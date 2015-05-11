@@ -274,11 +274,10 @@ DWORD get_fattime (void)
 	return tmr;
 }
 
-/*_Sigfun * signal(int i, _Sigfun *proc)
+_Sigfun * signal(int i, _Sigfun *proc)
 {
 	__no_operation();
-
-}*/
+}
 
 int main(void)
 {
