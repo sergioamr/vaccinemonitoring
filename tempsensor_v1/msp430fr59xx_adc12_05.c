@@ -981,7 +981,7 @@ int main(void) {
 			memset(ATresponse, 0, sizeof(ATresponse));
 			uart_rx(ATCMD_CGSN, ATresponse);
 			if (memcmp(ATresponse, "INVALID", strlen("INVALID"))) {
-				pstCfgInfoA = SampleData;
+				pstCfgInfoA = (CONFIG_INFOA*)SampleData;
 				memcpy(pstCfgInfoA, (void*) INFOA_ADDR, sizeof(CONFIG_INFOA));
 				//copy valid IMEI to FRAM
 				memcpy(pstCfgInfoA->cfgIMEI, ATresponse,
@@ -1197,20 +1197,20 @@ int main(void) {
 						fr = f_read(&filr, ATresponse, AGGREGATE_SIZE, &iIdx); /* Read first chunk of sector*/
 						if ((fr == FR_OK) && (iIdx > 0)) {
 							iStatus &= ~SPLIT_TIME_STAMP; //clear the last status of splitted data
-							pcData = FatFs.win;	//reuse the buffer maintained by the file system
+							pcData = (char*)FatFs.win;	//reuse the buffer maintained by the file system
 							//check for first time stamp
 							//pcTmp = strstr(&pcData[iOffset],"$TS");
 							pcTmp = strstr(&pcData[iOffset], "$"); //to prevent $TS rollover case
 							if ((pcTmp) && (pcTmp < &pcData[SECTOR_SIZE])) {
-								iIdx = pcTmp; //start position
+								iIdx = (int32_t)pcTmp; //start position
 								//check for second time stamp
 								//pcTmp = strstr(&pcTmp[TS_FIELD_OFFSET],"$TS");
 								pcTmp = strstr(&pcTmp[TS_FIELD_OFFSET], "$");
 								if ((pcTmp) && (pcTmp < &pcData[SECTOR_SIZE])) {
-									iPOSTstatus = pcTmp; //first src end postion
+									iPOSTstatus = (int32_t)pcTmp; //first src end postion
 									iStatus &= ~SPLIT_TIME_STAMP; //all data in FATFS buffer
 								} else {
-									iPOSTstatus = &pcData[SECTOR_SIZE];	//mark first source end position as end of sector boundary
+									iPOSTstatus = (int32_t)&pcData[SECTOR_SIZE];	//mark first source end position as end of sector boundary
 									iStatus |= SPLIT_TIME_STAMP;
 								}
 								pcTmp = (char*)iIdx;//re-initialize to first time stamp
@@ -1222,7 +1222,7 @@ int main(void) {
 									pcSrc2 = NULL;
 									//update lseek
 									dwFinalSeek = dwLastseek
-											+ (iPOSTstatus - (int) pcSrc1);	//seek to the next time stamp
+											+ (iPOSTstatus - (int32_t) pcSrc1);	//seek to the next time stamp
 								}
 								//check to read some more data
 								else if ((filr.fsize - dwLastseek)
@@ -1250,12 +1250,12 @@ int main(void) {
 										if (pcSrc1) {
 											dwFinalSeek = dwLastseek
 													+ (pcSrc1 - ATresponse); //seek to the next TS
-											iIdx = pcSrc1; //second src end position
+											iIdx = (int32_t)pcSrc1; //second src end position
 										}
 										//no next time stamp found
 										else {
 											dwFinalSeek = dwLastseek + iIdx; //update with bytes read
-											dwLastseek = &ATresponse[iIdx]; //get postion of last byte
+											dwLastseek = (int32_t)&ATresponse[iIdx]; //get postion of last byte
 											iIdx = dwLastseek; //end position for second src
 										}
 										//first src is in FATFS buffer, second src is ATresponse
@@ -1298,14 +1298,14 @@ int main(void) {
 											"$");
 									if ((pcSrc1)
 											&& (pcSrc1 < &ATresponse[iIdx])) {
-										iPOSTstatus = pcSrc1; //first src end position;
+										iPOSTstatus = (int32_t)pcSrc1; //first src end position;
 										iStatus &= ~SPLIT_TIME_STAMP; //all data in FATFS buffer
 									} else {
-										iPOSTstatus = &ATresponse[iIdx]; //first src end position;
+										iPOSTstatus = (int32_t)&ATresponse[iIdx]; //first src end position;
 										iStatus |= SPLIT_TIME_STAMP;
 									}
 								} else {
-									iPOSTstatus = &ATresponse[iIdx]; //first src end position;
+									iPOSTstatus = (int32_t)&ATresponse[iIdx]; //first src end position;
 									iStatus |= SPLIT_TIME_STAMP;
 								}
 
@@ -1321,7 +1321,7 @@ int main(void) {
 										f_lseek(&filr, dwLastseek);
 										fr = f_read(&filr, &dummy, 1, &iIdx); /* dummy read to load the next sector */
 										if ((fr == FR_OK) && (iIdx > 0)) {
-											pcData = FatFs.win;	//resuse the buffer maintained by the file system
+											pcData = (char*)FatFs.win;	//resuse the buffer maintained by the file system
 											//update final lseek for next sample
 											//pcSrc1 = strstr(pcData,"$TS");
 											pcSrc1 = strstr(pcData, "$");
@@ -1330,10 +1330,10 @@ int main(void) {
 															< &pcData[SECTOR_SIZE])) {
 												dwFinalSeek = dwLastseek
 														+ (pcSrc1 - pcData); //seek to the next TS
-												iIdx = pcSrc1; //end position for second src
+												iIdx = (int32_t)pcSrc1; //end position for second src
 											} else {
 												dwFinalSeek = filr.fsize; //EOF - update with file size
-												iIdx = &pcData[dwFinalSeek
+												iIdx = (int32_t)&pcData[dwFinalSeek
 														% SECTOR_SIZE]; //end position for second src
 											}
 											//first src is in ATresponse buffer, second src is FATFS
@@ -1353,7 +1353,7 @@ int main(void) {
 									pcSrc2 = NULL;
 									//update lseek
 									dwFinalSeek = dwLastseek
-											+ (iPOSTstatus - (int) pcSrc1);	//seek to the next time stamp
+											+ (iPOSTstatus - (int32_t) pcSrc1);	//seek to the next time stamp
 								}
 							} else {
 								//control should not come here ideally
@@ -1385,7 +1385,7 @@ int main(void) {
 						strcat(SampleData,"IMEI=358072043113601&ph=8455523642&v=1.20140817.1&sid=0|1|2|3&"); //SERIAL
 #endif
 						//check if time stamp is split across the two sources
-						iOffset = iPOSTstatus - (int) pcTmp; //reuse, iPOSTstatus is end of first src
+						iOffset = iPOSTstatus - (int32_t) pcTmp; //reuse, iPOSTstatus is end of first src
 						if ((iOffset > 0) && (iOffset < TS_SIZE)) {
 							//reuse the SampleData tail part to store the complete timestamp
 							pcData = &SampleData[SAMPLE_LEN - 1] - TS_SIZE - 1; //to prevent overwrite
@@ -1645,7 +1645,7 @@ int main(void) {
 				iStatus |= NETWORK_DOWN;
 
 				//switch the SIM slot;
-				pstCfgInfoA = SampleData;
+				pstCfgInfoA = (CONFIG_INFOA*)SampleData;
 				memcpy(pstCfgInfoA, (void*) INFOA_ADDR, sizeof(CONFIG_INFOA));
 				if (pstCfgInfoA->cfgSIMSlot != 2) //value will be 0xFF in case FRAM was not already populated
 						{
@@ -2343,7 +2343,7 @@ int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 	iFlag = iFlagVal;
 	while ((pcTmp && !lastoffset)
 			|| (pcTmp && lastoffset && (pcTmp < (char*)lastoffset))) {
-		iSampleCnt = lastoffset - (int) pcTmp;
+		iSampleCnt = lastoffset - (int32_t) pcTmp;
 		if ((iSampleCnt > 0) && (iSampleCnt < iFieldSize)) {
 			//the field is splitted across
 			//reuse the SampleData tail part to store the complete timestamp
@@ -2668,7 +2668,7 @@ int8_t processmsg(char* pSMSmsg) {
 				case '1':
 					pcTmp = strtok(NULL, ",");
 					if (pcTmp) {
-						pstCfgInfoA = SampleData;
+						pstCfgInfoA = (CONFIG_INFOA*)SampleData;
 						memcpy(pstCfgInfoA, (void*) INFOA_ADDR,
 								sizeof(CONFIG_INFOA));
 						//get & set gateway
@@ -2751,7 +2751,7 @@ int8_t processmsg(char* pSMSmsg) {
 						if(pcTmp)
 						{
 #endif
-						pstCfgInfoA = SampleData;
+						pstCfgInfoA = (CONFIG_INFOA*)SampleData;
 						memcpy(pstCfgInfoA, (void*) INFOA_ADDR,
 								sizeof(CONFIG_INFOA));
 
