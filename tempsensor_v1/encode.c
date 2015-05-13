@@ -1,10 +1,7 @@
-
-
+#include "encode.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-
 
 void encode(double input_val, char output_chars[]) {
 
@@ -21,7 +18,6 @@ void encode(double input_val, char output_chars[]) {
   int WHOLE_PART_LOW2_MASK = 0x3;
   int WHOLE_PART_HIGH5_MASK = 0x7c;
   int MASK_6BITS = 0x3f;
-
 
   if (input_val > 127.0) {
     output_chars[0] = ENCODED_STR_MAX[0];

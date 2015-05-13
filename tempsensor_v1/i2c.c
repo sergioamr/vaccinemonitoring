@@ -13,6 +13,7 @@
 #include "config.h"
 #include "i2c.h"
 #include "driverlib.h"
+#include "timer.h"
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 volatile int8_t 	I2CRX[I2C_RX_LEN];

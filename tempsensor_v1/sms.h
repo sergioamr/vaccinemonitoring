@@ -46,6 +46,6 @@ EXTERN int recvmsg(int8_t iMsgIdx,char* pData);
 //! \return none
 //
 //*****************************************************************************
-EXTERN void delreadmsg();
+EXTERN void delallmsg();
 
 #endif /* SMS_H_ */
