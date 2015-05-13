@@ -81,7 +81,7 @@
 //#define I2C_DISABLED
 //#define POWER_SAVING_ENABLED
 //#define NOTFROMFILE
-//#define BUZZER_DISABLED
+#define BUZZER_DISABLED
 #define ENABLE_SIM_SLOT		//needed to set on new board, comment it for old board
 #define ALERT_UPLOAD_DISABLED
 //#define CALIBRATION			//set this flag whenever the device has to undergo calibration
@@ -874,7 +874,7 @@ int main(void) {
 	delay(1000);
 	lcd_init();
 	delay(1000);
-	lcd_print("Starting..");
+	lcd_print("Starting...");
 
 	//while(1)
 	//{
@@ -1547,7 +1547,7 @@ int main(void) {
 
 					//save the last read offset
 					memcpy(SampleData, g_pInfoB, sizeof(CONFIG_INFOB));
-					FRAMCtl_write8(SampleData, (void*) INFOB_ADDR,
+					FRAMCtl_write8((uint8_t*)SampleData, (void*) INFOB_ADDR,
 							sizeof(CONFIG_INFOB));
 
 #ifdef POWER_SAVING_ENABLED
@@ -2888,7 +2888,7 @@ void lcd_init() {
 	SampleData[7] = 0x01;
 	SampleData[8] = 0x06;
 
-	i2c_write(0x3e, 0, LCD_INIT_PARAM_SIZE, SampleData);
+	i2c_write(0x3e, 0, LCD_INIT_PARAM_SIZE, (uint8_t*)SampleData);
 #if 0
 	delay(1000);
 
@@ -3079,7 +3079,7 @@ void lcd_show(int8_t iItemId) {
 	}
 
 //display the lines
-	i2c_write(0x3e, 0x40, LCD_LINE_LEN, SampleData);
+	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t*)SampleData);
 	delay(100);
 	lcd_setaddr(0x40);	//go to next line
 	i2c_write(0x3e, 0x40, LCD_LINE_LEN, &SampleData[iIdx]);
@@ -3093,7 +3093,7 @@ void lcd_print(char* pcData) {
 		len = LCD_LINE_LEN;
 	}
 	lcd_clear();
-	i2c_write(0x3e, 0x40, len, pcData);
+	i2c_write(0x3e, 0x40, len, (uint8_t*)pcData);
 }
 
 void lcd_print_line(char* pcData, int8_t iLine) {
@@ -3107,7 +3107,7 @@ void lcd_print_line(char* pcData, int8_t iLine) {
 	} else {
 		lcd_setaddr(0x0);
 	}
-	i2c_write(0x3e, 0x40, len, pcData);
+	i2c_write(0x3e, 0x40, len, (uint8_t*)pcData);
 }
 
 void lcd_reset() {
@@ -3126,25 +3126,25 @@ void lcd_bldisable() {
 
 void lcd_clear() {
 	SampleData[0] = 0x01;
-	i2c_write(0x3e, 0, 1, SampleData);
+	i2c_write(0x3e, 0, 1, (uint8_t*)SampleData);
 	delay(100);
 }
 
 void lcd_on() {
 	SampleData[0] = 0x0C;
-	i2c_write(0x3e, 0, 1, SampleData);
+	i2c_write(0x3e, 0, 1, (uint8_t*)SampleData);
 	delay(100);
 }
 
 void lcd_off() {
 	SampleData[0] = 0x08;
-	i2c_write(0x3e, 0, 1, SampleData);
+	i2c_write(0x3e, 0, 1, (uint8_t*)SampleData);
 	delay(100);
 }
 
 void lcd_setaddr(int8_t addr) {
 	SampleData[0] = addr | 0x80;
-	i2c_write(0x3e, 0, 1, SampleData);
+	i2c_write(0x3e, 0, 1, (uint8_t*)SampleData);
 	delay(100);
 }
 
