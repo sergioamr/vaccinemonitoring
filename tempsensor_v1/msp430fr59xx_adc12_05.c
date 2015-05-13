@@ -196,7 +196,7 @@ struct tm currTime;
 FIL filr;
 FIL filw;
 FRESULT fr;
-int32_t iBytesLogged = 0;
+int iBytesLogged = 0;
 int g_iCurrDay = 0;
 #pragma SET_DATA_SECTION()
 
@@ -389,7 +389,7 @@ void monitoralarm() {
 			continue;
 		}
 
-		iTemp = strtod(&Temperature[iCnt], NULL);
+		iTemp = strtod((const char *) &Temperature[iCnt], NULL);
 		//iTemp = strtod("24.5",NULL);
 		//check for low temp threshold
 		if (iTemp < pstCfgInfoA->stTempAlertParams[iCnt].threshcold) {
@@ -641,13 +641,13 @@ int main(void) {
 	char* pcTmp = NULL;
 	char* pcSrc1 = NULL;
 	char* pcSrc2 = NULL;
-	int iIdx = 0;
+	uint32_t iIdx = 0;
 	int iPOSTstatus = 0;
 	int32_t dwLastseek = 0;
 	int32_t dwFinalSeek = 0;
 	int32_t iSize = 0;
 	int16_t iOffset = 0;
-	int8_t dummy = 0;
+	uint8_t dummy = 0;
 	int8_t iSampleCnt = 0;
 	char gprs_network_indication = 0;
 	int32_t dw_file_pointer_back_log = 0; // for error condition /// need to be tested.
@@ -658,7 +658,7 @@ int main(void) {
 
 	//ZZZZ for stack usage calculation. Should be removed during the release
 	//*(int32_t*)(&__STACK_END - &__STACK_SIZE) = 0xdeadbeef;
-	iIdx = &__STACK_SIZE;
+	iIdx = (uint32_t) &__STACK_SIZE;
 	memset((void*) (&__STACK_END - &__STACK_SIZE), 0xa5, iIdx / 4); //paint 1/4th stack with know values
 
 	dummy = sizeof(CONFIG_INFOA);
@@ -977,7 +977,7 @@ int main(void) {
 				//copy valid IMEI to FRAM
 				memcpy(pstCfgInfoA->cfgIMEI, ATresponse,
 						strlen(ATresponse) + 1);
-				FRAMCtl_write8(pstCfgInfoA, (void*) INFOA_ADDR,
+				FRAMCtl_write8((uint8_t *) pstCfgInfoA, (void*) INFOA_ADDR,
 						sizeof(CONFIG_INFOA));
 			}
 		}
@@ -1018,7 +1018,7 @@ int main(void) {
 			//convert the current sensor ADC value to temperature
 			for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
 				memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);//initialize as it will be used as scratchpad during POST formatting
-				ConvertADCToTemperature(ADCvar[iIdx], &Temperature[iIdx], iIdx);
+				ConvertADCToTemperature(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
 			}
 
 			//Write temperature data to 7 segment display
@@ -1185,7 +1185,7 @@ int main(void) {
 					iOffset = dwLastseek % SECTOR_SIZE;
 					//check the position is in first half of sector
 					if ((SECTOR_SIZE - iOffset) > AGGREGATE_SIZE) {
-						fr = f_read(&filr, ATresponse, AGGREGATE_SIZE, &iIdx); /* Read first chunk of sector*/
+						fr = f_read(&filr, ATresponse, AGGREGATE_SIZE, (UINT*)&iIdx); /* Read first chunk of sector*/
 						if ((fr == FR_OK) && (iIdx > 0)) {
 							iStatus &= ~SPLIT_TIME_STAMP; //clear the last status of splitted data
 							pcData = (char*)FatFs.win;	//reuse the buffer maintained by the file system
@@ -1226,7 +1226,7 @@ int main(void) {
 									//fr = f_read(&filr, ATresponse, AGGREGATE_SIZE, &iIdx);  /* Read next data of AGGREGATE_SIZE */
 									//if((fr == FR_OK) && (iIdx > 0))
 									//if(disk_read_ex(0,ATresponse,filr.dsect+1,AGGREGATE_SIZE) == RES_OK)
-									if (disk_read_ex(0, ATresponse,
+									if (disk_read_ex(0, (BYTE *) ATresponse,
 											filr.dsect + 1, 512) == RES_OK) {
 										//calculate bytes read
 										iSize = filr.fsize - dwLastseek;
@@ -1273,7 +1273,7 @@ int main(void) {
 					} else {
 						//the position is second half of sector
 						fr = f_read(&filr, ATresponse, SECTOR_SIZE - iOffset,
-								&iIdx); /* Read data till the end of sector */
+								(UINT *)&iIdx); /* Read data till the end of sector */
 						if ((fr == FR_OK) && (iIdx > 0)) {
 							iStatus &= ~SPLIT_TIME_STAMP; //clear the last status of splitted data
 							//get position of first time stamp
@@ -1310,7 +1310,7 @@ int main(void) {
 												- iOffset;
 										//seek
 										f_lseek(&filr, dwLastseek);
-										fr = f_read(&filr, &dummy, 1, &iIdx); /* dummy read to load the next sector */
+										fr = f_read(&filr, &dummy, 1, (UINT *)&iIdx); /* dummy read to load the next sector */
 										if ((fr == FR_OK) && (iIdx > 0)) {
 											pcData = (char*)FatFs.win;	//resuse the buffer maintained by the file system
 											//update final lseek for next sample
@@ -1364,7 +1364,7 @@ int main(void) {
 						//strcat(SampleData,"IMEI=358072043113601&ph=8455523642&v=1.20140817.1&sid=0|1|2|3|4&"); //SERIAL
 #else
 						strcat(SampleData, "IMEI=");
-						if (g_pInfoA->cfgIMEI[0] != -1) {
+						if (g_pInfoA->cfgIMEI[0] != 0xFF) {  // -1
 							strcat(SampleData, g_pInfoA->cfgIMEI);
 						} else {
 							strcat(SampleData, (void*) DEF_IMEI); //be careful as devices with unprogrammed IMEI will need up using same DEF_IMEI
@@ -1580,7 +1580,6 @@ int main(void) {
 					sendhb();
 				}
 			}
-
 		}
 
 #ifndef CALIBRATION
@@ -1653,7 +1652,7 @@ int main(void) {
 
 				modem_init(pstCfgInfoA->cfgSIMSlot);
 				//write to FRAM
-				FRAMCtl_write8(pstCfgInfoA, (void*) INFOA_ADDR,
+				FRAMCtl_write8((uint8_t *) pstCfgInfoA, (void*) INFOA_ADDR,
 						sizeof(CONFIG_INFOA));
 
 			}
@@ -2253,7 +2252,7 @@ FRESULT logsampletofile(FIL* fobj, int* tbw) {
 			strcat(acLogData, itoa(g_iSamplePeriod));
 			strcat(acLogData, ",");
 			strcat(acLogData, "\n");
-			fr = f_write(fobj, acLogData, strlen(acLogData), &bw);
+			fr = f_write(fobj, acLogData, strlen(acLogData), (UINT *)&bw);
 #else
 			bw = f_printf(fobj,"$TS=%04d%02d%02d:%02d:%02d:%02d,R=%d,", currTime.tm_year, currTime.tm_mon, currTime.tm_mday,
 					currTime.tm_hour, currTime.tm_min, currTime.tm_sec,g_iSamplePeriod);
@@ -2304,7 +2303,7 @@ FRESULT logsampletofile(FIL* fobj, int* tbw) {
 		strcat(acLogData, Temperature[4]);
 		strcat(acLogData, ",");
 		strcat(acLogData, "\n");
-		fr = f_write(fobj, acLogData, strlen(acLogData), &bw);
+		fr = f_write(fobj, acLogData, strlen(acLogData), (UINT *)&bw);
 #else
 		bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,", iBatteryLevel,
 				!(P4IN & BIT4),Temperature[0],Temperature[1],Temperature[2],Temperature[3]);
@@ -2722,7 +2721,7 @@ int8_t processmsg(char* pSMSmsg) {
 								}
 							}
 
-							FRAMCtl_write8(pstCfgInfoA, (void*) INFOA_ADDR,
+							FRAMCtl_write8((uint8_t *)pstCfgInfoA, (void*) INFOA_ADDR,
 									sizeof(CONFIG_INFOA));
 							iCnt = 1;
 						}
@@ -2792,7 +2791,7 @@ int8_t processmsg(char* pSMSmsg) {
 							pstCfgInfoA->stBattPowerAlertParam.battthreshold =
 									101;
 						}
-						FRAMCtl_write8(pstCfgInfoA, (void*) INFOA_ADDR,
+						FRAMCtl_write8((uint8_t *) pstCfgInfoA, (void*) INFOA_ADDR,
 								sizeof(CONFIG_INFOA));
 						iCnt = 1;
 					} else {
@@ -2893,7 +2892,7 @@ void lcd_init() {
 void lcd_show(int8_t iItemId) {
 	int iIdx = 0;
 	int iCnt = 0;
-	float signal_strength = 0;
+	//float signal_strength = 0; // Not used
 	float local_signal = 0;
 
 //check if there is a change in display id
@@ -2918,7 +2917,7 @@ void lcd_show(int8_t iItemId) {
 	switch (iItemId) {
 		case 0:
 			memset(&Temperature[1], 0, TEMP_DATA_LEN + 1); //initialize as it will be used as scratchpad during POST formatting
-			ConvertADCToTemperature(ADCvar[1], &Temperature[1], 1);
+			ConvertADCToTemperature(ADCvar[1], &Temperature[1][0], 1);
 			strcat(SampleData, Temperature[1]);
 			strcat(SampleData, "C ");
 			strcat(SampleData, itoa(iBatteryLevel));
@@ -3052,7 +3051,7 @@ void lcd_show(int8_t iItemId) {
 
 	if (iCnt != 0xff) {
 		memset(&Temperature[iCnt], 0, TEMP_DATA_LEN + 1);//initialize as it will be used as scratchpad during POST formatting
-		ConvertADCToTemperature(ADCvar[iCnt], &Temperature[iCnt], iCnt);
+		ConvertADCToTemperature(ADCvar[iCnt], &Temperature[iCnt][0], iCnt);
 
 		if (TEMP_ALARM_GET(iCnt) == TEMP_ALERT_CNF) {
 			strcat(SampleData, "ALERT ");
@@ -3070,10 +3069,10 @@ void lcd_show(int8_t iItemId) {
 	}
 
 //display the lines
-	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t*)SampleData);
+	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t*) SampleData);
 	delay(100);
 	lcd_setaddr(0x40);	//go to next line
-	i2c_write(0x3e, 0x40, LCD_LINE_LEN, &SampleData[iIdx]);
+	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t*) &SampleData[iIdx]);
 
 }
 
@@ -3088,7 +3087,7 @@ void lcd_print(const uint8_t *pcData) {
 }
 
 void lcd_print_line(const uint8_t* pcData, int8_t iLine) {
-	int8_t len = strlen(pcData);
+	uint8_t len = strlen((const char *) pcData);
 
 	if (len > LCD_LINE_LEN) {
 		len = LCD_LINE_LEN;

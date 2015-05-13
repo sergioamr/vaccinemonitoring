@@ -17,7 +17,7 @@ int16_t g_iFullRecharge = 0;
 
 void batt_init()
 {
-	uint16_t 	flags = 0;
+	uint8_t 	flags = 0;
 	uint16_t 	designenergy = 0;
 	uint16_t 	terminalvolt = 0;
 	uint16_t 	taperrate = 0;
@@ -29,9 +29,6 @@ void batt_init()
 	uint8_t		tmp = 0;
 	uint8_t 	dummy1;
 	uint8_t 	dummy2;
-
-
-
 
 	data = 0x00;
 	i2c_write(SLAVE_ADDR_BATTERY, BATT_CONTROL_1, 1, &data);
@@ -215,7 +212,7 @@ void batt_init()
 
 int8_t batt_getlevel()
 {
-	int8_t level = 0;
+	uint8_t level = 0;
 	double adjustedlevel = 0.0;
 
 	i2c_read(SLAVE_ADDR_BATTERY, BATT_STATE_OF_CHARGE, 1, &level);
