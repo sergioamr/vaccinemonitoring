@@ -140,6 +140,7 @@
 #include "MMC.h"
 #include "pmm.h"
 #include "encode.h"
+#include "lcd.h"
 
 #if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
 #define AGGREGATE_SIZE		256			//288
@@ -247,17 +248,7 @@ int8_t processmsg(char* pSMSmsg);
 void sendhb();
 int dopost_sms_status(void);
 int dopost_gprs_connection_status(char status);
-void lcd_init();
-void lcd_show(int8_t iItemId);
-void lcd_print(char* pcData);
-void lcd_print_line(char* pcData, int8_t iLine);
-void lcd_reset();
-void lcd_blenable();
-void lcd_bldisable();
-void lcd_clear();
-void lcd_on();
-void lcd_off();
-void lcd_setaddr(int8_t addr);
+
 #ifdef POWER_SAVING_ENABLED
 static int8_t modem_enter_powersave_mode();
 static int8_t modem_exit_powersave_mode();
@@ -1106,7 +1097,7 @@ int main(void) {
 				if (!(iStatus & TEST_FLAG)) {
 
 					uart_tx(
-							"AT+CGDCONT=1,\"IP\",\"airtelgprs.com\",\"0.0.0.0\",0,0\r\n"); //APN
+							"AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
 					//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
 					delay(MODEM_TX_DELAY2);
 
@@ -3086,8 +3077,8 @@ void lcd_show(int8_t iItemId) {
 
 }
 
-void lcd_print(char* pcData) {
-	int8_t len = strlen(pcData);
+void lcd_print(const uint8_t *pcData) {
+	int8_t len = strlen((const char *) pcData);
 
 	if (len > LCD_LINE_LEN) {
 		len = LCD_LINE_LEN;
@@ -3096,7 +3087,7 @@ void lcd_print(char* pcData) {
 	i2c_write(0x3e, 0x40, len, pcData);
 }
 
-void lcd_print_line(char* pcData, int8_t iLine) {
+void lcd_print_line(const uint8_t* pcData, int8_t iLine) {
 	int8_t len = strlen(pcData);
 
 	if (len > LCD_LINE_LEN) {
