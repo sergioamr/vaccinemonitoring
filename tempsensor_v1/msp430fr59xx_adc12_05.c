@@ -274,7 +274,7 @@ void deactivatehttp() {
 }
 
 void dohttpsetup() { // needs char* apn
-	uart_tx("AT+CGDCONT=1,\"IP\",\"airtelgprs.com\",\"0.0.0.0\",0,0\r\n"); //APN
+	uart_tx("AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
 	//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n");
 	delay(MODEM_TX_DELAY2);
 
@@ -338,7 +338,7 @@ int doget(char* queryData) {
 	iRxLen = RX_EXTENDED_LEN;
 	RX[RX_EXTENDED_LEN + 1] = 0;	//null termination
 #if 0
-			strcpy(queryData,"AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/358072043113601/1/\"\r\n");	//reuse,   //SERIAL
+			strcpy(queryData,"AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/358072043119046/1/\"\r\n");	//reuse,   //SERIAL
 #else
 	strcpy(queryData, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/");
 	strcat(queryData, g_pInfoA->cfgIMEI);
@@ -1111,7 +1111,7 @@ int main(void) {
 #ifdef NOTFROMFILE
 				iPOSTstatus = 0;	//set to 1 if post and sms should happen
 				memset(SampleData,0,sizeof(SampleData));
-				strcat(SampleData,"IMEI=358072043113601&phone=8455523642&uploadversion=1.20140817.1&sensorid=0|1|2|3&");//SERIAL
+				strcat(SampleData,"IMEI=358072043119046&phone=00447542972925&uploadversion=1.20140817.1&sensorid=0|1|2|3&");//SERIAL
 				rtc_get(&currTime);
 				strcat(SampleData,"sampledatetime=");
 				for(iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++)
@@ -1370,10 +1370,10 @@ int main(void) {
 							strcat(SampleData, (void*) DEF_IMEI); //be careful as devices with unprogrammed IMEI will need up using same DEF_IMEI
 						}
 						strcat(SampleData,
-								"&ph=8455523642&v=1.20140817.1&sid=0|1|2|3|4&"); //SERIAL
+								"&ph=00447542972925&v=1.20140817.1&sid=0|1|2|3|4&"); //SERIAL
 #endif
 #else
-						strcat(SampleData,"IMEI=358072043113601&ph=8455523642&v=1.20140817.1&sid=0|1|2|3&"); //SERIAL
+						strcat(SampleData,"IMEI=358072043119046&ph=00447542972925&v=1.20140817.1&sid=0|1|2|3&"); //SERIAL
 #endif
 						//check if time stamp is split across the two sources
 						iOffset = iPOSTstatus - (int32_t) pcTmp; //reuse, iPOSTstatus is end of first src
@@ -1498,7 +1498,7 @@ int main(void) {
 					if (iPOSTstatus != 0) {
 						//redo the post
 						uart_tx(
-								"AT+CGDCONT=1,\"IP\",\"airtelgprs.com\",\"0.0.0.0\",0,0\r\n"); //APN
+								"AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
 						//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
 						delay(MODEM_TX_DELAY2);
 
@@ -2834,7 +2834,7 @@ void sendhb() {
 	memset(SampleData, 0, sizeof(SampleData));
 	strcat(SampleData, SMS_HB_MSG_TYPE);
 #if 0
-	strcat(SampleData,"358072043113601");	//ZZZZ remove hardcoding //SERIAL
+	strcat(SampleData,"358072043119046");	//ZZZZ remove hardcoding //SERIAL
 	strcat(SampleData,",");
 #else
 	strcat(SampleData, g_pInfoA->cfgIMEI);
