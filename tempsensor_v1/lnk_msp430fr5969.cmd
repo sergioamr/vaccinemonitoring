@@ -168,10 +168,10 @@ SECTIONS
     .TI.noinit  : {} > RAM                  /* For #pragma NOINIT                */
     .xusersect  : 							/* user data section                */
     {
-    	msp430fr59xx_adc12_05.obj (.aggregate_vars)
+    	globals.obj (.aggregate_vars)
     	i2c.obj (.aggregate_vars)
     	uart.obj (.aggregate_vars)
-    	msp430fr59xx_adc12_05.obj (.xbigdata_vars)
+    	globals.obj (.xbigdata_vars)
     } > RAM
     .stack      : {} > RAM (HIGH)           /* SOFTWARE SYSTEM STACK             */
 

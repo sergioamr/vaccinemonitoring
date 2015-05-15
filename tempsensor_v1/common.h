@@ -89,7 +89,7 @@ int32_t	   dwLastSeek;
 double	   calibration[MAX_NUM_SENSORS][2];
 } CONFIG_INFOB;
 
-
+#define NAME_LEN			2
 
 #ifdef __cplusplus
 }

@@ -10,6 +10,9 @@
 #include "uart.h"
 #include "stdlib.h"
 #include "string.h"
+#include "lcd.h"
+
+#define DEBUG_INFO
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 volatile char RX[RX_LEN+1];
@@ -96,6 +99,10 @@ int uart_tx(volatile char* pTxData)
 {
 	int ret = -1;
 
+#ifdef DEBUG_INFO
+	lcd_print_debug(pTxData);
+#endif
+
 	if(pTxData)
 	{
 		while(iTXInProgress == 1);		//wait till the last msg is transmitted
@@ -124,7 +131,6 @@ int uart_rx(int atCMD, char* pResponse)
 	int  bytestoread = 0;
 	int  iStartIdx = 0;
 	int  iEndIdx = 0;
-
 
 	//input check
 	if(pResponse)

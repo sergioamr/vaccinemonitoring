@@ -23,7 +23,7 @@
 #define   SLAVE_ADDR_BATTERY	0x55
 
 //Battery configuration
-#ifdef BAT_VER == 1
+#if BAT_VER == 1
 #define   BATTERY_CAPACITY 		650			//650 mAh
 #define   DESIGN_ENERGY			2405
 #define   TERMINAL_VOLTAGE		3400
@@ -77,6 +77,14 @@ EXTERN int8_t g_iAlarmHighTempPeriod;
 EXTERN int8_t g_iAlarmPowerPeriod;
 EXTERN int8_t g_iAlarmBatteryPeriod;
 
+// Used to store the sensors data
+#define TEMP_DATA_LEN		5
 
+// Network signal quality values
+#define NETWORK_DOWN_SS		14
+#define NETWORK_UP_SS		NETWORK_DOWN_SS + 2 //2 points above the network down signal level
+#define NETWORK_MAX_SS		31
+
+#define NETWORK_ZERO 10
 
 #endif /* CONFIG_H_ */

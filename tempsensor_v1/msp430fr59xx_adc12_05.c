@@ -87,25 +87,14 @@
 //#define CALIBRATION			//set this flag whenever the device has to undergo calibration
 #define MIN 14
 
-//LCD lines
-#define LINE1					1
-#define LINE2					2
-#define GSM 1
-#define GPRS 2
 //Temperature cut off
 #define TEMP_CUTOFF				-800		//-80 deg C
 #define MODEM_CHECK_RETRY 	3
-#define NAME_LEN			2
-#define TEMP_DATA_LEN		5
 
 #define MODEM_TX_DELAY1		1000
 #define MODEM_TX_DELAY2		5000
 
-//#define ATRESP_MAX_LEN		128	//opt
-#define ATRESP_MAX_LEN		64
 #define HTTP_RESPONSE_RETRY	10
-
-#define FILE_BUFFER_LEN     64
 
 #define MAX_NUM_CONTINOUS_SAMPLES 10
 
@@ -113,15 +102,10 @@
 #define TS_SIZE				21
 #define TS_FIELD_OFFSET		1	//1 - $, 3 - $TS
 
-#define NETWORK_DOWN_SS		14
-#define NETWORK_UP_SS		NETWORK_DOWN_SS + 2 //2 points above the network down signal level
-#define NETWORK_MAX_SS		31
-
-#define NETWORK_ZERO 10
-
 #include <msp430.h>
 
 #include "config.h"
+#include "defines.h"
 #include "common.h"
 #include "driverlib.h"
 #include "stdlib.h"
@@ -138,14 +122,8 @@
 #include "signal.h"
 #include "MMC.h"
 #include "pmm.h"
-
-#ifdef MAX_NUM_SENSORS == 5
-#define AGGREGATE_SIZE		256			//288
-#define MAX_DISPLAY_ID		9
-#else
-#define AGGREGATE_SIZE		256
-#define MAX_DISPLAY_ID		6
-#endif
+#include "lcd.h"
+#include "globals.h"
 
 #define FORMAT_FIELD_OFF	1		//2 if field name is 1 character & equal, 3 if field name is 2 character & equal...
 extern volatile uint32_t iMinuteTick;
@@ -161,80 +139,13 @@ volatile int iSamplesRead = 0;
 
 //char		  filler[SAMPLE_LEN];
 //NOTE placement of data sections is in alphabetical order
-#pragma SET_DATA_SECTION(".aggregate_vars")
-char	 	  ATresponse[ATRESP_MAX_LEN] = {};
-#pragma SET_DATA_SECTION()
 
-#pragma SET_DATA_SECTION(".xbigdata_vars")
-char		  SampleData[SAMPLE_LEN];
-#pragma SET_DATA_SECTION()
-
-//volatile uint8_t iStatus = LOG_TIME_STAMP | TEST_FLAG;	//to test the reading and POST formation, there will be no SMS and POST happening
-volatile uint16_t iStatus = LOG_TIME_STAMP;			//this is recommended setting
-#ifdef MAX_NUM_SENSORS == 5
-char SensorName[MAX_NUM_SENSORS][NAME_LEN] = {"A","B","C","D","E"};
-uint8_t SensorDisplayName[MAX_NUM_SENSORS] = {0xA,0xB,0xC,0xD,0xE};
-#else
-char SensorName[MAX_NUM_SENSORS][NAME_LEN] = {"A","B","C","D"};
-uint8_t SensorDisplayName[MAX_NUM_SENSORS] = {0xA,0xB,0xC,0xD};
-#endif
-
-#pragma SET_DATA_SECTION(".aggregate_vars")
-static char tmpstr[10];	//opt
-char   acLogData[FILE_BUFFER_LEN];
-//char Temperature[MAX_NUM_SENSORS][TEMP_DATA_LEN+1];
-char   filler[30]; //ZZZZ recheck to remove this, placeholder for Temperature, which is
-                   //now moved to INFOD FRAM to optimize repeated temperature conversion
-#pragma SET_DATA_SECTION()
-
-
-#pragma SET_DATA_SECTION(".config_vars_infoC")
-//put all variables that are written less frequently
-volatile   int32_t ADCvar[MAX_NUM_SENSORS];
-struct 	   tm currTime;
-FIL 	   filr;
-FIL 	   filw;
-FRESULT    fr;
-int32_t    iBytesLogged = 0;
-int              g_iCurrDay   = 0;
-#pragma SET_DATA_SECTION()
-
-#pragma SET_DATA_SECTION(".config_vars_infoD")
-//put all variables that are written less frequently
-CONFIG_INFOA* g_pInfoA = (CONFIG_INFOA*) INFOA_ADDR;
-CONFIG_INFOB* g_pInfoB = (CONFIG_INFOB*) INFOB_ADDR;
-uint32_t 	  g_iAlarmStatus = 0;
-//CONFIG_INFOA* pstCfgInfoA = INFOA_ADDR;
-double 	 iTemp = 0.0;
-int16_t		  g_iAlarmCnfCnt[MAX_NUM_SENSORS+2];		//additional two for power and battery alert
-
-uint8_t iBatteryLevel = 100;
-int8_t iSignalLevel  = 99;
-//opt
-uint8_t iPostSuccess=0;
-uint8_t iPostFail=0;
-//uint8_t iHTTPRetryFailed=0;
-//uint8_t iHTTPRetrySucceeded=0;
-uint8_t iHTTPRespDelayCnt=0;
-uint8_t iLastDisplayId = 0xFF;
-//moved stack variables to prevent stack overflow
-uint32_t iUploadTimeElapsed = 0;
-uint32_t iSampleTimeElapsed = 0;
-uint32_t iSMSRxPollElapsed = 0;
-uint32_t iLCDShowElapsed = 0;
-uint32_t iMsgRxPollElapsed = 0;
-int8_t g_iLastCfgSeq  = -1;
-char Temperature[MAX_NUM_SENSORS][TEMP_DATA_LEN+1];
-char signal_gprs=0;
-char file_pointer_enabled_gprs_status=0; // for gprs condtition enabling.../// need to be tested..//
-
-#pragma SET_DATA_SECTION()
 
 
 //local functions
 static void writetoI2C (uint8_t addressI2C, uint8_t dataI2C);
 static float ConvertoTemp (float R);
-static void ConvertADCToTemperature(unsigned int ADCval, char* TemperatureVal, int8_t iSensorIdx);
+void ConvertADCToTemperature(unsigned int ADCval, char* TemperatureVal, int8_t iSensorIdx);
 char* itoa(int num);
 char* itoa_nopadding(int num);		//ZZZZ remove this function for final release
 static void parsetime(char* pDatetime, struct tm* pTime);
@@ -244,12 +155,6 @@ int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset, char* seperator
 void 	uploadsms();
 int8_t 	processmsg(char* pSMSmsg);
 void 	sendhb();
-void 	lcd_init();
-void 	lcd_clear();
-void 	lcd_setaddr(int8_t addr);
-void 	lcd_show(int8_t iItemId);
-void    lcd_print(char* pcData);
-void    lcd_print_line(char* pcData,int8_t iLine);
 int dopost_sms_status(void);
 int dopost_gprs_connection_status(char status);
 #ifdef POWER_SAVING_ENABLED
@@ -277,7 +182,6 @@ DWORD get_fattime (void)
 _Sigfun * signal(int i, _Sigfun *proc)
 {
 	__no_operation();
-
 }
 
 int main(void)
@@ -517,15 +421,14 @@ int main(void)
   delay(1000);
   lcd_init();
   delay(1000);
-  lcd_print("Starting..");
+  lcd_print("Starting...");
+  //lcd_print_line(__TIME__, LINE2);
 
   //while(1)
   //{
 	  //iBatteryLevel = batt_getlevel();
 	  //delay(2000);
   //}
-
-
 
   //i2c_init(SLAVE_ADDR_DISPLAY,EUSCI_B_I2C_SET_DATA_RATE_400KBPS);
 
@@ -2354,20 +2257,6 @@ int8_t modem_exit_powersave_mode()
 #endif
 
 
-#define TEMP_ALERT_OFF	 	 0
-#define LOW_TEMP_ALARM_ON	 1
-#define HIGH_TEMP_ALARM_ON	 2
-#define TEMP_ALERT_CNF		 3
-
-#define BATT_ALERT_OFF		 0
-#define POWER_ALERT_OFF		 0	
-#define BATT_ALARM_ON		 1
-#define POWER_ALARM_ON		 1
-
-#define TEMP_ALARM_CLR(sid)  g_iAlarmStatus &= ~(3 << (sid << 1))
-#define TEMP_ALARM_SET(sid,state) g_iAlarmStatus |= (state << (sid << 1))
-#define TEMP_ALARM_GET(sid) ((g_iAlarmStatus & ((0x3) << (sid << 1)))) >> (sid << 1)
-
 #if 1
 
 void monitoralarm()
@@ -3148,282 +3037,6 @@ void sendhb()
 	  sendmsg(SampleData);
 }
 
-void lcd_init()
-{
-	  memset(SampleData,0,LCD_INIT_PARAM_SIZE);
-
-	  SampleData[0] = 0x38;
-	  SampleData[1] = 0x39;
-	  SampleData[2] = 0x14;
-	  SampleData[3] = 0x78;
-	  SampleData[4] = 0x5E;
-	  SampleData[5] = 0x6D;
-	  SampleData[6] = 0x0C;
-	  SampleData[7] = 0x01;
-	  SampleData[8] = 0x06;
-
-	  i2c_write(0x3e,0,LCD_INIT_PARAM_SIZE,SampleData);
-#if 0
-	  delay(1000);
-
-	  SampleData[0] = 0x41;
-	  SampleData[1] = 0x42;
-	  i2c_write(0x3e,0x40,2,SampleData);
-	  delay(100);
-#endif
-}
-
-void lcd_clear()
-{
-	  SampleData[0] = 0x01;
-	  i2c_write(0x3e,0,1,SampleData);
-	  delay(100);
-}
-
-void lcd_on()
-{
-	  SampleData[0] = 0x0C;
-	  i2c_write(0x3e,0,1,SampleData);
-	  delay(100);
-}
-
-void lcd_off()
-{
-	  SampleData[0] = 0x08;
-	  i2c_write(0x3e,0,1,SampleData);
-	  delay(100);
-}
-
-void lcd_setaddr(int8_t addr)
-{
-	  SampleData[0] = addr | 0x80;
-	  i2c_write(0x3e,0,1,SampleData);
-	  delay(100);
-}
-
-void lcd_show(int8_t iItemId)
-{
-	int iIdx = 0;
-	int iCnt = 0;
-	float signal_strength=0;
-	float local_signal=0;
-
-	//check if there is a change in display id
-	//if(iLastDisplayId != iItemId) lcd_clear();
-	lcd_clear();
-
-	memset(SampleData,0,LCD_DISPLAY_LEN);
-	  //get local time
-    rtc_getlocal(&currTime);
-	strcat(SampleData,itoa(currTime.tm_year));strcat(SampleData,"/");
-	strcat(SampleData,itoa(currTime.tm_mon));strcat(SampleData,"/");
-	strcat(SampleData,itoa(currTime.tm_mday));strcat(SampleData," ");
-
-	strcat(SampleData,itoa(currTime.tm_hour));strcat(SampleData,":");
-	strcat(SampleData,itoa(currTime.tm_min));
-	iIdx = strlen(SampleData); //marker
-
-	switch(iItemId)
-	{
-		case 0:
-			  memset(&Temperature[1],0,TEMP_DATA_LEN+1);	//initialize as it will be used as scratchpad during POST formatting
-			  ConvertADCToTemperature(ADCvar[1],&Temperature[1],1);
-			  strcat(SampleData,Temperature[1]); strcat(SampleData,"C ");
-			  strcat(SampleData,itoa(iBatteryLevel));strcat(SampleData,"% ");
-			//  if(signal_gprs==1){
-			  if((iSignalLevel > NETWORK_DOWN_SS) && (iSignalLevel < NETWORK_MAX_SS)){
-			//	  strcat(SampleData,"G:");
-				 if(signal_gprs==1){
-				  	strcat(SampleData,"G");
-				  }
-				 else{
-				  	strcat(SampleData,"S");
-				  }
-			  	local_signal=iSignalLevel;
-			  	local_signal=(((local_signal-NETWORK_ZERO)/(NETWORK_MAX_SS-NETWORK_ZERO))*100);
-			  	strcat(SampleData,itoa(local_signal));
-			  	strcat(SampleData,"%");
-			  }
-			  else{
-			  	strcat(SampleData,"S --  ");
-			  }
-
-			  //strcat(SampleData,itoa(iSignalLevel));strcat(SampleData,"S");
-#if 0
-			  if(iSignalLevel == 99)
-			  {
-				  strcat(SampleData,"S:--");
-			  }
-			  else if((iSignalLevel >= LOW_RANGE_MIN) && (iSignalLevel <= LOW_RANGE_MAX))
-			  {
-				  strcat(SampleData,"S:LO");
-			  }
-			  else if((iSignalLevel >= MED_RANGE_MIN) && (iSignalLevel <= MED_RANGE_MAX))
-			  {
-				  strcat(SampleData,"S:MD");
-			  }
-			  else if((iSignalLevel >= HIGH_RANGE_MIN) && (iSignalLevel <= HIGH_RANGE_MAX))
-			  {
-				  strcat(SampleData,"S:HI");
-			  }
-#endif
-			  iCnt = 0xff;
-			  break;
-
-		case 1: iCnt = 0; break;
-		case 2: iCnt = 1; break;
-		case 3: iCnt = 2; break;
-		case 4: iCnt = 3; break;
-#ifdef MAX_NUM_SENSORS == 5
-		case 5: iCnt = 4; break;
-		case 6: iCnt = 0xff;
-#else
-		case 5: iCnt = 0xff;
-#endif
-
-			  strcat(SampleData,itoa(iBatteryLevel));strcat(SampleData,"% ");
-			  if(TEMP_ALARM_GET(MAX_NUM_SENSORS) == TEMP_ALERT_CNF)
-			  {
-				  strcat(SampleData,"BATT ALERT");
-			  }
-			  else if(P4IN & BIT4)	//power not plugged
-			  {
-				  strcat(SampleData,"POWER OUT");
-		      }
-			  else if(((P4IN & BIT6)) && (iBatteryLevel == 100))
-			  {
-				  strcat(SampleData,"FULL CHARGE");
-			  }
-			  else
-			  {
-				  strcat(SampleData,"CHARGING");
-			  }
-
-			  break;
-			  // added for new display//
-		case 7: iCnt = 0xff;
-		    strcat(SampleData,"SIM1 ");//current sim slot is 1
-			if(g_pInfoA->cfgSIMSlot != 1){
-			   strcat(SampleData,"  --  ");
-			}
-			else{
-			  if((iSignalLevel > NETWORK_DOWN_SS) && (iSignalLevel < NETWORK_MAX_SS)){
-			  	local_signal=iSignalLevel;
-			  	local_signal=(((local_signal-NETWORK_ZERO)/(NETWORK_MAX_SS-NETWORK_ZERO))*100);
-			  	strcat(SampleData,itoa(local_signal));
-			  	strcat(SampleData,"% ");
-				if(signal_gprs==1){
-					strcat(SampleData,"G:YES");
-				}
-				else{
-					strcat(SampleData,"G:NO");
-				}
-			  }
-			  else{
-				  strcat(SampleData,"  --  ");
-			  }
-			}
-			 break;
-		case 8: iCnt = 0xff;
-		     strcat(SampleData,"SIM2 ");//current sim slot is 2
-			if(g_pInfoA->cfgSIMSlot != 2){
-				strcat(SampleData,"  --  ");
-			}
-			else{
-				  if((iSignalLevel > NETWORK_DOWN_SS) && (iSignalLevel < NETWORK_MAX_SS)){
-				  	local_signal=iSignalLevel;
-				  	local_signal=(((local_signal-NETWORK_ZERO)/(NETWORK_MAX_SS-NETWORK_ZERO))*100);
-				  	strcat(SampleData,itoa(local_signal));
-				  	strcat(SampleData,"% ");
-					if(signal_gprs==1){
-						strcat(SampleData,"G:YES");
-					}
-					else{
-						strcat(SampleData,"G:NO");
-					}
-				  }
-				  else{
-					  strcat(SampleData,"  --  ");
-				  }
-				}
-			break;
-		default:
-			  break;
-	}
-
-	if(iCnt != 0xff)
-	{
-	  memset(&Temperature[iCnt],0,TEMP_DATA_LEN+1);	//initialize as it will be used as scratchpad during POST formatting
-	  ConvertADCToTemperature(ADCvar[iCnt],&Temperature[iCnt],iCnt);
-
-	  if(TEMP_ALARM_GET(iCnt) == TEMP_ALERT_CNF)
-	  {
-		  strcat(SampleData,"ALERT ");
-		  strcat(SampleData,SensorName[iCnt]); strcat(SampleData," "); strcat(SampleData,Temperature[iCnt]); strcat(SampleData,"C ");
-	  }
-	  else
-	  {
-		  strcat(SampleData,"Sensor ");
-		  strcat(SampleData,SensorName[iCnt]); strcat(SampleData," "); strcat(SampleData,Temperature[iCnt]); strcat(SampleData,"C ");
-	  }
-	}
-
-	//display the lines
-    i2c_write(0x3e,0x40,LCD_LINE_LEN,SampleData);
-	delay(100);
-	lcd_setaddr(0x40);	//go to next line
-	i2c_write(0x3e,0x40,LCD_LINE_LEN,&SampleData[iIdx]);
-
-
-}
-
-void lcd_print(char* pcData)
-{
-	  int8_t len = strlen(pcData);
-
-	  if(len > LCD_LINE_LEN)
-	  {
-		  len = LCD_LINE_LEN;
-	  }
-	  lcd_clear();
-	  i2c_write(0x3e,0x40,len,pcData);
-}
-
-void lcd_print_line(char* pcData,int8_t iLine)
-{
-	  int8_t len = strlen(pcData);
-
-	  if(len > LCD_LINE_LEN)
-	  {
-		  len = LCD_LINE_LEN;
-	  }
-	  if(iLine == 2)
-	  {
-		  lcd_setaddr(0x40);
-	  }
-	  else
-	  {
-		  lcd_setaddr(0x0);
-	  }
-	  i2c_write(0x3e,0x40,len,pcData);
-}
-
-void lcd_reset()
-{
-	PJOUT &= ~BIT6;
-	delay(100);	//delay 100 ms
-	PJOUT |= BIT6;
-}
-
-void lcd_blenable()
-{
-	PJOUT |= BIT7;
-}
-
-void lcd_bldisable()
-{
-	PJOUT &= ~BIT7;
-}
 
 void modem_init(int8_t slot)
 {
