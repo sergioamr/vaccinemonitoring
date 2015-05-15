@@ -33,7 +33,7 @@ void sendmsg(char* pData)
 	  //uart_tx("AT+CMGS=\"8151938952\",129\r\n");
 
 	  //uart_tx("AT+CMGS=\"+918151938952\",145\r\n");
-	  uart_tx("AT+CMGS=\"00447446974230\",129\r\n");
+	  uart_tx("AT+CMGS=\"00447751035864\",129\r\n");
 	  //uart_tx("AT+CMGS=\"9900029739\",129\r\n");
 	  //uart_tx("AT+CMGS=\"9900029636\",129\r\n"); //ZZZZ take an array of DA and send SMS to each one
 	  //uart_tx("AT+CMGS=\"919900029636\",129\r\n"); //ZZZZ take an array of DA and send SMS to each one
