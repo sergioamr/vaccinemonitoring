@@ -81,10 +81,10 @@
 //#define I2C_DISABLED
 //#define POWER_SAVING_ENABLED
 //#define NOTFROMFILE
-#define BUZZER_DISABLED
+//#define BUZZER_DISABLED
 #define ENABLE_SIM_SLOT		//needed to set on new board, comment it for old board
 #define ALERT_UPLOAD_DISABLED
-#define CALIBRATION			//set this flag whenever the device has to undergo calibration
+//#define CALIBRATION			//set this flag whenever the device has to undergo calibration
 #define MIN 14
 
 //LCD lines
@@ -139,7 +139,7 @@
 #include "MMC.h"
 #include "pmm.h"
 
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#ifdef MAX_NUM_SENSORS == 5
 #define AGGREGATE_SIZE		256			//288
 #define MAX_DISPLAY_ID		9
 #else
@@ -319,7 +319,7 @@ int main(void)
   P1SELC |= BIT2;                           // Enable A/D channel A2
 #ifdef SEQUENCE
   P1SELC |=  BIT3 | BIT4 | BIT5  ;          // Enable A/D channel A3-A5
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#ifdef MAX_NUM_SENSORS == 5
   P4SELC |=  BIT2  ;          				// Enable A/D channel A10
 #endif
 #endif
@@ -372,7 +372,7 @@ int main(void)
 #ifdef SEQUENCE
   ADC12MCTL3 = ADC12VRSEL_4 | ADC12INCH_3;   // Vr+ = VeREF+ (ext) and Vr-=AVss, 12bit resolution, channel 3
   ADC12MCTL4 = ADC12VRSEL_4 | ADC12INCH_4;   // Vr+ = VeREF+ (ext) and Vr-=AVss, 12bit resolution, channel 4
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#ifdef MAX_NUM_SENSORS == 5
   ADC12MCTL5 = ADC12VRSEL_4 | ADC12INCH_5;   // Vr+ = VeREF+ (ext) and Vr-=AVss,12bit resolution,channel 5,EOS
   ADC12MCTL6 = ADC12VRSEL_4 | ADC12INCH_10 | ADC12EOS;   // Vr+ = VeREF+ (ext) and Vr-=AVss,12bit resolution,channel 5,EOS
 #else
@@ -383,7 +383,7 @@ int main(void)
 #endif
   //ADC interrupt logic
   //ZZZZ comment ADC for debugging other interfaces
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#ifdef MAX_NUM_SENSORS == 5
   ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5 | ADC12IE6;     // Enable ADC conv complete interrupt
 #else
   ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5;     // Enable ADC conv complete interrupt
@@ -786,7 +786,7 @@ int main(void)
 #ifdef NOTFROMFILE
     	    iPOSTstatus = 0;	//set to 1 if post and sms should happen
     		memset(SampleData,0,sizeof(SampleData));
-	    	strcat(SampleData,"IMEI=358072043119046&phone=00447542972925&uploadversion=1.20140817.1&sensorid=0|1|2|3&"); //SERIAL
+	    	strcat(SampleData,"IMEI=358072043113601&phone=8455523642&uploadversion=1.20140817.1&sensorid=0|1|2|3&"); //SERIAL
 	    	rtc_get(&currTime);
 	    	strcat(SampleData,"sampledatetime=");
 			for(iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++)
@@ -1068,7 +1068,7 @@ int main(void)
 				{
 					//read so far is successful and time stamp is found
 			    	memset(SampleData,0,sizeof(SampleData));
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#ifdef MAX_NUM_SENSORS == 5
 #if 0
 			    	//strcat(SampleData,"IMEI=358072043113601&ph=8455523642&v=1.20140817.1&sid=0|1|2|3|4&"); //SERIAL
 #else
@@ -1079,10 +1079,10 @@ int main(void)
 			    	 else{
 			    	   strcat(SampleData,DEF_IMEI);		//be careful as devices with unprogrammed IMEI will need up using same DEF_IMEI
 			    	 }
-			    	strcat(SampleData,"&ph=00447542972925&v=1.20140817.1&sid=0|1|2|3|4&"); //SERIAL
+			    	strcat(SampleData,"&ph=8455523642&v=1.20140817.1&sid=0|1|2|3|4&"); //SERIAL
 #endif
 #else
-			    	strcat(SampleData,"IMEI=358072043119046&ph=00447542972925&v=1.20140817.1&sid=0|1|2|3&"); //SERIAL
+			    	strcat(SampleData,"IMEI=358072043113601&ph=8455523642&v=1.20140817.1&sid=0|1|2|3&"); //SERIAL
 #endif
 						//check if time stamp is split across the two sources
 						iOffset = iPOSTstatus - (int)pcTmp;	//reuse, iPOSTstatus is end of first src
@@ -1139,7 +1139,7 @@ int main(void)
 						{
 							formatfield(pcSrc2, "D", iIdx,"|",iOffset, NULL, 0);
 						}
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#ifdef MAX_NUM_SENSORS == 5
 						iOffset = formatfield(pcSrc1, "E", iPOSTstatus,"|",0,pcSrc2,8);
 						if(pcSrc2)
 						{
@@ -1753,12 +1753,12 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
     case ADC12IV_ADC12IFG5:   		        // Vector 22:  ADC12MEM5
 		//ADCvar[3] = ADC12MEM5;                     // Read conversion result
 		ADCvar[3] += ADC12MEM5;                     // Read conversion result
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 4
+#ifdef MAX_NUM_SENSORS == 4
 		isConversionDone = 1;
 #endif
 		break;
     case ADC12IV_ADC12IFG6:                 // Vector 24:  ADC12MEM6
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#ifdef MAX_NUM_SENSORS == 5
 		//ADCvar[4] = ADC12MEM6;                     // Read conversion result
 		ADCvar[4] += ADC12MEM6;                     // Read conversion result
 		isConversionDone = 1;
@@ -2213,7 +2213,7 @@ FRESULT logsampletofile(FIL* fobj, int* tbw)
 		iBatteryLevel = 0;
 #endif
 		//log sample period, battery level, power plugged, temperature values
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#ifdef MAX_NUM_SENSORS == 5
 		//bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,E=%s,", iBatteryLevel,
 		//			  !(P4IN & BIT4),Temperature[0],Temperature[1],Temperature[2],Temperature[3],Temperature[4]);
 		memset(acLogData,0,sizeof(acLogData));
@@ -3113,7 +3113,7 @@ void sendhb()
 	  memset(SampleData,0,sizeof(SampleData));
 	  strcat(SampleData,SMS_HB_MSG_TYPE);
 #if 0
-	  strcat(SampleData,"358072043119046");	//ZZZZ remove hardcoding //SERIAL
+	  strcat(SampleData,"358072043113601");	//ZZZZ remove hardcoding //SERIAL
 	  strcat(SampleData,",");
 #else
 	  strcat(SampleData,g_pInfoA->cfgIMEI);
@@ -3127,7 +3127,7 @@ void sendhb()
 #endif
 	  strcat(SampleData,DEF_GW);		//ZZZZ read from INFOA
 	  strcat(SampleData,",");
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#ifdef MAX_NUM_SENSORS == 5
 	  strcat(SampleData,"1,1,1,1,1,");	//ZZZZ to be changed based on jack detection
 #else
 	  strcat(SampleData,"1,1,1,1,");	//ZZZZ to be changed based on jack detection
@@ -3274,7 +3274,7 @@ void lcd_show(int8_t iItemId)
 		case 2: iCnt = 1; break;
 		case 3: iCnt = 2; break;
 		case 4: iCnt = 3; break;
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#ifdef MAX_NUM_SENSORS == 5
 		case 5: iCnt = 4; break;
 		case 6: iCnt = 0xff;
 #else

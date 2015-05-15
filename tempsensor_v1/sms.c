@@ -8,7 +8,7 @@
 #if 1
 #define SMS_C_
 
-#include "string.h"
+
 #include "stdint.h"
 #include "sms.h"
 #include "uart.h"

@@ -23,7 +23,7 @@
 #define   SLAVE_ADDR_BATTERY	0x55
 
 //Battery configuration
-#if defined(BAT_VER) && BAT_VER == 1
+#ifdef BAT_VER == 1
 #define   BATTERY_CAPACITY 		650			//650 mAh
 #define   DESIGN_ENERGY			2405
 #define   TERMINAL_VOLTAGE		3400

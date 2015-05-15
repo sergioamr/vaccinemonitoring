@@ -10,6 +10,7 @@
 #include "diskio.h"		/* FatFs lower layer API */
 #include "MMC.h"	    /* Header file of MMC SD card control module */
 
+
 DSTATUS stat;
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
@@ -22,6 +23,8 @@ DSTATUS disk_status (
 	//return the status code
 	return stat;
 }
+
+
 
 /*-----------------------------------------------------------------------*/
 /* Inidialize a Drive                                                    */
@@ -49,9 +52,17 @@ DSTATUS disk_initialize (
 		stat = RES_NOTRDY;
 		break;
 	}
-
-	return stat;
+/*
+		MMC_DATA_TOKEN_ERROR
+		MMC_INIT_ERROR
+		MMC_CRC_ERROR
+		MMC_WRITE_ERROR
+		MMC_OTHER_ERROR
+		MMC_TIMEOUT_ERROR
+		*/
 }
+
+
 
 /*-----------------------------------------------------------------------*/
 /* Read Sector(s)                                                        */
@@ -64,6 +75,7 @@ DRESULT disk_read (
 	UINT count		/* Number of sectors to read */
 )
 {
+	DRESULT res;
 	int result = RES_PARERR;
 	int iIdx   = 0;
 
@@ -81,7 +93,8 @@ DRESULT disk_read (
 		}
 	}
 
-	return stat;
+
+	return result;
 }
 
 DRESULT disk_read_ex (
@@ -91,8 +104,10 @@ DRESULT disk_read_ex (
 	UINT count		/* Bytes to read */
 )
 {
+	DRESULT res;
 	int result = RES_PARERR;
-	//int iIdx   = 0;
+	int iIdx   = 0;
+
 	//for(iIdx = 0; ((iIdx < count) && (stat == RES_OK)); iIdx++)
 	{
 		result = mmcReadBlock(sector*SECTOR_SIZE, count, buff);
@@ -107,8 +122,10 @@ DRESULT disk_read_ex (
 		}
 	}
 
-	return stat;
+
+	return result;
 }
+
 
 /*-----------------------------------------------------------------------*/
 /* Write Sector(s)                                                       */
@@ -122,6 +139,7 @@ DRESULT disk_write (
 	UINT count			/* Number of sectors to write */
 )
 {
+	DRESULT res;
 	int result = RES_PARERR;
 	int iIdx   = 0;
 
@@ -139,9 +157,12 @@ DRESULT disk_write (
 		}
 	}
 
-	return stat;
+
+	return result;
+
 }
 #endif
+
 
 /*-----------------------------------------------------------------------*/
 /* Miscellaneous Functions                                               */
@@ -174,6 +195,5 @@ DRESULT disk_ioctl (
 		res = RES_PARERR;
 		break;
 	}
-	return res;
 }
 #endif

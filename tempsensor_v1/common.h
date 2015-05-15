@@ -32,9 +32,10 @@ extern "C"
 #define PHONE_NUM_LEN        14
 #define SMS_CMD_LEN 		 36
 
+
 #define SMS_HB_MSG_TYPE  	 "10,"
 #define SMS_DATA_MSG_TYPE	 "11,"
-#define DEF_GW				 "00447751035864"
+#define DEF_GW				 "00447802002606"
 
 //iStatus contants
 #define MODEM_POWERED_ON 	0x0001

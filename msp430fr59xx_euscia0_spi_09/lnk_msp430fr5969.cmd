@@ -44,11 +44,11 @@
 /* -heap   0x0100                                   HEAP AREA SIZE            */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
-/* Version: 1.139                                                             */
+/* Version: 1.159                                                             */
 /*----------------------------------------------------------------------------*/
 
 /****************************************************************************/
-/* SPECIFY THE SYSTEM MEMORY MAP                                            */
+/* Specify the system memory map                                            */
 /****************************************************************************/
 
 MEMORY
@@ -125,27 +125,35 @@ MEMORY
 }
 
 /****************************************************************************/
-/* SPECIFY THE SECTIONS ALLOCATION INTO MEMORY                              */
+/* Specify the sections allocation into memory                              */
 /****************************************************************************/
 
 SECTIONS
 {
     GROUP(READ_WRITE_MEMORY)
     {
-       .TI.persistent : {}                  /* For #pragma PERSISTENT            */
-       .cio           : {}                  /* C I/O BUFFER                      */
-       .sysmem        : {}                  /* DYNAMIC MEMORY ALLOCATION AREA    */
+       .TI.persistent : {}                  /* For #pragma persistent            */
+       .cio           : {}                  /* C I/O Buffer                      */
+       .sysmem        : {}                  /* Dynamic memory allocation area    */
     } PALIGN(0x0400), RUN_END(fram_rx_start) > 0x4400
 
-    .cinit            : {}  > FRAM          /* INITIALIZATION TABLES             */
-    .pinit            : {}  > FRAM          /* C++ CONSTRUCTOR TABLES            */
-    .init_array       : {}  > FRAM          /* C++ CONSTRUCTOR TABLES            */
-    .mspabi.exidx     : {}  > FRAM          /* C++ CONSTRUCTOR TABLES            */
-    .mspabi.extab     : {}  > FRAM          /* C++ CONSTRUCTOR TABLES            */
-    .const            : {} >> FRAM | FRAM2  /* CONSTANT DATA                     */
+    .cinit            : {}  > FRAM          /* Initialization tables             */
+    .pinit            : {}  > FRAM          /* C++ Constructor tables            */
+    .init_array       : {}  > FRAM          /* C++ Constructor tables            */
+    .mspabi.exidx     : {}  > FRAM          /* C++ Constructor tables            */
+    .mspabi.extab     : {}  > FRAM          /* C++ Constructor tables            */
+#ifndef __LARGE_DATA_MODEL__
+    .const            : {} >> FRAM          /* Constant data                     */
+#else
+    .const            : {} >> FRAM | FRAM2  /* Constant data                     */
+#endif
 
-    .text:_isr        : {}  > FRAM          /* CODE ISRs                         */
-    .text             : {} >> FRAM2 | FRAM  /* CODE                              */
+    .text:_isr        : {}  > FRAM          /* Code ISRs                         */
+#ifndef __LARGE_DATA_MODEL__
+    .text             : {} >> FRAM          /* Code                              */
+#else
+    .text             : {} >> FRAM2 | FRAM  /* Code                              */
+#endif
 
     GROUP(IPENCAPSULATED_MEMORY)
     {
@@ -154,37 +162,26 @@ SECTIONS
        .ipe:_isr      : {}                  /* IPE ISRs                       */
     } PALIGN(0x0400), RUN_START(fram_ipe_start) RUN_END(fram_ipe_end) > FRAM
 
-    .jtagsignature : {} > JTAGSIGNATURE     /* JTAG SIGNATURE                    */
-    .bslsignature  : {} > BSLSIGNATURE      /* BSL SIGNATURE                     */
+    .jtagsignature : {} > JTAGSIGNATURE     /* JTAG Signature                    */
+    .bslsignature  : {} > BSLSIGNATURE      /* BSL Signature                     */
 
     GROUP(SIGNATURE_SHAREDMEMORY)
     {
-       .ipesignature   : {}                 /* IPE SIGNATURE                     */
-       .jtagpassword   : {}                 /* JTAG PASSWORD                     */
+       .ipesignature   : {}                 /* IPE Signature                     */
+       .jtagpassword   : {}                 /* JTAG Password                     */
     } > IPESIGNATURE
 
-    .bss        : {} > RAM                  /* GLOBAL & STATIC VARS              */
-    .data       : {} > RAM                  /* GLOBAL & STATIC VARS              */
-    .TI.noinit  : {} > RAM                  /* For #pragma NOINIT                */
-    .xusersect  : 							/* user data section                */
-    {
-    	msp430fr59xx_adc12_05.obj (.aggregate_vars)
-    	i2c.obj (.aggregate_vars)
-    	uart.obj (.aggregate_vars)
-    	msp430fr59xx_adc12_05.obj (.xbigdata_vars)
-    } > RAM
-    .stack      : {} > RAM (HIGH)           /* SOFTWARE SYSTEM STACK             */
+    .bss        : {} > RAM                  /* Global & static vars              */
+    .data       : {} > RAM                  /* Global & static vars              */
+    .TI.noinit  : {} > RAM                  /* For #pragma noinit                */
+    .stack      : {} > RAM (HIGH)           /* Software system stack             */
 
-    .infoA     : {} > INFOA              /* MSP430 INFO FRAM  MEMORY SEGMENTS */
+    .infoA     : {} > INFOA              /* MSP430 INFO FRAM  Memory segments */
     .infoB     : {} > INFOB
-    .infoC     : {
-    	*(.config_vars_infoC)
-    } > INFOC
-    .infoD     : {
-    	*(.config_vars_infoD)
-    } > INFOD
+    .infoC     : {} > INFOC
+    .infoD     : {} > INFOD
 
-    /* MSP430 INTERRUPT VECTORS          */
+    /* MSP430 Interrupt vectors          */
     .int00       : {}               > INT00
     .int01       : {}               > INT01
     .int02       : {}               > INT02
@@ -240,11 +237,11 @@ SECTIONS
     COMP_E       : { * ( .int52 ) } > INT52 type = VECT_INIT
     UNMI         : { * ( .int53 ) } > INT53 type = VECT_INIT
     SYSNMI       : { * ( .int54 ) } > INT54 type = VECT_INIT
-    .reset       : {}               > RESET  /* MSP430 RESET VECTOR         */ 
+    .reset       : {}               > RESET  /* MSP430 Reset vector         */ 
 }
 
 /****************************************************************************/
-/* MPU/IPE SPECIFIC MEMORY SEGMENT DEFINITONS                               */
+/* MPU/IPE Specific memory segment definitons                               */
 /****************************************************************************/
 
 #ifdef _IPE_ENABLE
@@ -253,14 +250,22 @@ SECTIONS
    #define IPE_MPUIPPUC 0x0020
 
    // Evaluate settings for the control setting of IP Encapsulation
-   #if defined(_IPE_LOCK ) && (defined(_IPE_ASSERTPUC1) && (_IPE_ASSERTPUC1 == 0x08))
-      fram_ipe_enable_value = (IPE_MPUIPENA | IPE_MPUIPPUC | IPE_MPUIPLOCK);
-   #elif defined(_IPE_LOCK )
-      fram_ipe_enable_value = (IPE_MPUIPENA | IPE_MPUIPLOCK);
-   #elif (defined(_IPE_ASSERTPUC1) && (_IPE_ASSERTPUC1 == 0x08))
-      fram_ipe_enable_value = (IPE_MPUIPENA | IPE_MPUIPPUC);
+   #if defined(_IPE_ASSERTPUC1)
+        #if defined(_IPE_LOCK ) && (_IPE_ASSERTPUC1 == 0x08))
+         fram_ipe_enable_value = (IPE_MPUIPENA | IPE_MPUIPPUC |IPE_MPUIPLOCK);
+        #elif defined(_IPE_LOCK )
+         fram_ipe_enable_value = (IPE_MPUIPENA | IPE_MPUIPLOCK);
+      #elif (_IPE_ASSERTPUC1 == 0x08)
+         fram_ipe_enable_value = (IPE_MPUIPENA | IPE_MPUIPPUC);
+      #else
+         fram_ipe_enable_value = (IPE_MPUIPENA);
+      #endif
    #else
-      fram_ipe_enable_value = (IPE_MPUIPENA);
+      #if defined(_IPE_LOCK )
+         fram_ipe_enable_value = (IPE_MPUIPENA | IPE_MPUIPLOCK);
+      #else
+         fram_ipe_enable_value = (IPE_MPUIPENA);
+      #endif
    #endif
 
    // Segment definitions
@@ -309,7 +314,7 @@ SECTIONS
 #endif
 
 /****************************************************************************/
-/* INCLUDE PERIPHERALS MEMORY MAP                                           */
+/* Include peripherals memory map                                           */
 /****************************************************************************/
 
 -l msp430fr5969.cmd
