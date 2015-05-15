@@ -133,6 +133,7 @@
 #include "pmm.h"
 #include "lcd.h"
 #include "globals.h"
+#include "sms.h"
 
 #define FORMAT_FIELD_OFF	1		//2 if field name is 1 character & equal, 3 if field name is 2 character & equal...
 extern volatile uint32_t iMinuteTick;
@@ -186,7 +187,9 @@ DWORD get_fattime(void) {
 
 _Sigfun * signal(int i, _Sigfun *proc) {
 	__no_operation();
+	return NULL;
 }
+
 int main(void) {
 	char* pcData = NULL;
 	char* pcTmp = NULL;
@@ -476,7 +479,7 @@ int main(void) {
 
 		RXHeadIdx = RXTailIdx = 0;//ZZZZ reset Rx index to faciliate processing in uart_rx
 		uart_tx("AT+CCLK?\r\n");
-		delay(1000);
+		delay(MODEM_TX_DELAY1);
 #if 0
 		memset(ATresponse,0,sizeof(ATresponse));
 		strcat(ATresponse,"$ST,a=1,b=xyz,$EN");
@@ -503,7 +506,6 @@ int main(void) {
 		delay(MODEM_TX_DELAY1);
 		memset(ATresponse, 0, sizeof(ATresponse));
 		uart_rx(ATCMD_CSCA, ATresponse);
-		lcd_print_debug("LOADING");
 
 		uart_tx("AT+CNUM\r\n");
 		delay(MODEM_TX_DELAY1);
@@ -551,11 +553,22 @@ int main(void) {
 		sendhb();
 	}
 
+	lcd_print("Battery check");
+
 #ifndef BATTERY_DISABLED
 	iBatteryLevel = batt_getlevel();
 #else
 	iBatteryLevel = 0;
 #endif
+
+	if (iBatteryLevel==0)
+		lcd_print("Battery FAIL");
+	else
+	if (iBatteryLevel>10)
+		lcd_print("Battery OK");
+	else
+	if (iBatteryLevel>99)
+		lcd_print("Battery FULL");
 
 	/* Register work area to the default drive */
 	f_mount(&FatFs, "", 0);
@@ -2224,7 +2237,7 @@ void monitoralarm() {
 			continue;
 		}
 
-		iTemp = strtod(&Temperature[iCnt], NULL);
+		iTemp = strtod(&Temperature[iCnt][0], NULL);
 		//iTemp = strtod("24.5",NULL);
 		//check for low temp threshold
 		if (iTemp < pstCfgInfoA->stTempAlertParams[iCnt].threshcold) {
@@ -2868,7 +2881,7 @@ void sendhb() {
 #endif
 	strcat(SampleData, DEF_GW);		//ZZZZ read from INFOA
 	strcat(SampleData, ",");
-#ifdef MAX_NUM_SENSORS == 5
+#if MAX_NUM_SENSORS == 5
 	strcat(SampleData, "1,1,1,1,1,");//ZZZZ to be changed based on jack detection
 #else
 			strcat(SampleData,"1,1,1,1,");	//ZZZZ to be changed based on jack detection

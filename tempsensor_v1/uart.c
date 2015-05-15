@@ -41,6 +41,7 @@ int iRxLen = RX_LEN;
 
 //local functions
 static int searchtoken(char* pToken, char** ppTokenPos);
+extern void delay(int time);
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
 #pragma vector=USCI_A0_VECTOR
@@ -100,7 +101,8 @@ int uart_tx(volatile char* pTxData)
 	int ret = -1;
 
 #ifdef DEBUG_INFO
-	lcd_print_debug((char *) pTxData);
+	lcd_clear();
+	lcd_print_debug((char *) pTxData, LINE1);
 #endif
 
 	if(pTxData)
@@ -125,6 +127,11 @@ int uart_tx(volatile char* pTxData)
 
 int uart_rx(int atCMD, char* pResponse)
 {
+#if defined(DEBUG_INFO) && defined(_DEBUG)
+	lcd_print_debug((char *) RX, LINE2);
+	delay(2000);
+#endif
+
 	int  ret = -1;
 	char* pToken1 = NULL;
 	char* pToken2 = NULL;

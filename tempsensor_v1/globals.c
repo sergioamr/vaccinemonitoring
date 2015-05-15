@@ -23,7 +23,7 @@ char	 	  ATresponse[ATRESP_MAX_LEN] = {};
 #pragma SET_DATA_SECTION()
 
 #pragma SET_DATA_SECTION(".xbigdata_vars")
-char		  SampleData[SAMPLE_LEN];
+char	  	  SampleData[SAMPLE_LEN];
 #pragma SET_DATA_SECTION()
 
 //volatile uint8_t iStatus = LOG_TIME_STAMP | TEST_FLAG;	//to test the reading and POST formation, there will be no SMS and POST happening

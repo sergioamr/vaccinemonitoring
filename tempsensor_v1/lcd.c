@@ -22,7 +22,7 @@ void lcd_init() {
 	SampleData[7] = 0x01; // clear display
 	SampleData[8] = 0x06; // entry mode set
 
-	i2c_write(0x3e, 0, LCD_INIT_PARAM_SIZE, SampleData);
+	i2c_write(0x3e, 0, LCD_INIT_PARAM_SIZE,  (uint8_t*) SampleData);
 #if 0
 	delay(1000);
 
@@ -253,25 +253,6 @@ void lcd_print(char* pcData) {
 	i2c_write(0x3e, 0x40, len, pcData);
 }
 
-int g_iDebug_state = -1; // Disable debug
-void lcd_print_debug(const char* pcData) {
-#ifndef _DEBUG
-	static char pos = 0;
-	char display[4] = { '*', '|', '/', '-' };
-#endif
-
-	if (g_iDebug_state == -1)
-		return;
-
-#ifdef _DEBUG
-	lcd_print_line(pcData, LINE2);
-#else
-	lcd_setaddr(0x0D);
-	i2c_write(0x3e,0x40,1,&display[(++pos)&0x3]);
-#endif
-
-}
-
 void lcd_print_line(const char* pcData, int8_t iLine) {
 	int8_t len = strlen(pcData);
 
@@ -298,4 +279,23 @@ void lcd_blenable() {
 
 void lcd_bldisable() {
 	PJOUT &= ~BIT7;
+}
+
+int g_iDebug_state = -1; // Disable debug
+void lcd_print_debug(const char* pcData, int line) {
+#ifndef _DEBUG
+	static char pos = 0;
+	char display[4] = { '*', '|', '/', '-' };
+#endif
+
+	if (g_iDebug_state == -1)
+		return;
+
+#ifdef _DEBUG
+	lcd_print_line(pcData, line);
+#else
+	lcd_setaddr(0x0D);
+	i2c_write(0x3e,0x40,1,&display[(++pos)&0x3]);
+#endif
+	delay(50);
 }
