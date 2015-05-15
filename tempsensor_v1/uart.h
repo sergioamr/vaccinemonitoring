@@ -21,6 +21,7 @@
 #define ATCMD_CPMS			6
 #define ATCMD_CMGR			7
 #define ATCMD_CPIN          8
+#define ATCMD_CSCA 			9
 
 #define CCLK_RESP_LEN		28
 #define HTTPSND_RSP_LEN		20
