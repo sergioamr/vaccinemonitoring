@@ -96,7 +96,6 @@ extern "C"
 #define PHONE_NUM_LEN        14
 #define SMS_CMD_LEN 		 36
 
-
 #define SMS_HB_MSG_TYPE  	 "10,"
 #define SMS_DATA_MSG_TYPE	 "11,"
 
@@ -127,7 +126,6 @@ extern "C"
 #define TEST_FLAG			0x0080
 #define BACKLOG_UPLOAD_ON	0x0100
 #define NETWORK_DOWN		0x0200
-
 
 #define LOW_RANGE_MIN 		0
 #define LOW_RANGE_MAX 		10

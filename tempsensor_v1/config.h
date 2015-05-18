@@ -42,7 +42,7 @@
 //Sampling configuration
 #define SAMPLE_PERIOD			1		//in minutes
 #define UPLOAD_PERIOD			10		//in minutes
-#define SMS_RX_POLL_INTERVAL	5		//poll interval in minutes for sms msg
+#define SMS_RX_POLL_INTERVAL	5		//poll interval in minutes for sms msg TODO change back
 #define LCD_REFRESH_INTERVAL	1
 #define MSG_REFRESH_INTERVAL	1
 #define SAMPLE_COUNT			100
@@ -68,7 +68,6 @@
 //INFO memory segment address
 #define INFOA_ADDR      		0x1980
 #define INFOB_ADDR      		0x1900
-
 
 EXTERN int g_iSamplePeriod;
 EXTERN int g_iUploadPeriod;

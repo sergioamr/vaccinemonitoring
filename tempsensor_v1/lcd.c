@@ -92,8 +92,8 @@ void lcd_show(int8_t iItemId) {
 		strcat(SampleData, itoa(iBatteryLevel));
 		strcat(SampleData, "% ");
 		//  if(signal_gprs==1){
-		if ((iSignalLevel > NETWORK_DOWN_SS)
-				&& (iSignalLevel < NETWORK_MAX_SS)) {
+		if ((iSignalLevel >= NETWORK_DOWN_SS)
+				&& (iSignalLevel <= NETWORK_MAX_SS)) {
 			//	  strcat(SampleData,"G:");
 			if (signal_gprs == 1) {
 				strcat(SampleData, "G");
@@ -108,26 +108,6 @@ void lcd_show(int8_t iItemId) {
 		} else {
 			strcat(SampleData, "S --  ");
 		}
-
-		//strcat(SampleData,itoa(iSignalLevel));strcat(SampleData,"S");
-#if 0
-		if(iSignalLevel == 99)
-		{
-			strcat(SampleData,"S:--");
-		}
-		else if((iSignalLevel >= LOW_RANGE_MIN) && (iSignalLevel <= LOW_RANGE_MAX))
-		{
-			strcat(SampleData,"S:LO");
-		}
-		else if((iSignalLevel >= MED_RANGE_MIN) && (iSignalLevel <= MED_RANGE_MAX))
-		{
-			strcat(SampleData,"S:MD");
-		}
-		else if((iSignalLevel >= HIGH_RANGE_MIN) && (iSignalLevel <= HIGH_RANGE_MAX))
-		{
-			strcat(SampleData,"S:HI");
-		}
-#endif
 		iCnt = 0xff;
 		break;
 
@@ -143,7 +123,7 @@ void lcd_show(int8_t iItemId) {
 	case 4:
 		iCnt = 3;
 		break;
-#if MAX_NUM_SENSORS == 5
+#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
 	case 5:
 		iCnt = 4;
 		break;

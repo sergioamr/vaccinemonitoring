@@ -1,6 +1,6 @@
 /* Copyright (c) 2015, Intel Corporation. All rights reserved.
  *
- * INFORMATION IN THIS DOCUMENT IS PROVIDED IN CONNECTION WITH INTEL® PRODUCTS. NO LICENSE, EXPRESS OR IMPLIED,
+ * INFORMATION IN THIS DOCUMENT IS PROVIDED IN CONNECTION WITH INTELï¿½ PRODUCTS. NO LICENSE, EXPRESS OR IMPLIED,
  * BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS IS GRANTED BY THIS DOCUMENT. EXCEPT AS PROVIDED
  * IN INTEL'S TERMS AND CONDITIONS OF SALE FOR SUCH PRODUCTS, INTEL ASSUMES NO LIABILITY WHATSOEVER, AND INTEL
  * DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY, RELATING TO SALE AND/OR USE OF INTEL PRODUCTS INCLUDING LIABILITY
@@ -121,7 +121,7 @@ static void setupIO() {
 	P1SELC |= BIT2;                           // Enable A/D channel A2
 #ifdef SEQUENCE
 	P1SELC |= BIT3 | BIT4 | BIT5;          // Enable A/D channel A3-A5
-#if MAX_NUM_SENSORS == 5
+#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
 	P4SELC |= BIT2;          				// Enable A/D channel A10
 #endif
 #endif
@@ -172,7 +172,7 @@ static void setupIO() {
 #ifdef SEQUENCE
 	ADC12MCTL3 = ADC12VRSEL_4 | ADC12INCH_3; // Vr+ = VeREF+ (ext) and Vr-=AVss, 12bit resolution, channel 3
 	ADC12MCTL4 = ADC12VRSEL_4 | ADC12INCH_4; // Vr+ = VeREF+ (ext) and Vr-=AVss, 12bit resolution, channel 4
-#if MAX_NUM_SENSORS == 5
+#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
 	ADC12MCTL5 = ADC12VRSEL_4 | ADC12INCH_5; // Vr+ = VeREF+ (ext) and Vr-=AVss,12bit resolution,channel 5,EOS
 	ADC12MCTL6 = ADC12VRSEL_4 | ADC12INCH_10 | ADC12EOS; // Vr+ = VeREF+ (ext) and Vr-=AVss,12bit resolution,channel 5,EOS
 #else
@@ -183,7 +183,7 @@ static void setupIO() {
 #endif
 	//ADC interrupt logic
 	//ZZZZ comment ADC for debugging other interfaces
-#if MAX_NUM_SENSORS == 5
+#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
 	ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5 | ADC12IE6; // Enable ADC conv complete interrupt
 #else
 			ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5; // Enable ADC conv complete interrupt
@@ -429,8 +429,13 @@ int main(void) {
 		g_iCurrDay = currTime.tm_mday;
 		//ZZZZ determine the file name for SD logging
 
-		//uart_tx("AT+CGSN\r\n");  // Why are we reading twice the IMEI ?, is there any problem here?
-		//delay(MODEM_TX_DELAY1);
+		// Reading the Service Center Address to use as message gateway
+		// http://www.developershome.com/sms/cscaCommand.asp
+		// Get service center address; format "+CSCA: address,address_type"
+		uart_tx("AT+CSCA?\r\n");
+		delay(MODEM_TX_DELAY1);
+		memset(ATresponse, 0, sizeof(ATresponse));
+		uart_rx(ATCMD_CSCA, ATresponse);
 
 		uart_tx("AT+CNUM\r\n");
 		delay(MODEM_TX_DELAY1);
@@ -483,9 +488,6 @@ int main(void) {
 		uart_tx("ATE0\r\n");
 		delay(MODEM_TX_DELAY1);
 
-		//delete all existing SMS messages
-		//delallmsg();
-		//delay(5000);
 		//heartbeat
 		sendhb();
 	}
@@ -549,7 +551,6 @@ int main(void) {
 					iSampleCnt = 0;
 				}
 			}
-
 #endif
 			//monitor for temperature alarms
 			monitoralarm();
@@ -607,8 +608,7 @@ int main(void) {
 
 				if (!(iStatus & TEST_FLAG)) {
 
-					uart_tx(
-							"AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
+					uart_tx("AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
 					//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
 					delay(MODEM_TX_DELAY2);
 
@@ -866,14 +866,11 @@ int main(void) {
 							//file system issue ZZZZ
 						}
 					}
-//358072043113601
+
 					if ((fr == FR_OK) && pcTmp) {
 						//read so far is successful and time stamp is found
 						memset(SampleData, 0, sizeof(SampleData));
-#ifdef MAX_NUM_SENSORS == 5
-#if 0
-						//strcat(SampleData,"IMEI=358072043113601&ph=8455523642&v=1.20140817.1&sid=0|1|2|3|4&"); //SERIAL
-#else
+#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
 						strcat(SampleData, "IMEI=");
 						if (g_pInfoA->cfgIMEI[0] != -1) {
 							strcat(SampleData, g_pInfoA->cfgIMEI);
@@ -882,7 +879,6 @@ int main(void) {
 						}
 						strcat(SampleData,
 								"&ph=8455523642&v=1.20140817.1&sid=0|1|2|3|4&"); //SERIAL
-#endif
 #else
 						strcat(SampleData,"IMEI=358072043113601&ph=8455523642&v=1.20140817.1&sid=0|1|2|3&"); //SERIAL
 #endif
@@ -949,7 +945,7 @@ int main(void) {
 							formatfield(pcSrc2, "D", iIdx, "|", iOffset, NULL,
 									0);
 						}
-#ifdef MAX_NUM_SENSORS == 5
+#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
 						iOffset = formatfield(pcSrc1, "E", iPOSTstatus, "|", 0,
 								pcSrc2, 8);
 						if (pcSrc2) {
@@ -1005,6 +1001,7 @@ int main(void) {
 					iPOSTstatus = 0;
 					//initialize the RX counters as RX buffer is been used in the aggregrate variables for HTTP POST formation
 					uart_resetbuffer();
+
 					iPOSTstatus = dopost(SampleData);
 					if (iPOSTstatus != 0) {
 						//redo the post
@@ -1097,15 +1094,70 @@ int main(void) {
 #ifndef CALIBRATION
 		if ((iMinuteTick - iSMSRxPollElapsed) >= SMS_RX_POLL_INTERVAL) {
 			iSMSRxPollElapsed = iMinuteTick;
-			;
-			lcd_print_line("Cfg Processing..", LINE2);
-			//sms config reception and processing
+			lcd_print_line("Configuring...", LINE1);
+			delay(100);
+
+			//update the signal strength
+			uart_tx("AT+CSQ\r\n");
+			delay(2000);
+			memset(ATresponse, 0, sizeof(ATresponse));
+			uart_rx(ATCMD_CSQ, ATresponse);
+
+			if (ATresponse[0] != 0) {
+				iSignalLevel = strtol(ATresponse, 0, 10);
+			}
+
+			signal_gprs = dopost_gprs_connection_status(GPRS);
+
+			iIdx = 0;
+			while (iIdx < MODEM_CHECK_RETRY) {
+				gprs_network_indication = dopost_gprs_connection_status(GSM);
+				if((gprs_network_indication == 0)
+						|| ((iSignalLevel < NETWORK_DOWN_SS)
+								|| (iSignalLevel > NETWORK_MAX_SS))) {
+					lcd_print_line("Signal lost...", LINE2);
+					delay(100);
+					iStatus |= NETWORK_DOWN;
+					iOffset = 0;
+					modem_init(pstCfgInfoA->cfgSIMSlot);
+					lcd_print_line("Reconnecting...", LINE2);
+					delay(100);
+					iIdx++;
+				} else {
+					iStatus &= ~NETWORK_DOWN;
+					break;
+				}
+			}
+
+			if (iIdx == MODEM_CHECK_RETRY) {
+				//switch the SIM slot;
+				pstCfgInfoA = SampleData;
+				memcpy(pstCfgInfoA, INFOA_ADDR, sizeof(CONFIG_INFOA));
+				if (pstCfgInfoA->cfgSIMSlot != 2) { //value will be 0xFF in case FRAM was not already populated
+					//current sim slot is 1
+					//change to sim slot 2
+					pstCfgInfoA->cfgSIMSlot = 2;
+					lcd_print_line("Switching SIM: 2", LINE2);
+					delay(100);
+				} else {
+					//current sim slot is 2
+					//change to sim slot 1
+					pstCfgInfoA->cfgSIMSlot = 1;
+					lcd_print_line("Switching SIM: 1", LINE2);
+					delay(100);
+				}
+
+				modem_init(pstCfgInfoA->cfgSIMSlot);
+				//write to FRAM
+				FRAMCtl_write8(pstCfgInfoA, INFOA_ADDR, sizeof(CONFIG_INFOA));
+			}
+
 #if 1
+			//sms config reception and processing
 			dohttpsetup();
 			memset(ATresponse, 0, CFG_SIZE);
 			doget(ATresponse);
-			if (ATresponse[0] == '$')	//check for $
-					{
+			if (ATresponse[0] == '$') {
 				if (processmsg(ATresponse)) {
 					//send heartbeat on successful processing of SMS message
 					sendhb();
@@ -1117,57 +1169,6 @@ int main(void) {
 			}
 			deactivatehttp();
 #endif
-			//update the signal strength
-			uart_tx("AT+CSQ\r\n");
-			delay(2000);
-			memset(ATresponse, 0, sizeof(ATresponse));
-			uart_rx(ATCMD_CSQ, ATresponse);
-			if (ATresponse[0] != 0) {
-
-				iSignalLevel = strtol(ATresponse, 0, 10);
-			}
-			signal_gprs = dopost_gprs_connection_status(GPRS);
-			//	if((iSignalLevel <= NETWORK_DOWN_SS) || (iSignalLevel >= NETWORK_MAX_SS)){
-			//	signal_gprs=0;
-			//}
-			//else{
-			//		signal_gprs=1;
-			//	}
-
-			// adding for network registration report..//
-
-			gprs_network_indication = dopost_gprs_connection_status(GSM);
-
-			//if((iOffset == -1) && ((iSignalLevel <= NETWORK_DOWN_SS) || (iSignalLevel >= NETWORK_MAX_SS)))
-			if ((gprs_network_indication == 0)
-					|| ((iSignalLevel <= NETWORK_DOWN_SS)
-							|| (iSignalLevel >= NETWORK_MAX_SS))) {
-				iOffset = 0;
-				//network is down
-				iStatus |= NETWORK_DOWN;
-
-				//switch the SIM slot;
-				pstCfgInfoA = SampleData;
-				memcpy(pstCfgInfoA, INFOA_ADDR, sizeof(CONFIG_INFOA));
-				if (pstCfgInfoA->cfgSIMSlot != 2)//value will be 0xFF in case FRAM was not already populated
-						{
-					//current sim slot is 1
-					//change to sim slot 2
-					pstCfgInfoA->cfgSIMSlot = 2;
-					lcd_print_line("Switch to SIM 2 ", LINE2);
-				} else {
-					//current sim slot is 2
-					//change to sim slot 1
-					pstCfgInfoA->cfgSIMSlot = 1;
-					lcd_print_line("Switch to SIM 1 ", LINE2);
-				}
-
-				modem_init(pstCfgInfoA->cfgSIMSlot);
-				//write to FRAM
-				FRAMCtl_write8(pstCfgInfoA, INFOA_ADDR, sizeof(CONFIG_INFOA));
-
-			}
-
 		}
 #endif
 
@@ -1531,12 +1532,12 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 	case ADC12IV_ADC12IFG5:   		        // Vector 22:  ADC12MEM5
 		//ADCvar[3] = ADC12MEM5;                     // Read conversion result
 		ADCvar[3] += ADC12MEM5;                     // Read conversion result
-#ifdef MAX_NUM_SENSORS == 4
+#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 4
 		isConversionDone = 1;
 #endif
 		break;
 	case ADC12IV_ADC12IFG6:                 // Vector 24:  ADC12MEM6
-#ifdef MAX_NUM_SENSORS == 5
+#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
 		//ADCvar[4] = ADC12MEM6;                     // Read conversion result
 		ADCvar[4] += ADC12MEM6;                     // Read conversion result
 		isConversionDone = 1;
@@ -1677,7 +1678,7 @@ int dopost(char* postdata) {
 	int iRetVal = -1;
 
 	if (iStatus & TEST_FLAG)
-		return;
+		return iRetVal;
 #ifndef SAMPLE_POST
 	memset(ATresponse, 0, sizeof(ATresponse));
 #ifdef NOTFROMFILE
@@ -1728,15 +1729,6 @@ int dopost(char* postdata) {
 #else
 	uart_tx("AT#HTTPCFG=1,\"67.205.14.22\",80,0,,,0,120,1\r\n");
 	delay(5000);
-
-	//uart_tx("AT#HTTPCFG=1,\"54.175.219.8\",80,0,,,0,120,1\r\n");
-	//delay(5000);
-
-	//uart_tx("AT#HTTPCFG=0,\"106.10.138.240\",80,0,,,0,120,1\r\n"); //http profile 0
-	//delay(5000);
-	//uart_tx("AT#HTTPCFG=0,\"www.yahoo.com\",80,0,,,0,120,1\r\n"); //http profile 0
-	//delay(5000);
-
 	uart_tx("AT#HTTPSND=1,0,\"/post.php?dir=galcore&dump\",26,1\r\n");
 	isHTTPResponseAvailable = 0;
 	iIdx = 0;
@@ -1757,15 +1749,16 @@ int dopost(char* postdata) {
 		delay(10000);
 	}
 #endif
+	return iRetVal;
 }
+
 int dopost_sms_status(void) {
-	char l_file_pointer_enabled_sms_status = 0;
+	int l_file_pointer_enabled_sms_status = 0;
 	int isHTTPResponseAvailable = 0;
-	int iRetVal = -1;
 	int i = 0, j = 0;
 
 	if (iStatus & TEST_FLAG)
-		return;
+		return l_file_pointer_enabled_sms_status;
 	iHTTPRespDelayCnt = 0;
 	while ((!isHTTPResponseAvailable)
 			&& iHTTPRespDelayCnt <= HTTP_RESPONSE_RETRY) {
@@ -1788,16 +1781,15 @@ int dopost_sms_status(void) {
 		l_file_pointer_enabled_sms_status = 0; // reset for sms packet.....///
 	}
 	return l_file_pointer_enabled_sms_status;
-
 }
+
 int dopost_gprs_connection_status(char status) {
-	char l_file_pointer_enabled_sms_status = 0;
+	int l_file_pointer_enabled_sms_status = 0;
 	int isHTTPResponseAvailable = 0;
-	int iRetVal = -1;
 	int i = 0, j = 0;
 
 	if (iStatus & TEST_FLAG)
-		return;
+		return l_file_pointer_enabled_sms_status;
 	iHTTPRespDelayCnt = 0;
 	if (status == GSM) {
 		uart_tx("AT+CREG?\r\n");
@@ -1943,7 +1935,7 @@ FRESULT logsampletofile(FIL* fobj, int* tbw) {
 		iBatteryLevel = 0;
 #endif
 		//log sample period, battery level, power plugged, temperature values
-#ifdef MAX_NUM_SENSORS == 5
+#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
 		//bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,E=%s,", iBatteryLevel,
 		//			  !(P4IN & BIT4),Temperature[0],Temperature[1],Temperature[2],Temperature[3],Temperature[4]);
 		memset(acLogData, 0, sizeof(acLogData));
