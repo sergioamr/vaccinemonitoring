@@ -15,7 +15,6 @@
 #include "stdio.h"
 #include "string.h"
 #include "timer.h"
-#include "defines.h"
 #include "globals.h"
 
 #pragma SET_DATA_SECTION(".aggregate_vars")

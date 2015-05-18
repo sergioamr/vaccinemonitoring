@@ -45,6 +45,12 @@ extern volatile int RXHeadIdx;
 extern int iRxLen;
 extern volatile char RX[RX_LEN+1];
 
+
+//*****************************************************************************
+// Set tail and head to 0 for easy parsing.
+//*****************************************************************************
+extern void uart_resetbuffer();
+
 //*****************************************************************************
 //
 //! \brief Transmit to UART

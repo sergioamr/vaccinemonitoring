@@ -10,6 +10,3 @@
 
 int g_iSamplePeriod = SAMPLE_PERIOD;
 int g_iUploadPeriod = UPLOAD_PERIOD;
-
-
-

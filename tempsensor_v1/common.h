@@ -13,6 +13,70 @@ extern "C"
 {
 #endif
 
+/*
+ * Defines for functionality configuration
+ */
+//#define POWER_SAVING_ENABLED // TODO Code originally commented
+#define ENABLE_SIM_SLOT		//needed to set on new board, comment it for old board
+#define SEQUENCE
+//#define FILE_TEST
+//#define SAMPLE_POST
+#define NO_CODE_SIZE_LIMIT
+//#define BATTERY_DISABLED
+//#define I2C_DISABLED
+
+//#define NOTFROMFILE
+#define BUZZER_DISABLED
+#define ALERT_UPLOAD_DISABLED
+//#define CALIBRATION			//set this flag whenever the device has to undergo calibration
+#define MIN 14
+
+/*
+ *  Alarm monitoring
+ */
+
+#define TEMP_ALERT_OFF	 	 0
+#define LOW_TEMP_ALARM_ON	 1
+#define HIGH_TEMP_ALARM_ON	 2
+#define TEMP_ALERT_CNF		 3
+
+#define BATT_ALERT_OFF		 0
+#define POWER_ALERT_OFF		 0
+#define BATT_ALARM_ON		 1
+#define POWER_ALARM_ON		 1
+
+#define TEMP_ALARM_CLR(sid)  g_iAlarmStatus &= ~(3 << (sid << 1))
+#define TEMP_ALARM_SET(sid,state) g_iAlarmStatus |= (state << (sid << 1))
+#define TEMP_ALARM_GET(sid) ((g_iAlarmStatus & ((0x3) << (sid << 1)))) >> (sid << 1)
+
+/*
+ * Communication
+ */
+
+#define GSM 1
+#define GPRS 2
+
+/*
+ * Timeouts for modem transactions
+ *
+ * TODO Modify delay times with the documentation for the Telit modem
+ * see section 3.2.4 Command Response Time-Out
+ * https://www.sparkfun.com/datasheets/Cellular%20Modules/AT_Commands_Reference_Guide_r0.pdf
+ *
+ */
+
+#ifdef _DEBUG
+#define MODEM_TX_DELAY1		250
+#define MODEM_TX_DELAY2		3000
+#else
+#define MODEM_TX_DELAY1		1000
+#define MODEM_TX_DELAY2		5000
+#endif
+
+/*
+ * Defines for data sizes
+ */
+
 //len constants
 #define IMEI_MAX_LEN		 15
 #define GW_MAX_LEN			 12
@@ -35,7 +99,22 @@ extern "C"
 
 #define SMS_HB_MSG_TYPE  	 "10,"
 #define SMS_DATA_MSG_TYPE	 "11,"
-#define DEF_GW				 "00447802002606"
+
+#define SMS_DEFAULT_CENTER  "00447802002606" // Disabled
+#define SMS_NEXLEAF_GATEWAY "00447751035864"
+
+/*
+ * Constants for different uses
+ */
+
+#if MAX_NUM_SENSORS == 5
+#define AGGREGATE_SIZE		256			//288
+#define MAX_DISPLAY_ID		9
+#else
+#define AGGREGATE_SIZE		256
+#define MAX_DISPLAY_ID		6
+#endif
+
 
 //iStatus contants
 #define MODEM_POWERED_ON 	0x0001
@@ -73,14 +152,13 @@ typedef struct {
 	int battthreshold;
 } BATT_POWER_ALERT_PARAM;
 
-
 typedef struct {
 int8_t 				    cfgUploadMode;
 int8_t					cfgSIMSlot;
 TEMP_ALERT_PARAM		stTempAlertParams[MAX_NUM_SENSORS];
 BATT_POWER_ALERT_PARAM	stBattPowerAlertParam;
 char    				cfgIMEI[IMEI_MAX_LEN + 1];
-char    				cfgGW[GW_MAX_LEN + 1];
+char    				cfgSMSC[GW_MAX_LEN + 1][2]; // Service Message Center number
 char    				cfgAPN[APN_MAX_LEN + 1];
 } CONFIG_INFOA;
 

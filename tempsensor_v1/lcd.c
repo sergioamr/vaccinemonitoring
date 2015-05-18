@@ -6,8 +6,9 @@
 #include "stdio.h"
 #include "string.h"
 #include "timer.h"
-#include "defines.h"
 #include "globals.h"
+#include "rtc.h"
+#include "stringutils.h"
 
 void lcd_init() {
 	memset(SampleData, 0, LCD_INIT_PARAM_SIZE);
@@ -35,32 +36,32 @@ void lcd_init() {
 
 void lcd_clear() {
 	SampleData[0] = 0x01;
-	i2c_write(0x3e, 0, 1, SampleData);
+	i2c_write(0x3e, 0, 1, (uint8_t *) SampleData);
 	delay(100);
 }
 
 void lcd_on() {
 	SampleData[0] = 0x0C;
-	i2c_write(0x3e, 0, 1, SampleData);
+	i2c_write(0x3e, 0, 1, (uint8_t *) SampleData);
 	delay(100);
 }
 
 void lcd_off() {
 	SampleData[0] = 0x08;
-	i2c_write(0x3e, 0, 1, SampleData);
+	i2c_write(0x3e, 0, 1, (uint8_t *) SampleData);
 	delay(100);
 }
 
 void lcd_setaddr(int8_t addr) {
 	SampleData[0] = addr | 0x80;
-	i2c_write(0x3e, 0, 1, SampleData);
+	i2c_write(0x3e, 0, 1, (uint8_t *) SampleData);
 	delay(100);
 }
 
 void lcd_show(int8_t iItemId) {
 	int iIdx = 0;
 	int iCnt = 0;
-	float signal_strength = 0;
+	//float signal_strength = 0;
 	float local_signal = 0;
 
 	//check if there is a change in display id
@@ -85,7 +86,7 @@ void lcd_show(int8_t iItemId) {
 	switch (iItemId) {
 	case 0:
 		memset(&Temperature[1][0], 0, TEMP_DATA_LEN + 1);//initialize as it will be used as scratchpad during POST formatting
-		ConvertADCToTemperature(ADCvar[1], &Temperature[1], 1);
+		ConvertADCToTemperature(ADCvar[1], &Temperature[1][0], 1);
 		strcat(SampleData, Temperature[1]);
 		strcat(SampleData, "C ");
 		strcat(SampleData, itoa(iBatteryLevel));
@@ -142,7 +143,7 @@ void lcd_show(int8_t iItemId) {
 	case 4:
 		iCnt = 3;
 		break;
-#ifdef MAX_NUM_SENSORS == 5
+#if MAX_NUM_SENSORS == 5
 	case 5:
 		iCnt = 4;
 		break;
@@ -219,7 +220,7 @@ void lcd_show(int8_t iItemId) {
 
 	if (iCnt != 0xff) {
 		memset(&Temperature[iCnt], 0, TEMP_DATA_LEN + 1);//initialize as it will be used as scratchpad during POST formatting
-		ConvertADCToTemperature(ADCvar[iCnt], &Temperature[iCnt], iCnt);
+		ConvertADCToTemperature(ADCvar[iCnt], &Temperature[iCnt][0], iCnt);
 
 		if (TEMP_ALARM_GET(iCnt) == TEMP_ALERT_CNF) {
 			strcat(SampleData, "ALERT ");
@@ -237,10 +238,10 @@ void lcd_show(int8_t iItemId) {
 	}
 
 	//display the lines
-	i2c_write(0x3e, 0x40, LCD_LINE_LEN, SampleData);
+	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t *) SampleData);
 	delay(100);
 	lcd_setaddr(0x40);	//go to next line
-	i2c_write(0x3e, 0x40, LCD_LINE_LEN, &SampleData[iIdx]);
+	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t *) &SampleData[iIdx]);
 }
 
 void lcd_print(char* pcData) {
@@ -250,7 +251,7 @@ void lcd_print(char* pcData) {
 		len = LCD_LINE_LEN;
 	}
 	lcd_clear();
-	i2c_write(0x3e, 0x40, len, pcData);
+	i2c_write(0x3e, 0x40, len, (uint8_t *) pcData);
 }
 
 void lcd_print_line(const char* pcData, int8_t iLine) {
@@ -264,7 +265,7 @@ void lcd_print_line(const char* pcData, int8_t iLine) {
 	} else {
 		lcd_setaddr(0x0);
 	}
-	i2c_write(0x3e, 0x40, len, pcData);
+	i2c_write(0x3e, 0x40, len, (uint8_t *) pcData);
 }
 
 void lcd_reset() {

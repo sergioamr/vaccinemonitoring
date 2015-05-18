@@ -96,13 +96,19 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
   }
 }
 
+void uart_resetbuffer() {
+	RXHeadIdx = RXTailIdx = 0;//ZZZZ reset Rx index to faciliate processing in uart_rx
+}
+
 int uart_tx(volatile char* pTxData)
 {
 	int ret = -1;
 
-#ifdef DEBUG_INFO
-	lcd_clear();
-	lcd_print_debug((char *) pTxData, LINE1);
+#ifdef _DEBUG
+	if (g_iDebug_state == 0) {
+		lcd_clear();
+		lcd_print_debug((char *) pTxData, LINE1);
+	}
 #endif
 
 	if(pTxData)
@@ -122,22 +128,37 @@ int uart_tx(volatile char* pTxData)
 		//UCA0IE |= UCTXCPTIE;
 	}
 
+#ifdef _DEBUG
+	memset((char *) RX, sizeof(RX),0);
+#endif
+
 	return ret;
 }
 
 int uart_rx(int atCMD, char* pResponse)
 {
-#if defined(DEBUG_INFO) && defined(_DEBUG)
-	lcd_print_debug((char *) RX, LINE2);
-	delay(2000);
-#endif
-
 	int  ret = -1;
 	char* pToken1 = NULL;
 	char* pToken2 = NULL;
 	int  bytestoread = 0;
 	int  iStartIdx = 0;
 	int  iEndIdx = 0;
+
+	if (RXHeadIdx < RXTailIdx) {
+		pToken1 = strstr((const char *) &RX[RXHeadIdx], "CMS ERROR:");
+		if (pToken1 != NULL) {
+			// ERROR FOUND;
+			lcd_clear();
+			lcd_print_debug((char *) &RX[RXHeadIdx + 7], LINE1);
+			delay(5000);
+			return ret;
+		} else {
+			#if defined(DEBUG_INFO) && defined(_DEBUG)
+				lcd_print_debug((char *) RX, LINE2);
+				delay(2000);
+			#endif
+		}
+	}
 
 	//input check
 	if(pResponse)

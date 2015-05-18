@@ -1,107 +1,30 @@
-/* --COPYRIGHT--,BSD_EX
- * Copyright (c) 2012, Texas Instruments Incorporated
- * All rights reserved.
+/* Copyright (c) 2015, Intel Corporation. All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * INFORMATION IN THIS DOCUMENT IS PROVIDED IN CONNECTION WITH INTEL® PRODUCTS. NO LICENSE, EXPRESS OR IMPLIED,
+ * BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS IS GRANTED BY THIS DOCUMENT. EXCEPT AS PROVIDED
+ * IN INTEL'S TERMS AND CONDITIONS OF SALE FOR SUCH PRODUCTS, INTEL ASSUMES NO LIABILITY WHATSOEVER, AND INTEL
+ * DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY, RELATING TO SALE AND/OR USE OF INTEL PRODUCTS INCLUDING LIABILITY
+ * OR WARRANTIES RELATING TO FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR INFRINGEMENT OF ANY PATENT,
+ * COPYRIGHT OR OTHER INTELLECTUAL PROPERTY RIGHT.
+ * UNLESS OTHERWISE AGREED IN WRITING BY INTEL, THE INTEL PRODUCTS ARE NOT DESIGNED NOR INTENDED FOR ANY APPLICATION
+ * IN WHICH THE FAILURE OF THE INTEL PRODUCT COULD CREATE A SITUATION WHERE PERSONAL INJURY OR DEATH MAY OCCUR.
  *
- * *  Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
+ * Intel may make changes to specifications and product descriptions at any time, without notice.
+ * Designers must not rely on the absence or characteristics of any features or instructions marked
+ * "reserved" or "undefined." Intel reserves these for future definition and shall have no responsibility
+ * whatsoever for conflicts or incompatibilities arising from future changes to them. The information here
+ * is subject to change without notice. Do not finalize a design with this information.
+ * The products described in this document may contain design defects or errors known as errata which may
+ * cause the product to deviate from published specifications. Current characterized errata are available on request.
  *
- * *  Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
+ * This document contains information on products in the design phase of development.
+ * All Thermal Canyons featured are used internally within Intel to identify products
+ * that are in development and not yet publicly announced for release.  Customers, licensees
+ * and other third parties are not authorized by Intel to use Thermal Canyons in advertising,
+ * promotion or marketing of any product or services and any such use of Intel's internal
+ * Thermal Canyons is at the sole risk of the user.
  *
- * *  Neither the name of Texas Instruments Incorporated nor the names of
- *    its contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *******************************************************************************
- *
- *                       MSP430 CODE EXAMPLE DISCLAIMER
- *
- * MSP430 code examples are self-contained low-level programs that typically
- * demonstrate a single peripheral function or device feature in a highly
- * concise manner. For this the code may rely on the device's power-on default
- * register values and settings such as the clock configuration and care must
- * be taken when combining code from several examples to avoid potential side
- * effects. Also see www.ti.com/grace for a GUI- and www.ti.com/msp430ware
- * for an API functional library-approach to peripheral configuration.
- *
- * --/COPYRIGHT--*/
-//******************************************************************************
-//  MSP430FR59xx Demo - ADC12, Using an External Reference
-//
-//  Description: This example shows how to use an external positive reference for
-//  the ADC12.The external reference is applied to the VeREF+ pin. AVss is used
-//  for the negative reference. A single conversion is performed on channel A0.
-//  The conversion results are stored in ADC12MEM0. Test by applying a voltage
-//  to channel A0, then setting and running to a break point at the "_NOP()"
-//  instruction. To view the conversion results, open an SFR window in debugger
-//  and view the contents of ADC12MEM0 or from the variable ADCvar.
-//  NOTE: VeREF+ range: 1.4V (min) to AVCC (max)
-//        VeREF- range: 0V (min) to 1.2V (max)
-//        Differential ref voltage range: 1.4V(min) to AVCC(max)
-//          (see datasheet for device specific information)
-//
-//                MSP430FR5969
-//             -------------------
-//         /|\|                   |
-//          | |                   |
-//          --|RST                |
-//            |                   |
-//     Vin -->|P1.0/A0            |
-//            |                   |
-//     REF -->|P1.1/VREF+/VeREF+  |
-//            |                   |
-//
-//   T. Witt / P. Thanigai
-//   Texas Instruments Inc.
-//   November 2011
-//   Built with IAR Embedded Workbench V5.30 & Code Composer Studio V5.5
-//******************************************************************************
-#define SEQUENCE
-//#define FILE_TEST
-//#define SAMPLE_POST
-#define NO_CODE_SIZE_LIMIT
-//#define BATTERY_DISABLED
-//#define I2C_DISABLED
-//#define POWER_SAVING_ENABLED
-//#define NOTFROMFILE
-#define BUZZER_DISABLED
-#define ENABLE_SIM_SLOT		//needed to set on new board, comment it for old board
-#define ALERT_UPLOAD_DISABLED
-//#define CALIBRATION			//set this flag whenever the device has to undergo calibration
-#define MIN 14
-
-//Temperature cut off
-#define TEMP_CUTOFF				-800		//-80 deg C
-#define MODEM_CHECK_RETRY 	3
-
-// TODO Modify delay times with the documentation for the Telit modem
-// see section 3.2.4 Command Response Time-Out
-// https://www.sparkfun.com/datasheets/Cellular%20Modules/AT_Commands_Reference_Guide_r0.pdf
-
-#ifdef _DEBUG
-#define MODEM_TX_DELAY1		250
-#define MODEM_TX_DELAY2		5000
-#else
-#define MODEM_TX_DELAY1		1000
-#define MODEM_TX_DELAY2		5000
-#endif
+ */
 
 #define HTTP_RESPONSE_RETRY	10
 
@@ -114,7 +37,6 @@
 #include <msp430.h>
 
 #include "config.h"
-#include "defines.h"
 #include "common.h"
 #include "driverlib.h"
 #include "stdlib.h"
@@ -166,10 +88,8 @@ int8_t processmsg(char* pSMSmsg);
 void sendhb();
 int dopost_sms_status(void);
 int dopost_gprs_connection_status(char status);
-#ifdef POWER_SAVING_ENABLED
-static int8_t modem_enter_powersave_mode();
-static int8_t modem_exit_powersave_mode();
-#endif
+void sampletemp();
+void modem_init(int8_t slot);
 
 FATFS FatFs; /* Work area (file system object) for logical drive */
 
@@ -190,34 +110,7 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 	return NULL;
 }
 
-int main(void) {
-	char* pcData = NULL;
-	char* pcTmp = NULL;
-	char* pcSrc1 = NULL;
-	char* pcSrc2 = NULL;
-	int iIdx = 0;
-	int iPOSTstatus = 0;
-	int32_t dwLastseek = 0;
-	int32_t dwFinalSeek = 0;
-	int32_t iSize = 0;
-	int16_t iOffset = 0;
-	int8_t dummy = 0;
-	int8_t iSampleCnt = 0;
-	char gprs_network_indication = 0;
-	int32_t dw_file_pointer_back_log = 0; // for error condition /// need to be tested.
-	char file_pointer_enabled_sms_status = 0; // for sms condtition enabling.../// need to be tested
-	CONFIG_INFOA* pstCfgInfoA = NULL;
-
-	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
-
-	//ZZZZ for stack usage calculation. Should be removed during the release
-	//*(int32_t*)(&__STACK_END - &__STACK_SIZE) = 0xdeadbeef;
-	iIdx = &__STACK_SIZE;
-	memset((void*) (&__STACK_END - &__STACK_SIZE), 0xa5, iIdx / 4); //paint 1/4th stack with know values
-
-	dummy = sizeof(CONFIG_INFOA);
-	dummy = sizeof(CONFIG_INFOB);
-	dummy = sizeof(Temperature);
+static void setupIO() {
 
 	// Configure GPIO
 	P2DIR |= BIT3;							// SPI CS
@@ -228,7 +121,7 @@ int main(void) {
 	P1SELC |= BIT2;                           // Enable A/D channel A2
 #ifdef SEQUENCE
 	P1SELC |= BIT3 | BIT4 | BIT5;          // Enable A/D channel A3-A5
-#ifdef MAX_NUM_SENSORS == 5
+#if MAX_NUM_SENSORS == 5
 	P4SELC |= BIT2;          				// Enable A/D channel A10
 #endif
 #endif
@@ -279,7 +172,7 @@ int main(void) {
 #ifdef SEQUENCE
 	ADC12MCTL3 = ADC12VRSEL_4 | ADC12INCH_3; // Vr+ = VeREF+ (ext) and Vr-=AVss, 12bit resolution, channel 3
 	ADC12MCTL4 = ADC12VRSEL_4 | ADC12INCH_4; // Vr+ = VeREF+ (ext) and Vr-=AVss, 12bit resolution, channel 4
-#ifdef MAX_NUM_SENSORS == 5
+#if MAX_NUM_SENSORS == 5
 	ADC12MCTL5 = ADC12VRSEL_4 | ADC12INCH_5; // Vr+ = VeREF+ (ext) and Vr-=AVss,12bit resolution,channel 5,EOS
 	ADC12MCTL6 = ADC12VRSEL_4 | ADC12INCH_10 | ADC12EOS; // Vr+ = VeREF+ (ext) and Vr-=AVss,12bit resolution,channel 5,EOS
 #else
@@ -290,7 +183,7 @@ int main(void) {
 #endif
 	//ADC interrupt logic
 	//ZZZZ comment ADC for debugging other interfaces
-#ifdef MAX_NUM_SENSORS == 5
+#if MAX_NUM_SENSORS == 5
 	ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5 | ADC12IE6; // Enable ADC conv complete interrupt
 #else
 			ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5; // Enable ADC conv complete interrupt
@@ -321,6 +214,45 @@ int main(void) {
 #endif
 
 	__bis_SR_register(GIE);		//enable interrupt globally
+
+}
+
+int main(void) {
+	char* pcData = NULL;
+	char* pcTmp = NULL;
+	char* pcSrc1 = NULL;
+	char* pcSrc2 = NULL;
+	uint32_t iIdx = 0;
+	int iPOSTstatus = 0;
+	int32_t dwLastseek = 0;
+	int32_t dwFinalSeek = 0;
+	int32_t iSize = 0;
+	int16_t iOffset = 0;
+
+#ifdef _DEBUG
+	int8_t dummy = 0;  // Used to calculate the size of the different elements consuming memory
+#endif
+
+	int8_t iSampleCnt = 0;
+	char gprs_network_indication = 0;
+	int32_t dw_file_pointer_back_log = 0; // for error condition /// need to be tested.
+	char file_pointer_enabled_sms_status = 0; // for sms condtition enabling.../// need to be tested
+	CONFIG_INFOA* pstCfgInfoA = NULL;
+
+	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
+
+#ifdef _DEBUG
+	//ZZZZ for stack usage calculation. Should be removed during the release
+	//*(int32_t*)(&__STACK_END - &__STACK_SIZE) = 0xdeadbeef;
+	iIdx = (unsigned long) &__STACK_SIZE;
+	memset((void*) (&__STACK_END - &__STACK_SIZE), 0xa5, iIdx / 4); //paint 1/4th stack with know values
+
+	dummy = (int8_t) sizeof(CONFIG_INFOA);
+	dummy = (int8_t) sizeof(CONFIG_INFOB);
+	dummy = (int8_t) sizeof(Temperature);
+#endif
+
+	setupIO();
 
 	delay(1000);
 	lcd_reset();
@@ -453,7 +385,8 @@ int main(void) {
 	//ADC12CTL0 |= ADC12ENC;                    // Enable conversions
 	//ADC12CTL0 |= ADC12ENC | ADC12SC;            // Start conversion-software trigger
 	sampletemp();
-	delay(2000);// to allow conversion to get over and prevent any side-effects to other interface like modem
+	delay(2000);  // to allow conversion to get over and prevent any side-effects to other interface like modem
+	 	 	 	  // TODO is this delay to help on the following bug from texas instruments ? (http://www.ti.com/lit/er/slaz627b/slaz627b.pdf)
 
 	//check Modem is powered on
 	for (iIdx = 0; iIdx < MODEM_CHECK_RETRY; iIdx++) {
@@ -477,7 +410,7 @@ int main(void) {
 		delay(MODEM_TX_DELAY1);
 #endif
 
-		RXHeadIdx = RXTailIdx = 0;//ZZZZ reset Rx index to faciliate processing in uart_rx
+		uart_resetbuffer();
 		uart_tx("AT+CCLK?\r\n");
 		delay(MODEM_TX_DELAY1);
 #if 0
@@ -499,18 +432,10 @@ int main(void) {
 		//uart_tx("AT+CGSN\r\n");  // Why are we reading twice the IMEI ?, is there any problem here?
 		//delay(MODEM_TX_DELAY1);
 
-		// Reading the Service Center Address to use as message gateway
-		// http://www.developershome.com/sms/cscaCommand.asp
-		// Get service center address; format "+CSCA: address,address_type"
-		uart_tx("AT+CSCA?\r\n");
-		delay(MODEM_TX_DELAY1);
-		memset(ATresponse, 0, sizeof(ATresponse));
-		uart_rx(ATCMD_CSCA, ATresponse);
-
 		uart_tx("AT+CNUM\r\n");
 		delay(MODEM_TX_DELAY1);
 
-		RXHeadIdx = RXTailIdx = 0;//ZZZZ reset Rx index to faciliate processing in uart_rx
+		uart_resetbuffer();
 		uart_tx("AT+CSQ\r\n");
 		delay(MODEM_TX_DELAY1);
 		memset(ATresponse, 0, sizeof(ATresponse));
@@ -529,7 +454,7 @@ int main(void) {
 
 		// added for IMEI number//
 		if ((uint8_t) g_pInfoA->cfgIMEI[0] == 0xFF) {
-			RXHeadIdx = RXTailIdx = 0;//ZZZZ reset Rx index to faciliate processing in uart_rx
+			uart_resetbuffer();
 			uart_tx("AT+CGSN\r\n");
 			delay(MODEM_TX_DELAY1);
 			memset(ATresponse, 0, sizeof(ATresponse));
@@ -543,6 +468,18 @@ int main(void) {
 				FRAMCtl_write8(pstCfgInfoA, INFOA_ADDR, sizeof(CONFIG_INFOA));
 			}
 		}
+
+		// Reading the Service Center Address to use as message gateway
+		// http://www.developershome.com/sms/cscaCommand.asp
+		// Get service center address; format "+CSCA: address,address_type"
+
+		uart_resetbuffer();
+		uart_tx("AT+CSCA?\r\n");
+		delay(MODEM_TX_DELAY2);
+		memset(ATresponse, 0, sizeof(ATresponse));
+		uart_rx(ATCMD_CSCA, ATresponse);
+
+		// Disable echo from modem
 		uart_tx("ATE0\r\n");
 		delay(MODEM_TX_DELAY1);
 
@@ -561,13 +498,11 @@ int main(void) {
 	iBatteryLevel = 0;
 #endif
 
-	if (iBatteryLevel==0)
+	if (iBatteryLevel == 0)
 		lcd_print("Battery FAIL");
-	else
-	if (iBatteryLevel>10)
+	else if (iBatteryLevel > 10)
 		lcd_print("Battery OK");
-	else
-	if (iBatteryLevel>99)
+	else if (iBatteryLevel > 99)
 		lcd_print("Battery FULL");
 
 	/* Register work area to the default drive */
@@ -594,7 +529,7 @@ int main(void) {
 			//convert the current sensor ADC value to temperature
 			for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
 				memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);//initialize as it will be used as scratchpad during POST formatting
-				ConvertADCToTemperature(ADCvar[iIdx], &Temperature[iIdx], iIdx);
+				ConvertADCToTemperature(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
 			}
 
 			//Write temperature data to 7 segment display
@@ -1069,7 +1004,7 @@ int main(void) {
 				if (iPOSTstatus) {
 					iPOSTstatus = 0;
 					//initialize the RX counters as RX buffer is been used in the aggregrate variables for HTTP POST formation
-					RXHeadIdx = RXTailIdx = 0; //ZZZZ end to ensure there is no incoming notification on the modem
+					uart_resetbuffer();
 					iPOSTstatus = dopost(SampleData);
 					if (iPOSTstatus != 0) {
 						//redo the post
@@ -1139,7 +1074,7 @@ int main(void) {
 			if (iStatus & NETWORK_DOWN) {
 				delay(2000);//additional delay to enable ADC conversion to complete
 				//check for signal strength
-				RXHeadIdx = RXTailIdx = 0;//ZZZZ reset Rx index to faciliate processing in uart_rx
+				uart_resetbuffer();
 				uart_tx("AT+CSQ\r\n");
 				delay(MODEM_TX_DELAY1);
 				memset(ATresponse, 0, sizeof(ATresponse));
@@ -1267,7 +1202,7 @@ int main(void) {
 				&& ((iMinuteTick - iMsgRxPollElapsed) >= MSG_REFRESH_INTERVAL)) {
 			iMsgRxPollElapsed = iMinuteTick;
 			//check if messages are available
-			RXHeadIdx = RXTailIdx = 0;//ZZZZ reset Rx index to faciliate processing in uart_rx
+			uart_resetbuffer();
 
 			uart_tx("AT+CPMS?\r\n");
 			delay(1000);
@@ -1913,7 +1848,7 @@ int dopost_gprs_connection_status(char status) {
 }
 //WARNING: doget() should not be used in parallel to HTTP POST
 int doget(char* queryData) {
-	RXTailIdx = RXHeadIdx = 0;
+	uart_resetbuffer();
 	iRxLen = RX_EXTENDED_LEN;
 	RX[RX_EXTENDED_LEN + 1] = 0;	//null termination
 #if 0
@@ -1931,9 +1866,8 @@ int doget(char* queryData) {
 	memset(queryData, 0, CFG_SIZE);
 	uart_rx(ATCMD_HTTPRCV, queryData);
 
-	RXTailIdx = RXHeadIdx = 0;
+	uart_resetbuffer();
 	iRxLen = RX_LEN;
-
 }
 
 void dohttpsetup(char* apn) {
@@ -1954,75 +1888,6 @@ void deactivatehttp() {
 	delay(MODEM_TX_DELAY2);
 }
 
-char* itoa(int num) {
-	uint8_t digit = 0;
-	uint8_t iIdx = 0;
-	uint8_t iCnt = 0;
-	char str[10];
-
-	memset(tmpstr, 0, sizeof(tmpstr));
-
-	if (num == 0) {
-		tmpstr[0] = 0x30;
-		tmpstr[1] = 0x30;
-	} else {
-		while (num != 0) {
-			digit = (num % 10) + 0x30;
-			str[iIdx] = digit;
-			iIdx++;
-			num = num / 10;
-		}
-
-		//pad with zero if single digit
-		if (iIdx == 1) {
-			tmpstr[0] = 0x30; //leading 0
-			tmpstr[1] = str[0];
-		} else {
-			while (iIdx) {
-				iIdx = iIdx - 1;
-				tmpstr[iCnt] = str[iIdx];
-				iCnt = iCnt + 1;
-			}
-		}
-	}
-
-	return tmpstr;
-}
-
-char* itoa_nopadding(int num) {
-	uint8_t digit = 0;
-	uint8_t iIdx = 0;
-	uint8_t iCnt = 0;
-	char str[10];
-
-	memset(tmpstr, 0, sizeof(tmpstr));
-
-	if (num == 0) {
-		tmpstr[0] = 0x30;
-		//tmpstr[1] = 0x30;
-	} else {
-		while (num != 0) {
-			digit = (num % 10) + 0x30;
-			str[iIdx] = digit;
-			iIdx++;
-			num = num / 10;
-		}
-
-		//pad with zero if single digit
-		if (iIdx == 1) {
-			//tmpstr[0] = 0x30; //leading 0
-			tmpstr[0] = str[0];
-		} else {
-			while (iIdx) {
-				iIdx = iIdx - 1;
-				tmpstr[iCnt] = str[iIdx];
-				iCnt = iCnt + 1;
-			}
-		}
-	}
-
-	return tmpstr;
-}
 
 FRESULT logsampletofile(FIL* fobj, int* tbw) {
 	int bw = 0;	//bytes written
@@ -2176,46 +2041,6 @@ int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 
 	return ret;
 }
-
-#ifdef POWER_SAVING_ENABLED
-int8_t modem_enter_powersave_mode()
-{
-	uint8_t iRetVal = 0;
-
-	delay(15000);		//to allow the last transmit to do successfully
-	//set DTR OFF (high)
-	P3OUT |= BIT3;//DTR
-	delay(100);//opt
-	//get CTS to confirm the modem entered power saving mode
-	if(P3IN & BIT7)//CTS
-	{
-		//CTS OFF (high)
-		iRetVal = 1;
-	}
-	return iRetVal;
-}
-
-int8_t modem_exit_powersave_mode()
-{
-	uint16_t iRetVal = 0;
-
-	//set DTR ON (low)
-	P3OUT &= ~BIT3;//DTR
-	delay(100);//opt
-	//get CTS to confirm the modem exit power saving mode
-	iRetVal = P3IN;
-	if(!(iRetVal & BIT7))//CTS
-	{
-		//CTS ON (low)
-		iRetVal = 1;
-	}
-
-	//delay(15000);
-	return iRetVal;
-
-}
-
-#endif
 
 #if 1
 
@@ -2704,7 +2529,7 @@ int8_t processmsg(char* pSMSmsg) {
 					//uart_tx(pcTmp);
 					//uart_tx("\",145\r\n");
 					//delay(1000);
-					strncpy(pstCfgInfoA->cfgGW, pcTmp, strlen(pcTmp));
+					strncpy(pstCfgInfoA->cfgSMSC[0][pstCfgInfoA->cfgSIMSlot], pcTmp, strlen(pcTmp));
 
 					pcTmp = strtok(NULL, ",");
 					if (pcTmp) {
@@ -2879,7 +2704,7 @@ void sendhb() {
 		strcat(SampleData, "0,");
 	}
 #endif
-	strcat(SampleData, DEF_GW);		//ZZZZ read from INFOA
+	strcat(SampleData, &g_pInfoA->cfgSMSC[0][g_pInfoA->cfgSIMSlot]); // Append the message service center so the backend cand send us back the right APN for it
 	strcat(SampleData, ",");
 #if MAX_NUM_SENSORS == 5
 	strcat(SampleData, "1,1,1,1,1,");//ZZZZ to be changed based on jack detection
@@ -2897,53 +2722,6 @@ void sendhb() {
 
 	SampleData[strlen(SampleData)] = 0x1A;
 	sendmsg(SampleData);
-}
-
-void modem_init(int8_t slot) {
-#ifdef ENABLE_SIM_SLOT
-	if (slot != 2) {
-		//enable SIM A (slot 1)
-		uart_tx("AT#GPIO=2,0,1\r\n");
-		delay(MODEM_TX_DELAY1);
-		uart_tx("AT#GPIO=4,1,1\r\n");
-		delay(MODEM_TX_DELAY1);
-		uart_tx("AT#GPIO=3,0,1\r\n");
-		delay(MODEM_TX_DELAY1);
-		uart_tx("AT#SIMDET=0\r\n");
-		delay(5000);
-		uart_tx("AT#SIMDET=1\r\n");
-		delay(MODEM_TX_DELAY1);
-	} else {
-		//enable SIM B (slot 2)
-		uart_tx("AT#GPIO=2,1,1\r\n");
-		delay(MODEM_TX_DELAY1);
-		uart_tx("AT#GPIO=4,0,1\r\n");
-		delay(MODEM_TX_DELAY1);
-		uart_tx("AT#GPIO=3,1,1\r\n");
-		delay(MODEM_TX_DELAY1);
-		uart_tx("AT#SIMDET=0\r\n");
-		delay(5000);
-		uart_tx("AT#SIMDET=1\r\n");
-		delay(MODEM_TX_DELAY1);
-	}
-#endif
-	uart_tx("AT+CMGF=1\r\n");		   // set sms format to text mode
-	delay(MODEM_TX_DELAY1);
-	uart_tx("AT+CMEE=2\r\n");
-	delay(MODEM_TX_DELAY1);
-	uart_tx("AT#CMEEMODE=1\r\n");
-	delay(MODEM_TX_DELAY1);
-	uart_tx("AT&K4\r\n");
-	delay(MODEM_TX_DELAY1);
-	uart_tx("AT&P0\r\n");
-	delay(MODEM_TX_DELAY1);
-	uart_tx("AT&W0\r\n");
-	delay(MODEM_TX_DELAY1);
-	uart_tx("AT#NITZ=1\r\n");
-	delay(MODEM_TX_DELAY1);
-	uart_tx("AT+CSDH=1\r\n");
-	delay(MODEM_TX_DELAY1);
-	delay(10000);		//some time to enable SMS,POST to work
 }
 
 void sampletemp() {
