@@ -30,7 +30,6 @@
 
 #define MAX_NUM_CONTINOUS_SAMPLES 10
 
-#define FILE_NAME			"/data/150623.csv"
 #define TS_SIZE				21
 #define TS_FIELD_OFFSET		1	//1 - $, 3 - $TS
 
@@ -215,6 +214,18 @@ static void setupIO() {
 
 	__bis_SR_register(GIE);		//enable interrupt globally
 
+}
+
+char* getCurrentFileName() {
+	char* fn = "/data/";
+	strcat(fn, itoa(currTime.tm_mday));
+	strcat(fn, itoa(currTime.tm_mon));
+	strcat(fn, itoa(currTime.tm_year));
+	if(strcmp("/data/", fn) != 0) {
+		strcat(fn, "unknown");
+	}
+	strcat(fn, ".csv");
+	return fn;
 }
 
 int main(void) {
@@ -507,6 +518,7 @@ int main(void) {
 	else if (iBatteryLevel > 99)
 		lcd_print("Battery FULL");
 
+	delay(1000);
 	/* Register work area to the default drive */
 	f_mount(&FatFs, "", 0);
 
@@ -680,10 +692,11 @@ int main(void) {
 				iPOSTstatus = 0;
 				fr = FR_DENIED;
 				iOffset = 0;
+				char* fn = getCurrentFileName();
 
 				//fr = f_read(&filr, acLogData, 1, &iIdx);  /* Read a chunk of source file */
 				memset(ATresponse, 0, AGGREGATE_SIZE + 1); //ensure the buffer in aggregate_var section is more than AGGREGATE_SIZE
-				fr = f_open(&filr, FILE_NAME, FA_READ | FA_OPEN_ALWAYS);
+				fr = f_open(&filr, fn, FA_READ | FA_OPEN_ALWAYS);
 				if (fr == FR_OK) {
 					dw_file_pointer_back_log = dwLastseek; // added for dummy storing///
 					//seek if offset is valid and not greater than existing size else read from the beginning
@@ -1880,12 +1893,12 @@ void deactivatehttp() {
 	delay(MODEM_TX_DELAY2);
 }
 
-
 FRESULT logsampletofile(FIL* fobj, int* tbw) {
 	int bw = 0;	//bytes written
+	char* fn = getCurrentFileName();
 
 	if (!(iStatus & TEST_FLAG)) {
-		fr = f_open(fobj, FILE_NAME, FA_WRITE | FA_OPEN_ALWAYS);
+		fr = f_open(fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
 		if (fr == FR_OK) {
 			if (fobj->fsize) {
 				//append to the file
@@ -1921,10 +1934,6 @@ FRESULT logsampletofile(FIL* fobj, int* tbw) {
 			if (bw > 0) {
 				*tbw += bw;
 				iStatus &= ~LOG_TIME_STAMP;
-			}
-
-			if (currTime.tm_mday != g_iCurrDay) {
-				//ZZZZ day has changed, update the filename
 			}
 		}
 

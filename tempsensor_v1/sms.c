@@ -30,7 +30,6 @@ void sendmsg(char* pData) {
 		return;
 
 	// TODO Define SMS Gateway
-
 	memset(SampleData, 0, sizeof(SampleData));
 	strcat(SampleData, "AT+CMGS=\""); // Send message to a number
 	strcat(SampleData, SMS_NEXLEAF_GATEWAY);
