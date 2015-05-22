@@ -355,6 +355,9 @@ int main(void) {
 		uart_tx("AT+CSCA?\r\n");
 		memset(ATresponse, 0, sizeof(ATresponse));
 		uart_rx(ATCMD_CSCA, ATresponse);
+		//copy valid IMEI to FRAM
+		// TODO check this not sure if it works
+		memcpy(g_pInfoA->cfgIMEI, ATresponse, strlen(ATresponse) + 1);
 
 		uart_tx("AT+CNUM\r\n");
 
