@@ -57,12 +57,13 @@ MEMORY
     PERIPHERALS_8BIT        : origin = 0x0010, length = 0x00F0
     PERIPHERALS_16BIT       : origin = 0x0100, length = 0x0100
     RAM                     : origin = 0x1C00, length = 0x0800
-    INFOA                   : origin = 0x1980, length = 0x0180
+    INFOA                   : origin = 0x1980, length = 0x0080
     INFOB                   : origin = 0x1900, length = 0x0080
     INFOC                   : origin = 0x1880, length = 0x0080
     INFOD                   : origin = 0x1800, length = 0x0080
     FRAM                    : origin = 0x4400, length = 0xBB80
-    FRAM2                   : origin = 0x10000,length = 0x4000
+    FRAM2                   : origin = 0x10000,length = 0x3000
+    FRAM3                   : origin = 0x13000,length = 0x1000, fill = 0xFFFF
     JTAGSIGNATURE           : origin = 0xFF80, length = 0x0004, fill = 0xFFFF
     BSLSIGNATURE            : origin = 0xFF84, length = 0x0004, fill = 0xFFFF
     IPESIGNATURE            : origin = 0xFF88, length = 0x0008, fill = 0xFFFF
@@ -175,7 +176,7 @@ SECTIONS
     } > FRAM
     .stack      : {} > RAM (HIGH)           /* SOFTWARE SYSTEM STACK             */
 
-    .infoA     : {} > INFOA              /* MSP430 INFO FRAM  MEMORY SEGMENTS */
+    .infoA     : {} > FRAM3              /* MSP430 INFO FRAM  MEMORY SEGMENTS */
     .infoB     : {} > INFOB
     .infoC     : {
     	*(.config_vars_infoC)

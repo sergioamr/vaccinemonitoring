@@ -42,6 +42,8 @@ void modem_checkSignal() {
 
 void modem_getsimcardsinfo() {
 	uint8_t slot = g_pInfoA->cfgSIMSlot;
+	int len;
+	int t;
 
 	// Reading the Service Center Address to use as message gateway
 	// http://www.developershome.com/sms/cscaCommand.asp
@@ -53,11 +55,16 @@ void modem_getsimcardsinfo() {
 
 	if (uart_rx_cleanBuf(ATCMD_CSCA, ATresponse,
 			sizeof(ATresponse))==UART_SUCCESS) {
-		strcpy(g_pInfoA->cfgSMSCenter[slot], ATresponse);
+
+		len=strlen(ATresponse);
+		for (t=0; t<len; t++) {
+			g_pInfoA->cfgSMSCenter[slot][t]=ATresponse[t];
+		}
+		//memcpy(&g_pInfoA->cfgSMSCenter[slot][0], ATresponse, strlen(ATresponse));
 
 #ifdef _DEBUG
 		lcd_clear();
-		lcd_print_line(g_pInfoA->cfgSMSCenter[slot], LINE2);
+		lcd_print_line(&g_pInfoA->cfgSMSCenter[slot][0], LINE2);
 #endif
 	} else {
 		lcd_clear();
@@ -69,7 +76,7 @@ void modem_getsimcardsinfo() {
 	}
 
 	// added for IMEI number//
-	if ((uint8_t) g_pInfoA->cfgIMEI[0] == 0xFF) {
+	//if ((uint8_t) g_pInfoA->cfgIMEI[0] == 0xFF) {
 		uart_resetbuffer();
 		uart_tx("AT+CGSN\r\n");
 		if (uart_rx_cleanBuf(ATCMD_CGSN, ATresponse,
@@ -88,8 +95,7 @@ void modem_getsimcardsinfo() {
 				lcd_print_line("IMEI Error", LINE2);
 			}
 		}
-
-	}
+	//}
 
 	delay(100);
 }

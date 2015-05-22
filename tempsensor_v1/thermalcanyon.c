@@ -1133,11 +1133,12 @@ int main(void) {
 
 void writetoI2C(uint8_t addressI2C, uint8_t dataI2C) {
 	return; //void function for the new board with LCD
+/*
 #ifndef I2C_DISABLED
 	delay(100);
 	i2c_write(SLAVE_ADDR_DISPLAY, addressI2C, 1, &dataI2C);
 #endif
-
+*/
 }
 
 void ConvertADCToTemperature(unsigned int ADCval, char* TemperatureVal,
@@ -1670,7 +1671,7 @@ FRESULT logsampletofile(FIL* fobj, int* tbw) {
 			strcat(acLogData, itoa(g_iSamplePeriod));
 			strcat(acLogData, ",");
 			strcat(acLogData, "\n");
-			fr = f_write(fobj, acLogData, strlen(acLogData), &bw);
+			fr = f_write(fobj, acLogData, strlen(acLogData), (UINT *)&bw);
 #else
 			bw = f_printf(fobj,"$TS=%04d%02d%02d:%02d:%02d:%02d,R=%d,", currTime.tm_year, currTime.tm_mon, currTime.tm_mday,
 					currTime.tm_hour, currTime.tm_min, currTime.tm_sec,g_iSamplePeriod);
@@ -1717,7 +1718,7 @@ FRESULT logsampletofile(FIL* fobj, int* tbw) {
 		strcat(acLogData, Temperature[4]);
 		strcat(acLogData, ",");
 		strcat(acLogData, "\n");
-		fr = f_write(fobj, acLogData, strlen(acLogData), &bw);
+		fr = f_write(fobj, acLogData, strlen(acLogData), (UINT *)&bw);
 #else
 		bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,", iBatteryLevel,
 				!(P4IN & BIT4),Temperature[0],Temperature[1],Temperature[2],Temperature[3]);
@@ -1746,7 +1747,7 @@ int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 	pcTmp = strchr(pcSrc, fieldstr[0]);
 	iFlag = iFlagVal;
 	while ((pcTmp && !lastoffset)
-			|| (pcTmp && lastoffset && (pcTmp < lastoffset))) {
+			|| (pcTmp && (char *) lastoffset && (pcTmp < (char *) lastoffset))) {
 		iSampleCnt = lastoffset - (int) pcTmp;
 		if ((iSampleCnt > 0) && (iSampleCnt < iFieldSize)) {
 			//the field is splitted across

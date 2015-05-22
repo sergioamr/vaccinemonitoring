@@ -83,7 +83,7 @@ extern void uart_tx_nowait(const char *cmd);
 //
 //*****************************************************************************
 extern int uart_rx(int atCMD, char* pResponse);
-extern int uart_rx_cleanBuf(int atCMD, char* pResponse, uint8_t reponseLen);
+extern int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen);
 
 #ifdef __cplusplus
 }

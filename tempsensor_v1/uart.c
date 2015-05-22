@@ -232,7 +232,7 @@ int uart_rx(int atCMD, char* pResponse) {
 }
 
 // Clears the response buffer if len > 0
-int uart_rx_cleanBuf(int atCMD, char* pResponse, uint8_t reponseLen) {
+int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 	int ret = -1;
 	char* pToken1 = NULL;
 	char* pToken2 = NULL;

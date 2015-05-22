@@ -26,7 +26,7 @@ CONFIG_INFOB g_InfoB;
 #pragma SET_DATA_SECTION()
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
-char	 	  ATresponse[ATRESP_MAX_LEN] = {};
+volatile char ATresponse[ATRESP_MAX_LEN] = {};
 #pragma SET_DATA_SECTION()
 
 #pragma SET_DATA_SECTION(".xbigdata_vars")
