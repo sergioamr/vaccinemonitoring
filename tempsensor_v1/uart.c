@@ -650,6 +650,7 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 
 		RXBuffer[RXTailIdx++] = UCA0RXBUF;
 
+		// TODO Change this into an array that you check if it is ok
 		if (uartWaitMode==WAIT_OK) {
 			if (Ready == 0 && UCA0RXBUF == 'O') Ready++; else
 			if (Ready == 1 && UCA0RXBUF == 'K') Ready++; else
@@ -661,6 +662,16 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 			if (UCA0RXBUF == 0x0A) Ready++; else
 			if (UCA0RXBUF == '>' && Ready==2)
 				Ready=4;
+		}
+
+		if (UCA0STATW & UCRXERR) {
+			iError++;
+		}
+
+		if (UCA0RXBUF == XOFF) {
+			iTxStop = 1;
+		} else if (UCA0RXBUF == XON) {
+			iTxStop = 0;
 		}
 
 		break;
