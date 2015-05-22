@@ -46,7 +46,7 @@ extern FIL filr;
 extern FIL filw;
 extern FRESULT fr;
 extern int32_t iBytesLogged;
-extern int g_iCurrDay;
+extern int g_iCurrYearDay;
 
 extern double iTemp;
 extern int16_t g_iAlarmCnfCnt[MAX_NUM_SENSORS+2];		//additional two for power and battery alert

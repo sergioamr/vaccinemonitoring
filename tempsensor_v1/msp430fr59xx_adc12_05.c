@@ -76,7 +76,7 @@ static float ConvertoTemp(float R);
 void ConvertADCToTemperature(unsigned int ADCval, char* TemperatureVal,
 		int8_t iSensorIdx);
 char* itoa(int num);
-char* itoa_nopadding(int num);	//ZZZZ remove this function for final release
+char* itoa_nopadding(int num);	//TODO remove this function for final release
 static void parsetime(char* pDatetime, struct tm* pTime);
 static int dopost(char* postdata);
 static FRESULT logsampletofile(FIL* fobj, int* tbw);
@@ -89,6 +89,9 @@ int dopost_sms_status(void);
 int dopost_gprs_connection_status(char status);
 void sampletemp();
 void modem_init(int8_t slot);
+char* getDMYString(struct tm* timeData);
+char* getCurrentFileName(struct tm* timeData);
+void pullTime();
 
 FATFS FatFs; /* Work area (file system object) for logical drive */
 
@@ -181,7 +184,7 @@ static void setupIO() {
 	ADC12CTL0 |= ADC12MSC; //first sample by trigger and rest automatic trigger by prior conversion
 #endif
 	//ADC interrupt logic
-	//ZZZZ comment ADC for debugging other interfaces
+	//TODO comment ADC for debugging other interfaces
 #if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
 	ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5 | ADC12IE6; // Enable ADC conv complete interrupt
 #else
@@ -216,16 +219,36 @@ static void setupIO() {
 
 }
 
-char* getCurrentFileName() {
+char* getDMYString(struct tm* timeData) {
+	char* dayMonthYear = "";
+	strcat(dayMonthYear, itoa(timeData->tm_mday));
+	strcat(dayMonthYear, itoa(timeData->tm_mon));
+	strcat(dayMonthYear, itoa(timeData->tm_year));
+	return dayMonthYear;
+}
+
+char* getCurrentFileName(struct tm* timeData) {
 	char* fn = "/data/";
-	strcat(fn, itoa(currTime.tm_mday));
-	strcat(fn, itoa(currTime.tm_mon));
-	strcat(fn, itoa(currTime.tm_year));
-	if(strcmp("/data/", fn) != 0) {
+	strcat(fn, getDMYString(timeData));
+	if(strcmp("/data/", fn) != 0 || strcmp("/data/000000", fn) == 0) {
 		strcat(fn, "unknown");
 	}
 	strcat(fn, ".csv");
 	return fn;
+}
+
+void pullTime() {
+	uart_resetbuffer();
+	uart_tx("AT+CCLK?\r\n");
+	delay(10000);
+	memset(ATresponse, 0, sizeof(ATresponse));
+	uart_rx(ATCMD_CCLK, ATresponse);
+	parsetime(ATresponse, &currTime);
+	rtc_init(&currTime);
+	if(g_iCurrYearDay != currTime.tm_yday) {
+		// Day has changed so save the new date TODO keep trying until date is set. Call function ONCE PER DAY
+		g_iCurrYearDay = currTime.tm_yday;
+	}
 }
 
 int main(void) {
@@ -253,7 +276,7 @@ int main(void) {
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 
 #ifdef _DEBUG
-	//ZZZZ for stack usage calculation. Should be removed during the release
+	//TODO for stack usage calculation. Should be removed during the release
 	//*(int32_t*)(&__STACK_END - &__STACK_SIZE) = 0xdeadbeef;
 	iIdx = (unsigned long) &__STACK_SIZE;
 	memset((void*) (&__STACK_END - &__STACK_SIZE), 0xa5, iIdx / 4); //paint 1/4th stack with know values
@@ -330,7 +353,7 @@ int main(void) {
 		f_mount(&FatFs, "", 0);
 
 		/* Open a text file */
-		fr = f_open(&fil, "150218.txt", FA_READ|FA_WRITE|FA_OPEN_ALWAYS);
+		fr = f_open(&fil, "test.txt", FA_READ|FA_WRITE|FA_OPEN_ALWAYS);
 		if (fr) return (int)fr;
 
 		/* Read all lines and display it */
@@ -421,30 +444,13 @@ int main(void) {
 		delay(MODEM_TX_DELAY1);
 #endif
 
-		uart_resetbuffer();
-		uart_tx("AT+CCLK?\r\n");
-		delay(MODEM_TX_DELAY1);
-#if 0
-		memset(ATresponse,0,sizeof(ATresponse));
-		strcat(ATresponse,"$ST,a=1,b=xyz,$EN");
-		iIdx = strlen(ATresponse);
-		ATresponse[iIdx] = 0x1A;
-		sendmsg(ATresponse);
-		delay(1000);
-#endif
-
-		memset(ATresponse, 0, sizeof(ATresponse));
-		uart_rx(ATCMD_CCLK, ATresponse);
-		parsetime(ATresponse, &currTime);
-		rtc_init(&currTime);
-		g_iCurrDay = currTime.tm_mday;
-		//ZZZZ determine the file name for SD logging
+		pullTime();
 
 		// Reading the Service Center Address to use as message gateway
 		// http://www.developershome.com/sms/cscaCommand.asp
 		// Get service center address; format "+CSCA: address,address_type"
 		uart_tx("AT+CSCA?\r\n");
-		delay(MODEM_TX_DELAY1);
+		delay(MODEM_TX_DELAY2);
 		memset(ATresponse, 0, sizeof(ATresponse));
 		uart_rx(ATCMD_CSCA, ATresponse);
 
@@ -458,12 +464,11 @@ int main(void) {
 		uart_rx(ATCMD_CSQ, ATresponse);
 		if (ATresponse[0] != 0) {
 			iSignalLevel = strtol(ATresponse, 0, 10);
-			//  if((iSignalLevel <= NETWORK_DOWN_SS) || (iSignalLevel >= NETWORK_MAX_SS)){
-			//  	signal_gprs=0;
-			//  }
-			//   else{
-			//      signal_gprs=1;
-			//  }
+			if((iSignalLevel <= NETWORK_DOWN_SS) || (iSignalLevel >= NETWORK_MAX_SS)){
+				signal_gprs=0;
+			} else {
+				signal_gprs=1;
+			}
 		}
 		/// added for gprs connection..//
 		signal_gprs = dopost_gprs_connection_status(GPRS);
@@ -489,12 +494,7 @@ int main(void) {
 		// http://www.developershome.com/sms/cscaCommand.asp
 		// Get service center address; format "+CSCA: address,address_type"
 
-		uart_resetbuffer();
-		uart_tx("AT+CSCA?\r\n");
-		delay(MODEM_TX_DELAY2);
-		memset(ATresponse, 0, sizeof(ATresponse));
-		uart_rx(ATCMD_CSCA, ATresponse);
-
+		//uart_resetbuffer();
 		// Disable echo from modem
 		uart_tx("ATE0\r\n");
 		delay(MODEM_TX_DELAY1);
@@ -692,7 +692,7 @@ int main(void) {
 				iPOSTstatus = 0;
 				fr = FR_DENIED;
 				iOffset = 0;
-				char* fn = getCurrentFileName();
+				char* fn = getCurrentFileName(&currTime);
 
 				//fr = f_read(&filr, acLogData, 1, &iIdx);  /* Read a chunk of source file */
 				memset(ATresponse, 0, AGGREGATE_SIZE + 1); //ensure the buffer in aggregate_var section is more than AGGREGATE_SIZE
@@ -792,7 +792,7 @@ int main(void) {
 
 							}
 						} else {
-							//file system issue ZZZZ
+							//file system issue TODO
 						}
 					} else {
 						//the position is second half of sector
@@ -876,7 +876,7 @@ int main(void) {
 								dwLastseek = dwLastseek + iIdx;
 							}
 						} else {
-							//file system issue ZZZZ
+							//file system issue TODO
 						}
 					}
 
@@ -1188,7 +1188,7 @@ int main(void) {
 #ifndef BUZZER_DISABLED
 		if(iStatus & BUZZER_ON)
 		{
-			iIdx = 10;	//ZZZZ fine-tune for 5 to 10 secs
+			iIdx = 10;	//TODO fine-tune for 5 to 10 secs
 			while((iIdx--) && (iStatus & BUZZER_ON))
 			{
 				P3OUT |= BIT4;
@@ -1895,7 +1895,7 @@ void deactivatehttp() {
 
 FRESULT logsampletofile(FIL* fobj, int* tbw) {
 	int bw = 0;	//bytes written
-	char* fn = getCurrentFileName();
+	char* fn = getCurrentFileName(&currTime);
 
 	if (!(iStatus & TEST_FLAG)) {
 		fr = f_open(fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
@@ -2017,7 +2017,7 @@ int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 		}
 
 		iSampleCnt = 0;
-		while (pcTmp[FORMAT_FIELD_OFF + iSampleCnt] != ',')	//ZZZZ recheck whenever the log formatting changes
+		while (pcTmp[FORMAT_FIELD_OFF + iSampleCnt] != ',')	//TODO recheck whenever the log formatting changes
 		{
 			iSampleCnt++;
 		}
@@ -2694,7 +2694,7 @@ void sendhb() {
 	memset(SampleData, 0, sizeof(SampleData));
 	strcat(SampleData, SMS_HB_MSG_TYPE);
 #if 0
-	strcat(SampleData,"358072043113601");	//ZZZZ remove hardcoding //SERIAL
+	strcat(SampleData,"358072043113601");	//TODO remove hardcoding //SERIAL
 	strcat(SampleData,",");
 #else
 	strcat(SampleData, g_pInfoA->cfgIMEI);
@@ -2708,9 +2708,9 @@ void sendhb() {
 	strcat(SampleData, &g_pInfoA->cfgSMSC[0][g_pInfoA->cfgSIMSlot]); // Append the message service center so the backend cand send us back the right APN for it
 	strcat(SampleData, ",");
 #if MAX_NUM_SENSORS == 5
-	strcat(SampleData, "1,1,1,1,1,");//ZZZZ to be changed based on jack detection
+	strcat(SampleData, "1,1,1,1,1,");//TODO to be changed based on jack detection
 #else
-			strcat(SampleData,"1,1,1,1,");	//ZZZZ to be changed based on jack detection
+			strcat(SampleData,"1,1,1,1,");	//TODO to be changed based on jack detection
 #endif
 
 	pcTmp = itoa(batt_getlevel());	//opt by directly using tmpstr
@@ -2738,8 +2738,7 @@ void sampletemp() {
 	for (iIdx = 0; iIdx < SAMPLE_COUNT; iIdx++) {
 		ADC12CTL0 &= ~ADC12ENC;
 		ADC12CTL0 |= ADC12ENC | ADC12SC;
-		while ((iSamplesRead - iLastSamplesRead) == 0)
-			;
+		while ((iSamplesRead - iLastSamplesRead) == 0);
 		iLastSamplesRead = iSamplesRead;
 //		delay(10);	//to allow the ADC conversion to complete
 	}

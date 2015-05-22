@@ -10,7 +10,7 @@
 #include "uart.h"
 #include "stdlib.h"
 #include "string.h"
-#include "lcd.h"
+//#include "lcd.h"
 
 #define DEBUG_INFO
 
@@ -104,12 +104,12 @@ int uart_tx(volatile char* pTxData)
 {
 	int ret = -1;
 
-#ifdef _DEBUG
+/*#ifdef _DEBUG
 	if (g_iDebug_state == 0) {
 		lcd_clear();
 		lcd_print_debug((char *) pTxData, LINE1);
 	}
-#endif
+#endif*/
 
 	if(pTxData)
 	{
@@ -144,6 +144,7 @@ int uart_rx(int atCMD, char* pResponse)
 	int  iStartIdx = 0;
 	int  iEndIdx = 0;
 
+	/*
 	if (RXHeadIdx < RXTailIdx) {
 		pToken1 = strstr((const char *) &RX[RXHeadIdx], "CMS ERROR:");
 		if (pToken1 != NULL) {
@@ -159,6 +160,7 @@ int uart_rx(int atCMD, char* pResponse)
 			#endif
 		}
 	}
+	*/
 
 	//input check
 	if(pResponse)
@@ -191,6 +193,21 @@ int uart_rx(int atCMD, char* pResponse)
 					{
 						bytestoread = CCLK_RESP_LEN;
 					}
+					memcpy(pResponse, pToken1, bytestoread);
+					ret = 0;
+				}
+				else{
+
+				}
+
+			break;
+
+			case ATCMD_BND:
+				pToken1 = strstr((const char *) RX,"BND:");
+				if(pToken1 != NULL)
+				{
+					pToken2 = strstr(pToken1,"OK");
+					bytestoread = pToken2 - pToken1;
 					memcpy(pResponse, pToken1, bytestoread);
 					ret = 0;
 				}
