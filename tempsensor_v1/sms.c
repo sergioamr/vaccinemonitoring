@@ -34,8 +34,18 @@ void sendmsg(char* pData) {
 		uart_tx(pData);
 		delay(10000);
 		_NOP();
-		// TODO Check if ok
+		// TODO Check if ok or RXBuffer contains Error
 	}
+
+	int res=uart_rx(ATCMGS, ATresponse);
+
+	if (res==UART_SUCCESS) {
+		_NOP();
+	} else
+	if (res==UART_ERROR) {
+		lcd_print("MODEM ERROR");
+	}
+
 	_NOP();
 }
 

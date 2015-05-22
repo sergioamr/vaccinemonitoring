@@ -373,14 +373,17 @@ int main(void) {
 				signal_gprs=1;
 			}
 		}
+
+		lcd_print("Checking GPRS");
 		/// added for gprs connection..//
 		signal_gprs = dopost_gprs_connection_status(GPRS);
 
+		lcd_print("IMEI");
+
 		// added for IMEI number//
-		if ((uint8_t) g_pInfoA->cfgIMEI[0] == 0xFF) {
+		if ((uint8_t) g_pInfoA->cfgIMEI[0] == 0xFF || (uint8_t) g_pInfoA->cfgIMEI[0] == '+') {
 			uart_resetbuffer();
 			uart_tx("AT+CGSN\r\n");
-			delay(MODEM_TX_DELAY1);
 			memset(ATresponse, 0, sizeof(ATresponse));
 			uart_rx(ATCMD_CGSN, ATresponse);
 			if (memcmp(ATresponse, "INVALID", strlen("INVALID"))) {
@@ -397,8 +400,6 @@ int main(void) {
 		//uart_resetbuffer();
 		// Disable echo from modem
 		uart_tx("ATE0\r\n");
-		delay(MODEM_TX_DELAY1);
-
 		//heartbeat
 		sendhb();
 	}
@@ -455,7 +456,7 @@ int main(void) {
 
 #ifndef  NOTFROMFILE
 			//log to file
-			fr = logsampletofile(&filw, &iBytesLogged);
+			fr = logsampletofile(&filw, (int *) &iBytesLogged);
 			if (fr == FR_OK) {
 				iSampleCnt++;
 				if (iSampleCnt >= MAX_NUM_CONTINOUS_SAMPLES) {
@@ -2592,6 +2593,7 @@ void sendhb() {
 
 	char* pcTmp = NULL;
 
+	lcd_print("HEART BEAT");
 	//send heart beat
 	memset(SampleData, 0, sizeof(SampleData));
 	strcat(SampleData, SMS_HB_MSG_TYPE);
