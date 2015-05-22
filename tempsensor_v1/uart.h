@@ -46,6 +46,8 @@ extern volatile int RXHeadIdx;
 extern int iRxLen;
 extern volatile char RXBuffer[RX_LEN+1];
 
+extern void uart_setOKMode();
+extern uint8_t uart_tx_waitForPrompt(const char *cmd);
 
 //*****************************************************************************
 // Set tail and head to 0 for easy parsing.

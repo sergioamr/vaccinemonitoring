@@ -23,5 +23,6 @@ extern void lcd_show(int8_t iItemId);
 extern void lcd_print(char* pcData);
 extern void lcd_print_line(const char* pcData,int8_t iLine);
 extern void lcd_print_debug(const char* pcData, int line);
+extern void lcd_disable_debug();
 
 #endif /* LCD_H_ */

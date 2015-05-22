@@ -22,9 +22,16 @@
 #include "sms.h"
 #include "timer.h"
 
+char ctrlZ[2] = { 0x1A, 0 };
+char ESC[2] = { 0x1B, 0 };
+
 void modem_init(int8_t slot) {
 
+	uart_setOKMode();
+	uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted
+
 #ifdef ENABLE_SIM_SLOT
+	uart_tx("AT#GPIO=2,0,1\r\n");
 	if (slot != 2) {
 		//enable SIM A (slot 1)
 		uart_tx("AT#GPIO=2,0,1\r\n");

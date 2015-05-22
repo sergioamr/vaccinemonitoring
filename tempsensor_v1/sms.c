@@ -14,6 +14,7 @@
 #include "timer.h"
 #include "config.h"
 #include "common.h"
+#include "lcd.h"
 #include "string.h"
 #include "globals.h"
 
@@ -25,17 +26,16 @@ extern char* itoa_nopadding(int num);
 
 char destinationSMS[] = "AT+CMGS=\"" SMS_NEXLEAF_GATEWAY "\",129\r\n";
 void sendmsg(char* pData) {
-	//char ctrlZ[2] = {0x1A,0};
-
 	if (iStatus & TEST_FLAG)
 		return;
 
-	uart_tx_nowait(destinationSMS);
+	lcd_disable_debug();
+	if (uart_tx_waitForPrompt(destinationSMS)) {
+		uart_tx(pData);
+		// TODO Check if ok
+	}
 
-	delay(5000);
-	uart_tx(pData);
-	delay(1000);
-	//uart_tx(ctrlZ);
+	NOP();
 }
 
 int recvmsg(int8_t iMsgIdx, char* pData) {

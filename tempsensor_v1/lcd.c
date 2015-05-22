@@ -263,6 +263,10 @@ void lcd_bldisable() {
 }
 
 int g_iDebug_state = -1; // Disable debug
+void lcd_disable_debug() {
+	g_iDebug_state=-1;
+}
+
 void lcd_print_debug(const char* pcData, int line) {
 #ifndef _DEBUG
 	static char pos = 0;

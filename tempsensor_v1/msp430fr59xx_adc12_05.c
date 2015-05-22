@@ -55,6 +55,7 @@
 #include "lcd.h"
 #include "globals.h"
 #include "sms.h"
+#include "modem.h"
 
 #define FORMAT_FIELD_OFF	1		//2 if field name is 1 character & equal, 3 if field name is 2 character & equal...
 extern volatile uint32_t iMinuteTick;
@@ -2620,7 +2621,7 @@ void sendhb() {
 		strcat(SampleData, ",1");
 	}
 
-	SampleData[strlen(SampleData)] = 0x1A;
+	strcat(SampleData, ctrlZ);
 	sendmsg(SampleData);
 }
 

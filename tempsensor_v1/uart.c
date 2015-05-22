@@ -14,6 +14,10 @@
 #include "lcd.h"
 #define DEBUG_INFO
 
+// We define the exit condition for the wait for ready function
+#define WAIT_OK 0
+#define WAIT_PROMPT 1
+uint8_t uartWaitMode = 0;
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 volatile char RXBuffer[RX_LEN + 1];
@@ -192,6 +196,24 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 
 void uart_tx_nowait(const char *cmd) {
 	sendCommand(cmd);
+}
+
+void uart_setPromptMode() {
+	uartWaitMode=WAIT_PROMPT;
+}
+
+void uart_setOKMode() {
+	uartWaitMode=WAIT_OK;
+}
+
+uint8_t uart_tx_waitForPrompt(const char *cmd) {
+	uart_setPromptMode();
+	sendCommand(cmd);
+	if (!waitForReady(5000))
+		return 1; // We found a prompt
+
+	uart_setOKMode();
+	return 0;
 }
 
 uint8_t uart_tx(const char *cmd) {
@@ -616,19 +638,26 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 
 		RXBuffer[RXTailIdx++] = UCA0RXBUF;
 
-		if (Ready == 0 && UCA0RXBUF == 'O')
-			Ready++;
-		else
-		if (Ready == 1 && UCA0RXBUF == 'K')
-			Ready++;
-		else
-		if (Ready == 2 && UCA0RXBUF == 0x0D)
-			Ready++;
-		else
-		if (Ready == 3 && UCA0RXBUF == 0x0A)
-			Ready++;
-		else
-		if (Ready < 4) Ready = 0;
+		if (uartWaitMode==WAIT_OK) {
+			if (Ready == 0 && UCA0RXBUF == 'O')
+				Ready++;
+			else
+			if (Ready == 1 && UCA0RXBUF == 'K')
+				Ready++;
+			else
+			if (Ready == 2 && UCA0RXBUF == 0x0D)
+				Ready++;
+			else
+			if (Ready == 3 && UCA0RXBUF == 0x0A)
+				Ready++;
+			else
+			if (Ready < 4) Ready = 0;
+		} else {
+			if (UCA0RXBUF == 0x0D) Ready++; else
+			if (UCA0RXBUF == 0x0A) Ready++; else
+			if (UCA0RXBUF == '>' && Ready==2)
+				Ready=4;
+		}
 
 		break;
 
