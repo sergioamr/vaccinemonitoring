@@ -9,7 +9,7 @@
 #define UART_H_
 
 #define TX_LEN   			300
-#define RX_LEN   			102
+#define RX_LEN   			360
 #define TOKEN_LEN			3
 
 #define ATCMD_CCLK			0
@@ -44,7 +44,7 @@ extern "C"
 extern volatile int RXTailIdx;
 extern volatile int RXHeadIdx;
 extern int iRxLen;
-extern volatile char RX[RX_LEN+1];
+extern volatile char RXBuffer[RX_LEN+1];
 
 
 //*****************************************************************************
@@ -61,7 +61,9 @@ extern void uart_resetbuffer();
 //! \return 0 on success, -1 on failure
 //
 //*****************************************************************************
-extern int uart_tx(volatile char* pTxData);
+extern uint8_t uart_tx(const char* pTxData);
+extern uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts);
+extern void uart_tx_nowait(const char *cmd);
 
 //*****************************************************************************
 //
@@ -74,6 +76,7 @@ extern int uart_tx(volatile char* pTxData);
 //
 //*****************************************************************************
 extern int uart_rx(int atCMD, char* pResponse);
+extern int uart_rx_cleanBuf(int atCMD, char* pResponse, uint8_t reponseLen);
 
 #ifdef __cplusplus
 }

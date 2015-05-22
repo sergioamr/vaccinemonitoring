@@ -66,8 +66,8 @@ extern "C"
  */
 
 #ifdef _DEBUG
-#define MODEM_TX_DELAY1		250
-#define MODEM_TX_DELAY2		3000
+#define MODEM_TX_DELAY1		1000
+#define MODEM_TX_DELAY2		5000
 #else
 #define MODEM_TX_DELAY1		1000
 #define MODEM_TX_DELAY2		5000

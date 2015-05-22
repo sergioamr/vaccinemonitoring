@@ -240,7 +240,7 @@ char* getCurrentFileName(struct tm* timeData) {
 void pullTime() {
 	uart_resetbuffer();
 	uart_tx("AT+CCLK?\r\n");
-	delay(10000);
+
 	memset(ATresponse, 0, sizeof(ATresponse));
 	uart_rx(ATCMD_CCLK, ATresponse);
 	parsetime(ATresponse, &currTime);
@@ -287,102 +287,14 @@ int main(void) {
 #endif
 
 	setupIO();
-
 	delay(1000);
 	lcd_reset();
 	lcd_blenable();
 
-#if UTC_TEST
-	currTime.tm_year = 2015;
-	currTime.tm_mon = 8;
-	currTime.tm_mday = 1;
-	currTime.tm_hour = 0;
-	currTime.tm_min = 30;
-	currTime.tm_sec = 0;
-	converttoUTC(&currTime);
-
-	currTime.tm_year = 2015;
-	currTime.tm_mon = 9;
-	currTime.tm_mday = 2;
-	currTime.tm_hour = 4;
-	currTime.tm_min = 12;
-	currTime.tm_sec = 0;
-	converttoUTC(&currTime);
-
-	currTime.tm_year = 2015;
-	currTime.tm_mon = 7;
-	currTime.tm_mday = 30;
-	currTime.tm_hour = 3;
-	currTime.tm_min = 57;
-	currTime.tm_sec = 0;
-	converttoUTC(&currTime);
-
-	currTime.tm_year = 2016;
-	currTime.tm_mon = 3;
-	currTime.tm_mday = 19;
-	currTime.tm_hour = 2;
-	currTime.tm_min = 19;
-	currTime.tm_sec = 0;
-	converttoUTC(&currTime);
-
-	currTime.tm_year = 2014;
-	currTime.tm_mon = 4;
-	currTime.tm_mday = 22;
-	currTime.tm_hour = 5;
-	currTime.tm_min = 30;
-	currTime.tm_sec = 0;
-	converttoUTC(&currTime);
-
-	currTime.tm_year = 2014;
-	currTime.tm_mon = 4;
-	currTime.tm_mday = 30;
-	currTime.tm_hour = 5;
-	currTime.tm_min = 31;
-	currTime.tm_sec = 0;
-	converttoUTC(&currTime);
-#endif
-	//filler[0]=0xff;
-
-#ifdef FILE_TEST
-	{
-		FIL fil; /* File object */
-		FRESULT fr; /* FatFs return code */
-		int br,bw;
-
-		/* Register work area to the default drive */
-		f_mount(&FatFs, "", 0);
-
-		/* Open a text file */
-		fr = f_open(&fil, "test.txt", FA_READ|FA_WRITE|FA_OPEN_ALWAYS);
-		if (fr) return (int)fr;
-
-		/* Read all lines and display it */
-		//while (f_gets(line, sizeof line, &fil))
-		//    printf(line);
-		/* Close the file */
-
-		iIdx = 0;
-		while(iIdx < 5)
-		{
-#ifdef WRITE
-			memset(SampleData,iIdx+ 0x30,sizeof(SampleData));
-			fr = f_write(&fil, SampleData, sizeof(SampleData), &bw); /* Read a chunk of source file */
-			iIdx++;
-#else
-			//f_lseek(&fil,512);
-			fr = f_read(&fil, acLogData, sizeof(acLogData), &br); /* Read a chunk of source file */
-			iIdx++;
-#endif
-		}
-
-		f_close(&fil);
-	}
-#endif
-
 #ifndef BATTERY_DISABLED
 	batt_init();
-#endif
 	delay(1000);
+#endif
 	lcd_init();
 	delay(1000);
 
@@ -394,14 +306,6 @@ int main(void) {
 #else
 	lcd_print_line("(db)" __TIME__, LINE2);
 #endif
-
-	//while(1)
-	//{
-	//iBatteryLevel = batt_getlevel();
-	//delay(2000);
-	//}
-
-	//i2c_init(SLAVE_ADDR_DISPLAY,EUSCI_B_I2C_SET_DATA_RATE_400KBPS);
 
 	//Configure 7 segement LEDs
 	writetoI2C(0x01, 0x0f);						// Decode Mode register
@@ -416,8 +320,6 @@ int main(void) {
 	writetoI2C(0x24, 0x04);
 #endif
 
-	//ADC12CTL0 |= ADC12ENC;                    // Enable conversions
-	//ADC12CTL0 |= ADC12ENC | ADC12SC;            // Start conversion-software trigger
 	sampletemp();
 	delay(2000);  // to allow conversion to get over and prevent any side-effects to other interface like modem
 	 	 	 	  // TODO is this delay to help on the following bug from texas instruments ? (http://www.ti.com/lit/er/slaz627b/slaz627b.pdf)
@@ -450,16 +352,13 @@ int main(void) {
 		// http://www.developershome.com/sms/cscaCommand.asp
 		// Get service center address; format "+CSCA: address,address_type"
 		uart_tx("AT+CSCA?\r\n");
-		delay(MODEM_TX_DELAY2);
 		memset(ATresponse, 0, sizeof(ATresponse));
 		uart_rx(ATCMD_CSCA, ATresponse);
 
 		uart_tx("AT+CNUM\r\n");
-		delay(MODEM_TX_DELAY1);
 
 		uart_resetbuffer();
 		uart_tx("AT+CSQ\r\n");
-		delay(MODEM_TX_DELAY1);
 		memset(ATresponse, 0, sizeof(ATresponse));
 		uart_rx(ATCMD_CSQ, ATresponse);
 		if (ATresponse[0] != 0) {
@@ -1782,9 +1681,9 @@ int dopost_sms_status(void) {
 			if (j > 101) {
 				j = j - 101;
 			}
-			if ((RX[i] == '+') && (RX[j] == 'C') && (RX[j + 1] == 'M')
-					&& (RX[j + 2] == 'G') && (RX[j + 3] == 'S')
-					&& (RX[j + 4] == ':')) {
+			if ((RXBuffer[i] == '+') && (RXBuffer[j] == 'C') && (RXBuffer[j + 1] == 'M')
+					&& (RXBuffer[j + 2] == 'G') && (RXBuffer[j + 3] == 'S')
+					&& (RXBuffer[j + 4] == ':')) {
 				isHTTPResponseAvailable = 1;
 				l_file_pointer_enabled_sms_status = 1; // set for sms packet.....///
 			}
@@ -1812,9 +1711,9 @@ int dopost_gprs_connection_status(char status) {
 			if (j > 101) {
 				j = j - 101;
 			}
-			if ((RX[i] == '+') && (RX[j] == 'C') && (RX[j + 1] == 'R')
-					&& (RX[j + 2] == 'E') && (RX[j + 3] == 'G')
-					&& (RX[j + 4] == ':') && (RX[j + 8] == '1')) {
+			if ((RXBuffer[i] == '+') && (RXBuffer[j] == 'C') && (RXBuffer[j + 1] == 'R')
+					&& (RXBuffer[j + 2] == 'E') && (RXBuffer[j + 3] == 'G')
+					&& (RXBuffer[j + 4] == ':') && (RXBuffer[j + 8] == '1')) {
 				isHTTPResponseAvailable = 1;
 				l_file_pointer_enabled_sms_status = 1; // set for sms packet.....///
 			}
@@ -1832,11 +1731,11 @@ int dopost_gprs_connection_status(char status) {
 			if (j > 101) {
 				j = j - 101;
 			}
-			if ((RX[i] == '+') && (RX[j] == 'C') && (RX[j + 1] == 'G')
-					&& (RX[j + 2] == 'R') && (RX[j + 3] == 'E')
-					&& (RX[j + 4] == 'G') && (RX[j + 5] == ':')
-					&& (RX[j + 7] == '0') && (RX[j + 8] == ',')
-					&& (RX[j + 9] == '1')) {
+			if ((RXBuffer[i] == '+') && (RXBuffer[j] == 'C') && (RXBuffer[j + 1] == 'G')
+					&& (RXBuffer[j + 2] == 'R') && (RXBuffer[j + 3] == 'E')
+					&& (RXBuffer[j + 4] == 'G') && (RXBuffer[j + 5] == ':')
+					&& (RXBuffer[j + 7] == '0') && (RXBuffer[j + 8] == ',')
+					&& (RXBuffer[j + 9] == '1')) {
 				isHTTPResponseAvailable = 1;
 				l_file_pointer_enabled_sms_status = 1; // set for sms packet.....///
 			}
@@ -1855,7 +1754,7 @@ int dopost_gprs_connection_status(char status) {
 int doget(char* queryData) {
 	uart_resetbuffer();
 	iRxLen = RX_EXTENDED_LEN;
-	RX[RX_EXTENDED_LEN + 1] = 0;	//null termination
+	RXBuffer[RX_EXTENDED_LEN + 1] = 0;	//null termination
 #if 0
 			strcpy(queryData,"AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/358072043113601/1/\"\r\n");	//reuse,   //SERIAL
 #else

@@ -28,46 +28,29 @@ void modem_init(int8_t slot) {
 	if (slot != 2) {
 		//enable SIM A (slot 1)
 		uart_tx("AT#GPIO=2,0,1\r\n");
-		delay(MODEM_TX_DELAY1);
 		uart_tx("AT#GPIO=4,1,1\r\n");
-		delay(MODEM_TX_DELAY1);
 		uart_tx("AT#GPIO=3,0,1\r\n");
-		delay(MODEM_TX_DELAY1);
 	} else {
 		//enable SIM B (slot 2)
 		uart_tx("AT#GPIO=2,1,1\r\n");
-		delay(MODEM_TX_DELAY1);
 		uart_tx("AT#GPIO=4,0,1\r\n");
-		delay(MODEM_TX_DELAY1);
 		uart_tx("AT#GPIO=3,1,1\r\n");
-		delay(MODEM_TX_DELAY1);
 	}
 #endif
-	uart_tx("AT#SIMDET=0\r\n");
-	delay(MODEM_TX_DELAY1 * 20);
-	uart_tx("AT#SIMDET=1\r\n");
-	delay(MODEM_TX_DELAY1);
+	uart_tx_timeout("AT#SIMDET=0\r\n", MODEM_TX_DELAY2, 10);
+	uart_tx_timeout("AT#SIMDET=1\r\n", MODEM_TX_DELAY2, 10);
 	//uart_tx("AT#SIMDET=2\r\n");
-	//delay(MODEM_TX_DELAY1 * 20);
+
 	uart_tx("AT+CMGF=1\r\n");		   // set sms format to text mode
-	delay(MODEM_TX_DELAY1);
 	uart_tx("AT+CMEE=2\r\n");
-	delay(MODEM_TX_DELAY1);
 	uart_tx("AT#CMEEMODE=1\r\n");
-	delay(MODEM_TX_DELAY1);
 	uart_tx("AT#AUTOBND=2\r\n");
-	delay(MODEM_TX_DELAY1);
 	uart_tx("AT#NITZ=1\r\n");
-	delay(MODEM_TX_DELAY1);
 	uart_tx("AT&K4\r\n");
-	delay(MODEM_TX_DELAY1);
 	uart_tx("AT&P0\r\n");
-	delay(MODEM_TX_DELAY1);
 	uart_tx("AT&W0\r\n");
-	delay(MODEM_TX_DELAY1);
 	uart_tx("AT+CSDH=1\r\n");
-	delay(MODEM_TX_DELAY1);
-	delay(10000);		//some time to enable SMS,POST to work
+	delay(1000);		//some time to enable SMS,POST to work
 }
 
 #ifdef POWER_SAVING_ENABLED

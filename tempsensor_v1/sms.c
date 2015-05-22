@@ -23,20 +23,14 @@ extern char* itoa_nopadding(int num);
 //char g_TmpSMScmdBuffer[SMS_CMD_LEN];
 //#pragma SET_DATA_SECTION()
 
+char destinationSMS[] = "AT+CMGS=\"" SMS_NEXLEAF_GATEWAY "\",129\r\n";
 void sendmsg(char* pData) {
 	//char ctrlZ[2] = {0x1A,0};
 
 	if (iStatus & TEST_FLAG)
 		return;
 
-	// TODO Define SMS Gateway
-	/*
-	memset(SampleData, 0, sizeof(SampleData));
-	strcat(SampleData, "AT+CMGS=\""); // Send message to a number
-	strcat(SampleData, SMS_NEXLEAF_GATEWAY);
-	strcat(SampleData, "\",129\r\n");
-	*/
-	uart_tx("AT+CMGS=\"00447751035864\",129\r\n");
+	uart_tx_nowait(destinationSMS);
 
 	delay(5000);
 	uart_tx(pData);
@@ -50,7 +44,7 @@ int recvmsg(int8_t iMsgIdx, char* pData) {
 	//reset the RX counters to reuse memory from POST DATA
 	RXTailIdx = RXHeadIdx = 0;
 	iRxLen = RX_EXTENDED_LEN;
-	RX[RX_EXTENDED_LEN + 1] = 0; //null termination ... Outside the array??? wtf
+	RXBuffer[RX_EXTENDED_LEN + 1] = 0; //null termination ... Outside the array??? wtf
 
 	//uart_tx("AT+CMGL=\"REC UNREAD\"\r\n");
 	//uart_tx("AT+CMGL=\"REC READ\"\r\n");
