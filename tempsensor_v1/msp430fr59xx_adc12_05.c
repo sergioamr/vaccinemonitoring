@@ -357,7 +357,7 @@ int main(void) {
 		uart_rx(ATCMD_CSCA, ATresponse);
 		//copy valid IMEI to FRAM
 		// TODO check this not sure if it works
-		memcpy(g_pInfoA->cfgIMEI, ATresponse, strlen(ATresponse) + 1);
+		memcpy(g_pInfoA->cfgSMSC[g_pInfoA->cfgSIMSlot], ATresponse, strlen(ATresponse) + 1);
 
 		uart_tx("AT+CNUM\r\n");
 
@@ -385,11 +385,8 @@ int main(void) {
 			uart_rx(ATCMD_CGSN, ATresponse);
 			if (memcmp(ATresponse, "INVALID", strlen("INVALID"))) {
 				pstCfgInfoA = SampleData;
-				memcpy(pstCfgInfoA, INFOA_ADDR, sizeof(CONFIG_INFOA));
-				//copy valid IMEI to FRAM
-				memcpy(pstCfgInfoA->cfgIMEI, ATresponse,
-						strlen(ATresponse) + 1);
-				FRAMCtl_write8(pstCfgInfoA, INFOA_ADDR, sizeof(CONFIG_INFOA));
+				// TODO watch pstCfgInfoA as it is no longer needed
+				memcpy(g_pInfoA->cfgIMEI, ATresponse, strlen(ATresponse) + 1);
 			}
 		}
 
@@ -1661,6 +1658,7 @@ int dopost(char* postdata) {
 
 	if(isHTTPResponseAvailable)
 	{
+		iRetVal = 1;
 		uart_tx("imessy=martina&mary=johyyy");
 		delay(10000);
 	}
