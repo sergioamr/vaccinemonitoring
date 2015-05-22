@@ -2588,6 +2588,7 @@ int8_t processmsg(char* pSMSmsg) {
 }
 
 void sendhb() {
+
 	char* pcTmp = NULL;
 
 	//send heart beat
@@ -2620,6 +2621,8 @@ void sendhb() {
 	} else {
 		strcat(SampleData, ",1");
 	}
+
+	strcat(SampleData, ",(db)" __TIME__);
 
 	strcat(SampleData, ctrlZ);
 	sendmsg(SampleData);

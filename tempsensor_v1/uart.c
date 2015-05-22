@@ -639,18 +639,10 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 		RXBuffer[RXTailIdx++] = UCA0RXBUF;
 
 		if (uartWaitMode==WAIT_OK) {
-			if (Ready == 0 && UCA0RXBUF == 'O')
-				Ready++;
-			else
-			if (Ready == 1 && UCA0RXBUF == 'K')
-				Ready++;
-			else
-			if (Ready == 2 && UCA0RXBUF == 0x0D)
-				Ready++;
-			else
-			if (Ready == 3 && UCA0RXBUF == 0x0A)
-				Ready++;
-			else
+			if (Ready == 0 && UCA0RXBUF == 'O') Ready++; else
+			if (Ready == 1 && UCA0RXBUF == 'K') Ready++; else
+			if (Ready == 2 && UCA0RXBUF == 0x0D) Ready++; else
+			if (Ready == 3 && UCA0RXBUF == 0x0A) Ready++; else
 			if (Ready < 4) Ready = 0;
 		} else {
 			if (UCA0RXBUF == 0x0D) Ready++; else

@@ -32,10 +32,11 @@ void sendmsg(char* pData) {
 	lcd_disable_debug();
 	if (uart_tx_waitForPrompt(destinationSMS)) {
 		uart_tx(pData);
+		delay(10000);
+		_NOP();
 		// TODO Check if ok
 	}
-
-	NOP();
+	_NOP();
 }
 
 int recvmsg(int8_t iMsgIdx, char* pData) {
