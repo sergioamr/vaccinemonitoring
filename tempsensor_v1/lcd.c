@@ -10,6 +10,12 @@
 #include "rtc.h"
 #include "stringutils.h"
 
+void lcd_setupIO() {
+	PJDIR |= BIT6 | BIT7;      			// set LCD reset and Backlight enable
+	PJOUT |= BIT6;							// LCD reset pulled high
+	PJOUT &= ~BIT7;							// Backlight disable
+}
+
 void lcd_init() {
 	memset(SampleData, 0, LCD_INIT_PARAM_SIZE);
 

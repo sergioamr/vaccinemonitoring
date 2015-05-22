@@ -13,6 +13,7 @@
 #include "config.h"
 #include "i2c.h"
 #include "driverlib.h"
+#include "timer.h"
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 volatile int8_t 	I2CRX[I2C_RX_LEN];
@@ -46,8 +47,15 @@ void i2c_read(uint8_t ucSlaveAddr, uint8_t ucCmd, uint8_t ucLen, uint8_t* pucDat
 	 UCB0CTL1 |= UCTR;
 	 UCB0CTL1 |= UCTXSTT;                    // I2C start condition
 
-	 while(!(cMode & I2C_DATA_RECEIVED) && iRetry){ iRetry--; delay(100); pucData[0] = 0;};
-	 memcpy(pucData,I2CRX,ucLen);
+	 while(!(cMode & I2C_DATA_RECEIVED) && iRetry){ iRetry--;
+#ifndef _DEBUG
+	 	 delay(100);
+#else
+	 	delay(10);
+#endif
+	 	 pucData[0] = 0;
+	 };
+	 memcpy((void *) pucData,(const void *) I2CRX,ucLen);
 }
 
 void i2c_write(uint8_t ucSlaveAddr, uint8_t ucCmd, uint8_t ucLen, uint8_t* pucData)
@@ -55,7 +63,7 @@ void i2c_write(uint8_t ucSlaveAddr, uint8_t ucCmd, uint8_t ucLen, uint8_t* pucDa
 	 UCB0I2CSA = ucSlaveAddr;                  				// Slave address
 	 cMode = I2C_WRITE;
 	 I2CTX[0] = ucCmd;
-	 memcpy(&I2CTX[1],pucData,ucLen);
+	 memcpy((char *) &I2CTX[1],(const char *) pucData,ucLen);
 	 iI2CTxIdx = 0;
 	 iI2CTxLen = ucLen+1;
 
@@ -135,4 +143,3 @@ void __attribute__ ((interrupt(USCI_B0_VECTOR))) USCIB0_ISR (void)
 	    default: break;
 	  }
 }
-

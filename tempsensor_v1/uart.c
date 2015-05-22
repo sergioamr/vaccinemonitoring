@@ -182,7 +182,7 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 	while(attempts>0) {
 		sendCommand(cmd);
 		if (!waitForReady(timeout)) {
-			return 1;
+			return UART_SUCCESS;
 		}
 		attempts--;
 		if (g_iDebug_state == 0) {
@@ -191,7 +191,7 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 	}
 
 	iModemErrors++;
-	return 0;
+	return UART_FAILED;
 }
 
 void uart_tx_nowait(const char *cmd) {

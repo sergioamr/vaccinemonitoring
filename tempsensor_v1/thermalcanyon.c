@@ -33,80 +33,13 @@
 #define TS_SIZE				21
 #define TS_FIELD_OFFSET		1	//1 - $, 3 - $TS
 
-#include <msp430.h>
+#define NOTFROMFILE
 
-#include "config.h"
-#include "common.h"
-#include "driverlib.h"
-#include "stdlib.h"
-#include "string.h"
-#include "time.h"
-#include "math.h"
-#include "i2c.h"
-#include "timer.h"
-#include "uart.h"
-#include "battery.h"
-#include "rtc.h"
-#include "ff.h"
-#include "diskio.h"
-#include "signal.h"
-#include "MMC.h"
-#include "pmm.h"
-#include "lcd.h"
-#include "globals.h"
-#include "sms.h"
-#include "modem.h"
+#include "thermalcanyon.h"
 
-#define FORMAT_FIELD_OFF	1		//2 if field name is 1 character & equal, 3 if field name is 2 character & equal...
-extern volatile uint32_t iMinuteTick;
-extern char* g_TmpSMScmdBuffer;
-extern char __STACK_END; /* the type does not matter! */
-extern char __STACK_SIZE; /* the type does not matter! */
-
-//volatile unsigned int ADCvar[MAX_NUM_SENSORS];
 volatile char isConversionDone = 0;
 volatile uint8_t iDisplayId = 0;
 volatile int iSamplesRead = 0;
-
-//char		  filler[SAMPLE_LEN];
-//NOTE placement of data sections is in alphabetical order
-
-//local functions
-static void writetoI2C(uint8_t addressI2C, uint8_t dataI2C);
-static float ConvertoTemp(float R);
-void ConvertADCToTemperature(unsigned int ADCval, char* TemperatureVal,
-		int8_t iSensorIdx);
-char* itoa(int num);
-char* itoa_nopadding(int num);	//TODO remove this function for final release
-static void parsetime(char* pDatetime, struct tm* pTime);
-static int dopost(char* postdata);
-static FRESULT logsampletofile(FIL* fobj, int* tbw);
-int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
-		char* seperator, int8_t iFlagVal, char* pcExtSrc, int8_t iFieldSize);
-void uploadsms();
-int8_t processmsg(char* pSMSmsg);
-void sendhb();
-int dopost_sms_status(void);
-int dopost_gprs_connection_status(char status);
-void sampletemp();
-void modem_init(int8_t slot);
-char* getDMYString(struct tm* timeData);
-char* getCurrentFileName(struct tm* timeData);
-void pullTime();
-
-FATFS FatFs; /* Work area (file system object) for logical drive */
-
-DWORD get_fattime(void) {
-	DWORD tmr;
-
-	rtc_getlocal(&currTime);
-	/* Pack date and time into a DWORD variable */
-	tmr = (((DWORD) currTime.tm_year - 1980) << 25)
-			| ((DWORD) currTime.tm_mon << 21) | ((DWORD) currTime.tm_mday << 16)
-			| (WORD) (currTime.tm_hour << 11) | (WORD) (currTime.tm_min << 5)
-			| (WORD) (currTime.tm_sec >> 1);
-	return tmr;
-}
 
 _Sigfun * signal(int i, _Sigfun *proc) {
 	__no_operation();
@@ -139,9 +72,7 @@ static void setupIO() {
 	P4IE |= BIT1;							// enable interrupt for button input
 	P2IE |= BIT2;							// enable interrupt for buzzer off
 
-	PJDIR |= BIT6 | BIT7;      			// set LCD reset and Backlight enable
-	PJOUT |= BIT6;							// LCD reset pulled high
-	PJOUT &= ~BIT7;							// Backlight disable
+	lcd_setupIO();
 
 #ifdef POWER_SAVING_ENABLED
 	P3DIR |= BIT3;							// Modem DTR
@@ -217,25 +148,6 @@ static void setupIO() {
 #endif
 
 	__bis_SR_register(GIE);		//enable interrupt globally
-
-}
-
-char* getDMYString(struct tm* timeData) {
-	char* dayMonthYear = "";
-	strcat(dayMonthYear, itoa(timeData->tm_mday));
-	strcat(dayMonthYear, itoa(timeData->tm_mon));
-	strcat(dayMonthYear, itoa(timeData->tm_year));
-	return dayMonthYear;
-}
-
-char* getCurrentFileName(struct tm* timeData) {
-	char* fn = "/data/";
-	strcat(fn, getDMYString(timeData));
-	if(strcmp("/data/", fn) != 0 || strcmp("/data/000000", fn) == 0) {
-		strcat(fn, "unknown");
-	}
-	strcat(fn, ".csv");
-	return fn;
 }
 
 void pullTime() {
@@ -288,16 +200,18 @@ int main(void) {
 #endif
 
 	setupIO();
-	delay(1000);
+	delay(100);
+
 	lcd_reset();
 	lcd_blenable();
 
 #ifndef BATTERY_DISABLED
 	batt_init();
-	delay(1000);
 #endif
+	delay(100);
+
 	lcd_init();
-	delay(1000);
+	delay(100);
 
 	g_iDebug_state = 0;         // Setting up debug states
 	lcd_print("Booting...");
@@ -322,8 +236,10 @@ int main(void) {
 #endif
 
 	sampletemp();
+#ifndef _DEBUG
 	delay(2000);  // to allow conversion to get over and prevent any side-effects to other interface like modem
 	 	 	 	  // TODO is this delay to help on the following bug from texas instruments ? (http://www.ti.com/lit/er/slaz627b/slaz627b.pdf)
+#endif
 
 	//check Modem is powered on
 	for (iIdx = 0; iIdx < MODEM_CHECK_RETRY; iIdx++) {
@@ -349,31 +265,8 @@ int main(void) {
 
 		pullTime();
 
-		// Reading the Service Center Address to use as message gateway
-		// http://www.developershome.com/sms/cscaCommand.asp
-		// Get service center address; format "+CSCA: address,address_type"
-		uart_tx("AT+CSCA?\r\n");
-		memset(ATresponse, 0, sizeof(ATresponse));
-		uart_rx(ATCMD_CSCA, ATresponse);
-		//copy valid IMEI to FRAM
-		// TODO check this not sure if it works
-		//g_pInfoA->cfgSMSC[0][g_pInfoA->cfgSIMSlot]
-		memcpy(g_pInfoA->cfgSMSC[0][g_pInfoA->cfgSIMSlot], ATresponse, strlen(ATresponse) + 1);
-
-		uart_tx("AT+CNUM\r\n");
-
-		uart_resetbuffer();
-		uart_tx("AT+CSQ\r\n");
-		memset(ATresponse, 0, sizeof(ATresponse));
-		uart_rx(ATCMD_CSQ, ATresponse);
-		if (ATresponse[0] != 0) {
-			iSignalLevel = strtol(ATresponse, 0, 10);
-			if((iSignalLevel <= NETWORK_DOWN_SS) || (iSignalLevel >= NETWORK_MAX_SS)){
-				signal_gprs=0;
-			} else {
-				signal_gprs=1;
-			}
-		}
+		modem_getsimcardsinfo();
+		modem_checkSignal();
 
 		lcd_print("Checking GPRS");
 		/// added for gprs connection..//
@@ -415,10 +308,14 @@ int main(void) {
 
 	if (iBatteryLevel == 0)
 		lcd_print("Battery FAIL");
-	else if (iBatteryLevel > 10)
-		lcd_print("Battery OK");
+	else if (iBatteryLevel > 100)
+		lcd_print("Battery UNKNOWN");
 	else if (iBatteryLevel > 99)
 		lcd_print("Battery FULL");
+	else if (iBatteryLevel > 15)
+		lcd_print("Battery OK");
+	else if (iBatteryLevel)
+		lcd_print("Battery LOW");
 
 	delay(1000);
 	/* Register work area to the default drive */
@@ -1746,7 +1643,6 @@ int dopost_gprs_connection_status(char status) {
 		}
 		if (isHTTPResponseAvailable == 0) {
 			uart_tx("AT+CGATT=1\r\n");
-			delay(MODEM_TX_DELAY1);
 			l_file_pointer_enabled_sms_status = 0; // reset for sms packet.....///
 		}
 	}
@@ -2433,7 +2329,7 @@ int8_t processmsg(char* pSMSmsg) {
 					//uart_tx(pcTmp);
 					//uart_tx("\",145\r\n");
 					//delay(1000);
-					strncpy(pstCfgInfoA->cfgSMSC[0][pstCfgInfoA->cfgSIMSlot], pcTmp, strlen(pcTmp));
+					strncpy(pstCfgInfoA->cfgSMSCenter[pstCfgInfoA->cfgSIMSlot][0], pcTmp, strlen(pcTmp));
 
 					pcTmp = strtok(NULL, ",");
 					if (pcTmp) {
