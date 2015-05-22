@@ -264,6 +264,18 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint8_t reponseLen) {
 	//input check
 	if (pResponse) {
 		switch (atCMD) {
+		case ATCMGS:
+			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "ERROR");
+			if (pToken1!=NULL)
+				return UART_ERROR;
+
+			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "+CMGS:");
+			if (pToken1!=NULL) {
+				strcpy(pResponse, pToken1+6);
+				return UART_SUCCESS;
+			}
+			return UART_FAILED;
+
 		// Getting the SIM Message Center to send it to the backend in order to get the APN
 		case ATCMD_CSCA:
 			pToken1 = strstr((const char *) RXBuffer, "CSCA:");

@@ -23,6 +23,11 @@
 #define ATCMD_CPIN          8
 #define ATCMD_CSCA 			9
 #define ATCMD_BND			10
+#define ATCMGS			    11
+
+#define UART_SUCCESS 0
+#define UART_ERROR -1
+#define UART_FAILED 1
 
 #define CCLK_RESP_LEN		28
 #define HTTPSND_RSP_LEN		20
