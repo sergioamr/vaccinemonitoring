@@ -57,7 +57,7 @@ MEMORY
     PERIPHERALS_8BIT        : origin = 0x0010, length = 0x00F0
     PERIPHERALS_16BIT       : origin = 0x0100, length = 0x0100
     RAM                     : origin = 0x1C00, length = 0x0800
-    INFOA                   : origin = 0x1980, length = 0x0100
+    INFOA                   : origin = 0x1980, length = 0x0180
     INFOB                   : origin = 0x1900, length = 0x0080
     INFOC                   : origin = 0x1880, length = 0x0080
     INFOD                   : origin = 0x1800, length = 0x0080

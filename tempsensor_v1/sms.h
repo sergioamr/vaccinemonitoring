@@ -8,10 +8,6 @@
 #ifndef SMS_H_
 #define SMS_H_
 
-#ifndef EXTERN
-#define EXTERN extern
-#endif
-
 //*****************************************************************************
 //
 //! \brief send sms msg
@@ -21,7 +17,7 @@
 //! \return none
 //
 //*****************************************************************************
-EXTERN void sendmsg(char* pData);
+extern void sendmsg(char* pData);
 
 //*****************************************************************************
 //
@@ -33,7 +29,7 @@ EXTERN void sendmsg(char* pData);
 //! \return 0 on success, -1 on failure
 //
 //*****************************************************************************
-EXTERN int recvmsg(int8_t iMsgIdx,char* pData);
+extern int recvmsg(int8_t iMsgIdx,char* pData);
 
 //*****************************************************************************
 //
@@ -44,6 +40,10 @@ EXTERN int recvmsg(int8_t iMsgIdx,char* pData);
 //! \return none
 //
 //*****************************************************************************
-EXTERN void delreadmsg();
+extern void delreadmsg();
+
+extern void delallmsg();
+extern void delmsg(int8_t iMsgIdx, char* pData);
+
 
 #endif /* SMS_H_ */

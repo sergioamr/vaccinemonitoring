@@ -184,7 +184,6 @@ int main(void) {
 	char gprs_network_indication = 0;
 	int32_t dw_file_pointer_back_log = 0; // for error condition /// need to be tested.
 	char file_pointer_enabled_sms_status = 0; // for sms condtition enabling.../// need to be tested
-	CONFIG_INFOA* pstCfgInfoA = NULL;
 
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 
@@ -281,8 +280,6 @@ int main(void) {
 			memset(ATresponse, 0, sizeof(ATresponse));
 			uart_rx(ATCMD_CGSN, ATresponse);
 			if (memcmp(ATresponse, "INVALID", strlen("INVALID"))) {
-				pstCfgInfoA = SampleData;
-				// TODO watch pstCfgInfoA as it is no longer needed
 				memcpy(g_pInfoA->cfgIMEI, ATresponse, strlen(ATresponse) + 1);
 			}
 		}
@@ -456,7 +453,7 @@ int main(void) {
 				strcat(SampleData,"temp=");
 				for(iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++)
 				{
-					strcat(SampleData,&Temperature[iIdx]);
+					strcat(SampleData,&Temperature[iIdx][0]);
 					if(iIdx != (MAX_NUM_SENSORS - 1))
 					{
 						strcat(SampleData, "|");
@@ -856,11 +853,6 @@ int main(void) {
 						g_pInfoB->dwLastSeek = dwLastseek;
 					}
 
-					//save the last read offset
-					memcpy(SampleData, g_pInfoB, sizeof(CONFIG_INFOB));
-					FRAMCtl_write8(SampleData, INFOB_ADDR,
-							sizeof(CONFIG_INFOB));
-
 #ifdef POWER_SAVING_ENABLED
 					modem_enter_powersave_mode();
 #endif
@@ -931,7 +923,7 @@ int main(void) {
 					delay(100);
 					iStatus |= NETWORK_DOWN;
 					iOffset = 0;
-					modem_init(pstCfgInfoA->cfgSIMSlot);
+					modem_init(g_pInfoA->cfgSIMSlot);
 					lcd_print_line("Reconnecting...", LINE2);
 					delay(100);
 					iIdx++;
@@ -943,25 +935,21 @@ int main(void) {
 
 			if (iIdx == MODEM_CHECK_RETRY) {
 				//switch the SIM slot;
-				pstCfgInfoA = SampleData;
-				memcpy(pstCfgInfoA, INFOA_ADDR, sizeof(CONFIG_INFOA));
-				if (pstCfgInfoA->cfgSIMSlot != 2) { //value will be 0xFF in case FRAM was not already populated
+				if (g_pInfoA->cfgSIMSlot != 2) { //value will be 0xFF in case FRAM was not already populated
 					//current sim slot is 1
 					//change to sim slot 2
-					pstCfgInfoA->cfgSIMSlot = 2;
+					g_pInfoA->cfgSIMSlot = 2;
 					lcd_print_line("Switching SIM: 2", LINE2);
 					delay(100);
 				} else {
 					//current sim slot is 2
 					//change to sim slot 1
-					pstCfgInfoA->cfgSIMSlot = 1;
+					g_pInfoA->cfgSIMSlot = 1;
 					lcd_print_line("Switching SIM: 1", LINE2);
 					delay(100);
 				}
 
-				modem_init(pstCfgInfoA->cfgSIMSlot);
-				//write to FRAM
-				FRAMCtl_write8(pstCfgInfoA, INFOA_ADDR, sizeof(CONFIG_INFOA));
+				modem_init(g_pInfoA->cfgSIMSlot);
 			}
 
 #if 1
@@ -1072,9 +1060,7 @@ int main(void) {
 							case '2':
 								//reset the board by issuing a SW BOR
 								PMM_trigBOR();
-								while (1)
-									;	//code should not come here
-								break;
+								while (1);	//code should not come here
 
 							default:
 								break;
@@ -1650,47 +1636,6 @@ int dopost_gprs_connection_status(char status) {
 	return l_file_pointer_enabled_sms_status;
 
 }
-//WARNING: doget() should not be used in parallel to HTTP POST
-int doget(char* queryData) {
-	uart_resetbuffer();
-	iRxLen = RX_EXTENDED_LEN;
-	RXBuffer[RX_EXTENDED_LEN + 1] = 0;	//null termination
-#if 0
-			strcpy(queryData,"AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/358072043113601/1/\"\r\n");	//reuse,   //SERIAL
-#else
-	strcpy(queryData, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/");
-	strcat(queryData, g_pInfoA->cfgIMEI);
-	strcat(queryData, "/1/\"\r\n");
-#endif
-
-	uart_tx(queryData);
-	delay(10000);	//opt
-	uart_tx("AT#HTTPRCV=1\r\n");		//get the configuartion
-	delay(10000); //opt
-	memset(queryData, 0, CFG_SIZE);
-	uart_rx(ATCMD_HTTPRCV, queryData);
-
-	uart_resetbuffer();
-	iRxLen = RX_LEN;
-}
-
-void dohttpsetup(char* apn) {
-	uart_tx("AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
-	//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n");
-	delay(MODEM_TX_DELAY2);
-
-	uart_tx("AT#SGACT=1,1\r\n");
-	delay(MODEM_TX_DELAY2);
-
-	uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
-	delay(MODEM_TX_DELAY2);
-
-}
-
-void deactivatehttp() {
-	uart_tx("AT#SGACT=1,0\r\n");	//deactivate GPRS context
-	delay(MODEM_TX_DELAY2);
-}
 
 FRESULT logsampletofile(FIL* fobj, int* tbw) {
 	int bw = 0;	//bytes written
@@ -1845,9 +1790,6 @@ int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 #if 1
 
 void monitoralarm() {
-	CONFIG_INFOA* pstCfgInfoA = (CONFIG_INFOA*) INFOA_ADDR;
-
-	//CONFIG_INFOA* pstCfgInfoA = SampleData;
 	int8_t iCnt = 0;
 
 	//iterate through sensors
@@ -1865,7 +1807,7 @@ void monitoralarm() {
 		iTemp = strtod(&Temperature[iCnt][0], NULL);
 		//iTemp = strtod("24.5",NULL);
 		//check for low temp threshold
-		if (iTemp < pstCfgInfoA->stTempAlertParams[iCnt].threshcold) {
+		if (iTemp < g_pInfoA->stTempAlertParams[iCnt].threshcold) {
 			//check if alarm is set for low temp
 			if (TEMP_ALARM_GET(iCnt) != LOW_TEMP_ALARM_ON) {
 				//set it off incase it was earlier confirmed
@@ -1878,7 +1820,7 @@ void monitoralarm() {
 				//low temp alarm is already set, increment the counter
 				g_iAlarmCnfCnt[iCnt]++;
 				if ((g_iAlarmCnfCnt[iCnt] * g_iSamplePeriod)
-						>= pstCfgInfoA->stTempAlertParams[iCnt].mincold) {
+						>= g_pInfoA->stTempAlertParams[iCnt].mincold) {
 					TEMP_ALARM_SET(iCnt, TEMP_ALERT_CNF);
 #ifndef ALERT_UPLOAD_DISABLED
 					if(!(iStatus & BACKLOG_UPLOAD_ON))
@@ -1918,7 +1860,7 @@ void monitoralarm() {
 
 				}
 			}
-		} else if (iTemp > pstCfgInfoA->stTempAlertParams[iCnt].threshhot) {
+		} else if (iTemp > g_pInfoA->stTempAlertParams[iCnt].threshhot) {
 			//check if alarm is set for high temp
 			if (TEMP_ALARM_GET(iCnt) != HIGH_TEMP_ALARM_ON) {
 				//set it off incase it was earlier confirmed
@@ -1931,7 +1873,7 @@ void monitoralarm() {
 				//high temp alarm is already set, increment the counter
 				g_iAlarmCnfCnt[iCnt]++;
 				if ((g_iAlarmCnfCnt[iCnt] * g_iSamplePeriod)
-						>= pstCfgInfoA->stTempAlertParams[iCnt].minhot) {
+						>= g_pInfoA->stTempAlertParams[iCnt].minhot) {
 					TEMP_ALARM_SET(iCnt, TEMP_ALERT_CNF);
 #ifndef ALERT_UPLOAD_DISABLED
 					if(!(iStatus & BACKLOG_UPLOAD_ON))
@@ -1984,7 +1926,7 @@ void monitoralarm() {
 
 	//check for battery alert 
 	iCnt = MAX_NUM_SENSORS;
-	if (iBatteryLevel < pstCfgInfoA->stBattPowerAlertParam.battthreshold) {
+	if (iBatteryLevel < g_pInfoA->stBattPowerAlertParam.battthreshold) {
 		//check if battery alarm is set
 		if (TEMP_ALARM_GET(iCnt) != BATT_ALARM_ON) {
 			TEMP_ALARM_CLR(iCnt);//reset the alarm in case it was earlier confirmed
@@ -1996,7 +1938,7 @@ void monitoralarm() {
 			//power alarm is already set, increment the counter
 			g_iAlarmCnfCnt[iCnt]++;
 			if ((g_iAlarmCnfCnt[iCnt] * g_iSamplePeriod)
-					>= pstCfgInfoA->stBattPowerAlertParam.minutesbathresh) {
+					>= g_pInfoA->stBattPowerAlertParam.minutesbathresh) {
 				TEMP_ALARM_SET(iCnt, TEMP_ALERT_CNF);
 				//set buzzer if not set
 				if (!(iStatus & BUZZER_ON)) {
@@ -2027,7 +1969,7 @@ void monitoralarm() {
 	}
 
 	//check for power alert enable
-	if (pstCfgInfoA->stBattPowerAlertParam.enablepoweralert) {
+	if (g_pInfoA->stBattPowerAlertParam.enablepoweralert) {
 		iCnt = MAX_NUM_SENSORS + 1;
 		if (P4IN & BIT4) {
 			//check if power alarm is set
@@ -2041,7 +1983,7 @@ void monitoralarm() {
 				//power alarm is already set, increment the counter
 				g_iAlarmCnfCnt[iCnt]++;
 				if ((g_iAlarmCnfCnt[iCnt] * g_iSamplePeriod)
-						>= pstCfgInfoA->stBattPowerAlertParam.minutespower) {
+						>= g_pInfoA->stBattPowerAlertParam.minutespower) {
 					TEMP_ALARM_SET(iCnt, TEMP_ALERT_CNF);
 					//set buzzer if not set
 					if (!(iStatus & BUZZER_ON)) {
@@ -2078,36 +2020,35 @@ void monitoralarm() {
 
 void validatealarmthreshold() {
 
-	CONFIG_INFOA* pstCfgInfoA = (CONFIG_INFOA*) INFOA_ADDR;
 	int8_t iCnt = 0;
 
 	for (iCnt = 0; iCnt < MAX_NUM_SENSORS; iCnt++) {
 		//validate low temp threshold
-		if ((pstCfgInfoA->stTempAlertParams[iCnt].threshcold < MIN_TEMP)
-				|| (pstCfgInfoA->stTempAlertParams[iCnt].threshcold > MAX_TEMP)) {
-			pstCfgInfoA->stTempAlertParams[iCnt].threshcold =
+		if ((g_pInfoA->stTempAlertParams[iCnt].threshcold < MIN_TEMP)
+				|| (g_pInfoA->stTempAlertParams[iCnt].threshcold > MAX_TEMP)) {
+			g_pInfoA->stTempAlertParams[iCnt].threshcold =
 			LOW_TEMP_THRESHOLD;
 		}
 
-		if ((pstCfgInfoA->stTempAlertParams[iCnt].mincold
+		if ((g_pInfoA->stTempAlertParams[iCnt].mincold
 				< MIN_CNF_TEMP_THRESHOLD)
-				|| (pstCfgInfoA->stTempAlertParams[iCnt].mincold
+				|| (g_pInfoA->stTempAlertParams[iCnt].mincold
 						> MAX_CNF_TEMP_THRESHOLD)) {
-			pstCfgInfoA->stTempAlertParams[iCnt].mincold =
+			g_pInfoA->stTempAlertParams[iCnt].mincold =
 			ALARM_LOW_TEMP_PERIOD;
 		}
 
 		//validate high temp threshold
-		if ((pstCfgInfoA->stTempAlertParams[iCnt].threshhot < MIN_TEMP)
-				|| (pstCfgInfoA->stTempAlertParams[iCnt].threshhot > MAX_TEMP)) {
-			pstCfgInfoA->stTempAlertParams[iCnt].threshhot =
+		if ((g_pInfoA->stTempAlertParams[iCnt].threshhot < MIN_TEMP)
+				|| (g_pInfoA->stTempAlertParams[iCnt].threshhot > MAX_TEMP)) {
+			g_pInfoA->stTempAlertParams[iCnt].threshhot =
 			HIGH_TEMP_THRESHOLD;
 		}
-		if ((pstCfgInfoA->stTempAlertParams[iCnt].minhot
+		if ((g_pInfoA->stTempAlertParams[iCnt].minhot
 				< MIN_CNF_TEMP_THRESHOLD)
-				|| (pstCfgInfoA->stTempAlertParams[iCnt].minhot
+				|| (g_pInfoA->stTempAlertParams[iCnt].minhot
 						> MAX_CNF_TEMP_THRESHOLD)) {
-			pstCfgInfoA->stTempAlertParams[iCnt].minhot =
+			g_pInfoA->stTempAlertParams[iCnt].minhot =
 			ALARM_HIGH_TEMP_PERIOD;
 		}
 
@@ -2311,7 +2252,6 @@ int8_t processmsg(char* pSMSmsg) {
 	char* pcTmp = NULL;
 	int8_t iCnt = 0;
 	int8_t iCurrSeq = 0;
-	CONFIG_INFOA* pstCfgInfoA = NULL;
 
 	pcTmp = strtok(pSMSmsg, ",");
 
@@ -2322,23 +2262,16 @@ int8_t processmsg(char* pSMSmsg) {
 			case '1':
 				pcTmp = strtok(NULL, ",");
 				if (pcTmp) {
-					pstCfgInfoA = SampleData;
-					memcpy(pstCfgInfoA, INFOA_ADDR, sizeof(CONFIG_INFOA));
-					//get & set gateway
-					//uart_tx("AT+CSCA=\"");
-					//uart_tx(pcTmp);
-					//uart_tx("\",145\r\n");
-					//delay(1000);
-					strncpy(pstCfgInfoA->cfgSMSCenter[pstCfgInfoA->cfgSIMSlot][0], pcTmp, strlen(pcTmp));
+					strncpy(g_pInfoA->cfgSMSCenter[g_pInfoA->cfgSIMSlot][0], pcTmp, strlen(pcTmp));
 
 					pcTmp = strtok(NULL, ",");
 					if (pcTmp) {
 						//get upload mode
-						pstCfgInfoA->cfgUploadMode = strtol(pcTmp, 0, 10);
+						g_pInfoA->cfgUploadMode = strtol(pcTmp, 0, 10);
 						pcTmp = strtok(NULL, ",");
 						if (pcTmp) {
 							//get APN
-							memcpy(pstCfgInfoA->cfgAPN, pcTmp, strlen(pcTmp));
+							memcpy(g_pInfoA->cfgAPN, pcTmp, strlen(pcTmp));
 							pcTmp = strtok(NULL, ",");
 							if (pcTmp) {
 								//get upload interval
@@ -2371,20 +2304,17 @@ int8_t processmsg(char* pSMSmsg) {
 						if (pcTmp) {
 							if (strtol(pcTmp, 0, 10)) {
 								iStatus |= ENABLE_SECOND_SLOT;
-								pstCfgInfoA->cfgSIMSlot = 2;
+								g_pInfoA->cfgSIMSlot = 2;
 							} else {
 								iStatus &= ~ENABLE_SECOND_SLOT;
-								pstCfgInfoA->cfgSIMSlot = 1;
+								g_pInfoA->cfgSIMSlot = 1;
 							}
-							if (pstCfgInfoA->cfgSIMSlot
+							if (g_pInfoA->cfgSIMSlot
 									!= g_pInfoA->cfgSIMSlot) {
 								//sim slots need to be switched
-								modem_init(pstCfgInfoA->cfgSIMSlot);
+								modem_init(g_pInfoA->cfgSIMSlot);
 							}
 						}
-
-						FRAMCtl_write8(pstCfgInfoA, INFOA_ADDR,
-								sizeof(CONFIG_INFOA));
 						iCnt = 1;
 					}
 				}
@@ -2403,24 +2333,21 @@ int8_t processmsg(char* pSMSmsg) {
 					if(pcTmp)
 					{
 #endif
-					pstCfgInfoA = SampleData;
-					memcpy(pstCfgInfoA, INFOA_ADDR, sizeof(CONFIG_INFOA));
-
 					for (iCnt = 0; (iCnt < MAX_NUM_SENSORS) && (pcTmp);
 							iCnt++) {
-						pstCfgInfoA->stTempAlertParams[iCnt].mincold = strtol(
+						g_pInfoA->stTempAlertParams[iCnt].mincold = strtol(
 								pcTmp, 0, 10);
 						pcTmp = strtok(NULL, ",");
 						if (pcTmp) {
-							pstCfgInfoA->stTempAlertParams[iCnt].threshcold =
+							g_pInfoA->stTempAlertParams[iCnt].threshcold =
 									strtod(pcTmp, NULL);
 							pcTmp = strtok(NULL, ",");
 							if (pcTmp) {
-								pstCfgInfoA->stTempAlertParams[iCnt].minhot =
+								g_pInfoA->stTempAlertParams[iCnt].minhot =
 										strtol(pcTmp, 0, 10);
 								pcTmp = strtok(NULL, ",");
 								if (pcTmp) {
-									pstCfgInfoA->stTempAlertParams[iCnt].threshhot =
+									g_pInfoA->stTempAlertParams[iCnt].threshhot =
 											strtod(pcTmp, NULL);
 									pcTmp = strtok(NULL, ",");
 								}
@@ -2428,30 +2355,28 @@ int8_t processmsg(char* pSMSmsg) {
 						}
 					}
 					if (pcTmp) {
-						pstCfgInfoA->stBattPowerAlertParam.minutespower =
+						g_pInfoA->stBattPowerAlertParam.minutespower =
 								strtol(pcTmp, 0, 10);
 						pcTmp = strtok(NULL, ",");
 						if (pcTmp) {
-							pstCfgInfoA->stBattPowerAlertParam.enablepoweralert =
+							g_pInfoA->stBattPowerAlertParam.enablepoweralert =
 									strtol(pcTmp, 0, 10);
 							pcTmp = strtok(NULL, ",");
 							if (pcTmp) {
-								pstCfgInfoA->stBattPowerAlertParam.minutesbathresh =
+								g_pInfoA->stBattPowerAlertParam.minutesbathresh =
 										strtol(pcTmp, 0, 10);
 								pcTmp = strtok(NULL, ",");
 								if (pcTmp) {
-									pstCfgInfoA->stBattPowerAlertParam.battthreshold =
+									g_pInfoA->stBattPowerAlertParam.battthreshold =
 											strtol(pcTmp, 0, 10);
 								}
 							}
 						}
 
 					} else {
-						pstCfgInfoA->stBattPowerAlertParam.enablepoweralert = 0;
-						pstCfgInfoA->stBattPowerAlertParam.battthreshold = 101;
+						g_pInfoA->stBattPowerAlertParam.enablepoweralert = 0;
+						g_pInfoA->stBattPowerAlertParam.battthreshold = 101;
 					}
-					FRAMCtl_write8(pstCfgInfoA, INFOA_ADDR,
-							sizeof(CONFIG_INFOA));
 					iCnt = 1;
 				} else {
 					iCurrSeq = -1; //stop further processing as cfg is identical
@@ -2464,16 +2389,13 @@ int8_t processmsg(char* pSMSmsg) {
 				pcTmp = strtok(NULL,",");
 				if(pcTmp)
 				{
-					pstCfgInfoB = SampleData;
-					memcpy(pstCfgInfoB,INFOB_ADDR,sizeof(CONFIG_INFOB));
-					pstCfgInfoB->iDAcount=0;
+					g_pInfoB->iDAcount=0;
 					for(iCnt; (iCnt < MAX_SMS_NUM) && (pcTmp); iCnt++)
 					{
-						memcpy(pstCfgInfoB->cfgSMSDA[iCnt],pcTmp,strlen(pcTmp));
+						memcpy(g_pInfoB->cfgSMSDA[iCnt],pcTmp,strlen(pcTmp));
 						pcTmp = strtok(NULL,",");
 					}
-					pstCfgInfoB->iDAcount = iCnt;
-					FRAMCtl_write8(pstCfgInfoB,INFOB_ADDR,sizeof(CONFIG_INFOB));
+					g_pInfoB->iDAcount = iCnt;
 				}
 #endif
 				break;

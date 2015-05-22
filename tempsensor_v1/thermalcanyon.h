@@ -9,6 +9,7 @@
 #define THERMALCANYON_H_
 
 #include <msp430.h>
+#include "stdint.h"
 
 #include "config.h"
 #include "common.h"
@@ -32,6 +33,7 @@
 #include "sms.h"
 #include "modem.h"
 #include "fatdata.h"
+#include "http.h"
 
 //------------- FUNCTIONS MOVED FROM MAIN - WAITING CLEANUP -------------------
 
@@ -65,5 +67,7 @@ char* getDMYString(struct tm* timeData);
 char* getCurrentFileName(struct tm* timeData);
 void pullTime();
 void monitoralarm();
+
+extern void encode(double input_val, char output_chars[]); // Encode function from encode.c
 
 #endif /* THERMALCANYON_H_ */

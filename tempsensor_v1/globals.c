@@ -17,6 +17,14 @@
 #include "timer.h"
 #include "globals.h"
 
+#pragma SET_DATA_SECTION(".infoA")
+CONFIG_INFOA g_InfoA;
+#pragma SET_DATA_SECTION()
+
+#pragma SET_DATA_SECTION(".infoB")
+CONFIG_INFOB g_InfoB;
+#pragma SET_DATA_SECTION()
+
 #pragma SET_DATA_SECTION(".aggregate_vars")
 char	 	  ATresponse[ATRESP_MAX_LEN] = {};
 #pragma SET_DATA_SECTION()
@@ -57,8 +65,8 @@ int		   g_iCurrYearDay = 0;
 
 #pragma SET_DATA_SECTION(".config_vars_infoD")
 //put all variables that are written less frequently
-CONFIG_INFOA* g_pInfoA = (CONFIG_INFOA*) INFOA_ADDR;
-CONFIG_INFOB* g_pInfoB = (CONFIG_INFOB*) INFOB_ADDR;
+CONFIG_INFOA* g_pInfoA = &g_InfoA;
+CONFIG_INFOB* g_pInfoB = &g_InfoB;
 uint32_t 	  g_iAlarmStatus = 0;
 //CONFIG_INFOA* pstCfgInfoA = INFOA_ADDR;
 double 	 iTemp = 0.0;

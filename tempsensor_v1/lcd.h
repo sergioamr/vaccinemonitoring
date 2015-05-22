@@ -20,11 +20,12 @@ extern void lcd_reset();
 extern void lcd_blenable();
 extern void lcd_init();
 extern void lcd_on();
+extern void lcd_off();
 extern void lcd_clear();
 extern void lcd_setaddr(int8_t addr);
 extern void lcd_show(int8_t iItemId);
 extern void lcd_print(char* pcData);
 extern void lcd_print_line(const char* pcData,int8_t iLine);
 extern void lcd_print_debug(const char* pcData, int line);
-
+extern void lcd_bldisable();
 #endif /* LCD_H_ */

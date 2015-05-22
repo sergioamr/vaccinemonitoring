@@ -66,8 +66,8 @@
 #define DEF_IMEI  3000000000
 
 //INFO memory segment address
-#define INFOA_ADDR      		0x1980
-#define INFOB_ADDR      		0x1900
+//#define INFOA_ADDR      		0x1980
+//#define INFOB_ADDR      		0x1900
 
 EXTERN int g_iSamplePeriod;
 EXTERN int g_iUploadPeriod;

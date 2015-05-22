@@ -12,8 +12,7 @@
 #include "common.h"
 #include "ff.h"
 
-//#define ATRESP_MAX_LEN		128	//opt
-#define ATRESP_MAX_LEN		64
+#define ATRESP_MAX_LEN		512
 #define FILE_BUFFER_LEN     64
 
 extern CONFIG_INFOA* g_pInfoA;
