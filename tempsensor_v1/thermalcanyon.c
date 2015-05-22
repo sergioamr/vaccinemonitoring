@@ -357,7 +357,8 @@ int main(void) {
 		uart_rx(ATCMD_CSCA, ATresponse);
 		//copy valid IMEI to FRAM
 		// TODO check this not sure if it works
-		memcpy(g_pInfoA->cfgSMSC[g_pInfoA->cfgSIMSlot], ATresponse, strlen(ATresponse) + 1);
+		//g_pInfoA->cfgSMSC[0][g_pInfoA->cfgSIMSlot]
+		memcpy(g_pInfoA->cfgSMSC[0][g_pInfoA->cfgSIMSlot], ATresponse, strlen(ATresponse) + 1);
 
 		uart_tx("AT+CNUM\r\n");
 
@@ -2609,7 +2610,8 @@ void sendhb() {
 		strcat(SampleData, "0,");
 	}
 #endif
-	strcat(SampleData, &g_pInfoA->cfgSMSC[0][g_pInfoA->cfgSIMSlot]); // Append the message service center so the backend cand send us back the right APN for it
+	//strcat(SampleData, g_pInfoA->cfgSMSC[0][g_pInfoA->cfgSIMSlot]); // Append the message service center so the backend cand send us back the right APN for it
+	strcat(SampleData, "0");
 	strcat(SampleData, ",");
 #if MAX_NUM_SENSORS == 5
 	strcat(SampleData, "1,1,1,1,1,");//TODO to be changed based on jack detection
