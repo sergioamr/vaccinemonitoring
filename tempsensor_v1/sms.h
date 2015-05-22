@@ -8,7 +8,9 @@
 #ifndef SMS_H_
 #define SMS_H_
 
-#ifndef EXTERN
+#ifdef SMS_C_
+#define EXTERN
+#else
 #define EXTERN extern
 #endif
 

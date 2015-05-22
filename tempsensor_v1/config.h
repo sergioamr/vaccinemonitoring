@@ -8,13 +8,13 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+#ifdef CONFIG_C_
+#define EXTERN
+#else
 #define EXTERN extern
+#endif
 
 #include "stdint.h"
-
-//Temperature cut off
-#define TEMP_CUTOFF				-800		//-80 deg C
-#define MODEM_CHECK_RETRY 	3
 
 //I2C configuration
 #define   I2C_TX_LEN			17
@@ -23,7 +23,7 @@
 #define   SLAVE_ADDR_BATTERY	0x55
 
 //Battery configuration
-#if BAT_VER == 1
+#ifdef BAT_VER == 1
 #define   BATTERY_CAPACITY 		650			//650 mAh
 #define   DESIGN_ENERGY			2405
 #define   TERMINAL_VOLTAGE		3400
@@ -42,7 +42,7 @@
 //Sampling configuration
 #define SAMPLE_PERIOD			1		//in minutes
 #define UPLOAD_PERIOD			10		//in minutes
-#define SMS_RX_POLL_INTERVAL	5		//poll interval in minutes for sms msg TODO change back
+#define SMS_RX_POLL_INTERVAL	5		//poll interval in minutes for sms msg
 #define LCD_REFRESH_INTERVAL	1
 #define MSG_REFRESH_INTERVAL	1
 #define SAMPLE_COUNT			100
@@ -69,6 +69,7 @@
 #define INFOA_ADDR      		0x1980
 #define INFOB_ADDR      		0x1900
 
+
 EXTERN int g_iSamplePeriod;
 EXTERN int g_iUploadPeriod;
 EXTERN int8_t g_iAlarmLowTempPeriod;
@@ -76,14 +77,6 @@ EXTERN int8_t g_iAlarmHighTempPeriod;
 EXTERN int8_t g_iAlarmPowerPeriod;
 EXTERN int8_t g_iAlarmBatteryPeriod;
 
-// Used to store the sensors data
-#define TEMP_DATA_LEN		5
 
-// Network signal quality values
-#define NETWORK_DOWN_SS		14
-#define NETWORK_UP_SS		NETWORK_DOWN_SS + 2 //2 points above the network down signal level
-#define NETWORK_MAX_SS		31
-
-#define NETWORK_ZERO 10
 
 #endif /* CONFIG_H_ */
