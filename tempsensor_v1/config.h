@@ -16,6 +16,7 @@
 //Temperature cut off
 #define TEMP_CUTOFF				-800		//-80 deg C
 #define MODEM_CHECK_RETRY 	3
+#define MAX_TIME_ATTEMPTS 3
 
 //I2C configuration
 #define   I2C_TX_LEN			17
