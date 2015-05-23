@@ -11,6 +11,7 @@
 #define EXTERN extern
 
 #include "stdint.h"
+#include "common.h"
 
 //Temperature cut off
 #define TEMP_CUTOFF				-800		//-80 deg C
@@ -85,5 +86,31 @@ EXTERN int8_t g_iAlarmBatteryPeriod;
 #define NETWORK_MAX_SS		31
 
 #define NETWORK_ZERO 10
+
+#define NUM_SIM_CARDS 2
+
+typedef struct __attribute__((__packed__))  {
+int8_t 				    cfgUploadMode;
+int8_t					cfgSIMSlot;
+TEMP_ALERT_PARAM		stTempAlertParams[MAX_NUM_SENSORS];
+BATT_POWER_ALERT_PARAM	stBattPowerAlertParam;
+char    				cfgIMEI[IMEI_MAX_LEN + 1];
+char    				cfgSMSCenter[NUM_SIM_CARDS][GW_MAX_LEN + 1]; // Service Message Center number
+char    				cfgAPN[NUM_SIM_CARDS][APN_MAX_LEN + 1];
+} CONFIG_INFOA;
+
+typedef struct __attribute__((__packed__))  {
+	uint8_t memoryInitialized;
+	int32_t numberRuns;
+	int32_t numberConfigurationRuns;
+	char firmawareVersion[64];
+} CONFIG_SYSTEM;
+
+typedef struct {
+int32_t	   dwLastSeek;
+double	   calibration[MAX_NUM_SENSORS][2];
+} CONFIG_INFOB;
+
+extern void config_Init();
 
 #endif /* CONFIG_H_ */

@@ -63,7 +63,7 @@ MEMORY
     INFOD                   : origin = 0x1800, length = 0x0080
     FRAM                    : origin = 0x4400, length = 0xBB80
     FRAM2                   : origin = 0x10000,length = 0x3000
-    FRAM3                   : origin = 0x13000,length = 0x1000, fill = 0xFFFF
+    PERMANENT_AREA          : origin = 0x13000,length = 0x1000, fill = 0xFFFF
     JTAGSIGNATURE           : origin = 0xFF80, length = 0x0004, fill = 0xFFFF
     BSLSIGNATURE            : origin = 0xFF84, length = 0x0004, fill = 0xFFFF
     IPESIGNATURE            : origin = 0xFF88, length = 0x0008, fill = 0xFFFF
@@ -136,6 +136,7 @@ SECTIONS
        .TI.persistent : {}                  /* For #pragma PERSISTENT            */
        .cio           : {}                  /* C I/O BUFFER                      */
        .sysmem        : {}                  /* DYNAMIC MEMORY ALLOCATION AREA    */
+       .ConfigurationArea : {}
     } PALIGN(0x0400), RUN_END(fram_rx_start) > 0x4400
 
     .cinit            : {}  > FRAM          /* INITIALIZATION TABLES             */
@@ -166,7 +167,7 @@ SECTIONS
 
     .bss        : {} > RAM                  /* GLOBAL & STATIC VARS              */
     .data       : {} > RAM                  /* GLOBAL & STATIC VARS              */
-    .TI.noinit  : {} > RAM                  /* For #pragma NOINIT                */
+    .TI.noinit  : {} > FRAM                  /* For #pragma NOINIT                */
     .xusersect  : 							/* user data section                */
     {
     	globals.obj (.aggregate_vars)
@@ -176,7 +177,7 @@ SECTIONS
     } > FRAM
     .stack      : {} > RAM (HIGH)           /* SOFTWARE SYSTEM STACK             */
 
-    .infoA     : {} > FRAM3              /* MSP430 INFO FRAM  MEMORY SEGMENTS */
+    .infoA     : {} > INFOA
     .infoB     : {} > INFOB
     .infoC     : {
     	*(.config_vars_infoC)
@@ -184,6 +185,10 @@ SECTIONS
     .infoD     : {
     	*(.config_vars_infoD)
     } > INFOD
+
+    .PermanentArea : {
+   		 *(.ConfigurationArea)
+    } >> PERMANENT_AREA type=NOINIT            /* MSP430 INFO FRAM  MEMORY SEGMENTS */
 
     /* MSP430 INTERRUPT VECTORS          */
     .int00       : {}               > INT00

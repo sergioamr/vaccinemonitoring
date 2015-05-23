@@ -165,6 +165,7 @@ void pullTime() {
 }
 
 int main(void) {
+
 	char* pcData = NULL;
 	char* pcTmp = NULL;
 	char* pcSrc1 = NULL;
@@ -184,6 +185,8 @@ int main(void) {
 	char gprs_network_indication = 0;
 	int32_t dw_file_pointer_back_log = 0; // for error condition /// need to be tested.
 	char file_pointer_enabled_sms_status = 0; // for sms condtition enabling.../// need to be tested
+
+	config_Init();	// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
 
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 
