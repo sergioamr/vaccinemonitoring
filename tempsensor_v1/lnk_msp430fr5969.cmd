@@ -174,7 +174,7 @@ SECTIONS
     	i2c.obj (.aggregate_vars)
     	uart.obj (.aggregate_vars)
     	globals.obj (.xbigdata_vars)
-    } > FRAM
+    } >> FRAM
     .stack      : {} > RAM (HIGH)           /* SOFTWARE SYSTEM STACK             */
 
     .infoA     : {} > INFOA
