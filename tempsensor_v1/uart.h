@@ -24,6 +24,7 @@
 #define ATCMD_CSCA 			9
 #define ATCMD_BND			10
 #define ATCMGS			    11
+#define ATCMD_HTTPQRY       12
 
 #define UART_SUCCESS 0
 #define UART_ERROR -1

@@ -1,3 +1,4 @@
+
 /*
  * config.c
  *
@@ -7,17 +8,17 @@
 #define CONFIG_C_
 
 #include "thermalcanyon.h"
+#include "calib/calibration.h"
 
 int g_iSamplePeriod = SAMPLE_PERIOD;
 int g_iUploadPeriod = UPLOAD_PERIOD;
 
-#define __no_init    __attribute__ ((section (".noinit")))
+/************************** BEGIN CONFIGURATION MEMORY ****************************************/
 
 #pragma SET_DATA_SECTION(".ConfigurationArea")
 CONFIG_INFOA g_InfoA;
 CONFIG_SYSTEM g_SystemConfig;
 #pragma SET_DATA_SECTION()
-
 
 #pragma SET_DATA_SECTION(".infoB")
 CONFIG_INFOB g_InfoB;
@@ -31,19 +32,53 @@ CONFIG_INFOB* g_pInfoB = &g_InfoB;
 CONFIG_SYSTEM* g_pSysCfg = &g_SystemConfig;
 // Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
 
+/************************** END CONFIGURATION MEMORY ****************************************/
+
+void calibrate_device() {
+	main_calibration();
+	g_pSysCfg->calibrationFinished = 1;
+	//reset the board by issuing a SW BOR
+	PMM_trigBOR();
+	while(1);
+}
+
+void config_SafeMode() {
+	_NOP();
+}
+
 void config_Init() {
 
-	if (g_pSysCfg->memoryInitialized!=0xFF && g_pSysCfg->memoryInitialized!=0x00) {
+	if (g_pSysCfg->memoryInitialized != 0xFF
+			&& g_pSysCfg->memoryInitialized != 0x00) {
+
+		// Data structure changed, something failed.
+		// Check firmware version?
+		if (g_pSysCfg->configStructureSize != sizeof(CONFIG_SYSTEM)) {
+			config_SafeMode();
+		}
+
+		// Problem calibrating? Try again.
+		if (!g_pSysCfg->calibrationFinished) {
+			calibrate_device();
+			return;
+		}
 		g_pSysCfg->numberConfigurationRuns++;
+
 		return; // Memory was initialized, we are fine here.
 	}
 
-	g_pSysCfg->memoryInitialized=1;
-	strcpy(g_pSysCfg->firmawareVersion, __DATE__ " " __TIME__ ); // Set the date and time of compilation as firmware version
+	memset(g_pSysCfg, 0, sizeof(CONFIG_SYSTEM));
 
 	// First run
-	g_pSysCfg->numberConfigurationRuns=0;
+	g_pSysCfg->numberConfigurationRuns = 1;
+
+	// Value to check to make sure the structure is still the same size;
+	g_pSysCfg->configStructureSize = sizeof(CONFIG_SYSTEM);
+	g_pSysCfg->memoryInitialized = 1;
+
+	// Set the date and time of compilation as firmware version
+	strcpy(g_pSysCfg->firmawareVersion, __DATE__ " " __TIME__);
 
 	// First initalization, calibration code.
-	//calibration_run();
+	calibrate_device();
 }

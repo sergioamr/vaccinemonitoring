@@ -547,7 +547,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			} else {
 				pToken1 = strstr((const char *) RXBuffer, "SIM");
 			}
-/*
+
 		case ATCMD_HTTPQRY:
 			pToken1 = strstr(RXBuffer, "HTTPRING");
 			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
@@ -583,7 +583,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 				}
 			}
 			break;
-*/
 		default:
 			break;
 		}

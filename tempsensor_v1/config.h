@@ -104,7 +104,9 @@ typedef struct __attribute__((__packed__))  {
 	uint8_t memoryInitialized;
 	int32_t numberRuns;
 	int32_t numberConfigurationRuns;
+	uint8_t calibrationFinished;
 	char firmawareVersion[64];
+	uint16_t configStructureSize; // Size to check if there are changes on this structure
 } CONFIG_SYSTEM;
 
 typedef struct {

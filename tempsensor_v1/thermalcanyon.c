@@ -142,7 +142,6 @@ static void setupIO() {
 #ifndef I2C_DISABLED
 	//i2c_init(EUSCI_B_I2C_SET_DATA_RATE_400KBPS);
 	i2c_init(380000);
-
 #endif
 
 	__bis_SR_register(GIE);		//enable interrupt globally
@@ -1747,7 +1746,7 @@ int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 		char* seperator, int8_t iFlagVal, char* pcExtSrc, int8_t iFieldSize) {
 	char* pcTmp = NULL;
 	char* pcExt = NULL;
-	int16_t iSampleCnt = 0;
+	int32_t iSampleCnt = 0;
 	int16_t ret = 0;
 	int8_t iFlag = 0;
 
@@ -1850,7 +1849,7 @@ void monitoralarm() {
 						strcat(SampleData, "Alert Sensor ");
 						strcat(SampleData, SensorName[iCnt]);
 						strcat(SampleData,": Temp too LOW for ");
-						strcat(SampleData,itoa(pstCfgInfoA->stTempAlertParams[iCnt].mincold));
+						strcat(SampleData,itoa(g_pInfoA->stTempAlertParams[iCnt].mincold));
 						strcat(SampleData," minutes. Current Temp is ");
 						strcat(SampleData,Temperature[iCnt]);
 						//strcat(SampleData,"�C. Take ACTION immediately.");	//superscript causes ERROR on sending SMS
@@ -1903,7 +1902,7 @@ void monitoralarm() {
 						strcat(SampleData, "Alert Sensor ");
 						strcat(SampleData, SensorName[iCnt]);
 						strcat(SampleData,": Temp too HIGH for ");
-						strcat(SampleData,itoa(pstCfgInfoA->stTempAlertParams[iCnt].minhot));
+						strcat(SampleData,itoa(g_pInfoA->stTempAlertParams[iCnt].minhot));
 						strcat(SampleData," minutes. Current Temp is ");
 						strcat(SampleData,Temperature[iCnt]);
 						//strcat(SampleData,"�C. Take ACTION immediately."); //superscript causes ERROR on sending SMS
@@ -2271,7 +2270,7 @@ int8_t processmsg(char* pSMSmsg) {
 			case '1':
 				pcTmp = strtok(NULL, ",");
 				if (pcTmp) {
-					strncpy(g_pInfoA->cfgSMSCenter[g_pInfoA->cfgSIMSlot][0], pcTmp, strlen(pcTmp));
+					strncpy(g_pInfoA->cfgSMSCenter[g_pInfoA->cfgSIMSlot], pcTmp, strlen(pcTmp));
 
 					pcTmp = strtok(NULL, ",");
 					if (pcTmp) {
@@ -2433,17 +2432,17 @@ void sendhb() {
 	strcat(SampleData, ",");
 	if (g_pInfoA->cfgSIMSlot == 2) {
 		strcat(SampleData, "1,");
-		strcat(SampleData, &g_pInfoA->cfgSMSCenter[1]);
 	} else {
 		strcat(SampleData, "0,");
-		strcat(SampleData, &g_pInfoA->cfgSMSCenter[0]);
 	}
+	strcat(SampleData, &g_pInfoA->cfgSMSCenter[g_pInfoA->cfgSIMSlot][0]);
+
 #endif
 	strcat(SampleData, ",");
 #if MAX_NUM_SENSORS == 5
 	strcat(SampleData, "1,1,1,1,1,");//TODO to be changed based on jack detection
 #else
-			strcat(SampleData,"1,1,1,1,");	//TODO to be changed based on jack detection
+	strcat(SampleData,"1,1,1,1,");	//TODO to be changed based on jack detection
 #endif
 
 	pcTmp = itoa(batt_getlevel());	//opt by directly using tmpstr
@@ -2454,7 +2453,9 @@ void sendhb() {
 		strcat(SampleData, ",1");
 	}
 
+#ifdef _DEBUG
 	strcat(SampleData, ",(db)" __TIME__);
+#endif
 
 	strcat(SampleData, ctrlZ);
 	sendmsg(SampleData);

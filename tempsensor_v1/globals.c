@@ -58,7 +58,7 @@ int		   g_iCurrYearDay = 0;
 #pragma SET_DATA_SECTION(".config_vars_infoD")
 //put all variables that are written less frequently
 uint32_t 	  g_iAlarmStatus = 0;
-//CONFIG_INFOA* pstCfgInfoA = INFOA_ADDR;
+//CONFIG_INFOA* g_pInfoA-> = INFOA_ADDR;
 double 	 iTemp = 0.0;
 int16_t		  g_iAlarmCnfCnt[MAX_NUM_SENSORS+2];		//additional two for power and battery alert
 
