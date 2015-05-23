@@ -25,7 +25,7 @@ extern "C"
 //#define BATTERY_DISABLED
 //#define I2C_DISABLED
 
-//#define NOTFROMFILE
+#define NOTFROMFILE
 #define BUZZER_DISABLED
 #define ALERT_UPLOAD_DISABLED
 //#define CALIBRATION			//set this flag whenever the device has to undergo calibration

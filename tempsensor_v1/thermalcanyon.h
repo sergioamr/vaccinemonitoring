@@ -63,8 +63,6 @@ int dopost_sms_status(void);
 int dopost_gprs_connection_status(char status);
 void sampletemp();
 void modem_init(int8_t slot);
-char* getDMYString(struct tm* timeData);
-char* getCurrentFileName(struct tm* timeData);
 void pullTime();
 void monitoralarm();
 

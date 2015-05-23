@@ -33,8 +33,6 @@
 #define TS_SIZE				21
 #define TS_FIELD_OFFSET		1	//1 - $, 3 - $TS
 
-#define NOTFROMFILE
-
 #include "thermalcanyon.h"
 
 volatile char isConversionDone = 0;
@@ -151,16 +149,22 @@ static void setupIO() {
 }
 
 void pullTime() {
-	uart_resetbuffer();
-	uart_tx("AT+CCLK?\r\n");
+	int i;
+	for (i = 0; i < MAX_TIME_ATTEMPTS; i++) {
+		uart_resetbuffer();
+		uart_tx("AT+CCLK?\r\n");
 
-	memset(ATresponse, 0, sizeof(ATresponse));
-	uart_rx(ATCMD_CCLK, ATresponse);
-	parsetime(ATresponse, &currTime);
-	rtc_init(&currTime);
-	if(g_iCurrYearDay != currTime.tm_yday) {
-		// Day has changed so save the new date TODO keep trying until date is set. Call function ONCE PER DAY
-		g_iCurrYearDay = currTime.tm_yday;
+		memset(ATresponse, 0, sizeof(ATresponse));
+		uart_rx(ATCMD_CCLK, ATresponse);
+		parsetime(ATresponse, &currTime);
+		rtc_init(&currTime);
+		if(strcmp(getDMYString(&currTime), "000000") != 0) {
+			// Day has changed so save the new date TODO keep trying until date is set. Call function ONCE PER DAY
+			if(g_iCurrYearDay != currTime.tm_yday)
+				g_iCurrYearDay = currTime.tm_yday;
+			break;
+		}
+		delay(MODEM_TX_DELAY1);
 	}
 }
 
@@ -286,8 +290,7 @@ int main(void) {
 
 		// Reading the Service Center Address to use as message gateway
 		// http://www.developershome.com/sms/cscaCommand.asp
-		// Get service center address; format "+CSCA: address,address_type"
-
+		// Get service center address; format "+CSCA: address,address_type
 		//uart_resetbuffer();
 		// Disable echo from modem
 		uart_tx("ATE0\r\n");
@@ -387,6 +390,8 @@ int main(void) {
 				iStatus &= ~SMSED_LOW_TEMP;
 #endif
 				if ((iMinuteTick - iUploadTimeElapsed) >= g_iUploadPeriod) {
+					pullTime();
+
 					//if(((g_iUploadPeriod/g_iSamplePeriod) < MAX_NUM_CONTINOUS_SAMPLES) ||
 					//    (iStatus & ALERT_UPLOAD_ON))
 					if ((g_iUploadPeriod / g_iSamplePeriod)
@@ -2425,12 +2430,12 @@ void sendhb() {
 	strcat(SampleData, ",");
 	if (g_pInfoA->cfgSIMSlot == 2) {
 		strcat(SampleData, "1,");
+		strcat(SampleData, &g_pInfoA->cfgSMSCenter[1]);
 	} else {
 		strcat(SampleData, "0,");
+		strcat(SampleData, &g_pInfoA->cfgSMSCenter[0]);
 	}
 #endif
-	//strcat(SampleData, g_pInfoA->cfgSMSC[0][g_pInfoA->cfgSIMSlot]); // Append the message service center so the backend cand send us back the right APN for it
-	strcat(SampleData, "0");
 	strcat(SampleData, ",");
 #if MAX_NUM_SENSORS == 5
 	strcat(SampleData, "1,1,1,1,1,");//TODO to be changed based on jack detection
