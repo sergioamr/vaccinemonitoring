@@ -145,6 +145,7 @@ void modem_init(int8_t slot) {
 	uart_tx("AT#CMEEMODE=1\r\n");
 	uart_tx("AT#AUTOBND=2\r\n");
 	uart_tx("AT#NITZ=1\r\n");
+	uart_tx("AT+CTZU=1\r\n");
 	uart_tx("AT&K4\r\n");
 	uart_tx("AT&P0\r\n");
 	uart_tx("AT&W0\r\n");
