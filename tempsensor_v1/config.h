@@ -19,8 +19,8 @@
 #define MAX_TIME_ATTEMPTS 3
 
 //I2C configuration
-#define   I2C_TX_LEN			17
-#define   I2C_RX_LEN			8
+#define   I2C_TX_LEN			32
+#define   I2C_RX_LEN			32
 #define   SLAVE_ADDR_DISPLAY	0x38
 #define   SLAVE_ADDR_BATTERY	0x55
 

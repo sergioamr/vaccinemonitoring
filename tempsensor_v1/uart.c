@@ -50,65 +50,10 @@ int iRxLen = RX_LEN;
 #define ATCR 10
 
 #define IMEI_MAX_LEN		 15
-//char Substr[TOKEN_LEN+1];
 
 //local functions
 static int searchtoken(char* pToken, char** ppTokenPos);
 extern void delay(int time);
-
-/*
-#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
-#pragma vector=USCI_A0_VECTOR
-__interrupt void USCI_A0_ISR(void)
-#elif defined(__GNUC__)
-void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
-#else
-#error Compiler not supported!
-#endif
-{
-	switch (__even_in_range(UCA0IV, USCI_UART_UCTXCPTIFG)) {
-	case USCI_NONE:
-		break;
-	case USCI_UART_UCRXIFG:
-		if (UCA0STATW & UCRXERR) {
-			iError++;
-		}
-		RXBuffer[RXTailIdx] = UCA0RXBUF;
-
-		//if (RXBuffer[RXTailIdx] == ATCR) {
-		//	iRXCommandProcessed = 1;
-		//}
-
-		if (RXBuffer[RXTailIdx] == XOFF) {
-			iTxStop = 1;
-		} else if (RXBuffer[RXTailIdx] == XON) {
-			iTxStop = 0;
-		}
-
-		RXTailIdx = (RXTailIdx + 1);
-		if (RXTailIdx >= iRxLen) {
-			RXTailIdx = 0;
-		}
-		__no_operation();
-		break;
-	case USCI_UART_UCTXIFG:
-		if ((TXIdx < iTxLen) && (iTXInProgress)) {
-			UCA0TXBUF = TX[TXIdx];
-			TX[TXIdx]='*';
-			TXIdx = (TXIdx + 1);
-		} else {
-			//UCA0IE &= ~UCTXIE;
-			iTXInProgress = 0;
-		}
-
-		break;
-	case USCI_UART_UCSTTIFG:
-		break;
-	case USCI_UART_UCTXCPTIFG:
-		break;
-	}
-}
-*/
 
 void uart_resetbuffer() {
 	RXHeadIdx = RXTailIdx = 0; //ZZZZ reset Rx index to faciliate processing in uart_rx
@@ -692,5 +637,25 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 	default:
 		break;
 	}
+}
+
+void uart_setClock() {
+	// Configure USCI_A0 for UART mode
+	UCA0CTLW0 = UCSWRST;                      // Put eUSCI in reset
+	UCA0CTLW0 |= UCSSEL__SMCLK;               // CLK = SMCLK
+	// Baud Rate calculation
+	// 8000000/(16*115200) = 4.340	//4.340277777777778
+	// Fractional portion = 0.340
+	// User's Guide Table 21-4: UCBRSx = 0x49
+	// UCBRFx = int ( (4.340-4)*16) = 5
+	UCA0BRW = 4;                             // 8000000/16/115200
+	UCA0MCTLW |= UCOS16 | UCBRF_5 | 0x4900;
+
+#ifdef LOOPBACK
+	UCA0STATW |= UCLISTEN;
+#endif
+	UCA0CTLW0 &= ~UCSWRST;                    // Initialize eUSCI
+
+	UCA0IE |= UCRXIE;                // Enable USCI_A0 RX interrupt
 }
 

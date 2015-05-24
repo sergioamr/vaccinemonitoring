@@ -17,6 +17,7 @@
 #include "lcd.h"
 #include "string.h"
 #include "globals.h"
+#include "modem.h"
 
 extern char* itoa_nopadding(int num);
 
@@ -29,10 +30,18 @@ void sendmsg(char* pData) {
 	if (iStatus & TEST_FLAG)
 		return;
 
+	if (g_iDebug_state==0) {
+		lcd_clear();
+		lcd_print_line("SMS To ", LINE1);
+		lcd_print_line(SMS_NEXLEAF_GATEWAY, LINE2);
+	}
+
 	lcd_disable_debug();
+	strcat(pData,ctrlZ);
+
 	if (uart_tx_waitForPrompt(destinationSMS)) {
 		uart_tx(pData);
-		delay(10000);
+		delay(5000);
 		_NOP();
 		// TODO Check if ok or RXBuffer contains Error
 	}

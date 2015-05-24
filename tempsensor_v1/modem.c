@@ -59,17 +59,6 @@ void modem_getSMSCenter() {
 		memcpy(&g_pInfoA->cfgSMSCenter[slot][0], ATresponse,
 				strlen(ATresponse));
 
-#ifdef _DEBUG
-		lcd_clear();
-		lcd_print_line(&g_pInfoA->cfgSMSCenter[slot][0], LINE2);
-#endif
-	} else {
-		lcd_clear();
-		if (slot == 1)
-			lcd_print_line("SIM1 - SMSC", LINE1);
-		else
-			lcd_print_line("SIM2 - SMSC", LINE1);
-		lcd_print_line("SMSC ERROR", LINE2);
 	}
 }
 
@@ -79,6 +68,7 @@ void modem_getIMEI() {
 	char IMEI_OK = false;
 
 	uart_resetbuffer();
+	lcd_disable_debug();
 	uart_tx("AT+CGSN\r\n");
 	if (uart_rx_cleanBuf(ATCMD_CGSN, ATresponse,
 			sizeof(ATresponse))==UART_SUCCESS) {
@@ -86,11 +76,6 @@ void modem_getIMEI() {
 		if (memcmp(ATresponse, "INVALID", strlen("INVALID"))) {
 			//copy valid IMEI to FRAM
 			IMEI_OK = true;
-#ifdef _DEBUG
-			lcd_clear();
-			lcd_print_line("IMEI", LINE1);
-			lcd_print_line(g_pInfoA->cfgIMEI, LINE2);
-#endif
 		} else {
 			lcd_clear();
 			lcd_print_line("IMEI Error", LINE2);
@@ -100,13 +85,14 @@ void modem_getIMEI() {
 	if (!IMEI_OK)
 		return;
 
-	if (!memcmp(ATresponse, g_pInfoA->cfgIMEI, strlen(ATresponse))) {
-		lcd_print_line("IMEI Error 1", LINE1);
-		g_pInfoA->cfgIMEI[0] = 0xFF;  // We have the right IMEI from the modem so we flash it again into config.
+	if ((uint8_t) g_pInfoA->cfgIMEI[0] == 0xFF)  // IMEI Was not setup, copy it to permament memory
+		strcpy(g_pInfoA->cfgIMEI, ATresponse);
+
+	// Lets check if we have the right IMEI from the modem, otherwise we flash it again into config.
+	if (memcmp(ATresponse, g_pInfoA->cfgIMEI, 15)!=0) {
+		strcpy(g_pInfoA->cfgIMEI, ATresponse);
 	}
 
-	if ((uint8_t) g_pInfoA->cfgIMEI[0] == 0xFF)
-		strcpy(g_pInfoA->cfgIMEI, ATresponse);
 }
 
 void modem_getsimcardsinfo() {
@@ -117,7 +103,14 @@ void modem_getsimcardsinfo() {
 	delay(100);
 }
 
-void modem_init(int8_t slot) {
+void modem_init() {
+
+	uint8_t slot=g_pInfoA->cfgSIMSlot;
+
+	if (slot>1) {
+		// Memory not initialized
+		g_pInfoA->cfgSIMSlot=slot=0;
+	}
 
 	uart_setOKMode();
 	uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted

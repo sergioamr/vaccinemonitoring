@@ -67,6 +67,10 @@ void config_Init() {
 		return; // Memory was initialized, we are fine here.
 	}
 
+	// Setup InfoA config data
+	g_pInfoA->cfgSIMSlot=0;
+
+	// Setup internal system counters and checks
 	memset(g_pSysCfg, 0, sizeof(CONFIG_SYSTEM));
 
 	// First run
@@ -78,6 +82,7 @@ void config_Init() {
 
 	// Set the date and time of compilation as firmware version
 	strcpy(g_pSysCfg->firmawareVersion, __DATE__ " " __TIME__);
+
 
 	// First initalization, calibration code.
 	calibrate_device();

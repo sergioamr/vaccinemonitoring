@@ -121,23 +121,7 @@ static void setupIO() {
 			ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5; // Enable ADC conv complete interrupt
 #endif
 
-	// Configure USCI_A0 for UART mode
-	UCA0CTLW0 = UCSWRST;                      // Put eUSCI in reset
-	UCA0CTLW0 |= UCSSEL__SMCLK;               // CLK = SMCLK
-	// Baud Rate calculation
-	// 8000000/(16*115200) = 4.340	//4.340277777777778
-	// Fractional portion = 0.340
-	// User's Guide Table 21-4: UCBRSx = 0x49
-	// UCBRFx = int ( (4.340-4)*16) = 5
-	UCA0BRW = 4;                             // 8000000/16/115200
-	UCA0MCTLW |= UCOS16 | UCBRF_5 | 0x4900;
-
-#ifdef LOOPBACK
-	UCA0STATW |= UCLISTEN;
-#endif
-	UCA0CTLW0 &= ~UCSWRST;                    // Initialize eUSCI
-
-	UCA0IE |= UCRXIE;                // Enable USCI_A0 RX interrupt
+	uart_setClock();
 
 #ifndef I2C_DISABLED
 	//i2c_init(EUSCI_B_I2C_SET_DATA_RATE_400KBPS);
@@ -189,22 +173,11 @@ int main(void) {
 	int32_t dw_file_pointer_back_log = 0; // for error condition /// need to be tested.
 	char file_pointer_enabled_sms_status = 0; // for sms condtition enabling.../// need to be tested
 
-	config_Init();	// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
-
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 
-#ifdef _DEBUG
-	//TODO for stack usage calculation. Should be removed during the release
-	//*(int32_t*)(&__STACK_END - &__STACK_SIZE) = 0xdeadbeef;
-	iIdx = (unsigned long) &__STACK_SIZE;
-	memset((void*) (&__STACK_END - &__STACK_SIZE), 0xa5, iIdx / 4); //paint 1/4th stack with know values
-
-	dummy = (int8_t) sizeof(CONFIG_INFOA);
-	dummy = (int8_t) sizeof(CONFIG_INFOB);
-	dummy = (int8_t) sizeof(Temperature);
-#endif
-
 	setupIO();
+	//config_Init();	// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
+
 	delay(100);
 
 	lcd_reset();
@@ -226,12 +199,6 @@ int main(void) {
 #else
 	lcd_print_line("(db)" __TIME__, LINE2);
 #endif
-
-	//Configure 7 segement LEDs
-	writetoI2C(0x01, 0x0f);						// Decode Mode register
-	writetoI2C(0x02, 0x0B);						//Intensity register
-	writetoI2C(0x04, 0x01);						//Configuration Register
-	writetoI2C(0x20, 0x0A);						//Display channel
 
 #ifdef NO_CODE_SIZE_LIMIT
 	writetoI2C(0x21, 4);
@@ -258,7 +225,7 @@ int main(void) {
 	}
 
 	if (iStatus & MODEM_POWERED_ON) {
-		modem_init(g_pInfoA->cfgSIMSlot);
+		modem_init();
 
 #ifdef POWER_SAVING_ENABLED
 		uart_tx("AT+CFUN=5\r\n");//full modem functionality with power saving enabled (triggered via DTR)
@@ -930,7 +897,7 @@ int main(void) {
 					delay(100);
 					iStatus |= NETWORK_DOWN;
 					iOffset = 0;
-					modem_init(g_pInfoA->cfgSIMSlot);
+					modem_init();
 					lcd_print_line("Reconnecting...", LINE2);
 					delay(100);
 					iIdx++;
@@ -942,21 +909,21 @@ int main(void) {
 
 			if (iIdx == MODEM_CHECK_RETRY) {
 				//switch the SIM slot;
-				if (g_pInfoA->cfgSIMSlot != 2) { //value will be 0xFF in case FRAM was not already populated
+				if (g_pInfoA->cfgSIMSlot != 1) { //value will be 0xFF in case FRAM was not already populated
 					//current sim slot is 1
 					//change to sim slot 2
-					g_pInfoA->cfgSIMSlot = 2;
+					g_pInfoA->cfgSIMSlot = 1;
 					lcd_print_line("Switching SIM: 2", LINE2);
 					delay(100);
 				} else {
 					//current sim slot is 2
 					//change to sim slot 1
-					g_pInfoA->cfgSIMSlot = 1;
+					g_pInfoA->cfgSIMSlot = 0;
 					lcd_print_line("Switching SIM: 1", LINE2);
 					delay(100);
 				}
 
-				modem_init(g_pInfoA->cfgSIMSlot);
+				modem_init();
 			}
 
 #if 1
@@ -1125,7 +1092,7 @@ int main(void) {
 					lcd_blenable();
 					lcd_on();
 					lcd_print("Starting...");
-					modem_init(g_pInfoA->cfgSIMSlot);
+					modem_init();
 					iLastDisplayId = iDisplayId = 0;
 					lcd_show(iDisplayId);
 					break;
@@ -1854,9 +1821,6 @@ void monitoralarm() {
 						strcat(SampleData,Temperature[iCnt]);
 						//strcat(SampleData,"�C. Take ACTION immediately.");	//superscript causes ERROR on sending SMS
 						strcat(SampleData,"degC. Take ACTION immediately.");
-						iLen = strlen(SampleData);
-						SampleData[iLen] = (char)0x1A;
-
 						sendmsg(SampleData);
 
 						iStatus |= SMSED_LOW_TEMP;
@@ -1907,9 +1871,6 @@ void monitoralarm() {
 						strcat(SampleData,Temperature[iCnt]);
 						//strcat(SampleData,"�C. Take ACTION immediately."); //superscript causes ERROR on sending SMS
 						strcat(SampleData,"degC. Take ACTION immediately.");
-						iLen = strlen(SampleData);
-						SampleData[iLen] = (char)0x1A;
-
 						sendmsg(SampleData);
 
 						iStatus |= SMSED_HIGH_TEMP;
@@ -1959,9 +1920,6 @@ void monitoralarm() {
 				strcat(SampleData, "LOW Battery: ColdTrace has now ");
 				strcat(SampleData,itoa(iBatteryLevel));
 				strcat(SampleData, "battery left. Charge your device immediately.");
-				iLen = strlen(SampleData);
-				SampleData[iLen] = (char)0x1A;
-
 				sendmsg(SampleData);
 #endif
 
@@ -2002,9 +1960,6 @@ void monitoralarm() {
 					//send sms Power Outage: ATTENTION! Power is out in your clinic. Monitor the fridge temperature closely.
 					memset(SampleData,0,SMS_ENCODED_LEN);
 					strcat(SampleData, "Power Outage: ATTENTION! Power is out in your clinic. Monitor the fridge temperature closely.");
-					iLen = strlen(SampleData);
-					SampleData[iLen] = (char)0x1A;
-
 					sendmsg(SampleData);
 #endif
 					//initialize confirmation counter
@@ -2249,9 +2204,6 @@ void uploadsms() {
 		}
 
 	}
-	iIdx = strlen(ATresponse);
-	ATresponse[iIdx] = 0x1A;
-
 	sendmsg(ATresponse);
 
 }
@@ -2312,15 +2264,15 @@ int8_t processmsg(char* pSMSmsg) {
 						if (pcTmp) {
 							if (strtol(pcTmp, 0, 10)) {
 								iStatus |= ENABLE_SECOND_SLOT;
-								g_pInfoA->cfgSIMSlot = 2;
+								g_pInfoA->cfgSIMSlot = 1;
 							} else {
 								iStatus &= ~ENABLE_SECOND_SLOT;
-								g_pInfoA->cfgSIMSlot = 1;
+								g_pInfoA->cfgSIMSlot = 0;
 							}
 							if (g_pInfoA->cfgSIMSlot
 									!= g_pInfoA->cfgSIMSlot) {
 								//sim slots need to be switched
-								modem_init(g_pInfoA->cfgSIMSlot);
+								modem_init();
 							}
 						}
 						iCnt = 1;
@@ -2430,7 +2382,7 @@ void sendhb() {
 #else
 	strcat(SampleData, g_pInfoA->cfgIMEI);
 	strcat(SampleData, ",");
-	if (g_pInfoA->cfgSIMSlot == 2) {
+	if (g_pInfoA->cfgSIMSlot == 1) {
 		strcat(SampleData, "1,");
 	} else {
 		strcat(SampleData, "0,");
@@ -2456,8 +2408,6 @@ void sendhb() {
 #ifdef _DEBUG
 	strcat(SampleData, ",(db)" __TIME__);
 #endif
-
-	strcat(SampleData, ctrlZ);
 	sendmsg(SampleData);
 }
 

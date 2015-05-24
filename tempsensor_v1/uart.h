@@ -8,7 +8,7 @@
 #ifndef UART_H_
 #define UART_H_
 
-#define TX_LEN   			300
+#define TX_LEN   			360
 #define RX_LEN   			360
 #define TOKEN_LEN			3
 
@@ -54,6 +54,8 @@ extern volatile char RXBuffer[RX_LEN+1];
 
 extern void uart_setOKMode();
 extern uint8_t uart_tx_waitForPrompt(const char *cmd);
+
+extern void uart_setClock(); // Initializes the speed and the bauds of the UCA0
 
 //*****************************************************************************
 // Set tail and head to 0 for easy parsing.

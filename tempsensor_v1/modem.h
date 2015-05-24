@@ -18,7 +18,7 @@ int8_t modem_exit_powersave_mode();
 #endif
 
 extern void modem_checkSignal();
-extern void modem_init(int8_t slot);
+extern void modem_init();
 extern void modem_getsimcardsinfo();
 
 #endif /* MODEM_H_ */

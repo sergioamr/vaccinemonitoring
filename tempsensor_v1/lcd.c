@@ -30,6 +30,18 @@ void lcd_init() {
 	SampleData[8] = 0x06; // entry mode set
 
 	i2c_write(0x3e, 0, LCD_INIT_PARAM_SIZE,  (uint8_t*) SampleData);
+	delay(100);
+
+	/*
+	SampleData[0] = 0x40 | 0x80;
+	i2c_write(0x3e, 0, 1, SampleData);
+	delay(100);
+	SampleData[0] = 0x43;
+	SampleData[1] = 0x44;
+	i2c_write(0x3e, 0x40, 2, SampleData);
+	delay(100);
+	 */
+
 #if 0
 	delay(1000);
 
@@ -38,6 +50,12 @@ void lcd_init() {
 	i2c_write(0x3e,0x40,2,SampleData);
 	delay(100);
 #endif
+
+	//Configure 7 segement LEDs
+	writetoI2C(0x01, 0x0f);						// Decode Mode register
+	writetoI2C(0x02, 0x0B);						//Intensity register
+	writetoI2C(0x04, 0x01);						//Configuration Register
+	writetoI2C(0x20, 0x0A);						//Display channel
 }
 
 void lcd_clear() {
@@ -157,7 +175,7 @@ void lcd_show(int8_t iItemId) {
 	case 7:
 		iCnt = 0xff;
 		strcat(SampleData, "SIM1 ");	//current sim slot is 1
-		if (g_pInfoA->cfgSIMSlot != 1) {
+		if (g_pInfoA->cfgSIMSlot != 0) {
 			strcat(SampleData, "  --  ");
 		} else {
 			if ((iSignalLevel > NETWORK_DOWN_SS)
@@ -180,7 +198,7 @@ void lcd_show(int8_t iItemId) {
 	case 8:
 		iCnt = 0xff;
 		strcat(SampleData, "SIM2 ");	//current sim slot is 2
-		if (g_pInfoA->cfgSIMSlot != 2) {
+		if (g_pInfoA->cfgSIMSlot != 1) {
 			strcat(SampleData, "  --  ");
 		} else {
 			if ((iSignalLevel > NETWORK_DOWN_SS)
@@ -238,6 +256,7 @@ void lcd_print(char* pcData) {
 	}
 	lcd_clear();
 	i2c_write(0x3e, 0x40, len, (uint8_t *) pcData);
+	delay(100); // Give time for the buffer to be copied through the i2c
 }
 
 void lcd_print_line(const char* pcData, int8_t iLine) {
@@ -252,6 +271,7 @@ void lcd_print_line(const char* pcData, int8_t iLine) {
 		lcd_setaddr(0x0);
 	}
 	i2c_write(0x3e, 0x40, len, (uint8_t *) pcData);
+	delay(100); // Give time for the buffer to be copied through the i2c
 }
 
 void lcd_reset() {

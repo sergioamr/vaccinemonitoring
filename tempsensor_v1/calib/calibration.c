@@ -33,7 +33,7 @@
 extern volatile uint32_t iMinuteTick;
 
 //len constants
-#define IMEI_MAX_LEN		 15
+#define IMEI_MAX_LEN		 20
 #define APN_MAX_LEN     	 20
 #define UPLOAD_MODE_LEN 	 4
 #define MAX_SMS_NUM			 4
@@ -151,63 +151,6 @@ int main_calibration(void) {
 
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop watchdog timer
 
-	iVal = &__STACK_SIZE;
-	memset((void*) (&__STACK_END - &__STACK_SIZE), 0xa5, iVal / 4); //paint 1/4th stack with know values
-
-	// Configure GPIO
-	P2DIR |= BIT3;							// SPI CS
-	P2OUT |= BIT3;					// drive SPI CS high to deactive the chip
-	P2SEL1 |= BIT4 | BIT5 | BIT6;             // enable SPI CLK, SIMO, SOMI
-	PJSEL0 |= BIT4 | BIT5;                    // For XT1
-	P1SEL1 |= BIT6 | BIT7;					// Enable I2C SDA and CLK
-
-	P2SEL1 |= BIT0 | BIT1;                    // USCI_A0 UART operation
-	P2SEL0 &= ~(BIT0 | BIT1);
-	P4DIR |= BIT0 | BIT5 | BIT6 | BIT7; // Set P4.0 (Modem reset), LEDs to output direction
-	P4OUT &= ~BIT0;                           // Reset high
-
-	P3DIR |= BIT4;      						// Set P3.4 buzzer output
-
-	PJDIR |= BIT6 | BIT7;      			// set LCD reset and Backlight enable
-	PJOUT |= BIT6;							// LCD reset pulled high
-	PJOUT &= ~BIT7;							// Backlight disable
-	P2IE |= BIT2;							// enable interrupt for buzzer off
-
-	// Disable the GPIO power-on default high-impedance mode to activate
-	// previously configured port settings
-	PM5CTL0 &= ~LOCKLPM5;
-
-	// Startup clock system with max DCO setting ~8MHz
-	CSCTL0_H = CSKEY >> 8;                    // Unlock clock registers
-	CSCTL1 = DCOFSEL_3 | DCORSEL;             // Set DCO to 8MHz
-	CSCTL2 = SELA__LFXTCLK | SELS__DCOCLK | SELM__DCOCLK;
-	//CSCTL3 = DIVA__1 | DIVS__8 | DIVM__1;     // Set all dividers TODO - divider
-	CSCTL3 = DIVA__1 | DIVS__1 | DIVM__1;     // Set all dividers TODO - divider
-	CSCTL4 &= ~LFXTOFF;
-	do {
-		CSCTL5 &= ~LFXTOFFG;                    // Clear XT1 fault flag
-		SFRIFG1 &= ~OFIFG;
-	} while (SFRIFG1 & OFIFG);                   // Test oscillator fault flag
-	CSCTL0_H = 0;                             // Lock CS registers
-
-	// Configure USCI_A0 for UART mode
-	UCA0CTLW0 = UCSWRST;                      // Put eUSCI in reset
-	UCA0CTLW0 |= UCSSEL__SMCLK;               // CLK = SMCLK
-	// Baud Rate calculation
-	// 8000000/(16*115200) = 4.340	//4.340277777777778
-	// Fractional portion = 0.340
-	// User's Guide Table 21-4: UCBRSx = 0x49
-	// UCBRFx = int ( (4.340-4)*16) = 5
-	UCA0BRW = 4;                             // 8000000/16/115200
-	UCA0MCTLW |= UCOS16 | UCBRF_5 | 0x4900;
-
-#ifdef LOOPBACK
-	UCA0STATW |= UCLISTEN;
-#endif
-	UCA0CTLW0 &= ~UCSWRST;                    // Initialize eUSCI
-
-	UCA0IE |= UCRXIE;                // Enable USCI_A0 RX interrupt
-
 #ifdef SPI_NOR_TEST
 	// Configure USCI_A0 for SPI operation
 	UCA1CTLW0 = UCSWRST;// **Put state machine in reset**
@@ -224,8 +167,6 @@ int main_calibration(void) {
 	//iTxLen = 6;
 	UCA1IE |= UCRXIE | UCTXIE;;// Enable USCI_A0 RX, TX interrupt
 #endif
-
-	__bis_SR_register(GIE);
 
 	timedate = 86400;
 	MPY32CTL0 |= OP2_32;
@@ -367,79 +308,20 @@ int main_calibration(void) {
 	memset(TMP, 0, sizeof(TMP));
 	lcd_reset();
 	lcd_blenable();
-
-	//i2c_init(400000);
-	i2c_init(380000);
-
+	g_iDebug_state=0;
 	lcd_init();
 
+	__bis_SR_register(GIE);
+
+	delay(1000);
 	lcd_clear();
 	lcd_print_line("CALIBRATION MODE", LINE1);
-	lcd_print_line("Ver(" __DATE__ ")",LINE2);
-	delay(4000);
+	delay(1000);
+	lcd_print_line("V(" __DATE__ ")",LINE2);
+	delay(2000);
 
-	lcd_clear();
-	lcd_print_line("ABCDEFGHIJKLMNOP", LINE1);
-	lcd_print_line("1234567890ABCDEF", LINE2);
-	delay(4000);
+	i2c_init(380000);
 
-#if 0
-	i2c_setmode(I2C_POLL);
-	UCB0I2CSA = 0x3e;
-	UCB0CTL1 |= UCTR;
-	UCB0CTL1 |= UCTXSTT;                    // I2C start condition
-
-	lcd_tx(0);//control byte (instruction write, stream of bytes terminated with stop condition)
-	lcd_tx(0x38);
-			   //delay(10);	//delay 10 ms
-	lcd_tx(0x39);
-			   //delay(10);
-	lcd_tx(0x14);
-	lcd_tx(0x78);
-	lcd_tx(0x5E);
-	lcd_tx(0x6D);
-	lcd_tx(0x0C);
-	lcd_tx(0x01);
-	lcd_tx(0x06);
-			   //delay(10);
-
-			   //trigger a stop condition
-	UCB0CTL1 |= UCTXSTP;
-
-	UCB0CTL1 |= UCTXSTT;// I2C start condition
-	lcd_tx(0x40);//control byte (data write, stream of bytes terminated with stop condition)
-	lcd_tx(0x41);//character A
-	//delay(100);
-	lcd_tx(0x42);//character A
-	//delay(100);
-	//trigger a stop condition
-	UCB0CTL1 |= UCTXSTP;
-#else
-	TMP[0] = 0x38;
-	TMP[1] = 0x39;
-	TMP[2] = 0x14;
-	TMP[3] = 0x78;
-	TMP[4] = 0x5E;
-	TMP[5] = 0x6D;
-	TMP[6] = 0x0C;
-	TMP[7] = 0x01;
-	TMP[8] = 0x06;
-
-	i2c_write(0x3e, 0, 9, TMP);
-	delay(100);
-	TMP[0] = 0x41;
-	TMP[1] = 0x42;
-	i2c_write(0x3e, 0x40, 2, TMP);
-	delay(100);
-
-	TMP[0] = 0x40 | 0x80;
-	i2c_write(0x3e, 0, 1, TMP);
-	delay(100);
-	TMP[0] = 0x43;
-	TMP[1] = 0x44;
-	i2c_write(0x3e, 0x40, 2, TMP);
-	delay(100);
-#endif
 #endif
 
 #ifdef SMS_TEST
@@ -457,96 +339,53 @@ int main_calibration(void) {
 		}
 	}
 
-	for (t = 0; t < NUM_SMS_TESTS; t++)
-		if (iLastSlot != iSlot) {
-			iLastSlot = iSlot;
-
-			if (iStatus & MODEM_POWERED_ON) {
-#ifdef ENABLE_SIM_SLOT
-				if (iSlot == 0) {
-					//enable SIM A (slot 1)
-					uart_tx("AT#GPIO=2,0,1\r\n");
-					uart_tx("AT#GPIO=4,1,1\r\n");
-					uart_tx("AT#GPIO=3,0,1\r\n");
-					uart_tx("AT#SIMDET=0\r\n");
-					uart_tx("AT#SIMDET=1\r\n");
-				} else {
-					//enable SIM B (slot 2)
-					uart_tx("AT#GPIO=2,1,1\r\n");
-					uart_tx("AT#GPIO=4,0,1\r\n");
-					uart_tx("AT#GPIO=3,1,1\r\n");
-					uart_tx("AT#SIMDET=0\r\n");
-					uart_tx("AT#SIMDET=1\r\n");
-				}
-#endif
-
-				uart_tx("AT+CMGF=1\r\n");	// set sms format to text mode
-				uart_tx("AT+CMEE=2\r\n");
-				uart_tx("AT#CMEEMODE=1\r\n");
-				uart_tx("AT&K4\r\n");
-				uart_tx("AT&P0\r\n");
-				uart_tx("AT&W0\r\n");
+	if (iStatus & MODEM_POWERED_ON)
+	for (t = 0; t < NUM_SMS_TESTS; t++) {
+		modem_init();
+		modem_getsimcardsinfo();
 #if 1
-				memset(ATresponse, 0, sizeof(ATresponse));
-				strcat(ATresponse, "This is a test message.");
-				iIdx = strlen(ATresponse);
-				ATresponse[iIdx] = 0x1A;
-				sendmsg(ATresponse);
-				//sendmsgDA(ATresponse,"8151938952");
-				delay(1000);
+		sprintf(ATresponse, "IMEI %s Calibration test %d for %s ",
+				g_pInfoA->cfgIMEI, t, g_pInfoA->cfgSMSCenter[iSlot]);
+		sendmsg(ATresponse);
+		delay(1000);
 #endif
+		uart_tx("AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n");
+		delay(MODEM_TX_DELAY2);
 
-				// uart_tx("AT+CSDH=0\r\n");
-				//delay(MODEM_TX_DELAY1);
+		uart_tx("AT#SGACT=1,1\r\n");
+		delay(MODEM_TX_DELAY2);
 
-				//uart_tx("AT+CSCA=\"919845087001\",145\r\n");
-				//delay(MODEM_TX_DELAY1);
-				//uart_tx("AT+CSCA?\r\n");
-				//delay(MODEM_TX_DELAY1);
+		uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
+		//uart_tx("AT#HTTPCFG=1,\"54.175.222.246\",80\r\n");
 
-				//uart_tx("AT#GPIO=7,0,2\r\n");
-				//delay(5000);
-				uart_tx(
-						"AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n");
-				delay(MODEM_TX_DELAY2);
+		delay(MODEM_TX_DELAY2);
 
-				uart_tx("AT#SGACT=1,1\r\n");
-				delay(MODEM_TX_DELAY2);
+		//reset the RX counters to reuse memory from POST DATA
+		RXTailIdx = RXHeadIdx = 0;
+		iRxLen = RX_EXTENDED_LEN;
+		RXBuffer[RX_EXTENDED_LEN + 1] = 0;	//null termination
 
-				uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
-				//uart_tx("AT#HTTPCFG=1,\"54.175.222.246\",80\r\n");
+		memset(ATresponse, 0, sizeof(ATresponse));
+		strcpy(ATresponse,
+				"AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/358072043119046/1/\"\r\n");
+		//strcpy(ScratchPad,"AT#HTTPQRY=1,0,\"/ip\"\r\n");
 
-				delay(MODEM_TX_DELAY2);
+		uart_tx(ATresponse);
+		delay(10000);
+		uart_tx("AT#HTTPRCV=1\r\n");
+		delay(10000);
 
-				//reset the RX counters to reuse memory from POST DATA
-				RXTailIdx = RXHeadIdx = 0;
-				iRxLen = RX_EXTENDED_LEN;
-				RXBuffer[RX_EXTENDED_LEN + 1] = 0;	//null termination
+		uart_rx_cleanBuf(ATCMD_HTTPQRY, ATresponse, sizeof(ATresponse));
+		delay(5000);
 
-				memset(ATresponse, 0, sizeof(ATresponse));
-				strcpy(ATresponse,
-						"AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/358072043119046/1/\"\r\n");
-				//strcpy(ScratchPad,"AT#HTTPQRY=1,0,\"/ip\"\r\n");
-
-				uart_tx(ATresponse);
-				delay(10000);
-				uart_tx("AT#HTTPRCV=1\r\n");
-				delay(10000);
-
-				uart_rx_cleanBuf(ATCMD_HTTPQRY, ATresponse, sizeof(ATresponse));
-				delay(5000);
-
-				//uart_tx("AT+CPMS=\"SM\"\r\n");
-				//delay(5000);
-				// uart_tx("AT+CNMI?\r\n");
-				//delay(5000);
-				// uart_tx("AT+CPMS?\r\n");
-				// delay(5000);
-				iSlot = !iSlot;
-
-			}
-
-		}
+		//uart_tx("AT+CPMS=\"SM\"\r\n");
+		//delay(5000);
+		// uart_tx("AT+CNMI?\r\n");
+		//delay(5000);
+		// uart_tx("AT+CPMS?\r\n");
+		// delay(5000);
+		g_pInfoA->cfgSIMSlot = !g_pInfoA->cfgSIMSlot;
+	}
 
 #endif
 

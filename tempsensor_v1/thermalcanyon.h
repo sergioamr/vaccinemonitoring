@@ -62,7 +62,7 @@ void sendhb();
 int dopost_sms_status(void);
 int dopost_gprs_connection_status(char status);
 void sampletemp();
-void modem_init(int8_t slot);
+void modem_init();
 void pullTime();
 void monitoralarm();
 
