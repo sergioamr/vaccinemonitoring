@@ -143,8 +143,8 @@ void pullTime() {
 		rtc_init(&currTime);
 		if(strcmp(getDMYString(&currTime), "000000") != 0) {
 			// Day has changed so save the new date TODO keep trying until date is set. Call function ONCE PER DAY
-			if(g_iCurrYearDay != currTime.tm_yday)
-				g_iCurrYearDay = currTime.tm_yday;
+			if(g_iCurrDay != currTime.tm_mday)
+				g_iCurrDay = currTime.tm_mday;
 			break;
 		}
 		delay(MODEM_TX_DELAY1);

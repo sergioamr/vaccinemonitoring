@@ -25,7 +25,6 @@ char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
 
 void modem_checkSignal() {
-
 	if (uart_tx("AT+CSQ\r\n") != UART_SUCCESS)
 		return;
 
