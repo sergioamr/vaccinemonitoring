@@ -314,7 +314,7 @@ int main(void) {
 				ConvertADCToTemperature(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
 			}
 
-			//Write temperature data to 7 segment display
+			//Write temperature data to 7 segment display (Writes to a particular position?
 			writetoI2C(0x20, SensorDisplayName[iDisplayId]);//Display channel
 			writetoI2C(0x21, Temperature[iDisplayId][0]);//(A0tempdegCint >> 8));
 			writetoI2C(0x22, Temperature[iDisplayId][1]);//(A0tempdegCint >> 4));
@@ -359,8 +359,6 @@ int main(void) {
 				iStatus &= ~SMSED_LOW_TEMP;
 #endif
 				if ((iMinuteTick - iUploadTimeElapsed) >= g_iUploadPeriod) {
-					pullTime();
-
 					//if(((g_iUploadPeriod/g_iSamplePeriod) < MAX_NUM_CONTINOUS_SAMPLES) ||
 					//    (iStatus & ALERT_UPLOAD_ON))
 					if ((g_iUploadPeriod / g_iSamplePeriod)
@@ -559,7 +557,6 @@ int main(void) {
 								//control should not come here ideally
 								//update the seek to next sector to skip the bad logged data
 								dwLastseek = dwLastseek + SECTOR_SIZE - iOffset;
-
 							}
 						} else {
 							//file system issue TODO
@@ -841,14 +838,15 @@ int main(void) {
 			P4IE &= ~BIT1;				// disable interrupt for button input
 			//lcd_print_line("Sampling........", LINE2);
 			//re-trigger the ADC conversion
-			//ADC12CTL0 &= ~ADC12ENC;
-			//ADC12CTL0 |= ADC12ENC | ADC12SC;
+			ADC12CTL0 &= ~ADC12ENC;
+			ADC12CTL0 |= ADC12ENC | ADC12SC;
 			sampletemp();
 			delay(2000);	//to allow the ADC conversion to complete
 
 			if (iStatus & NETWORK_DOWN) {
 				delay(2000);//additional delay to enable ADC conversion to complete
 				//check for signal strength
+				pullTime();
 				uart_resetbuffer();
 				uart_tx("AT+CSQ\r\n");
 				delay(MODEM_TX_DELAY1);
