@@ -268,6 +268,24 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 	//input check
 	if (pResponse) {
 		switch (atCMD) {
+		case ATCMD_CSURVC:
+			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "ERROR");
+			if (pToken1 != NULL)
+				return UART_ERROR;
+
+			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ",");
+			int count = 0;
+			while (pToken1 != NULL) {
+				pToken1 = strstr(pToken1, ",");
+				if(count == 3) {
+					strncpy(pResponse, pToken1 + 1, MCC_MAX_LEN + MNC_MAX_LEN + 1);
+					return UART_SUCCESS;
+				}
+				count++;
+				pToken1++;
+			}
+			return UART_FAILED;
+
 		case ATCMD_CMGS:
 			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "ERROR");
 			if (pToken1!=NULL)

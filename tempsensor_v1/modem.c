@@ -94,12 +94,27 @@ void modem_getIMEI() {
 
 }
 
-void modem_getsimcardsinfo() {
+void modem_getSimCardInfo() {
 
 	modem_getSMSCenter();
 	modem_getIMEI();
+	modem_surveyNetwork();
 
 	delay(100);
+}
+
+void modem_surveyNetwork() {
+	uart_resetbuffer();
+	uart_tx("AT#CSURVC\r\n");
+	delay(1000);
+	if (uart_rx_cleanBuf(ATCMD_CSURVC, ATresponse,
+			sizeof(ATresponse))==UART_SUCCESS) {
+		// Get MCC then MNC (the next in the list)
+		char* surveyResult = strtok(ATresponse, ",");
+		strncpy(g_pInfoA->cfgMCC[g_pInfoA->cfgSIMSlot], surveyResult, strlen(surveyResult));
+		surveyResult = strtok(NULL, ",");
+		strncpy(g_pInfoA->cfgMNC[g_pInfoA->cfgSIMSlot], surveyResult, strlen(surveyResult));
+	}
 }
 
 void modem_init() {
@@ -136,6 +151,8 @@ void modem_init() {
 	uart_tx("AT+CMEE=2\r\n");
 	uart_tx("AT#CMEEMODE=1\r\n");
 	uart_tx("AT#AUTOBND=2\r\n");
+	// Displays info for the only serving cell
+	uart_tx("AT#CSURVEXT=0\r\n");
 	uart_tx("AT#NITZ=1\r\n");
 	uart_tx("AT+CTZU=1\r\n");
 	uart_tx("AT&K4\r\n");

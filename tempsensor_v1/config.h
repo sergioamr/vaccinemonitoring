@@ -98,6 +98,8 @@ BATT_POWER_ALERT_PARAM	stBattPowerAlertParam;
 char    				cfgIMEI[IMEI_MAX_LEN + 1];
 char    				cfgSMSCenter[NUM_SIM_CARDS][GW_MAX_LEN + 1]; // Service Message Center number
 char    				cfgAPN[NUM_SIM_CARDS][APN_MAX_LEN + 1];
+char					cfgMCC[NUM_SIM_CARDS][MCC_MAX_LEN + 1];
+char					cfgMNC[NUM_SIM_CARDS][MNC_MAX_LEN + 1];
 } CONFIG_INFOA;
 
 typedef struct __attribute__((__packed__))  {

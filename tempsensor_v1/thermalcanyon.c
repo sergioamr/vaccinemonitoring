@@ -161,7 +161,6 @@ void pullTime() {
 #define    PRIx32      "lx"
 
 int main(void) {
-
 	char* pcData = NULL;
 	char* pcTmp = NULL;
 	char* pcSrc1 = NULL;
@@ -250,7 +249,7 @@ int main(void) {
 
 		pullTime();
 
-		modem_getsimcardsinfo();
+		modem_getSimCardInfo();
 		modem_checkSignal();
 
 		lcd_print("Checking GPRS");
