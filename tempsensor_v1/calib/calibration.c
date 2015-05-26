@@ -21,6 +21,10 @@
 #include "driverlib.h"
 #include "globals.h"
 #include "lcd.h"
+#include "string.h"
+#include "stdio.h"
+#include "modem.h"
+#include "sms.h"
 
 #define  CALIBRATE 4	//0 - default, 1 = device A, 2 = device B...
 #define SMS_TEST
@@ -33,7 +37,7 @@
 extern volatile uint32_t iMinuteTick;
 
 //len constants
-#define IMEI_MAX_LEN		 20
+
 #define APN_MAX_LEN     	 20
 #define UPLOAD_MODE_LEN 	 4
 #define MAX_SMS_NUM			 4
