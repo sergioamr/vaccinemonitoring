@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Intel Corporation. All rights reserved.
+﻿/* Copyright (c) 2015, Intel Corporation. All rights reserved.
  *
  * INFORMATION IN THIS DOCUMENT IS PROVIDED IN CONNECTION WITH INTEL� PRODUCTS. NO LICENSE, EXPRESS OR IMPLIED,
  * BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS IS GRANTED BY THIS DOCUMENT. EXCEPT AS PROVIDED
@@ -44,12 +44,16 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 	return NULL;
 }
 
+// Setup Pinout for I2C, and SPI transactions.
+// http://www.ti.com/lit/ug/slau535a/slau535a.pdf
+
 static void setupIO() {
 
 	// Configure GPIO
 	P2DIR |= BIT3;							// SPI CS
 	P2OUT |= BIT3;					// drive SPI CS high to deactive the chip
 	P2SEL1 |= BIT4 | BIT5 | BIT6;             // enable SPI CLK, SIMO, SOMI
+
 	PJSEL0 |= BIT4 | BIT5;                    // For XT1
 	P1SELC |= BIT0 | BIT1;                    // Enable VEREF-,+
 	P1SELC |= BIT2;                           // Enable A/D channel A2
@@ -62,6 +66,9 @@ static void setupIO() {
 	P1SEL1 |= BIT6 | BIT7;					// Enable I2C SDA and CLK
 
 	P2SEL1 |= BIT0 | BIT1;                    // USCI_A0 UART operation
+	// P2.0 UCA0SIMO
+	// P2.1 UCA0RXD/ UCA0SOMI
+
 	P2SEL0 &= ~(BIT0 | BIT1);
 	P4DIR |= BIT0 | BIT5 | BIT7; // Set P4.0 (Modem reset), LEDs to output direction
 	P4OUT &= ~BIT0;                           // Reset high
