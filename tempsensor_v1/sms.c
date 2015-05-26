@@ -9,6 +9,8 @@
 #define SMS_C_
 
 #include "stdint.h"
+#include "stdio.h"
+#include "stringutils.h"
 #include "sms.h"
 #include "uart.h"
 #include "timer.h"
@@ -18,6 +20,7 @@
 #include "string.h"
 #include "globals.h"
 #include "modem.h"
+#include "stdlib.h"
 
 extern char* itoa_nopadding(int num);
 
@@ -25,37 +28,46 @@ extern char* itoa_nopadding(int num);
 //char g_TmpSMScmdBuffer[SMS_CMD_LEN];
 //#pragma SET_DATA_SECTION()
 
-char destinationSMS[] = "AT+CMGS=\"" SMS_NEXLEAF_GATEWAY "\",129\r\n";
-void sendmsg(char* pData) {
-	if (iStatus & TEST_FLAG)
-		return;
+uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 
-	if (g_iDebug_state==0) {
+	uint16_t msgNumber=0;  // Validation number from the network returned by the CMGS command
+	int res=UART_ERROR;
+
+	if (iStatus & TEST_FLAG)
+		return UART_SUCCESS;
+
+	if (g_iDebug_state == 0) {
 		lcd_clear();
 		lcd_print_line("SMS To ", LINE1);
-		lcd_print_line(SMS_NEXLEAF_GATEWAY, LINE2);
+		lcd_print_line(szPhoneNumber, LINE2);
 	}
 
 	lcd_disable_debug();
-	strcat(pData,ctrlZ);
+	strcat(pData, ctrlZ);
 
-	if (uart_tx_waitForPrompt(destinationSMS)) {
+	sprintf(g_szTemp, "AT+CMGS=\"%s\",129\r\n", szPhoneNumber);
+	if (uart_tx_waitForPrompt(g_szTemp)) {
 		uart_tx(pData);
-		delay(5000);
-		_NOP();
+
 		// TODO Check if ok or RXBuffer contains Error
+		res = uart_rx(ATCMD_CMGS, ATresponse);
+		msgNumber = atoi(ATresponse);
 	}
 
-	int res=uart_rx(ATCMGS, ATresponse);
-
-	if (res==UART_SUCCESS) {
+	if (res == UART_SUCCESS) {
+		sprintf(g_szTemp, "MSG %d ", msgNumber);
+		lcd_print_line(g_szTemp,LINE2);
 		_NOP();
-	} else
-	if (res==UART_ERROR) {
+	} else if (res == UART_ERROR) {
 		lcd_print("MODEM ERROR");
 	}
 
 	_NOP();
+	return res;
+}
+
+uint8_t sendmsg(char* pData) {
+	return sendmsg_number(SMS_NEXLEAF_GATEWAY, pData);
 }
 
 int recvmsg(int8_t iMsgIdx, char* pData) {

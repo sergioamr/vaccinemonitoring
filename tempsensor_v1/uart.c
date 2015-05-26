@@ -14,17 +14,16 @@
 #include "lcd.h"
 #define DEBUG_INFO
 
-// We define the exit condition for the wait for ready function
-#define WAIT_OK 0
-#define WAIT_PROMPT 1
-uint8_t uartWaitMode = 0;
+// AT Messages returns to check.
+char AT_MSG_OK[]={ 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
+char AT_MSG_PROMPT[]={ 0x0D, 0x0A, '>', 0};
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 volatile char RXBuffer[RX_LEN + 1];
 char TXBuffer[TX_LEN + 1] ="";
 #pragma SET_DATA_SECTION()
 
-volatile static char Ready = 0;
+volatile static char TransmissionEnd = 0;
 
 volatile int RXTailIdx = 0;
 volatile int RXHeadIdx = 0;
@@ -62,6 +61,53 @@ void uart_resetbuffer() {
 #endif
 }
 
+/*************************** ERROR AND OK  *****************************/
+// Function to check end of msg
+
+char g_szOK[32];
+uint8_t OKIdx=0;
+int8_t OKLength=0;
+
+char g_szError[32];
+uint8_t ErrorIdx=0;
+int8_t ErrorLength=0;
+
+void uart_setCheckMsg(const char *szOK, const char *szError) {
+	TransmissionEnd=0;
+
+	if (szError!=NULL) {
+		ErrorIdx=0;
+		ErrorLength=strlen(szError)-1;  // We don't check for 0 terminated string
+		strcpy(g_szError, szError);
+	} else
+		ErrorLength=-1;
+
+	if (szOK!=NULL) {
+		OKIdx=0;
+		OKLength=strlen(szOK)-1; // We don't check for 0 terminated string
+		strcpy(g_szOK, szOK);
+	} else
+		OKLength=-1;
+
+}
+
+// We define the exit condition for the wait for ready function
+inline void uart_checkOK() {
+
+	if (OKLength==-1)
+		return;
+
+	if (UCA0RXBUF!=g_szOK[++OKIdx]) {
+		OKIdx=0;
+		return;
+	}
+
+	if (OKIdx==OKLength) {
+		TransmissionEnd=1;
+		OKIdx=0;
+	}
+}
+
 void uart_init() {
 	// Configure USCI_A0 for UART mode
 	UCA0CTLW0 = UCSWRST;                      // Put eUSCI in reset
@@ -82,18 +128,32 @@ void uart_init() {
 	UCA0IE |= UCRXIE;                // Enable USCI_A0 RX interrupt
 }
 
-void sendCommand(const char *cmd) {
+// Reset all buffers, headers, and counters for transmission
+void uart_resetHeaders() {
+
 	memset((char *) RXBuffer, 0, sizeof(RXBuffer));
 
-	size_t cmdLen = strlen(cmd);
-	if (cmd!=TXBuffer) {
-		memset((char *) TXBuffer, 0, sizeof(TXBuffer));
-		memcpy((char *) TXBuffer, cmd, cmdLen);
-	}
 	TXIdx = 0;
 	RXHeadIdx = RXTailIdx = 0;
-	Ready = 0;
-	iTxLen = cmdLen;
+	TransmissionEnd = 0;
+
+	OKIdx=0;     // Indexes for checking for end of command
+	ErrorIdx=0;
+}
+
+void sendCommand(const char *cmd) {
+
+	// Clear reset
+	uart_resetHeaders();
+
+	// Only copy the buffer if we are not actually using TXBuffer,
+	// some places of the old code use the TXBuffer directly :-/
+
+	iTxLen = strlen(cmd);
+	if (cmd!=TXBuffer) {
+		memset((char *) TXBuffer, 0, sizeof(TXBuffer));
+		memcpy((char *) TXBuffer, cmd, iTxLen);
+	}
 
 	UCA0IE |= UCRXIE;   // Enable USCI_A0 RX interrupt
 	UCA0IE |= UCTXIE;
@@ -108,7 +168,7 @@ int waitForReady(uint32_t timeoutTimeMs) {
 	int count=timeoutTimeMs/DELAY_INTERVAL_TIME;
 	while (count>0) {
 		delay(DELAY_INTERVAL_TIME);
-		if (Ready==4) {
+		if (TransmissionEnd==1) {
 			delay(30);  // Documentation specifies 30 ms delay between commands
 			return 0;
 		}
@@ -143,19 +203,13 @@ void uart_tx_nowait(const char *cmd) {
 	sendCommand(cmd);
 }
 
-void uart_setPromptMode() {
-	uartWaitMode=WAIT_PROMPT;
-}
-
-void uart_setOKMode() {
-	uartWaitMode=WAIT_OK;
-}
-
 uint8_t uart_tx_waitForPrompt(const char *cmd) {
 	uart_setPromptMode();
 	sendCommand(cmd);
-	if (!waitForReady(5000))
+	if (!waitForReady(5000)) {
+		uart_setOKMode();
 		return 1; // We found a prompt
+	}
 
 	uart_setOKMode();
 	return 0;
@@ -200,7 +254,12 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			return ret;
 		} else {
 #if defined(DEBUG_INFO) && defined(_DEBUG)
-			lcd_print_debug((char *) RXBuffer, LINE2);
+			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": ");
+			if (pToken1!=NULL) {
+				lcd_print_debug((char *) pToken1+2, LINE2);
+			} else {
+				lcd_print_debug((char *) (const char *) &RXBuffer[RXHeadIdx], LINE2);
+			}
 			delay(100);
 #endif
 		}
@@ -209,7 +268,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 	//input check
 	if (pResponse) {
 		switch (atCMD) {
-		case ATCMGS:
+		case ATCMD_CMGS:
 			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "ERROR");
 			if (pToken1!=NULL)
 				return UART_ERROR;
@@ -494,7 +553,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			}
 
 		case ATCMD_HTTPQRY:
-			pToken1 = strstr(RXBuffer, "HTTPRING");
+			pToken1 = strstr((const char *) RXBuffer, "HTTPRING");
 			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
 				if (searchtoken("$ST", &pToken1) == 0) {
 					RXHeadIdx = pToken1 - &RXBuffer[0];
@@ -512,7 +571,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 							if (bytestoread > CMGL_RSP_LEN) {
 								bytestoread = CMGL_RSP_LEN;
 							}
-							memcpy(pResponse, &RXBuffer[iStartIdx], bytestoread);
+							memcpy(pResponse, (const char *) &RXBuffer[iStartIdx], bytestoread);
 							ret = 0;
 						} else {
 							//rollover
@@ -520,8 +579,8 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 							if (bytestoread > CMGL_RSP_LEN) {
 								bytestoread = CMGL_RSP_LEN;
 							}
-							memcpy(pResponse, &RXBuffer[iStartIdx], bytestoread);
-							memcpy(&pResponse[bytestoread], RXBuffer, iEndIdx);
+							memcpy(pResponse, (const char *)  &RXBuffer[iStartIdx], bytestoread);
+							memcpy(&pResponse[bytestoread], (const char *) RXBuffer, iEndIdx);
 							ret = 0;
 						}
 					}
@@ -574,6 +633,13 @@ int searchtoken(char* pToken, char** ppTokenPos) {
 	return ret;
 }
 
+void uart_setPromptMode() {
+	uart_setCheckMsg(AT_MSG_PROMPT, NULL);
+}
+
+void uart_setOKMode() {
+	uart_setCheckMsg(AT_MSG_OK, NULL);
+}
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
 #pragma vector=USCI_A0_VECTOR
@@ -592,8 +658,9 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 		if (RXTailIdx >= sizeof(RXBuffer))
 			RXTailIdx = 0;
 
+		uart_checkOK();
 		RXBuffer[RXTailIdx++] = UCA0RXBUF;
-
+		/*
 		// TODO Change this into an array that you check if it is ok
 		if (uartWaitMode==WAIT_OK) {
 			if (Ready == 0 && UCA0RXBUF == 'O') Ready++; else
@@ -607,6 +674,7 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 			if (UCA0RXBUF == '>' && Ready==2)
 				Ready=4;
 		}
+		*/
 
 		if (UCA0STATW & UCRXERR) {
 			iError++;

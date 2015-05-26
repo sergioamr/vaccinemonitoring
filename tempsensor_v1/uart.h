@@ -23,7 +23,7 @@
 #define ATCMD_CPIN          8
 #define ATCMD_CSCA 			9
 #define ATCMD_BND			10
-#define ATCMGS			    11
+#define ATCMD_CMGS		    11
 #define ATCMD_HTTPQRY       12
 
 #define UART_SUCCESS 0
@@ -56,6 +56,7 @@ extern void uart_setOKMode();
 extern uint8_t uart_tx_waitForPrompt(const char *cmd);
 
 extern void uart_setClock(); // Initializes the speed and the bauds of the UCA0
+extern void uart_setPromptMode();
 
 //*****************************************************************************
 // Set tail and head to 0 for easy parsing.

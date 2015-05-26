@@ -34,6 +34,7 @@
 #include "modem.h"
 #include "fatdata.h"
 #include "http.h"
+#include "stdio.h"
 
 //------------- FUNCTIONS MOVED FROM MAIN - WAITING CLEANUP -------------------
 
