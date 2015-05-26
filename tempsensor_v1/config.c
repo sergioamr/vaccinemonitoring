@@ -35,11 +35,11 @@ CONFIG_SYSTEM* g_pSysCfg = &g_SystemConfig;
 /************************** END CONFIGURATION MEMORY ****************************************/
 
 void calibrate_device() {
-	main_calibration();
+	//main_calibration();
 	g_pSysCfg->calibrationFinished = 1;
 	//reset the board by issuing a SW BOR
-	PMM_trigBOR();
-	while(1);
+	//PMM_trigBOR();
+	//while(1);
 }
 
 void config_SafeMode() {
@@ -67,11 +67,12 @@ void config_Init() {
 		return; // Memory was initialized, we are fine here.
 	}
 
-	// Setup InfoA config data
-	g_pInfoA->cfgSIMSlot=0;
-
 	// Setup internal system counters and checks
 	memset(g_pSysCfg, 0, sizeof(CONFIG_SYSTEM));
+	memset(g_pInfoA, 0, sizeof(CONFIG_INFOA));
+
+	// Setup InfoA config data
+	g_pInfoA->cfgSIMSlot=0;
 
 	// First run
 	g_pSysCfg->numberConfigurationRuns = 1;
@@ -81,7 +82,7 @@ void config_Init() {
 	g_pSysCfg->memoryInitialized = 1;
 
 	// Set the date and time of compilation as firmware version
-	strcpy(g_pSysCfg->firmawareVersion, __DATE__ " " __TIME__);
+	strcpy(g_pSysCfg->firmwareVersion, __DATE__ " " __TIME__);
 
 
 	// First initalization, calibration code.

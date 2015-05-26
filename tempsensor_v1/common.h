@@ -79,7 +79,7 @@ extern "C"
 
 //len constants
 #define IMEI_MAX_LEN		 15
-#define GW_MAX_LEN			 12
+#define GW_MAX_LEN			 15
 #define APN_MAX_LEN     	 20
 #define UPLOAD_MODE_LEN 	 4
 #define MAX_SMS_NUM			 4

@@ -141,7 +141,7 @@ void pullTime() {
 		uart_rx(ATCMD_CCLK, ATresponse);
 		parsetime(ATresponse, &currTime);
 		rtc_init(&currTime);
-		if(strcmp(getDMYString(&currTime), "000000") != 0) {
+		if(!strcmp(getDMYString(&currTime), "000000")) {
 			// Day has changed so save the new date TODO keep trying until date is set. Call function ONCE PER DAY
 			if(g_iCurrDay != currTime.tm_mday)
 				g_iCurrDay = currTime.tm_mday;
@@ -176,7 +176,7 @@ int main(void) {
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 
 	setupIO();
-	//config_Init();	// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
+	config_Init();	// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
 
 	delay(100);
 
@@ -243,19 +243,6 @@ int main(void) {
 		lcd_print("Checking GPRS");
 		/// added for gprs connection..//
 		signal_gprs = dopost_gprs_connection_status(GPRS);
-
-		lcd_print("IMEI");
-
-		// added for IMEI number//
-		if ((uint8_t) g_pInfoA->cfgIMEI[0] == 0xFF || (uint8_t) g_pInfoA->cfgIMEI[0] == '+') {
-			uart_resetbuffer();
-			uart_tx("AT+CGSN\r\n");
-			memset(ATresponse, 0, sizeof(ATresponse));
-			uart_rx(ATCMD_CGSN, ATresponse);
-			if (memcmp(ATresponse, "INVALID", strlen("INVALID"))) {
-				memcpy(g_pInfoA->cfgIMEI, ATresponse, strlen(ATresponse) + 1);
-			}
-		}
 
 		// Reading the Service Center Address to use as message gateway
 		// http://www.developershome.com/sms/cscaCommand.asp
@@ -1576,6 +1563,7 @@ int dopost_gprs_connection_status(char status) {
 					&& (RXBuffer[j + 4] == ':') && (RXBuffer[j + 8] == '1')) {
 				isHTTPResponseAvailable = 1;
 				l_file_pointer_enabled_sms_status = 1; // set for sms packet.....///
+				break;
 			}
 		}
 		if (isHTTPResponseAvailable == 0) {
@@ -1598,6 +1586,7 @@ int dopost_gprs_connection_status(char status) {
 					&& (RXBuffer[j + 9] == '1')) {
 				isHTTPResponseAvailable = 1;
 				l_file_pointer_enabled_sms_status = 1; // set for sms packet.....///
+				break;
 			}
 		}
 		if (isHTTPResponseAvailable == 0) {
@@ -2385,7 +2374,7 @@ void sendhb() {
 	} else {
 		strcat(SampleData, "0,");
 	}
-	strcat(SampleData, &g_pInfoA->cfgSMSCenter[g_pInfoA->cfgSIMSlot][0]);
+	strcat(SampleData, &g_pInfoA->cfgSMSCenter[g_pInfoA->cfgSIMSlot]);
 
 #endif
 	strcat(SampleData, ",");
