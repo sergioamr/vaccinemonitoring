@@ -158,6 +158,8 @@ void pullTime() {
 	}
 }
 
+#define    PRIx32      "lx"
+
 int main(void) {
 
 	char* pcData = NULL;
@@ -165,7 +167,7 @@ int main(void) {
 	char* pcSrc1 = NULL;
 	char* pcSrc2 = NULL;
 	uint32_t iIdx = 0;
-	int iPOSTstatus = 0;
+	int32_t iPOSTstatus = 0;
 	int32_t dwLastseek = 0;
 	int32_t dwFinalSeek = 0;
 	int32_t iSize = 0;
@@ -200,7 +202,7 @@ int main(void) {
 
 	g_iDebug_state = 0;         // Setting up debug states
 
-	sprintf(g_szTemp, "Boot %d",g_pSysCfg->numberConfigurationRuns);
+	sprintf(g_szTemp, "Boot %zu",g_pSysCfg->numberConfigurationRuns);
 	lcd_print(g_szTemp);
 
 	delay(100);
@@ -475,15 +477,15 @@ int main(void) {
 					iOffset = dwLastseek % SECTOR_SIZE;
 					//check the position is in first half of sector
 					if ((SECTOR_SIZE - iOffset) > AGGREGATE_SIZE) {
-						fr = f_read(&filr, ATresponse, AGGREGATE_SIZE, &iIdx); /* Read first chunk of sector*/
+						fr = f_read(&filr, ATresponse, AGGREGATE_SIZE,(UINT *) &iIdx); /* Read first chunk of sector*/
 						if ((fr == FR_OK) && (iIdx > 0)) {
 							iStatus &= ~SPLIT_TIME_STAMP;//clear the last status of splitted data
-							pcData = FatFs.win;	//reuse the buffer maintained by the file system
+							pcData = (char *) FatFs.win;	//reuse the buffer maintained by the file system
 							//check for first time stamp
 							//pcTmp = strstr(&pcData[iOffset],"$TS");
 							pcTmp = strstr(&pcData[iOffset], "$");//to prevent $TS rollover case
 							if ((pcTmp) && (pcTmp < &pcData[SECTOR_SIZE])) {
-								iIdx = pcTmp; //start position
+								iIdx = (uint32_t) pcTmp; //start position
 								//check for second time stamp
 								//pcTmp = strstr(&pcTmp[TS_FIELD_OFFSET],"$TS");
 								pcTmp = strstr(&pcTmp[TS_FIELD_OFFSET], "$");
@@ -516,7 +518,7 @@ int main(void) {
 									//fr = f_read(&filr, ATresponse, AGGREGATE_SIZE, &iIdx);  /* Read next data of AGGREGATE_SIZE */
 									//if((fr == FR_OK) && (iIdx > 0))
 									//if(disk_read_ex(0,ATresponse,filr.dsect+1,AGGREGATE_SIZE) == RES_OK)
-									if (disk_read_ex(0, ATresponse,
+									if (disk_read_ex(0, (BYTE *) ATresponse,
 											filr.dsect + 1, 512) == RES_OK) {
 										//calculate bytes read
 										iSize = filr.fsize - dwLastseek;
@@ -601,7 +603,7 @@ int main(void) {
 										f_lseek(&filr, dwLastseek);
 										fr = f_read(&filr, &dummy, 1, &iIdx); /* dummy read to load the next sector */
 										if ((fr == FR_OK) && (iIdx > 0)) {
-											pcData = FatFs.win;	//resuse the buffer maintained by the file system
+											pcData = (char *) FatFs.win;	//resuse the buffer maintained by the file system
 											//update final lseek for next sample
 											//pcSrc1 = strstr(pcData,"$TS");
 											pcSrc1 = strstr(pcData, "$");

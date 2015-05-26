@@ -65,7 +65,7 @@
 #define LCD_DISPLAY_LEN			32
 #define LCD_INIT_PARAM_SIZE		9
 #define LCD_LINE_LEN			16
-#define DEF_IMEI  3000000000
+#define DEF_IMEI  "IMEI_UNKNOWN"
 
 //INFO memory segment address
 //#define INFOA_ADDR      		0x1980
@@ -102,8 +102,8 @@ char    				cfgAPN[NUM_SIM_CARDS][APN_MAX_LEN + 1];
 
 typedef struct __attribute__((__packed__))  {
 	uint8_t memoryInitialized;
-	int32_t numberRuns;
-	int32_t numberConfigurationRuns;
+	uint32_t numberRuns;
+	uint32_t numberConfigurationRuns;
 	uint8_t calibrationFinished;
 	char firmwareVersion[64];
 	uint16_t configStructureSize; // Size to check if there are changes on this structure
