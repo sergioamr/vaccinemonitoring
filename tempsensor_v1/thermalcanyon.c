@@ -2367,10 +2367,6 @@ void sendhb() {
 	//send heart beat
 	memset(SampleData, 0, sizeof(SampleData));
 	strcat(SampleData, SMS_HB_MSG_TYPE);
-#if 0
-	strcat(SampleData,"358072043113601");	//TODO remove hardcoding //SERIAL
-	strcat(SampleData,",");
-#else
 	strcat(SampleData, g_pInfoA->cfgIMEI);
 	strcat(SampleData, ",");
 	if (g_pInfoA->cfgSIMSlot == 1) {
@@ -2379,8 +2375,10 @@ void sendhb() {
 		strcat(SampleData, "0,");
 	}
 	strcat(SampleData, &g_pInfoA->cfgSMSCenter[g_pInfoA->cfgSIMSlot][0]);
-
-#endif
+	strcat(SampleData, ",");
+	strcat(SampleData, &g_pInfoA->cfgMCC[g_pInfoA->cfgSIMSlot][0]);
+	strcat(SampleData, ",");
+	strcat(SampleData, &g_pInfoA->cfgMNC[g_pInfoA->cfgSIMSlot][0]);
 	strcat(SampleData, ",");
 #if MAX_NUM_SENSORS == 5
 	strcat(SampleData, "1,1,1,1,1,");//TODO to be changed based on jack detection
