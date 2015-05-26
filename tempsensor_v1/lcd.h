@@ -12,7 +12,7 @@
 #define LINE1					1
 #define LINE2					2
 
-extern int g_iDebug_state;
+extern int g_iBooting;
 
 extern void lcd_disable_debug();
 extern void lcd_setupIO();

@@ -190,7 +190,7 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 			return UART_SUCCESS;
 		}
 		attempts--;
-		if (g_iDebug_state == 0) {
+		if (g_iBooting == 0) {
 			lcd_print_debug("MODEM TIMEOUT", LINE2);
 		}
 	}
@@ -216,13 +216,10 @@ uint8_t uart_tx_waitForPrompt(const char *cmd) {
 }
 
 uint8_t uart_tx(const char *cmd) {
-#ifdef _DEBUG
-	if (g_iDebug_state == 0) {
-		lcd_clear();
+
+	if (g_iBooting == 0)
 		lcd_print_debug((char *) cmd, LINE1);
-		delay(30);
-	}
-#endif
+
 	return uart_tx_timeout(cmd, MODEM_TX_DELAY1, 10);
 }
 
@@ -232,6 +229,7 @@ int uart_rx(int atCMD, char* pResponse) {
 
 // Clears the response buffer if len > 0
 int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
+	int count = 0;
 	int ret = -1;
 	char* pToken1 = NULL;
 	char* pToken2 = NULL;
@@ -274,7 +272,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 				return UART_ERROR;
 
 			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ",");
-			int count = 0;
 			while (pToken1 != NULL) {
 				pToken1 = strstr(pToken1, ",");
 				if(count == 3) {

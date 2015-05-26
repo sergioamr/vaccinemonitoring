@@ -59,7 +59,7 @@ static void setupIO() {
 	P1SELC |= BIT2;                           // Enable A/D channel A2
 #ifdef SEQUENCE
 	P1SELC |= BIT3 | BIT4 | BIT5;          // Enable A/D channel A3-A5
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
 	P4SELC |= BIT2;          				// Enable A/D channel A10
 #endif
 #endif
@@ -158,8 +158,6 @@ void pullTime() {
 	}
 }
 
-#define    PRIx32      "lx"
-
 int main(void) {
 	char* pcData = NULL;
 	char* pcTmp = NULL;
@@ -171,10 +169,7 @@ int main(void) {
 	int32_t dwFinalSeek = 0;
 	int32_t iSize = 0;
 	int16_t iOffset = 0;
-
-#ifdef _DEBUG
-	int8_t dummy = 0;  // Used to calculate the size of the different elements consuming memory
-#endif
+	int8_t dummy = 0;
 
 	int8_t iSampleCnt = 0;
 	char gprs_network_indication = 0;
@@ -193,32 +188,33 @@ int main(void) {
 
 #ifndef BATTERY_DISABLED
 	batt_init();
-#endif
 	delay(100);
+#endif
 
 	lcd_init();
 	delay(100);
 
-	g_iDebug_state = 0;         // Setting up debug states
+	g_iBooting = 0;         // Booting is not completed
 
-	sprintf(g_szTemp, "Boot %zu",g_pSysCfg->numberConfigurationRuns);
+	sprintf(g_szTemp, "Boot %d",(int) g_pSysCfg->numberConfigurationRuns);
 	lcd_print(g_szTemp);
 
 	delay(100);
 #ifndef _DEBUG
-	lcd_print_line("(v)" g_pSysCfg->firmwareVersion);  // Show the firmware version
+	lcd_print_line(g_pSysCfg->firmwareVersion, LINE2);  // Show the firmware version
 	delay(4000);
 #else
 	lcd_print_line("(db)" __TIME__, LINE2);
 #endif
 
+/*
 #ifdef NO_CODE_SIZE_LIMIT
 	writetoI2C(0x21, 4);
 	writetoI2C(0x22, 2);
 	writetoI2C(0x23, 0);
 	writetoI2C(0x24, 0x04);
 #endif
-
+*/
 	sampletemp();
 #ifndef _DEBUG
 	delay(2000);  // to allow conversion to get over and prevent any side-effects to other interface like modem
@@ -302,7 +298,7 @@ int main(void) {
 	iDisplayId = 0;
 
 	// Init finished, we disabled the debugging display
-	g_iDebug_state = -1;
+	g_iBooting = -1;
 
 	lcd_print("Finished Boot");
 	while (1) {

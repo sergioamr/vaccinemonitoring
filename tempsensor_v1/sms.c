@@ -36,7 +36,7 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 	if (iStatus & TEST_FLAG)
 		return UART_SUCCESS;
 
-	if (g_iDebug_state == 0) {
+	if (g_iBooting == 0) {
 		lcd_clear();
 		lcd_print_line("SMS To ", LINE1);
 		lcd_print_line(szPhoneNumber, LINE2);

@@ -32,7 +32,6 @@ void lcd_init() {
 	i2c_write(0x3e, 0, LCD_INIT_PARAM_SIZE,  (uint8_t*) SampleData);
 	delay(100);
 
-	/*
 	SampleData[0] = 0x40 | 0x80;
 	i2c_write(0x3e, 0, 1, SampleData);
 	delay(100);
@@ -40,7 +39,6 @@ void lcd_init() {
 	SampleData[1] = 0x44;
 	i2c_write(0x3e, 0x40, 2, SampleData);
 	delay(100);
-	 */
 
 #if 0
 	delay(1000);
@@ -51,11 +49,8 @@ void lcd_init() {
 	delay(100);
 #endif
 
-	//Configure 7 segement LEDs
-	writetoI2C(0x01, 0x0f);						// Decode Mode register
-	writetoI2C(0x02, 0x0B);						//Intensity register
-	writetoI2C(0x04, 0x01);						//Configuration Register
-	writetoI2C(0x20, 0x0A);						//Display channel
+	delay(100);
+
 }
 
 void lcd_clear() {
@@ -288,9 +283,9 @@ void lcd_bldisable() {
 	PJOUT &= ~BIT7;
 }
 
-int g_iDebug_state = -1; // Disable debug
+int g_iBooting = -1; // Disable debug
 void lcd_disable_debug() {
-	g_iDebug_state=-1;
+	g_iBooting=-1;
 }
 
 void lcd_print_debug(const char* pcData, int line) {
@@ -299,14 +294,14 @@ void lcd_print_debug(const char* pcData, int line) {
 	char display[4] = { '*', '|', '/', '-' };
 #endif
 
-	if (g_iDebug_state == -1)
+	if (g_iBooting == -1)
 		return;
 
 #ifdef _DEBUG
 	lcd_print_line(pcData, line);
 #else
 	lcd_setaddr(0x0D);
-	i2c_write(0x3e,0x40,1,&display[(++pos)&0x3]);
+	i2c_write(0x3e,0x40,1,(uint8_t *)&display[(++pos)&0x3]);
 #endif
 	delay(50);
 }

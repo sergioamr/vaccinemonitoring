@@ -7,6 +7,7 @@
  */
 #define CONFIG_C_
 
+
 #include "thermalcanyon.h"
 #include "calib/calibration.h"
 
@@ -35,11 +36,16 @@ CONFIG_SYSTEM* g_pSysCfg = &g_SystemConfig;
 /************************** END CONFIGURATION MEMORY ****************************************/
 
 void calibrate_device() {
-	//main_calibration();
+
+#ifdef RUN_CALIBRATION
+	main_calibration();
+#endif
 	g_pSysCfg->calibrationFinished = 1;
 	//reset the board by issuing a SW BOR
-	//PMM_trigBOR();
-	//while(1);
+#ifdef RUN_CALIBRATION
+	PMM_trigBOR();
+	while(1);
+#endif
 }
 
 void config_SafeMode() {
