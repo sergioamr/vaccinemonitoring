@@ -17,6 +17,8 @@
 #include "timer.h"
 #include "globals.h"
 
+char g_szTemp[64];
+
 #pragma SET_DATA_SECTION(".aggregate_vars")
 char ATresponse[ATRESP_MAX_LEN] = {};
 #pragma SET_DATA_SECTION()
@@ -36,13 +38,8 @@ uint8_t SensorDisplayName[MAX_NUM_SENSORS] = {0xA,0xB,0xC,0xD};
 #endif
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
-char tmpstr[10];	//opt
 char   acLogData[FILE_BUFFER_LEN];
-//char Temperature[MAX_NUM_SENSORS][TEMP_DATA_LEN+1];
-char   filler[30]; //ZZZZ recheck to remove this, placeholder for Temperature, which is
-                   //now moved to INFOD FRAM to optimize repeated temperature conversion
 #pragma SET_DATA_SECTION()
-
 
 #pragma SET_DATA_SECTION(".config_vars_infoC")
 //put all variables that are written less frequently
@@ -58,7 +55,6 @@ int		   g_iCurrDay = 0;
 #pragma SET_DATA_SECTION(".config_vars_infoD")
 //put all variables that are written less frequently
 uint32_t 	  g_iAlarmStatus = 0;
-//CONFIG_INFOA* g_pInfoA-> = INFOA_ADDR;
 double 	 iTemp = 0.0;
 int16_t		  g_iAlarmCnfCnt[MAX_NUM_SENSORS+2];		//additional two for power and battery alert
 

@@ -17,6 +17,8 @@
 
 extern CONFIG_INFOA* g_pInfoA;
 extern CONFIG_INFOB* g_pInfoB;
+extern CONFIG_SYSTEM* g_pSysCfg; // System configuration
+
 extern uint32_t g_iAlarmStatus;
 
 extern char SensorName[MAX_NUM_SENSORS][NAME_LEN];
@@ -36,10 +38,8 @@ extern char signal_gprs;
 extern void ConvertADCToTemperature(unsigned int ADCval, char* TemperatureVal,
 		int8_t iSensorIdx);
 
-extern char tmpstr[10];	//opt
 extern char acLogData[FILE_BUFFER_LEN];
 
-extern char filler[30]; //ZZZZ recheck to remove this, placeholder for Temperature, which is
 //now moved to INFOD FRAM to optimize repeated temperature conversion
 extern struct tm currTime;
 extern FIL filr;
@@ -69,5 +69,7 @@ extern int8_t g_iLastCfgSeq;
 extern volatile uint16_t iStatus;
 
 extern char file_pointer_enabled_gprs_status; // for gprs condtition enabling.../// need to be tested..//
+
+extern char g_szTemp[64]; // Temporal string to use for display and string operations
 
 #endif /* GLOBALS_H_ */

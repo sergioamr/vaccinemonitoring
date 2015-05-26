@@ -199,10 +199,14 @@ int main(void) {
 	delay(100);
 
 	g_iDebug_state = 0;         // Setting up debug states
-	lcd_print("Booting...");
+
+	sprintf(g_szTemp, "Boot %d",g_pSysCfg->numberConfigurationRuns);
+	lcd_print(g_szTemp);
+
 	delay(100);
 #ifndef _DEBUG
-	lcd_print_line("(v)" __DATE__, LINE2);
+	lcd_print_line("(v)" g_pSysCfg->firmwareVersion);  // Show the firmware version
+	delay(4000);
 #else
 	lcd_print_line("(db)" __TIME__, LINE2);
 #endif
@@ -299,6 +303,7 @@ int main(void) {
 	// Init finished, we disabled the debugging display
 	g_iDebug_state = -1;
 
+	lcd_print("Finished Boot");
 	while (1) {
 		//check if conversion is complete
 		if ((isConversionDone) || (iStatus & TEST_FLAG)) {
@@ -334,10 +339,9 @@ int main(void) {
 			strcat(MSGData,SensorName[iDisplayId]);
 			strcat(MSGData," ");
 			strcat(MSGData,Temperature);
-			iIdx = strlen(MSGData);
-			MSGData[iIdx] = 0x1A;
+			sendmsg(MSGData);
 #endif
-			//sendmsg(MSGData);
+
 			isConversionDone = 0;
 
 			//if(iIdx >= SAMPLE_PERIOD)
@@ -646,7 +650,7 @@ int main(void) {
 						memset(SampleData, 0, sizeof(SampleData));
 #if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
 						strcat(SampleData, "IMEI=");
-						if (g_pInfoA->cfgIMEI[0] != -1) {
+						if (g_pInfoA->cfgIMEI[0] != 0xFF) {
 							strcat(SampleData, g_pInfoA->cfgIMEI);
 						} else {
 							strcat(SampleData, DEF_IMEI);//be careful as devices with unprogrammed IMEI will need up using same DEF_IMEI
@@ -1011,16 +1015,8 @@ int main(void) {
 									strcat(SampleData, "CHARGING");
 								}
 								iOffset = strlen(SampleData);
-								SampleData[iOffset] = 0x1A; //ctrl-Z
-								memset(tmpstr, 0, 40); //reuse tmpstr and filler space to form CMGS
-								strcat(tmpstr, "AT+CMGS=\"");
-								strcat(tmpstr, &ATresponse[6]);
-								strcat(tmpstr, "\",129\r\n");
-								uart_tx(tmpstr);
-								delay(5000);
-								uart_tx(SampleData);
-								delay(1000);
 
+								sendmsg_number(&ATresponse[6], SampleData);
 								break;
 
 							case '2':
@@ -2381,7 +2377,7 @@ void sendhb() {
 	} else {
 		strcat(SampleData, "0,");
 	}
-	strcat(SampleData, &g_pInfoA->cfgSMSCenter[g_pInfoA->cfgSIMSlot]);
+	strcat(SampleData, &g_pInfoA->cfgSMSCenter[g_pInfoA->cfgSIMSlot][0]);
 
 #endif
 	strcat(SampleData, ",");
