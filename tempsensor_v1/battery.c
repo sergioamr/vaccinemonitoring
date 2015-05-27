@@ -30,9 +30,6 @@ void batt_init()
 	uint8_t 	dummy1;
 	uint8_t 	dummy2;
 
-
-
-
 	data = 0x00;
 	i2c_write(SLAVE_ADDR_BATTERY, BATT_CONTROL_1, 1, &data);
 	delay(TRANS_DELAY);
@@ -189,9 +186,6 @@ void batt_init()
 	i2c_write(SLAVE_ADDR_BATTERY, BATT_CONTROL_2, 1, &data);
 	delay(TRANS_DELAY);
 
-
-
-
 #if 0
 //calibration experiment
 
@@ -210,6 +204,8 @@ void batt_init()
 		iIdx += 5;
 	}
 #endif
+
+	delay(TRANS_DELAY);
 }
 
 

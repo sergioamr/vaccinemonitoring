@@ -50,7 +50,6 @@ void lcd_init() {
 #endif
 
 	delay(100);
-
 }
 
 void lcd_clear() {
