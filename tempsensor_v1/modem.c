@@ -142,7 +142,7 @@ void modem_surveyNetwork() {
 
 			// We just want only one full buffer. The data is on the first few characters of the stream
 			uart_setNumberOfPages(1);
-			uart_tx_timeout("AT#CSURV\r\n", TIMEOUT_CSURV*1000, 10);  // #CSURV - Network Survey
+			uart_tx_timeout("AT#CSURV\r\n", TIMEOUT_CSURV, 10);  // #CSURV - Network Survey
 			// Maximum timeout is 2 minutes
 
 			//Execution command allows to perform a quick survey through channels
@@ -195,7 +195,7 @@ void modem_init() {
 
 	lcd_disable_verbose();
 	uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted
-	uart_tx_timeout("AT\r\n", MS(TIMEOUT_DEFAULT), 10); // Loop for OK until modem is ready
+	uart_tx_timeout("AT\r\n", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
 	lcd_enable_verbose();
 
 	uart_tx("AT\r\n"); // Display OK
@@ -203,12 +203,12 @@ void modem_init() {
 #ifdef ENABLE_SIM_SLOT
 	if (slot != 1) {
 		//enable SIM A (slot 1)
-		uart_tx_timeout("AT#GPIO=2,0,1\r\n", MS(TIMEOUT_GPO), 5); // First command always has a chance of timeout
+		uart_tx_timeout("AT#GPIO=2,0,1\r\n", TIMEOUT_GPO, 5); // First command always has a chance of timeout
 		uart_tx("AT#GPIO=4,1,1\r\n");
 		uart_tx("AT#GPIO=3,0,1\r\n");
 	} else {
 		//enable SIM B (slot 2)
-		uart_tx_timeout("AT#GPIO=2,1,1\r\n",  MS(TIMEOUT_GPO), 5);
+		uart_tx_timeout("AT#GPIO=2,1,1\r\n",  TIMEOUT_GPO, 5);
 		uart_tx("AT#GPIO=4,0,1\r\n");
 		uart_tx("AT#GPIO=3,1,1\r\n");
 	}
