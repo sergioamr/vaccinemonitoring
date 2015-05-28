@@ -5,9 +5,9 @@
  *      Author: sergioam
  */
 
-#ifndef CALIB_CALIBRATION_H_
-#define CALIB_CALIBRATION_H_
+#ifndef TEMPSENSOR_V1_CALIB_CALIBRATION_H_
+#define TEMPSENSOR_V1_CALIB_CALIBRATION_H_
 
 extern int main_calibration(void);
 
-#endif /* CALIB_CALIBRATION_H_ */
+#endif /* TEMPSENSOR_V1_CALIB_CALIBRATION_H_ */
