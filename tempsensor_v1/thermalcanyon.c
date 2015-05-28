@@ -148,18 +148,15 @@ void pullTime() {
 	for (i = 0; i < MAX_TIME_ATTEMPTS; i++) {
 		uart_resetbuffer();
 		uart_tx("AT+CCLK?\r\n");
-
-		memset(ATresponse, 0, sizeof(ATresponse));
-		uart_rx(ATCMD_CCLK, ATresponse);
+		uart_rx_cleanBuf(ATCMD_CCLK, ATresponse, sizeof(ATresponse));
 		parsetime(ATresponse, &currTime);
 		rtc_init(&currTime);
-		if(!strcmp(getDMYString(&currTime), "000000")) {
+
+		if (currTime.tm_year!=0) {
 			// Day has changed so save the new date TODO keep trying until date is set. Call function ONCE PER DAY
-			if(g_iCurrDay != currTime.tm_mday)
-				g_iCurrDay = currTime.tm_mday;
+			g_iCurrDay = currTime.tm_mday;
 			break;
 		}
-		delay(MODEM_TX_DELAY1);
 	}
 }
 
@@ -201,7 +198,7 @@ int main(void) {
 
 	lcd_init();
 
-	g_iBooting = 0;         // Booting is not completed
+	g_iLCDVerbose = 0;         // Booting is not completed
 
 	sprintf(g_szTemp, "Boot %d",(int) g_pSysCfg->numberConfigurationRuns);
 	lcd_print(g_szTemp);
@@ -304,7 +301,7 @@ int main(void) {
 	iDisplayId = 0;
 
 	// Init finished, we disabled the debugging display
-	g_iBooting = -1;
+	g_iLCDVerbose = -1;
 
 	lcd_print("Finished Boot");
 	while (1) {
@@ -408,12 +405,12 @@ int main(void) {
 				strcat(SampleData,"sampledatetime=");
 				for(iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++)
 				{
-					strcat(SampleData,itoa(currTime.tm_year)); strcat(SampleData,"/");
-					strcat(SampleData,itoa(currTime.tm_mon)); strcat(SampleData,"/");
-					strcat(SampleData,itoa(currTime.tm_mday)); strcat(SampleData,":");
-					strcat(SampleData,itoa(currTime.tm_hour)); strcat(SampleData,":");
-					strcat(SampleData,itoa(currTime.tm_min)); strcat(SampleData,":");
-					strcat(SampleData,itoa(currTime.tm_sec));
+					strcat(SampleData,itoa_withpadding(currTime.tm_year)); strcat(SampleData,"/");
+					strcat(SampleData,itoa_withpadding(currTime.tm_mon)); strcat(SampleData,"/");
+					strcat(SampleData,itoa_withpadding(currTime.tm_mday)); strcat(SampleData,":");
+					strcat(SampleData,itoa_withpadding(currTime.tm_hour)); strcat(SampleData,":");
+					strcat(SampleData,itoa_withpadding(currTime.tm_min)); strcat(SampleData,":");
+					strcat(SampleData,itoa_withpadding(currTime.tm_sec));
 					if(iIdx != (MAX_NUM_SENSORS - 1))
 					{
 						strcat(SampleData, "|");
@@ -434,7 +431,7 @@ int main(void) {
 				}
 				strcat(SampleData,"&");
 
-				pcData = itoa(batt_getlevel());;
+				pcData = itoa_withpadding(batt_getlevel());;
 				strcat(SampleData,"batterylevel=");
 				for(iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++)
 				{
@@ -767,7 +764,7 @@ int main(void) {
 						g_pInfoB->dwLastSeek = dwLastseek;
 
 						//check if catch is needed due to backlog
-						if ((filr.fsize - dwLastseek) > SAMPLE_SIZE) {
+						if ((filr.fsize - dwLastseek) > sizeof(SampleData)) {
 							iStatus |= BACKLOG_UPLOAD_ON;
 						} else {
 							iStatus &= ~BACKLOG_UPLOAD_ON;
@@ -928,7 +925,7 @@ int main(void) {
 #if 1
 			//sms config reception and processing
 			dohttpsetup();
-			memset(ATresponse, 0, CFG_SIZE);
+			memset(ATresponse, 0, sizeof(ATresponse));
 			doget(ATresponse);
 			if (ATresponse[0] == '$') {
 				if (processmsg(ATresponse)) {
@@ -1006,7 +1003,7 @@ int main(void) {
 
 								// added for show msg//
 								strcat(SampleData, "Battery:");
-								strcat(SampleData, itoa(iBatteryLevel));
+								strcat(SampleData, itoa_withpadding(iBatteryLevel));
 								strcat(SampleData, "%, ");
 								if (P4IN & BIT4)	//power not plugged
 								{
@@ -1450,7 +1447,7 @@ int dopost(char* postdata) {
 #else
 	strcpy(ATresponse, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",");
 #endif
-	strcat(ATresponse, itoa(strlen(postdata)));
+	strcat(ATresponse, itoa_withpadding(strlen(postdata)));
 	strcat(ATresponse, ",0\r\n");
 	//uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
 	//delay(5000);
@@ -1624,18 +1621,18 @@ FRESULT logsampletofile(FIL* fobj, int* tbw) {
 #if 1
 			memset(acLogData, 0, sizeof(acLogData));
 			strcat(acLogData, "$TS=");
-			strcat(acLogData, itoa(currTime.tm_year));
-			strcat(acLogData, itoa(currTime.tm_mon));
-			strcat(acLogData, itoa(currTime.tm_mday));
+			strcat(acLogData, itoa_withpadding(currTime.tm_year));
+			strcat(acLogData, itoa_withpadding(currTime.tm_mon));
+			strcat(acLogData, itoa_withpadding(currTime.tm_mday));
 			strcat(acLogData, ":");
-			strcat(acLogData, itoa(currTime.tm_hour));
+			strcat(acLogData, itoa_withpadding(currTime.tm_hour));
 			strcat(acLogData, ":");
-			strcat(acLogData, itoa(currTime.tm_min));
+			strcat(acLogData, itoa_withpadding(currTime.tm_min));
 			strcat(acLogData, ":");
-			strcat(acLogData, itoa(currTime.tm_sec));
+			strcat(acLogData, itoa_withpadding(currTime.tm_sec));
 			strcat(acLogData, ",");
 			strcat(acLogData, "R");	//removed =
-			strcat(acLogData, itoa(g_iSamplePeriod));
+			strcat(acLogData, itoa_withpadding(g_iSamplePeriod));
 			strcat(acLogData, ",");
 			strcat(acLogData, "\n");
 			fr = f_write(fobj, acLogData, strlen(acLogData), (UINT *)&bw);
@@ -1661,7 +1658,7 @@ FRESULT logsampletofile(FIL* fobj, int* tbw) {
 		//			  !(P4IN & BIT4),Temperature[0],Temperature[1],Temperature[2],Temperature[3],Temperature[4]);
 		memset(acLogData, 0, sizeof(acLogData));
 		strcat(acLogData, "F");
-		strcat(acLogData, itoa(iBatteryLevel));
+		strcat(acLogData, itoa_withpadding(iBatteryLevel));
 		strcat(acLogData, ",");
 		strcat(acLogData, "P");
 		if (P4IN & BIT4) {
@@ -1809,7 +1806,7 @@ void monitoralarm() {
 						strcat(SampleData, "Alert Sensor ");
 						strcat(SampleData, SensorName[iCnt]);
 						strcat(SampleData,": Temp too LOW for ");
-						strcat(SampleData,itoa(g_pInfoA->stTempAlertParams[iCnt].mincold));
+						strcat(SampleData,itoa_withpadding(g_pInfoA->stTempAlertParams[iCnt].mincold));
 						strcat(SampleData," minutes. Current Temp is ");
 						strcat(SampleData,Temperature[iCnt]);
 						//strcat(SampleData,"�C. Take ACTION immediately.");	//superscript causes ERROR on sending SMS
@@ -1859,7 +1856,7 @@ void monitoralarm() {
 						strcat(SampleData, "Alert Sensor ");
 						strcat(SampleData, SensorName[iCnt]);
 						strcat(SampleData,": Temp too HIGH for ");
-						strcat(SampleData,itoa(g_pInfoA->stTempAlertParams[iCnt].minhot));
+						strcat(SampleData,itoa_withpadding(g_pInfoA->stTempAlertParams[iCnt].minhot));
 						strcat(SampleData," minutes. Current Temp is ");
 						strcat(SampleData,Temperature[iCnt]);
 						//strcat(SampleData,"�C. Take ACTION immediately."); //superscript causes ERROR on sending SMS
@@ -1911,7 +1908,7 @@ void monitoralarm() {
 				//send sms LOW Battery: ColdTrace has now 15% battery left. Charge your device immediately.
 				memset(SampleData,0,SMS_ENCODED_LEN);
 				strcat(SampleData, "LOW Battery: ColdTrace has now ");
-				strcat(SampleData,itoa(iBatteryLevel));
+				strcat(SampleData,itoa_withpadding(iBatteryLevel));
 				strcat(SampleData, "battery left. Charge your device immediately.");
 				sendmsg(SampleData);
 #endif
@@ -2388,7 +2385,7 @@ void sendhb() {
 	strcat(SampleData,"1,1,1,1,");	//TODO to be changed based on jack detection
 #endif
 
-	pcTmp = itoa(batt_getlevel());	//opt by directly using tmpstr
+	pcTmp = itoa_withpadding(batt_getlevel());	//opt by directly using tmpstr
 	strcat(SampleData, pcTmp);
 	if (P4IN & BIT4) {
 		strcat(SampleData, ",0");

@@ -62,8 +62,8 @@ MEMORY
     INFOC                   : origin = 0x1880, length = 0x0080
     INFOD                   : origin = 0x1800, length = 0x0080
     FRAM                    : origin = 0x4400, length = 0xBB80
-    FRAM2                   : origin = 0x10000,length = 0x3000
-    PERMANENT_AREA          : origin = 0x13000,length = 0x1000, fill = 0x0000
+    FRAM2                   : origin = 0x10000,length = 0x3E00
+    PERMANENT_AREA          : origin = 0x13E00,length = 0x0200, fill = 0x0000
     JTAGSIGNATURE           : origin = 0xFF80, length = 0x0004, fill = 0xFFFF
     BSLSIGNATURE            : origin = 0xFF84, length = 0x0004, fill = 0xFFFF
     IPESIGNATURE            : origin = 0xFF88, length = 0x0008, fill = 0xFFFF

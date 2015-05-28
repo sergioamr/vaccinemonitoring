@@ -88,16 +88,16 @@ void lcd_show(int8_t iItemId) {
 	memset(SampleData, 0, LCD_DISPLAY_LEN);
 	//get local time
 	rtc_getlocal(&currTime);
-	strcat(SampleData, itoa(currTime.tm_year));
+	strcat(SampleData, itoa_withpadding(currTime.tm_year));
 	strcat(SampleData, "/");
-	strcat(SampleData, itoa(currTime.tm_mon));
+	strcat(SampleData, itoa_withpadding(currTime.tm_mon));
 	strcat(SampleData, "/");
-	strcat(SampleData, itoa(currTime.tm_mday));
+	strcat(SampleData, itoa_withpadding(currTime.tm_mday));
 	strcat(SampleData, " ");
 
-	strcat(SampleData, itoa(currTime.tm_hour));
+	strcat(SampleData, itoa_withpadding(currTime.tm_hour));
 	strcat(SampleData, ":");
-	strcat(SampleData, itoa(currTime.tm_min));
+	strcat(SampleData, itoa_withpadding(currTime.tm_min));
 	iIdx = strlen(SampleData); //marker
 
 	switch (iItemId) {
@@ -106,7 +106,7 @@ void lcd_show(int8_t iItemId) {
 		ConvertADCToTemperature(ADCvar[1], &Temperature[1][0], 1);
 		strcat(SampleData, Temperature[1]);
 		strcat(SampleData, "C ");
-		strcat(SampleData, itoa(iBatteryLevel));
+		strcat(SampleData, itoa_withpadding(iBatteryLevel));
 		strcat(SampleData, "% ");
 		//  if(signal_gprs==1){
 		if ((iSignalLevel >= NETWORK_DOWN_SS)
@@ -120,7 +120,7 @@ void lcd_show(int8_t iItemId) {
 			local_signal = iSignalLevel;
 			local_signal = (((local_signal - NETWORK_ZERO)
 					/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
-			strcat(SampleData, itoa(local_signal));
+			strcat(SampleData, itoa_withpadding(local_signal));
 			strcat(SampleData, "%");
 		} else {
 			strcat(SampleData, "S --  ");
@@ -150,7 +150,7 @@ void lcd_show(int8_t iItemId) {
 		case 5: iCnt = 0xff;
 #endif
 
-		strcat(SampleData, itoa(iBatteryLevel));
+		strcat(SampleData, itoa_withpadding(iBatteryLevel));
 		strcat(SampleData, "% ");
 		if (TEMP_ALARM_GET(MAX_NUM_SENSORS) == TEMP_ALERT_CNF) {
 			strcat(SampleData, "BATT ALERT");
@@ -176,7 +176,7 @@ void lcd_show(int8_t iItemId) {
 				local_signal = iSignalLevel;
 				local_signal = (((local_signal - NETWORK_ZERO)
 						/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
-				strcat(SampleData, itoa(local_signal));
+				strcat(SampleData, itoa_withpadding(local_signal));
 				strcat(SampleData, "% ");
 				if (signal_gprs == 1) {
 					strcat(SampleData, "G:YES");
@@ -199,7 +199,7 @@ void lcd_show(int8_t iItemId) {
 				local_signal = iSignalLevel;
 				local_signal = (((local_signal - NETWORK_ZERO)
 						/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
-				strcat(SampleData, itoa(local_signal));
+				strcat(SampleData, itoa_withpadding(local_signal));
 				strcat(SampleData, "% ");
 				if (signal_gprs == 1) {
 					strcat(SampleData, "G:YES");
@@ -281,9 +281,13 @@ void lcd_bldisable() {
 	PJOUT &= ~BIT7;
 }
 
-int g_iBooting = -1; // Disable debug
-void lcd_disable_debug() {
-	g_iBooting=-1;
+int g_iLCDVerbose = -1; // Disable debug
+void lcd_disable_verbose() {
+	g_iLCDVerbose=-1;
+}
+
+void lcd_enable_verbose() {
+	g_iLCDVerbose=-1;
 }
 
 void lcd_print_debug(const char* pcData, int line) {
@@ -292,7 +296,7 @@ void lcd_print_debug(const char* pcData, int line) {
 	char display[4] = { '*', '|', '/', '-' };
 #endif
 
-	if (g_iBooting == -1)
+	if (g_iLCDVerbose == -1)
 		return;
 
 #ifdef _DEBUG

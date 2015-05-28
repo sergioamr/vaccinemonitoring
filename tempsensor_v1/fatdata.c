@@ -1,6 +1,7 @@
 #include "thermalcanyon.h"
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
+char g_szFatFileName[64];
 FATFS FatFs; /* Work area (file system object) for logical drive */
 #pragma SET_DATA_SECTION()
 
@@ -16,20 +17,27 @@ DWORD get_fattime(void) {
 	return tmr;
 }
 
-char* getDMYString(struct tm* timeData) {
-	char* dayMonthYear = "";
-	strcat(dayMonthYear, itoa(timeData->tm_mday));
-	strcat(dayMonthYear, itoa(timeData->tm_mon));
-	strcat(dayMonthYear, itoa(timeData->tm_year));
-	return dayMonthYear;
+char szYMDString[4+2+2+1];
+
+char* getYMDString(struct tm* timeData) {
+
+	szYMDString[0]=0;
+	if (timeData->tm_year<1900 || timeData->tm_year>3000) // Working for 1000 years?
+		strcpy(szYMDString,"0000");
+	else
+		strcpy(szYMDString,itoa_nopadding(timeData->tm_year));
+
+	strcat(szYMDString,itoa_withpadding(timeData->tm_mon+1));
+	strcat(szYMDString,itoa_withpadding(timeData->tm_mday));
+	return szYMDString;
 }
 
 char* getCurrentFileName(struct tm* timeData) {
-	char* fn = "/data/";
-	strcat(fn, getDMYString(timeData));
-	if(strcmp("/data/", fn) != 0 || strcmp("/data/000000", fn) == 0) {
-		strcat(fn, "unknown");
+	if (timeData->tm_mday==0 && timeData->tm_mon && timeData->tm_year==0) {
+		strcpy(g_szFatFileName, "/data/unknown.csv");
+		return g_szFatFileName;
 	}
-	strcat(fn, ".csv");
-	return fn;
+
+	sprintf(g_szFatFileName, "/data/%s.csv",getYMDString(timeData));
+	return g_szFatFileName;
 }

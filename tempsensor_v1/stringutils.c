@@ -9,7 +9,7 @@
 #include "string.h"
 #include "globals.h"
 
-char* itoa(int num) {
+char* itoa_withpadding(int num) {
 	uint8_t digit = 0;
 	uint8_t iIdx = 0;
 	uint8_t iCnt = 0;

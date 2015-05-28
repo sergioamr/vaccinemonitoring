@@ -17,6 +17,7 @@
 // AT Messages returns to check.
 char AT_MSG_OK[]={ 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
 char AT_MSG_PROMPT[]={ 0x0D, 0x0A, '>', 0};
+char AT_CME_ERROR[]= "+CME ERROR:";
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 volatile char RXBuffer[RX_LEN + 1];
@@ -27,6 +28,8 @@ volatile static char TransmissionEnd = 0;
 
 volatile int RXTailIdx = 0;
 volatile int RXHeadIdx = 0;
+
+volatile int g_iUartState = 0;
 
 //volatile char* TX;
 volatile int TXIdx = 0;
@@ -74,6 +77,7 @@ int8_t ErrorLength=0;
 
 void uart_setCheckMsg(const char *szOK, const char *szError) {
 	TransmissionEnd=0;
+	g_iUartState=UART_SUCCESS;
 
 	if (szError!=NULL) {
 		ErrorIdx=0;
@@ -92,6 +96,24 @@ void uart_setCheckMsg(const char *szOK, const char *szError) {
 }
 
 // We define the exit condition for the wait for ready function
+inline void uart_checkERROR() {
+
+	if (ErrorLength==-1)
+		return;
+
+	if (UCA0RXBUF!=g_szError[++ErrorIdx]) {
+		ErrorIdx=0;
+		return;
+	}
+
+	if (ErrorIdx==ErrorLength) {
+		TransmissionEnd=1;
+		g_iUartState=UART_ERROR;
+		ErrorIdx=0;
+	}
+}
+
+// We define the exit condition for the wait for ready function
 inline void uart_checkOK() {
 
 	if (OKLength==-1)
@@ -104,6 +126,7 @@ inline void uart_checkOK() {
 
 	if (OKIdx==OKLength) {
 		TransmissionEnd=1;
+		g_iUartState=UART_SUCCESS;
 		OKIdx=0;
 	}
 }
@@ -138,6 +161,10 @@ void uart_init() {
 	UCA0IE |= UCRXIE;                // Enable USCI_A0 RX interrupt
 }
 
+uint8_t uart_getTransactionState() {
+	return g_iUartState;
+}
+
 // Reset all buffers, headers, and counters for transmission
 void uart_resetHeaders() {
 
@@ -149,6 +176,7 @@ void uart_resetHeaders() {
 
 	OKIdx=0;     // Indexes for checking for end of command
 	ErrorIdx=0;
+	g_iUartState=UART_INPROCESS;
 }
 
 void sendCommand(const char *cmd) {
@@ -180,13 +208,15 @@ int waitForReady(uint32_t timeoutTimeMs) {
 		delay(DELAY_INTERVAL_TIME);
 		if (TransmissionEnd==1) {
 			delay(30);  // Documentation specifies 30 ms delay between commands
-			return 0;
+			return UART_SUCCESS; // There was a transaction, you have to check the state of the uart transaction to check if it was successful
 		}
 		count--;
 	}
 
+	g_iUartState=UART_TIMEOUT;
+
 	delay(100);  // Documentation specifies 30 ms delay between commands
-	return -1;
+	return UART_FAILED;
 }
 
 uint8_t iModemErrors=0;
@@ -200,10 +230,15 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 			return UART_SUCCESS;
 		}
 		attempts--;
-		if (g_iBooting == 0) {
+		if (g_iLCDVerbose == 0) {
 			lcd_print_debug("MODEM TIMEOUT", LINE2);
 		}
 	}
+
+	// If there was an error we have to wait a bit to retrieve everything that is left from the transaction, like the error message
+	uart_state = uart_getTransactionState();
+	if (uart_state==UART_ERROR)
+		delay(500);
 
 	iModemErrors++;
 	return UART_FAILED;
@@ -231,9 +266,13 @@ void uart_setDelay(uint32_t delay) {
 	g_iModemMaxWait=MODEM_TX_DELAY1;
 }
 
+uint8_t isTransactionOK() {
+	return ErrorIdx;
+}
+
 uint8_t uart_tx(const char *cmd) {
 
-	if (g_iBooting == 0) {
+	if (g_iLCDVerbose == 0) {
 		lcd_clear();
 		lcd_print_debug((char *) cmd, LINE1);
 	}
@@ -667,11 +706,11 @@ int searchtoken(char* pToken, char** ppTokenPos) {
 }
 
 void uart_setPromptMode() {
-	uart_setCheckMsg(AT_MSG_PROMPT, NULL);
+	uart_setCheckMsg(AT_MSG_PROMPT, AT_CME_ERROR);
 }
 
 void uart_setOKMode() {
-	uart_setCheckMsg(AT_MSG_OK, NULL);
+	uart_setCheckMsg(AT_MSG_OK, AT_CME_ERROR);
 }
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
@@ -692,22 +731,10 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 			RXTailIdx = 0;
 
 		uart_checkOK();
+		uart_checkERROR();
+
 		RXBuffer[RXTailIdx++] = UCA0RXBUF;
-		/*
-		// TODO Change this into an array that you check if it is ok
-		if (uartWaitMode==WAIT_OK) {
-			if (Ready == 0 && UCA0RXBUF == 'O') Ready++; else
-			if (Ready == 1 && UCA0RXBUF == 'K') Ready++; else
-			if (Ready == 2 && UCA0RXBUF == 0x0D) Ready++; else
-			if (Ready == 3 && UCA0RXBUF == 0x0A) Ready++; else
-			if (Ready < 4) Ready = 0;
-		} else {
-			if (UCA0RXBUF == 0x0D) Ready++; else
-			if (UCA0RXBUF == 0x0A) Ready++; else
-			if (UCA0RXBUF == '>' && Ready==2)
-				Ready=4;
-		}
-		*/
+
 
 		if (UCA0STATW & UCRXERR) {
 			iError++;

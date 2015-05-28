@@ -30,11 +30,13 @@
 #define UART_SUCCESS 0
 #define UART_ERROR -1
 #define UART_FAILED 1
+#define UART_TIMEOUT 2
+#define UART_INPROCESS 3
 
 #define CCLK_RESP_LEN		28
 #define HTTPSND_RSP_LEN		20
 #define CMGL_RSP_LEN		140
-#define HTTPRCV_RSP_LEN		CFG_SIZE
+#define HTTPRCV_RSP_LEN		sizeof(RXBuffer)
 #define CGSN_OFFSET			4
 #define CGSN_LEN			15
 
@@ -66,13 +68,17 @@ extern void uart_resetbuffer();
 extern void uart_setIO();
 
 //*****************************************************************************
-//
-//! \brief Transmit to UART
-//!
+//! \brief Returns the state of the last transaction
 //! \param pointer to transmit buffer
-//!
+//! \return UART_SUCCESS UART_ERROR or UART_TIMEOUT
+//*****************************************************************************
+
+extern uint8_t uart_getTransactionState();
+
+//*****************************************************************************
+//! \brief Transmit to UART
+//! \param pointer to transmit buffer
 //! \return 0 on success, -1 on failure
-//
 //*****************************************************************************
 extern uint8_t uart_tx(const char* pTxData);
 extern uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts);

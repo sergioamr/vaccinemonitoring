@@ -8,7 +8,7 @@
 #ifndef STRINGUTILS_H_
 #define STRINGUTILS_H_
 
-extern char* itoa(int num);
+extern char* itoa_withpadding(int num);
 extern char* itoa_nopadding(int num);
 
 #endif /* STRINGUTILS_H_ */

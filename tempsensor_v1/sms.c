@@ -36,13 +36,13 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 	if (iStatus & TEST_FLAG)
 		return UART_SUCCESS;
 
-	if (g_iBooting == 0) {
+	if (g_iLCDVerbose == 0) {
 		lcd_clear();
 		lcd_print_line("SMS To ", LINE1);
 		lcd_print_line(szPhoneNumber, LINE2);
 	}
 
-	lcd_disable_debug();
+	lcd_disable_verbose();
 	strcat(pData, ctrlZ);
 
 	sprintf(g_szTemp, "AT+CMGS=\"%s\",129\r\n", szPhoneNumber);
@@ -75,8 +75,8 @@ int recvmsg(int8_t iMsgIdx, char* pData) {
 
 	//reset the RX counters to reuse memory from POST DATA
 	RXTailIdx = RXHeadIdx = 0;
-	iRxLen = RX_EXTENDED_LEN;
-	RXBuffer[RX_EXTENDED_LEN + 1] = 0; //null termination ... Outside the array??? wtf
+	iRxLen = RX_LEN;
+	RXBuffer[RX_LEN] = 0; //null termination ... Outside the array??? wtf
 
 	//uart_tx("AT+CMGL=\"REC UNREAD\"\r\n");
 	//uart_tx("AT+CMGL=\"REC READ\"\r\n");

@@ -10,7 +10,7 @@
 #include "i2c.h"
 #include "timer.h"
 
-#define  TRANS_DELAY 		100
+#define  TRANS_DELAY 		10
 
 #ifndef BATTERY_DISABLED
 int16_t g_iFullRecharge = 0;

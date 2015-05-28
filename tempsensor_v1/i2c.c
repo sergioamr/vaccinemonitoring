@@ -69,7 +69,7 @@ void i2c_write(uint8_t ucSlaveAddr, uint8_t ucCmd, uint8_t ucLen, uint8_t* pucDa
 
 	 UCB0CTL1 |= UCTR;
 	 UCB0CTL1 |= UCTXSTT;                    // I2C start condition
-
+	 //delay(5);
 }
 
 

@@ -12,9 +12,10 @@
 #define LINE1					1
 #define LINE2					2
 
-extern int g_iBooting;
+extern int g_iLCDVerbose;
 
-extern void lcd_disable_debug();
+extern void lcd_disable_verbose();
+extern void lcd_enable_verbose();
 extern void lcd_setupIO();
 extern void lcd_reset();
 extern void lcd_blenable();

@@ -28,24 +28,20 @@ void deactivatehttp() {
 }
 
 //WARNING: doget() should not be used in parallel to HTTP POST
-int doget(char* queryData) {
+int doget() {
 	uart_resetbuffer();
-	iRxLen = RX_EXTENDED_LEN;
-	RXBuffer[RX_EXTENDED_LEN + 1] = 0;	//null termination
-#if 0
-			strcpy(queryData,"AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/358072043113601/1/\"\r\n");	//reuse,   //SERIAL
-#else
-	strcpy(queryData, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/");
-	strcat(queryData, g_pInfoA->cfgIMEI);
-	strcat(queryData, "/1/\"\r\n");
-#endif
+	iRxLen = RX_LEN;
+	RXBuffer[RX_LEN] = 0;	//null termination
 
-	uart_tx(queryData);
-	delay(10000);	//opt
-	uart_tx("AT#HTTPRCV=1\r\n");		//get the configuartion
-	delay(10000); //opt
-	memset(queryData, 0, CFG_SIZE);
-	uart_rx(ATCMD_HTTPRCV, queryData);
+	strcpy(g_szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/");
+	strcat(g_szTemp, g_pInfoA->cfgIMEI);
+	strcat(g_szTemp, "/1/\"\r\n");
+	uart_tx_timeout(g_szTemp, 10000, 1);
+
+	uart_tx_timeout("AT#HTTPRCV=1\r\n",180000,1);		//get the configuartion
+
+	memset(ATresponse, 0, sizeof(ATresponse));
+	uart_rx(ATCMD_HTTPRCV, ATresponse);
 
 	uart_resetbuffer();
 	iRxLen = RX_LEN;

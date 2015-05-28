@@ -50,7 +50,7 @@ static void writetoI2C(uint8_t addressI2C, uint8_t dataI2C);
 static float ConvertoTemp(float R);
 void ConvertADCToTemperature(unsigned int ADCval, char* TemperatureVal,
 		int8_t iSensorIdx);
-char* itoa(int num);
+char* itoa_withpadding(int num);
 char* itoa_nopadding(int num);	//TODO remove this function for final release
 static void parsetime(char* pDatetime, struct tm* pTime);
 static int dopost(char* postdata);

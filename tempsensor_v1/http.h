@@ -10,6 +10,6 @@
 
 extern void dohttpsetup();
 extern void deactivatehttp();
-extern int doget(char* queryData);
+extern int doget();
 
 #endif /* HTTP_H_ */

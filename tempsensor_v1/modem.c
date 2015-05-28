@@ -67,7 +67,6 @@ void modem_getIMEI() {
 	char IMEI_OK = false;
 
 	uart_resetbuffer();
-	lcd_disable_debug();
 	uart_tx("AT+CGSN\r\n");
 	if (uart_rx_cleanBuf(ATCMD_CGSN, ATresponse,
 			sizeof(ATresponse))==UART_SUCCESS) {
@@ -103,18 +102,45 @@ void modem_getSimCardInfo() {
 	delay(100);
 }
 
+#define NETWORK_WAITING_TIME 10000
 void modem_surveyNetwork() {
-	uart_resetbuffer();
-	uart_tx("AT#CSURVC\r\n");
-	delay(1000);
-	if (uart_rx_cleanBuf(ATCMD_CSURVC, ATresponse,
-			sizeof(ATresponse))==UART_SUCCESS) {
-		// Get MCC then MNC (the next in the list)
-		char* surveyResult = strtok(ATresponse, ",");
-		strncpy(g_pInfoA->cfgMCC[g_pInfoA->cfgSIMSlot], surveyResult, strlen(surveyResult));
-		surveyResult = strtok(NULL, ",");
-		strncpy(g_pInfoA->cfgMNC[g_pInfoA->cfgSIMSlot], surveyResult, strlen(surveyResult));
-	}
+
+	int attempts = 10;
+	int uart_state;
+	lcd_clear();
+	lcd_print("AREA CODE");
+	lcd_disable_verbose();
+
+	do {
+		uart_resetbuffer();
+		uart_tx("AT#CSURVEXT=0\r\n");
+		uart_state = uart_getTransactionState();
+
+		if (uart_state == UART_SUCCESS) {
+			uart_tx_timeout("AT#CSURVC\r\n", 180000, 10);
+			if (uart_rx_cleanBuf(ATCMD_CSURVC, ATresponse,
+					sizeof(ATresponse))==UART_SUCCESS) {
+				// Get MCC then MNC (the next in the list)
+				char* surveyResult = strtok(ATresponse, ",");
+				strncpy(g_pInfoA->cfgMCC[g_pInfoA->cfgSIMSlot], surveyResult,
+						strlen(surveyResult));
+				surveyResult = strtok(NULL, ",");
+				strncpy(g_pInfoA->cfgMNC[g_pInfoA->cfgSIMSlot], surveyResult,
+						strlen(surveyResult));
+			}
+
+			uart_state = uart_getTransactionState();
+			if (uart_state != UART_SUCCESS) {
+				lcd_print_line("NETWORK BUSY", LINE2);
+				delay(NETWORK_WAITING_TIME);
+			}
+		}
+
+		attempts--;
+	} while(uart_state!=UART_SUCCESS && attempts>0);
+
+	lcd_enable_verbose();
+
 }
 
 void modem_init() {
@@ -130,8 +156,7 @@ void modem_init() {
 	uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted
 
 #ifdef ENABLE_SIM_SLOT
-	uart_tx("AT#GPIO=2,0,1\r\n");
-	if (slot != 2) {
+	if (slot != 1) {
 		//enable SIM A (slot 1)
 		uart_tx("AT#GPIO=2,0,1\r\n");
 		uart_tx("AT#GPIO=4,1,1\r\n");
@@ -152,7 +177,6 @@ void modem_init() {
 	uart_tx("AT#CMEEMODE=1\r\n");
 	uart_tx("AT#AUTOBND=2\r\n");
 	// Displays info for the only serving cell
-	uart_tx("AT#CSURVEXT=0\r\n");
 	uart_tx("AT#NITZ=1\r\n");
 	uart_tx("AT+CTZU=1\r\n");
 	uart_tx("AT&K4\r\n");
