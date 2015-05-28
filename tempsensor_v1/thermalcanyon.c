@@ -180,7 +180,6 @@ int main(void) {
 
 	setupIO();
 	config_Init();	// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
-
 	delay(100);
 
 	lcd_reset();
@@ -188,11 +187,9 @@ int main(void) {
 
 #ifndef BATTERY_DISABLED
 	batt_init();
-	delay(100);
 #endif
 
 	lcd_init();
-	delay(100);
 
 	g_iBooting = 0;         // Booting is not completed
 
@@ -202,7 +199,6 @@ int main(void) {
 	delay(100);
 #ifndef _DEBUG
 	lcd_print_line(g_pSysCfg->firmwareVersion, LINE2);  // Show the firmware version
-	delay(4000);
 #else
 	lcd_print_line("(db)" __TIME__, LINE2);
 #endif
