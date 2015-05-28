@@ -130,8 +130,7 @@ void modem_init() {
 	uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted
 
 #ifdef ENABLE_SIM_SLOT
-	uart_tx("AT#GPIO=2,0,1\r\n");
-	if (slot != 2) {
+	if (slot != 1) {
 		//enable SIM A (slot 1)
 		uart_tx("AT#GPIO=2,0,1\r\n");
 		uart_tx("AT#GPIO=4,1,1\r\n");
