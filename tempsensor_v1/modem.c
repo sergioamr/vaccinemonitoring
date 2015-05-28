@@ -20,6 +20,7 @@
 #include "globals.h"
 #include "sms.h"
 #include "timer.h"
+#include "stdio.h"
 
 char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
@@ -102,43 +103,77 @@ void modem_getSimCardInfo() {
 	delay(100);
 }
 
+// 2 minutes timeout by the TELIT documentation
+#define MAX_CSURV_TIME 120000
+
+#ifdef _DEBUG
+#define NETWORK_WAITING_TIME 5000
+#define NET_ATTEMPTS 10
+#else
 #define NETWORK_WAITING_TIME 10000
+#define NET_ATTEMPTS 10
+#endif
+
 void modem_surveyNetwork() {
 
-	int attempts = 10;
+	int attempts = NET_ATTEMPTS;
 	int uart_state;
 	lcd_clear();
-	lcd_print("AREA CODE");
 	lcd_disable_verbose();
 
+	uart_setDelayIntervalDivider(64);  // 120000 / 64
+
+	int slot = g_pInfoA->cfgSIMSlot;
+
 	do {
+		if (attempts!=NET_ATTEMPTS) {
+			lcd_clear();
+			sprintf(g_szTemp, "MCC RETRY %d   ", NET_ATTEMPTS-attempts);
+			lcd_print_line(g_szTemp, LINE1);
+		} else {
+			lcd_print_line("MCC DISCOVER", LINE1);
+		}
+
 		uart_resetbuffer();
 		uart_tx("AT#CSURVEXT=0\r\n");
 		uart_state = uart_getTransactionState();
 
 		if (uart_state == UART_SUCCESS) {
-			uart_tx_timeout("AT#CSURVC\r\n", 180000, 10);
-			if (uart_rx_cleanBuf(ATCMD_CSURVC, ATresponse,
-					sizeof(ATresponse))==UART_SUCCESS) {
-				// Get MCC then MNC (the next in the list)
-				char* surveyResult = strtok(ATresponse, ",");
-				strncpy(g_pInfoA->cfgMCC[g_pInfoA->cfgSIMSlot], surveyResult,
-						strlen(surveyResult));
-				surveyResult = strtok(NULL, ",");
-				strncpy(g_pInfoA->cfgMNC[g_pInfoA->cfgSIMSlot], surveyResult,
-						strlen(surveyResult));
-			}
+
+			// We just want only one full buffer. The data is on the first few characters of the stream
+			uart_setNumberOfPages(1);
+			uart_tx_timeout("AT#CSURV\r\n", MAX_CSURV_TIME, 10);  // #CSURV - Network Survey
+			// Maximum timeout is 2 minutes
+
+			//Execution command allows to perform a quick survey through channels
+			//belonging to the band selected by last #BND command issue, starting from
+			//channel <s> to channel <e>. If parameters are omitted, a full band scan is
+			//performed.
 
 			uart_state = uart_getTransactionState();
 			if (uart_state != UART_SUCCESS) {
 				lcd_print_line("NETWORK BUSY", LINE2);
 				delay(NETWORK_WAITING_TIME);
+			} else
+			if (uart_rx_cleanBuf(ATCMD_CSURVC, ATresponse,
+					sizeof(ATresponse))==UART_SUCCESS) {
+				// Get MCC then MNC (the next in the list)
+				char* surveyResult = strtok(ATresponse, ",");
+				g_pInfoA->iCfgMCC[slot]=atoi(surveyResult);
+				surveyResult = strtok(NULL, ",");
+				g_pInfoA->iCfgMCC[slot]=atoi(surveyResult);
+
+				lcd_clear();
+				lcd_print_line("SUCCESS", LINE1);
+				sprintf(g_szTemp, "MCC %d MNC %d", g_pInfoA->iCfgMCC[slot], g_pInfoA->iCfgMNC[slot]);
+				lcd_print_line(g_szTemp, LINE2);
 			}
 		}
 
 		attempts--;
 	} while(uart_state!=UART_SUCCESS && attempts>0);
 
+	uart_setDefaultIntervalDivider();
 	lcd_enable_verbose();
 
 }
@@ -155,15 +190,17 @@ void modem_init() {
 	uart_setOKMode();
 	uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted
 
+	uart_tx_timeout("AT#GPIO=2,0,1\r\n", MODEM_TX_DELAY2, 5);
+
 #ifdef ENABLE_SIM_SLOT
 	if (slot != 1) {
 		//enable SIM A (slot 1)
-		uart_tx("AT#GPIO=2,0,1\r\n");
+		uart_tx_timeout("AT#GPIO=2,0,1\r\n", MODEM_TX_DELAY2, 5); // First command always has a chance of timeout
 		uart_tx("AT#GPIO=4,1,1\r\n");
 		uart_tx("AT#GPIO=3,0,1\r\n");
 	} else {
 		//enable SIM B (slot 2)
-		uart_tx("AT#GPIO=2,1,1\r\n");
+		uart_tx_timeout("AT#GPIO=2,1,1\r\n", MODEM_TX_DELAY2, 5);
 		uart_tx("AT#GPIO=4,0,1\r\n");
 		uart_tx("AT#GPIO=3,1,1\r\n");
 	}
@@ -172,7 +209,7 @@ void modem_init() {
 	uart_tx_timeout("AT#SIMDET=1\r\n", MODEM_TX_DELAY2, 10);
 	//uart_tx("AT#SIMDET=2\r\n");
 
-	uart_tx("AT+CMGF=1\r\n");		   // set sms format to text mode
+	uart_tx_timeout("AT+CMGF=1\r\n", MODEM_TX_DELAY2, 5);		   // set sms format to text mode
 	uart_tx("AT+CMEE=2\r\n");
 	uart_tx("AT#CMEEMODE=1\r\n");
 	uart_tx("AT#AUTOBND=2\r\n");

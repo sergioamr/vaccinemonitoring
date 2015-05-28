@@ -8,8 +8,8 @@
 #ifndef TEMPSENSOR_V1_UART_H_
 #define TEMPSENSOR_V1_UART_H_
 
-#define TX_LEN   			360
-#define RX_LEN   			360
+#define TX_LEN   			160
+#define RX_LEN   			2048
 #define TOKEN_LEN			3
 
 #define ATCMD_CCLK			0
@@ -72,8 +72,14 @@ extern void uart_setIO();
 //! \param pointer to transmit buffer
 //! \return UART_SUCCESS UART_ERROR or UART_TIMEOUT
 //*****************************************************************************
-
 extern uint8_t uart_getTransactionState();
+
+extern void uart_setNumberOfPages(int numPages);
+extern void uart_setRingBuffer();
+
+extern void uart_setDefaultIntervalDivider();
+extern void uart_setDelayIntervalDivider(uint8_t divider);
+
 
 //*****************************************************************************
 //! \brief Transmit to UART

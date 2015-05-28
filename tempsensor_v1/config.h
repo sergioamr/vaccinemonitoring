@@ -98,8 +98,8 @@ BATT_POWER_ALERT_PARAM	stBattPowerAlertParam;
 char    				cfgIMEI[IMEI_MAX_LEN + 1];
 char    				cfgSMSCenter[NUM_SIM_CARDS][GW_MAX_LEN + 1]; // Service Message Center number
 char    				cfgAPN[NUM_SIM_CARDS][APN_MAX_LEN + 1];
-char					cfgMCC[NUM_SIM_CARDS][MCC_MAX_LEN + 1];
-char					cfgMNC[NUM_SIM_CARDS][MNC_MAX_LEN + 1];
+uint16_t 				iCfgMCC[NUM_SIM_CARDS];
+uint16_t 				iCfgMNC[NUM_SIM_CARDS];
 } CONFIG_INFOA;
 
 typedef struct __attribute__((__packed__))  {
@@ -109,6 +109,12 @@ typedef struct __attribute__((__packed__))  {
 	uint8_t calibrationFinished;
 	char firmwareVersion[64];
 	uint16_t configStructureSize; // Size to check if there are changes on this structure
+
+	// Stats to control buffer sizes
+	uint16_t maxSamplebuffer;
+	uint16_t maxATResponse;
+	uint16_t maxRXBuffer;
+	uint16_t maxTXBuffer;
 } CONFIG_SYSTEM;
 
 typedef struct {

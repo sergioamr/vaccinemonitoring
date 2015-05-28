@@ -66,11 +66,11 @@ extern "C"
  */
 
 #ifdef _DEBUG
-#define MODEM_TX_DELAY1		2000
-#define MODEM_TX_DELAY2		5000
+#define MODEM_TX_DELAY1		5000
+#define MODEM_TX_DELAY2		10000
 #else
-#define MODEM_TX_DELAY1		2000
-#define MODEM_TX_DELAY2		5000
+#define MODEM_TX_DELAY1		5000
+#define MODEM_TX_DELAY2		10000
 #endif
 
 /*
@@ -87,11 +87,7 @@ extern "C"
 #define MAX_SMS_NUM			 4
 #define SMS_NUM_LEN			 12
 #define SMS_READ_MAX_MSG_IDX 25		//ZZZZ to change date based on CPMS
-#define SAMPLE_LEN			 470
-//#define RX_EXTENDED_LEN 	 300	//to retreive a complete cfg message via SMS/HTTP message by reusing POST buffer
-//#define CFG_SIZE			 168	//can go upto 200
-//#define SAMPLE_SIZE			 460
-
+#define SAMPLE_LEN			 1024
 #define SMS_ENCODED_LEN		 154	//ZZZZ SMS_ENCODED_LEN + ENCODED_TEMP_LEN should less than aggregate_var size - RX buff size
 #define ENCODED_TEMP_LEN	 3
 #define MSG_RESPONSE_LEN	 100

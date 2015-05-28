@@ -200,7 +200,7 @@ int main(void) {
 
 	g_iLCDVerbose = 0;         // Booting is not completed
 
-	sprintf(g_szTemp, "Boot %d",(int) g_pSysCfg->numberConfigurationRuns);
+	sprintf(g_szTemp, "Booting %d",(int) g_pSysCfg->numberConfigurationRuns);
 	lcd_print(g_szTemp);
 
 #ifndef _DEBUG
@@ -210,19 +210,13 @@ int main(void) {
 	lcd_print_line("(db)" __TIME__, LINE2);
 #endif
 
-/*
-#ifdef NO_CODE_SIZE_LIMIT
-	writetoI2C(0x21, 4);
-	writetoI2C(0x22, 2);
-	writetoI2C(0x23, 0);
-	writetoI2C(0x24, 0x04);
-#endif
-*/
 	sampletemp();
 #ifndef _DEBUG
 	delay(2000);  // to allow conversion to get over and prevent any side-effects to other interface like modem
 	 	 	 	  // TODO is this delay to help on the following bug from texas instruments ? (http://www.ti.com/lit/er/slaz627b/slaz627b.pdf)
 #endif
+
+	P4OUT &= ~BIT0;                           // Reset high
 
 	//check Modem is powered on
 	for (iIdx = 0; iIdx < MODEM_CHECK_RETRY; iIdx++) {
@@ -2362,7 +2356,9 @@ void sendhb() {
 
 	char* pcTmp = NULL;
 
-	lcd_print("HEART BEAT");
+	int slot = g_pInfoA->cfgSIMSlot;
+
+	lcd_print("SMS SYNC");
 	//send heart beat
 	memset(SampleData, 0, sizeof(SampleData));
 	strcat(SampleData, SMS_HB_MSG_TYPE);
@@ -2373,11 +2369,11 @@ void sendhb() {
 	} else {
 		strcat(SampleData, "0,");
 	}
-	strcat(SampleData, &g_pInfoA->cfgSMSCenter[g_pInfoA->cfgSIMSlot][0]);
+	strcat(SampleData, &g_pInfoA->cfgSMSCenter[slot][0]);
 	strcat(SampleData, ",");
-	strcat(SampleData, &g_pInfoA->cfgMCC[g_pInfoA->cfgSIMSlot][0]);
+	strcat(SampleData, itoa_nopadding(g_pInfoA->iCfgMCC[slot]));
 	strcat(SampleData, ",");
-	strcat(SampleData, &g_pInfoA->cfgMNC[g_pInfoA->cfgSIMSlot][0]);
+	strcat(SampleData, itoa_nopadding(g_pInfoA->iCfgMNC[slot]));
 	strcat(SampleData, ",");
 #if MAX_NUM_SENSORS == 5
 	strcat(SampleData, "1,1,1,1,1,");//TODO to be changed based on jack detection

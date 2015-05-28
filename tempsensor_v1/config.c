@@ -90,6 +90,10 @@ void config_Init() {
 	// Set the date and time of compilation as firmware version
 	strcpy(g_pSysCfg->firmwareVersion, __DATE__ " " __TIME__);
 
+	g_pSysCfg->maxSamplebuffer=0;
+	g_pSysCfg->maxATResponse=0;
+	g_pSysCfg->maxRXBuffer=0;
+	g_pSysCfg->maxTXBuffer=0;
 
 	// First initalization, calibration code.
 	calibrate_device();

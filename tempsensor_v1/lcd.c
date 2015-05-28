@@ -305,5 +305,5 @@ void lcd_print_debug(const char* pcData, int line) {
 	lcd_setaddr(0x0D);
 	i2c_write(0x3e,0x40,1,(uint8_t *)&display[(++pos)&0x3]);
 #endif
-	delay(50);
+	delay(10);
 }

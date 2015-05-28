@@ -12,7 +12,9 @@
 #include "stdlib.h"
 #include "string.h"
 #include "lcd.h"
-#define DEBUG_INFO
+#include "globals.h"
+#include "stdio.h"
+#include "string.h"
 
 // AT Messages returns to check.
 char AT_MSG_OK[]={ 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
@@ -30,7 +32,7 @@ volatile int RXTailIdx = 0;
 volatile int RXHeadIdx = 0;
 
 volatile int g_iUartState = 0;
-
+volatile int g_iRxCountBytes = 0;
 //volatile char* TX;
 volatile int TXIdx = 0;
 volatile int8_t iTxStop = 0;
@@ -113,6 +115,18 @@ inline void uart_checkERROR() {
 	}
 }
 
+
+volatile int uart_numDataPages = -1; // Number of pages of data to retrieve. -1 is circular buffer
+
+// Cancels data transaction after a number of pages has been obtained
+void uart_setNumberOfPages(int numPages) {
+	uart_numDataPages=numPages;
+}
+
+void uart_setRingBuffer() {
+	uart_numDataPages=-1;
+}
+
 // We define the exit condition for the wait for ready function
 inline void uart_checkOK() {
 
@@ -138,7 +152,9 @@ void uart_setIO() {
 	P2SEL1 |= BIT0 | BIT1;                    // USCI_A0 UART operation
 	P2SEL0 &= ~(BIT0 | BIT1);
 	P4DIR |= BIT0 | BIT5 | BIT6 | BIT7; // Set P4.0 (Modem reset), LEDs to output direction
-	P4OUT &= ~BIT0;                           // Reset high
+
+	// Turn off modem
+	P4OUT |= BIT0;
 }
 
 void uart_init() {
@@ -176,7 +192,9 @@ void uart_resetHeaders() {
 
 	OKIdx=0;     // Indexes for checking for end of command
 	ErrorIdx=0;
-	g_iUartState=UART_INPROCESS;
+	g_iUartState=UART_INPROCESS;  // Setup in process, we are actually going to generate a command
+
+	g_iRxCountBytes=0; // Stats to know how much data are we getting on this buffer.
 }
 
 void sendCommand(const char *cmd) {
@@ -188,6 +206,17 @@ void sendCommand(const char *cmd) {
 	// some places of the old code use the TXBuffer directly :-/
 
 	iTxLen = strlen(cmd);
+
+	// Store the maximum size used from this buffer
+	if (iTxLen>g_pSysCfg->maxTXBuffer)
+		g_pSysCfg->maxTXBuffer=iTxLen;
+
+	if (iTxLen>sizeof(TXBuffer)) {
+		lcd_clear();
+		lcd_print("TXBUFFER ERROR");
+		delay(10000);
+	}
+
 	if (cmd!=TXBuffer) {
 		memset((char *) TXBuffer, 0, sizeof(TXBuffer));
 		memcpy((char *) TXBuffer, cmd, iTxLen);
@@ -200,12 +229,21 @@ void sendCommand(const char *cmd) {
 	return;
 }
 
-#define DELAY_INTERVAL_TIME 100
+#define DEFAULT_INTERVAL_DELAY 8
+uint8_t delayDivider = DEFAULT_INTERVAL_DELAY;
+void uart_setDefaultIntervalDivider() {
+	delayDivider = DEFAULT_INTERVAL_DELAY;
+}
+
+void uart_setDelayIntervalDivider(uint8_t divider) {
+	delayDivider = divider;
+}
 
 int waitForReady(uint32_t timeoutTimeMs) {
-	int count=timeoutTimeMs/DELAY_INTERVAL_TIME;
+	uint32_t delayTime = timeoutTimeMs/delayDivider;
+	int count=delayDivider;
 	while (count>0) {
-		delay(DELAY_INTERVAL_TIME);
+		delay(delayTime);
 		if (TransmissionEnd==1) {
 			delay(30);  // Documentation specifies 30 ms delay between commands
 			return UART_SUCCESS; // There was a transaction, you have to check the state of the uart transaction to check if it was successful
@@ -214,6 +252,10 @@ int waitForReady(uint32_t timeoutTimeMs) {
 	}
 
 	g_iUartState=UART_TIMEOUT;
+
+	// Store the maximum size used from this buffer
+	if (g_iRxCountBytes>g_pSysCfg->maxRXBuffer)
+		g_pSysCfg->maxRXBuffer=g_iRxCountBytes;
 
 	delay(100);  // Documentation specifies 30 ms delay between commands
 	return UART_FAILED;
@@ -241,6 +283,7 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 		delay(500);
 
 	iModemErrors++;
+	uart_setRingBuffer(); // Restore the ring buffer if it was changed.
 	return UART_FAILED;
 }
 
@@ -293,6 +336,8 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 	int bytestoread = 0;
 	int iStartIdx = 0;
 	int iEndIdx = 0;
+	uint16_t mcc = 0;
+	uint16_t mnc = 0;
 
 	iRXCommandProcessed = 0;
 	if (reponseLen > 0)
@@ -308,7 +353,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			delay(5000);
 			return ret;
 		} else {
-#if defined(DEBUG_INFO) && defined(_DEBUG)
+#if defined(_DEBUG)
 			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": ");
 			if (pToken1!=NULL) {
 				lcd_print_debug((char *) pToken1+2, LINE2);
@@ -328,15 +373,17 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			if (pToken1 != NULL)
 				return UART_ERROR;
 
-			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ",");
-			while (pToken1 != NULL) {
-				pToken1 = strstr(pToken1, ",");
-				if(count == 3) {
-					strncpy(pResponse, pToken1 + 1, MCC_MAX_LEN + MNC_MAX_LEN + 1);
-					return UART_SUCCESS;
-				}
-				count++;
-				pToken1++;
+			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "mcc:");
+			if (pToken1!=NULL) mcc=atoi(pToken1+5);
+				else mcc=0;
+
+			pToken1 = strstr((const char *) pToken1, "mnc:");
+			if (pToken1!=NULL) mnc=atoi(pToken1+5);
+				else mnc=0;
+
+			if (mcc!=0 && mnc!=0) {
+				sprintf(ATresponse, "%d,%d", mcc, mnc);
+				return UART_SUCCESS;
 			}
 			return UART_FAILED;
 
@@ -727,14 +774,23 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 		break;
 
 	case USCI_SPI_UCRXIFG:
-		if (RXTailIdx >= sizeof(RXBuffer))
+		if (RXTailIdx >= sizeof(RXBuffer)) {
 			RXTailIdx = 0;
+			if (uart_numDataPages>0) {
+				uart_numDataPages--;
+				if (uart_numDataPages==0) {
+					UCA0IE &= ~UCRXIE; // Disable interruption, we don't want more data.
+					TransmissionEnd=1;
+					g_iUartState=UART_SUCCESS;
+					return;
+				}
+			}
+		}
 
 		uart_checkOK();
 		uart_checkERROR();
 
 		RXBuffer[RXTailIdx++] = UCA0RXBUF;
-
 
 		if (UCA0STATW & UCRXERR) {
 			iError++;
@@ -746,14 +802,11 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 			iTxStop = 0;
 		}
 
+		g_iRxCountBytes++;  // Data transfer check
 		break;
 
 	case USCI_SPI_UCTXIFG:
 		UCA0TXBUF = TXBuffer[TXIdx];               // Transmit characters
-#ifdef _DEBUG
-		//TXBuffer[iTxPos] = '*';
-#endif
-
 		if (TXIdx >= iTxLen) {
 			TXIdx = 0;
 			UCA0IE &= ~UCTXIE; 	// Finished transmision
