@@ -8,6 +8,7 @@
 #ifndef TEMPSENSOR_V1_MODEM_H_
 #define TEMPSENSOR_V1_MODEM_H_
 
+#include "command_timeout.h"
 extern char ctrlZ[2];
 extern char ESC[2];
 

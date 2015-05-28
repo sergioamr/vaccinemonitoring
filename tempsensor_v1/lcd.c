@@ -287,7 +287,7 @@ void lcd_disable_verbose() {
 }
 
 void lcd_enable_verbose() {
-	g_iLCDVerbose=-1;
+	g_iLCDVerbose=0;
 }
 
 void lcd_print_debug(const char* pcData, int line) {
