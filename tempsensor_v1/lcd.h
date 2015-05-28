@@ -5,8 +5,8 @@
  *      Author: sergioam
  */
 
-#ifndef LCD_H_
-#define LCD_H_
+#ifndef TEMPSENSOR_V1_LCD_H_
+#define TEMPSENSOR_V1_LCD_H_
 
 //LCD lines
 #define LINE1					1
@@ -29,4 +29,4 @@ extern void lcd_print(char* pcData);
 extern void lcd_print_line(const char* pcData,int8_t iLine);
 extern void lcd_print_debug(const char* pcData, int line);
 extern void lcd_bldisable();
-#endif /* LCD_H_ */
+#endif /* TEMPSENSOR_V1_LCD_H_ */

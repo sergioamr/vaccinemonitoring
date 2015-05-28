@@ -5,8 +5,8 @@
  *      Author: rajeevnx
  */
 
-#ifndef RTC_H_
-#define RTC_H_
+#ifndef TEMPSENSOR_V1_RTC_H_
+#define TEMPSENSOR_V1_RTC_H_
 
 
 #include "time.h"
@@ -52,4 +52,4 @@ extern void rtc_getlocal(struct tm* pTime);
 }
 #endif
 
-#endif /* RTC_H_ */
+#endif /* TEMPSENSOR_V1_RTC_H_ */

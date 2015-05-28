@@ -5,8 +5,8 @@
  *      Author: rajeevnx
  */
 
-#ifndef ALARM_H_
-#define ALARM_H_
+#ifndef TEMPSENSOR_V1_ALARM_H_
+#define TEMPSENSOR_V1_ALARM_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -41,4 +41,4 @@ extern void validatealarmthreshold();
 }
 #endif
 
-#endif /* ALARM_H_ */
+#endif /* TEMPSENSOR_V1_ALARM_H_ */

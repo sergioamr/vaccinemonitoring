@@ -5,8 +5,8 @@
  *      Author: rajeevnx
  */
 
-#ifndef COMMON_H_
-#define COMMON_H_
+#ifndef TEMPSENSOR_V1_COMMON_H_
+#define TEMPSENSOR_V1_COMMON_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -157,4 +157,4 @@ typedef struct {
 #endif
 
 
-#endif /* COMMON_H_ */
+#endif /* TEMPSENSOR_V1_COMMON_H_ */

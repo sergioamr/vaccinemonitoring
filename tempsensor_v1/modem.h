@@ -5,8 +5,8 @@
  *      Author: sergioam
  */
 
-#ifndef MODEM_H_
-#define MODEM_H_
+#ifndef TEMPSENSOR_V1_MODEM_H_
+#define TEMPSENSOR_V1_MODEM_H_
 
 extern char ctrlZ[2];
 extern char ESC[2];
@@ -22,4 +22,4 @@ extern void modem_init();
 extern void modem_getSimCardInfo();
 extern void modem_surveyNetwork();
 
-#endif /* MODEM_H_ */
+#endif /* TEMPSENSOR_V1_MODEM_H_ */

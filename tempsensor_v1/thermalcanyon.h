@@ -5,8 +5,8 @@
  *      Author: sergioam
  */
 
-#ifndef THERMALCANYON_H_
-#define THERMALCANYON_H_
+#ifndef TEMPSENSOR_V1_THERMALCANYON_H_
+#define TEMPSENSOR_V1_THERMALCANYON_H_
 
 #include <msp430.h>
 #include "stdint.h"
@@ -69,4 +69,4 @@ void monitoralarm();
 
 extern void encode(double input_val, char output_chars[]); // Encode function from encode.c
 
-#endif /* THERMALCANYON_H_ */
+#endif /* TEMPSENSOR_V1_THERMALCANYON_H_ */

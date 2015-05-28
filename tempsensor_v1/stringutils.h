@@ -5,10 +5,10 @@
  *      Author: sergioam
  */
 
-#ifndef STRINGUTILS_H_
-#define STRINGUTILS_H_
+#ifndef TEMPSENSOR_V1_STRINGUTILS_H_
+#define TEMPSENSOR_V1_STRINGUTILS_H_
 
 extern char* itoa_withpadding(int num);
 extern char* itoa_nopadding(int num);
 
-#endif /* STRINGUTILS_H_ */
+#endif /* TEMPSENSOR_V1_STRINGUTILS_H_ */

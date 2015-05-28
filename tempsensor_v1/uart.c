@@ -236,7 +236,7 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 	}
 
 	// If there was an error we have to wait a bit to retrieve everything that is left from the transaction, like the error message
-	uart_state = uart_getTransactionState();
+	int uart_state = uart_getTransactionState();
 	if (uart_state==UART_ERROR)
 		delay(500);
 

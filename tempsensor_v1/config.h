@@ -5,8 +5,8 @@
  *      Author: rajeevnx
  */
 
-#ifndef CONFIG_H_
-#define CONFIG_H_
+#ifndef TEMPSENSOR_V1_CONFIG_H_
+#define TEMPSENSOR_V1_CONFIG_H_
 
 #define EXTERN extern
 
@@ -118,4 +118,4 @@ double	   calibration[MAX_NUM_SENSORS][2];
 
 extern void config_Init();
 
-#endif /* CONFIG_H_ */
+#endif /* TEMPSENSOR_V1_CONFIG_H_ */

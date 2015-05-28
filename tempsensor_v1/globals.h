@@ -5,8 +5,8 @@
  *      Author: sergioam
  */
 
-#ifndef GLOBALS_H_
-#define GLOBALS_H_
+#ifndef TEMPSENSOR_V1_GLOBALS_H_
+#define TEMPSENSOR_V1_GLOBALS_H_
 
 #include "config.h"
 #include "common.h"
@@ -72,4 +72,4 @@ extern char file_pointer_enabled_gprs_status; // for gprs condtition enabling...
 
 extern char g_szTemp[64]; // Temporal string to use for display and string operations
 
-#endif /* GLOBALS_H_ */
+#endif /* TEMPSENSOR_V1_GLOBALS_H_ */

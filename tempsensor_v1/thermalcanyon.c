@@ -1,4 +1,4 @@
-﻿/* Copyright (c) 2015, Intel Corporation. All rights reserved.
+/* Copyright (c) 2015, Intel Corporation. All rights reserved.
  *
  * INFORMATION IN THIS DOCUMENT IS PROVIDED IN CONNECTION WITH INTEL� PRODUCTS. NO LICENSE, EXPRESS OR IMPLIED,
  * BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS IS GRANTED BY THIS DOCUMENT. EXCEPT AS PROVIDED
@@ -1883,7 +1883,7 @@ void monitoralarm() {
 		}
 	}
 
-	//check for battery alert 
+	//check for battery alert
 	iCnt = MAX_NUM_SENSORS;
 	if (iBatteryLevel < g_pInfoA->stBattPowerAlertParam.battthreshold) {
 		//check if battery alarm is set
@@ -1919,7 +1919,7 @@ void monitoralarm() {
 			}
 		}
 	} else {
-		//reset battery alarm 
+		//reset battery alarm
 		TEMP_ALARM_SET(iCnt, BATT_ALERT_OFF);
 		g_iAlarmCnfCnt[iCnt] = 0;
 	}
@@ -1958,7 +1958,7 @@ void monitoralarm() {
 				}
 			}
 		} else {
-			//reset power alarm	
+			//reset power alarm
 			TEMP_ALARM_SET(iCnt, POWER_ALERT_OFF);
 			g_iAlarmCnfCnt[iCnt] = 0;
 		}

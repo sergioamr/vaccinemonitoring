@@ -5,8 +5,8 @@
  *      Author: rajeevnx
  */
 
-#ifndef UART_H_
-#define UART_H_
+#ifndef TEMPSENSOR_V1_UART_H_
+#define TEMPSENSOR_V1_UART_H_
 
 #define TX_LEN   			360
 #define RX_LEN   			360
@@ -101,4 +101,4 @@ extern int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen);
 }
 #endif
 
-#endif /* UART_H_ */
+#endif /* TEMPSENSOR_V1_UART_H_ */

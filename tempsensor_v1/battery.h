@@ -5,8 +5,8 @@
  *      Author: rajeevnx
  */
 
-#ifndef BATTERY_H_
-#define BATTERY_H_
+#ifndef TEMPSENSOR_V1_BATTERY_H_
+#define TEMPSENSOR_V1_BATTERY_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -64,4 +64,4 @@ extern int8_t batt_getlevel();
 
 
 
-#endif /* BATTERY_H_ */
+#endif /* TEMPSENSOR_V1_BATTERY_H_ */

@@ -5,8 +5,8 @@
  *      Author: rajeevnx
  */
 
-#ifndef SMS_H_
-#define SMS_H_
+#ifndef TEMPSENSOR_V1_SMS_H_
+#define TEMPSENSOR_V1_SMS_H_
 
 //*****************************************************************************
 //! \brief send sms msg
@@ -35,4 +35,4 @@ extern void delallmsg();
 extern void delmsg(int8_t iMsgIdx, char* pData);
 
 
-#endif /* SMS_H_ */
+#endif /* TEMPSENSOR_V1_SMS_H_ */

@@ -5,11 +5,11 @@
  *      Author: sergioam
  */
 
-#ifndef HTTP_H_
-#define HTTP_H_
+#ifndef TEMPSENSOR_V1_HTTP_H_
+#define TEMPSENSOR_V1_HTTP_H_
 
 extern void dohttpsetup();
 extern void deactivatehttp();
 extern int doget();
 
-#endif /* HTTP_H_ */
+#endif /* TEMPSENSOR_V1_HTTP_H_ */
