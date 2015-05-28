@@ -33,13 +33,12 @@ void lcd_init() {
 	delay(100);
 
 	SampleData[0] = 0x40 | 0x80;
-	i2c_write(0x3e, 0, 1, SampleData);
-	delay(100);
-	SampleData[0] = 0x43;
-	SampleData[1] = 0x44;
-	i2c_write(0x3e, 0x40, 2, SampleData);
-	delay(100);
+	i2c_write(0x3e, 0, 1, (uint8_t *) SampleData);
 
+	//SampleData[0] = 0x43;
+	//SampleData[1] = 0x44;
+	//i2c_write(0x3e, 0x40, 2, SampleData);
+	//delay(100);
 #if 0
 	delay(1000);
 
@@ -49,7 +48,7 @@ void lcd_init() {
 	delay(100);
 #endif
 
-	delay(100);
+	delay(1000);
 }
 
 void lcd_clear() {

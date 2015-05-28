@@ -109,10 +109,8 @@ extern "C"
  */
 
 #if MAX_NUM_SENSORS == 5
-#define AGGREGATE_SIZE		256			//288
 #define MAX_DISPLAY_ID		9
 #else
-#define AGGREGATE_SIZE		256
 #define MAX_DISPLAY_ID		6
 #endif
 

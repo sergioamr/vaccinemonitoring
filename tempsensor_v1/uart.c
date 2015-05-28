@@ -108,6 +108,16 @@ inline void uart_checkOK() {
 	}
 }
 
+void uart_setIO() {
+	// P2.0 UCA0SIMO
+	// P2.1 UCA0RXD/ UCA0SOMI
+
+	P2SEL1 |= BIT0 | BIT1;                    // USCI_A0 UART operation
+	P2SEL0 &= ~(BIT0 | BIT1);
+	P4DIR |= BIT0 | BIT5 | BIT6 | BIT7; // Set P4.0 (Modem reset), LEDs to output direction
+	P4OUT &= ~BIT0;                           // Reset high
+}
+
 void uart_init() {
 	// Configure USCI_A0 for UART mode
 	UCA0CTLW0 = UCSWRST;                      // Put eUSCI in reset
@@ -215,12 +225,20 @@ uint8_t uart_tx_waitForPrompt(const char *cmd) {
 	return 0;
 }
 
+uint32_t g_iModemMaxWait = MODEM_TX_DELAY1;
+
+void uart_setDelay(uint32_t delay) {
+	g_iModemMaxWait=MODEM_TX_DELAY1;
+}
+
 uint8_t uart_tx(const char *cmd) {
 
-	if (g_iBooting == 0)
+	if (g_iBooting == 0) {
+		lcd_clear();
 		lcd_print_debug((char *) cmd, LINE1);
+	}
 
-	return uart_tx_timeout(cmd, MODEM_TX_DELAY1, 10);
+	return uart_tx_timeout(cmd, g_iModemMaxWait, 10);
 }
 
 int uart_rx(int atCMD, char* pResponse) {

@@ -205,7 +205,7 @@ void batt_init()
 	}
 #endif
 
-	delay(TRANS_DELAY);
+	delay(1000);
 }
 
 

@@ -1,6 +1,8 @@
 #include "thermalcanyon.h"
 
+#pragma SET_DATA_SECTION(".aggregate_vars")
 FATFS FatFs; /* Work area (file system object) for logical drive */
+#pragma SET_DATA_SECTION()
 
 DWORD get_fattime(void) {
 	DWORD tmr;

@@ -63,6 +63,7 @@ extern void uart_setPromptMode();
 // Set tail and head to 0 for easy parsing.
 //*****************************************************************************
 extern void uart_resetbuffer();
+extern void uart_setIO();
 
 //*****************************************************************************
 //

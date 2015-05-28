@@ -47,48 +47,7 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 // Setup Pinout for I2C, and SPI transactions.
 // http://www.ti.com/lit/ug/slau535a/slau535a.pdf
 
-static void setupIO() {
-
-	// Configure GPIO
-	P2DIR |= BIT3;							// SPI CS
-	P2OUT |= BIT3;					// drive SPI CS high to deactive the chip
-	P2SEL1 |= BIT4 | BIT5 | BIT6;             // enable SPI CLK, SIMO, SOMI
-
-	PJSEL0 |= BIT4 | BIT5;                    // For XT1
-	P1SELC |= BIT0 | BIT1;                    // Enable VEREF-,+
-	P1SELC |= BIT2;                           // Enable A/D channel A2
-#ifdef SEQUENCE
-	P1SELC |= BIT3 | BIT4 | BIT5;          // Enable A/D channel A3-A5
-#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
-	P4SELC |= BIT2;          				// Enable A/D channel A10
-#endif
-#endif
-	P1SEL1 |= BIT6 | BIT7;					// Enable I2C SDA and CLK
-
-	P2SEL1 |= BIT0 | BIT1;                    // USCI_A0 UART operation
-	// P2.0 UCA0SIMO
-	// P2.1 UCA0RXD/ UCA0SOMI
-
-	P2SEL0 &= ~(BIT0 | BIT1);
-	P4DIR |= BIT0 | BIT5 | BIT7; // Set P4.0 (Modem reset), LEDs to output direction
-	P4OUT &= ~BIT0;                           // Reset high
-
-	P3DIR |= BIT4;      						// Set P3.4 buzzer output
-	P4IE |= BIT1;							// enable interrupt for button input
-	P2IE |= BIT2;							// enable interrupt for buzzer off
-
-	lcd_setupIO();
-
-#ifdef POWER_SAVING_ENABLED
-	P3DIR |= BIT3;							// Modem DTR
-	P3OUT &= ~BIT3;// DTR ON (low)
-#endif
-	//P1SEL0 |= BIT2;
-
-	// Disable the GPIO power-on default high-impedance mode to activate
-	// previously configured port settings
-	PM5CTL0 &= ~LOCKLPM5;
-
+void setupClock_IO() {
 	// Startup clock system with max DCO setting ~8MHz
 	CSCTL0_H = CSKEY >> 8;                    // Unlock clock registers
 	CSCTL1 = DCOFSEL_3 | DCORSEL;             // Set DCO to 8MHz
@@ -101,6 +60,24 @@ static void setupIO() {
 		SFRIFG1 &= ~OFIFG;
 	} while (SFRIFG1 & OFIFG);                   // Test oscillator fault flag
 	CSCTL0_H = 0;                             // Lock CS registers
+}
+
+static void setupADC_IO() {
+
+	P1SELC |= BIT0 | BIT1;                    // Enable VEREF-,+
+	P1SELC |= BIT2;                           // Enable A/D channel A2
+#ifdef SEQUENCE
+	P1SELC |= BIT3 | BIT4 | BIT5;          // Enable A/D channel A3-A5
+#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
+	P4SELC |= BIT2;          				// Enable A/D channel A10
+#endif
+#endif
+
+#ifdef POWER_SAVING_ENABLED
+	P3DIR |= BIT3;							// Modem DTR
+	P3OUT &= ~BIT3;// DTR ON (low)
+#endif
+	//P1SEL0 |= BIT2;
 
 	// Configure ADC12
 	ADC12CTL0 = ADC12ON | ADC12SHT0_2;       // Turn on ADC12, set sampling time
@@ -120,6 +97,7 @@ static void setupIO() {
 	ADC12CTL1 = ADC12SHP | ADC12CONSEQ_1;                   // sample a sequence
 	ADC12CTL0 |= ADC12MSC; //first sample by trigger and rest automatic trigger by prior conversion
 #endif
+
 	//ADC interrupt logic
 	//TODO comment ADC for debugging other interfaces
 #if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
@@ -128,7 +106,34 @@ static void setupIO() {
 			ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5; // Enable ADC conv complete interrupt
 #endif
 
+}
+
+static void setupIO() {
+
+	// Configure GPIO
+	P2DIR |= BIT3;							// SPI CS
+	P2OUT |= BIT3;					// drive SPI CS high to deactive the chip
+	P2SEL1 |= BIT4 | BIT5 | BIT6;             // enable SPI CLK, SIMO, SOMI
+	PJSEL0 |= BIT4 | BIT5;                    // For XT1
+	P1SEL1 |= BIT6 | BIT7;					// Enable I2C SDA and CLK
+
+	uart_setIO();
+
+	P4IE |= BIT1;							// enable interrupt for button input
+	P2IE |= BIT2;							// enable interrupt for buzzer off
+	P3DIR |= BIT4;      						// Set P3.4 buzzer output
+
+	lcd_setupIO();
+
+	P2IE |= BIT2;							// enable interrupt for buzzer off
+
+	// Disable the GPIO power-on default high-impedance mode to activate
+	// previously configured port settings
+	PM5CTL0 &= ~LOCKLPM5;
+
+	setupClock_IO();
 	uart_setClock();
+	setupADC_IO();
 
 #ifndef I2C_DISABLED
 	//i2c_init(EUSCI_B_I2C_SET_DATA_RATE_400KBPS);
@@ -158,6 +163,10 @@ void pullTime() {
 	}
 }
 
+/****************************************************************************/
+/*  MAIN                                                                    */
+/****************************************************************************/
+
 int main(void) {
 	char* pcData = NULL;
 	char* pcTmp = NULL;
@@ -170,7 +179,6 @@ int main(void) {
 	int32_t iSize = 0;
 	int16_t iOffset = 0;
 	int8_t dummy = 0;
-
 	int8_t iSampleCnt = 0;
 	char gprs_network_indication = 0;
 	int32_t dw_file_pointer_back_log = 0; // for error condition /// need to be tested.
@@ -178,9 +186,11 @@ int main(void) {
 
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 
+	printf("Booting \n");
+
 	setupIO();
 	config_Init();	// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
-	delay(100);
+	delay(1000);
 
 	lcd_reset();
 	lcd_blenable();
@@ -196,9 +206,9 @@ int main(void) {
 	sprintf(g_szTemp, "Boot %d",(int) g_pSysCfg->numberConfigurationRuns);
 	lcd_print(g_szTemp);
 
-	delay(100);
 #ifndef _DEBUG
 	lcd_print_line(g_pSysCfg->firmwareVersion, LINE2);  // Show the firmware version
+	delay(5000);
 #else
 	lcd_print_line("(db)" __TIME__, LINE2);
 #endif
@@ -454,7 +464,7 @@ int main(void) {
 				char* fn = getCurrentFileName(&currTime);
 
 				//fr = f_read(&filr, acLogData, 1, &iIdx);  /* Read a chunk of source file */
-				memset(ATresponse, 0, AGGREGATE_SIZE + 1); //ensure the buffer in aggregate_var section is more than AGGREGATE_SIZE
+				memset(ATresponse, 0, sizeof(ATresponse)); //ensure the buffer in aggregate_var section is more than AGGREGATE_SIZE
 				fr = f_open(&filr, fn, FA_READ | FA_OPEN_ALWAYS);
 				if (fr == FR_OK) {
 					dw_file_pointer_back_log = dwLastseek; // added for dummy storing///
@@ -467,8 +477,8 @@ int main(void) {
 
 					iOffset = dwLastseek % SECTOR_SIZE;
 					//check the position is in first half of sector
-					if ((SECTOR_SIZE - iOffset) > AGGREGATE_SIZE) {
-						fr = f_read(&filr, ATresponse, AGGREGATE_SIZE,(UINT *) &iIdx); /* Read first chunk of sector*/
+					if ((SECTOR_SIZE - iOffset) > sizeof(ATresponse)) {
+						fr = f_read(&filr, ATresponse, sizeof(ATresponse),(UINT *) &iIdx); /* Read first chunk of sector*/
 						if ((fr == FR_OK) && (iIdx > 0)) {
 							iStatus &= ~SPLIT_TIME_STAMP;//clear the last status of splitted data
 							pcData = (char *) FatFs.win;	//reuse the buffer maintained by the file system
@@ -513,8 +523,8 @@ int main(void) {
 											filr.dsect + 1, 512) == RES_OK) {
 										//calculate bytes read
 										iSize = filr.fsize - dwLastseek;
-										if (iSize >= AGGREGATE_SIZE) {
-											iIdx = AGGREGATE_SIZE;
+										if (iSize >= sizeof(ATresponse)) {
+											iIdx = sizeof(ATresponse);
 										} else {
 											iIdx = iSize;
 										}
