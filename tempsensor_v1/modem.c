@@ -84,11 +84,11 @@ void modem_getIMEI() {
 	if (!IMEI_OK)
 		return;
 
-	if ((uint8_t) g_pInfoA->cfgIMEI[0] == 0xFF)  // IMEI Was not setup, copy it to permament memory
+	if ((uint8_t) g_pInfoA->cfgIMEI[0] == 0xFF) // IMEI Was not setup, copy it to permament memory
 		strcpy(g_pInfoA->cfgIMEI, ATresponse);
 
 	// Lets check if we have the right IMEI from the modem, otherwise we flash it again into config.
-	if (memcmp(ATresponse, g_pInfoA->cfgIMEI, 15)!=0) {
+	if (memcmp(ATresponse, g_pInfoA->cfgIMEI, 15) != 0) {
 		strcpy(g_pInfoA->cfgIMEI, ATresponse);
 	}
 
@@ -125,15 +125,15 @@ void modem_surveyNetwork() {
 	lcd_clear();
 	lcd_disable_verbose();
 
-	if (g_pInfoA->iCfgMCC[slot]!=0 && g_pInfoA->iCfgMNC[slot]!=0)
+	if (g_pInfoA->iCfgMCC[slot] != 0 && g_pInfoA->iCfgMNC[slot] != 0)
 		return;
 
 	uart_setDelayIntervalDivider(64);  // 120000 / 64
 
 	do {
-		if (attempts!=NET_ATTEMPTS) {
+		if (attempts != NET_ATTEMPTS) {
 			lcd_clear();
-			sprintf(g_szTemp, "MCC RETRY %d   ", NET_ATTEMPTS-attempts);
+			sprintf(g_szTemp, "MCC RETRY %d   ", NET_ATTEMPTS - attempts);
 			lcd_print_line(g_szTemp, LINE1);
 		} else {
 			lcd_print_line("MCC DISCOVER", LINE1);
@@ -149,7 +149,7 @@ void modem_surveyNetwork() {
 
 			// We just want only one full buffer. The data is on the first few characters of the stream
 			uart_setNumberOfPages(1);
-			uart_tx_timeout("AT#CSURV\r\n", TIMEOUT_CSURV, 10);  // #CSURV - Network Survey
+			uart_tx_timeout("AT#CSURV\r\n", TIMEOUT_CSURV, 10); // #CSURV - Network Survey
 			// Maximum timeout is 2 minutes
 
 			//Execution command allows to perform a quick survey through channels
@@ -161,22 +161,23 @@ void modem_surveyNetwork() {
 			if (uart_state != UART_SUCCESS) {
 				lcd_print_line("NETWORK BUSY", LINE2);
 				delay(NETWORK_WAITING_TIME);
-			} else
-			if (uart_rx_cleanBuf(ATCMD_CSURVC, ATresponse,
-					sizeof(ATresponse))==UART_SUCCESS) {
+			} else if (uart_rx_cleanBuf(ATCMD_CSURVC, ATresponse,
+					sizeof(ATresponse)) == UART_SUCCESS) {
 				// Get MCC then MNC (the next in the list)
 				char* surveyResult = strtok(ATresponse, ",");
-				g_pInfoA->iCfgMCC[slot]=atoi(surveyResult);
+				g_pInfoA->iCfgMCC[slot] = atoi(surveyResult);
 				surveyResult = strtok(NULL, ",");
-				g_pInfoA->iCfgMNC[slot]=atoi(surveyResult);
+				g_pInfoA->iCfgMNC[slot] = atoi(surveyResult);
 
 				lcd_clear();
-				if (g_pInfoA->iCfgMCC[slot]>0 && g_pInfoA->iCfgMNC[slot]>0) {
+				if (g_pInfoA->iCfgMCC[slot] > 0
+						&& g_pInfoA->iCfgMNC[slot] > 0) {
 					lcd_print_line("SUCCESS", LINE1);
-					sprintf(g_szTemp, "MCC %d MNC %d", g_pInfoA->iCfgMCC[slot], g_pInfoA->iCfgMNC[slot]);
+					sprintf(g_szTemp, "MCC %d MNC %d", g_pInfoA->iCfgMCC[slot],
+							g_pInfoA->iCfgMNC[slot]);
 					lcd_print_line(g_szTemp, LINE2);
 				} else {
-					uart_state=UART_ERROR;
+					uart_state = UART_ERROR;
 					lcd_print_line("FAILED", LINE2);
 					delay(1000);
 				}
@@ -184,21 +185,22 @@ void modem_surveyNetwork() {
 		}
 
 		attempts--;
-	} while(uart_state!=UART_SUCCESS && attempts>0);
+	} while (uart_state != UART_SUCCESS && attempts > 0);
 
 	uart_setDefaultIntervalDivider();
 
 	lcd_enable_verbose();
-	delay(60000); // Wait a full minute for the transfer to finish
+	lcd_progress_wait(10000); // Wait 10 seconds to make sure the modem finished transfering.
+							  // It should be clear already but next transaction
 }
 
 void modem_init() {
 
-	uint8_t slot=g_pInfoA->cfgSIMSlot;
+	uint8_t slot = g_pInfoA->cfgSIMSlot;
 
-	if (slot>1) {
+	if (slot > 1) {
 		// Memory not initialized
-		g_pInfoA->cfgSIMSlot=slot=0;
+		g_pInfoA->cfgSIMSlot = slot = 0;
 	}
 
 	uart_setOKMode();
@@ -218,7 +220,7 @@ void modem_init() {
 		uart_tx("AT#GPIO=3,0,1\r\n");
 	} else {
 		//enable SIM B (slot 2)
-		uart_tx_timeout("AT#GPIO=2,1,1\r\n",  TIMEOUT_GPO, 5);
+		uart_tx_timeout("AT#GPIO=2,1,1\r\n", TIMEOUT_GPO, 5);
 		uart_tx("AT#GPIO=4,0,1\r\n");
 		uart_tx("AT#GPIO=3,1,1\r\n");
 	}
@@ -227,7 +229,7 @@ void modem_init() {
 	uart_tx_timeout("AT#SIMDET=1\r\n", MODEM_TX_DELAY2, 10);
 	//uart_tx("AT#SIMDET=2\r\n");
 
-	uart_tx_timeout("AT+CMGF=1\r\n", MODEM_TX_DELAY2, 5);		   // set sms format to text mode
+	uart_tx_timeout("AT+CMGF=1\r\n", MODEM_TX_DELAY2, 5);// set sms format to text mode
 	uart_tx("AT+CMEE=2\r\n");
 	uart_tx("AT#CMEEMODE=1\r\n");
 	uart_tx("AT#AUTOBND=2\r\n");

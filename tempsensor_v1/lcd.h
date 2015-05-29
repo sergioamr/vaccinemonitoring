@@ -32,4 +32,5 @@ extern void lcd_print(char* pcData);
 extern void lcd_print_line(const char* pcData,int8_t iLine);
 extern void lcd_print_progress(const char* pcData, int line);
 extern void lcd_bldisable();
+extern void lcd_progress_wait(uint16_t delayTime);
 #endif /* TEMPSENSOR_V1_LCD_H_ */

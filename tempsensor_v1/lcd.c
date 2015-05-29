@@ -31,7 +31,7 @@ void lcd_init() {
 	lcdBuffer[7] = 0x01; // clear display
 	lcdBuffer[8] = 0x06; // entry mode set
 
-	i2c_write(0x3e, 0, LCD_INIT_PARAM_SIZE,  (uint8_t*) lcdBuffer);
+	i2c_write(0x3e, 0, LCD_INIT_PARAM_SIZE, (uint8_t*) lcdBuffer);
 	delay(100);
 
 	lcdBuffer[0] = 0x40 | 0x80;
@@ -104,7 +104,7 @@ void lcd_show(int8_t iItemId) {
 
 	switch (iItemId) {
 	case 0:
-		memset(&Temperature[1][0], 0, TEMP_DATA_LEN + 1);//initialize as it will be used as scratchpad during POST formatting
+		memset(&Temperature[1][0], 0, TEMP_DATA_LEN + 1); //initialize as it will be used as scratchpad during POST formatting
 		ConvertADCToTemperature(ADCvar[1], &Temperature[1][0], 1);
 		strcat(lcdBuffer, Temperature[1]);
 		strcat(lcdBuffer, "C ");
@@ -243,6 +243,14 @@ void lcd_show(int8_t iItemId) {
 	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t *) &lcdBuffer[iIdx]);
 }
 
+void lcd_progress_wait(uint16_t delayTime) {
+	int count = delayTime / 100;
+	for (int t = 0; t < count; t++) {
+		delay(50);
+		lcd_print_progress("", LINE2);
+	}
+}
+
 void lcd_print(char* pcData) {
 	int8_t len = strlen(pcData);
 
@@ -285,11 +293,11 @@ void lcd_bldisable() {
 
 int g_iLCDVerbose = VERBOSE_DISABLED; // Disable debug
 void lcd_disable_verbose() {
-	g_iLCDVerbose=VERBOSE_DISABLED;
+	g_iLCDVerbose = VERBOSE_DISABLED;
 }
 
 void lcd_enable_verbose() {
-	g_iLCDVerbose=VERBOSE_BOOTING;
+	g_iLCDVerbose = VERBOSE_BOOTING;
 }
 
 void lcd_print_progress(const char* pcData, int line) {
@@ -305,7 +313,7 @@ void lcd_print_progress(const char* pcData, int line) {
 	lcd_print_line(pcData, line);
 #else
 	lcd_setaddr(0x0F);
-	i2c_write(0x3e,0x40,1,(uint8_t *)&display[(++pos)&0x3]);
+	i2c_write(0x3e, 0x40, 1, (uint8_t *) &display[(++pos) & 0x3]);
 #endif
 	delay(50);
 }

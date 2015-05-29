@@ -165,6 +165,7 @@ void pullTime() {
 /****************************************************************************/
 
 int main(void) {
+	int t;
 	char* pcData = NULL;
 	char* pcTmp = NULL;
 	char* pcSrc1 = NULL;
@@ -212,8 +213,10 @@ int main(void) {
 
 	sampletemp();
 #ifndef _DEBUG
-	delay(2000);  // to allow conversion to get over and prevent any side-effects to other interface like modem
-	 	 	 	  // TODO is this delay to help on the following bug from texas instruments ? (http://www.ti.com/lit/er/slaz627b/slaz627b.pdf)
+	// to allow conversion to get over and prevent any side-effects to other interface like modem
+    // TODO is this delay to help on the following bug from texas instruments ? (http://www.ti.com/lit/er/slaz627b/slaz627b.pdf)
+
+	lcd_progress_wait(2000);
 #endif
 
 	P4OUT &= ~BIT0;                           // Reset high
