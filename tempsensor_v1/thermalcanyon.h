@@ -54,7 +54,7 @@ char* itoa_withpadding(int num);
 char* itoa_nopadding(int num);	//TODO remove this function for final release
 static void parsetime(char* pDatetime, struct tm* pTime);
 static int dopost(char* postdata);
-static FRESULT logsampletofile(FIL* fobj, int* tbw);
+
 int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 		char* seperator, int8_t iFlagVal, char* pcExtSrc, int8_t iFieldSize);
 void uploadsms();

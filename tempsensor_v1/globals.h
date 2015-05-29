@@ -43,7 +43,6 @@ extern char acLogData[FILE_BUFFER_LEN];
 //now moved to INFOD FRAM to optimize repeated temperature conversion
 extern struct tm currTime;
 extern FIL filr;
-extern FIL filw;
 extern FRESULT fr;
 extern int32_t iBytesLogged;
 extern int g_iCurrDay;

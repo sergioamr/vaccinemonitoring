@@ -184,8 +184,6 @@ int main(void) {
 
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 
-	printf("Booting \n");
-
 	setupIO();
 	config_Init();	// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
 
@@ -202,15 +200,13 @@ int main(void) {
 	lcd_init();
 
 	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
-
-	sprintf(g_szTemp, "Booting %d",(int) g_pSysCfg->numberConfigurationRuns);
-	lcd_print(g_szTemp);
+	lcd_print_ext(LINE1, "Booting %d",(int) g_pSysCfg->numberConfigurationRuns);
 
 #ifndef _DEBUG
-	lcd_print_line(g_pSysCfg->firmwareVersion, LINE2);  // Show the firmware version
+	lcd_print_lne(LINE2, g_pSysCfg->firmwareVersion);  // Show the firmware version
 	delay(5000);
 #else
-	lcd_print_line("(db)" __TIME__, LINE2);
+	lcd_print_lne(LINE2, "(db)" __TIME__);
 #endif
 
 	sampletemp();
@@ -284,8 +280,8 @@ int main(void) {
 		lcd_print("Battery LOW");
 
 	delay(1000);
-	/* Register work area to the default drive */
-	f_mount(&FatFs, "", 0);
+
+	fat_initDrive();
 
 	//get the last read offset from FRAM
 	if (g_pInfoB->dwLastSeek > 0) {
@@ -303,6 +299,7 @@ int main(void) {
 	lcd_disable_verbose();
 
 	lcd_print("Finished Boot");
+
 	while (1) {
 		//check if conversion is complete
 		if ((isConversionDone) || (iStatus & TEST_FLAG)) {
@@ -321,7 +318,7 @@ int main(void) {
 
 #ifndef  NOTFROMFILE
 			//log to file
-			fr = logsampletofile(&filw, (int *) &iBytesLogged);
+			fr = log_sample_to_disk((int *) &iBytesLogged);
 			if (fr == FR_OK) {
 				iSampleCnt++;
 				if (iSampleCnt >= MAX_NUM_CONTINOUS_SAMPLES) {
@@ -349,7 +346,7 @@ int main(void) {
 					|| (iStatus & TEST_FLAG) || (iStatus & BACKLOG_UPLOAD_ON)
 					|| (iStatus & ALERT_UPLOAD_ON))
 					&& !(iStatus & NETWORK_DOWN)) {
-				lcd_print_line("Transmitting....", LINE2);
+				lcd_print_lne(LINE2, "Transmitting....");
 				//iStatus &= ~TEST_FLAG;
 #ifdef SMS_ALERT
 				iStatus &= ~SMSED_HIGH_TEMP;
@@ -833,7 +830,7 @@ int main(void) {
 		if ((iMinuteTick - iSampleTimeElapsed) >= g_iSamplePeriod) {
 			iSampleTimeElapsed = iMinuteTick;
 			P4IE &= ~BIT1;				// disable interrupt for button input
-			//lcd_print_line("Sampling........", LINE2);
+			//lcd_print_lne(LINE2, "Sampling........");
 			//re-trigger the ADC conversion
 			ADC12CTL0 &= ~ADC12ENC;
 			ADC12CTL0 |= ADC12ENC | ADC12SC;
@@ -867,7 +864,7 @@ int main(void) {
 #ifndef CALIBRATION
 		if ((iMinuteTick - iSMSRxPollElapsed) >= SMS_RX_POLL_INTERVAL) {
 			iSMSRxPollElapsed = iMinuteTick;
-			lcd_print_line("Configuring...", LINE1);
+			lcd_print_lne(LINE1, "Configuring...");
 			delay(100);
 
 			//update the signal strength
@@ -888,13 +885,11 @@ int main(void) {
 				if((gprs_network_indication == 0)
 						|| ((iSignalLevel < NETWORK_DOWN_SS)
 								|| (iSignalLevel > NETWORK_MAX_SS))) {
-					lcd_print_line("Signal lost...", LINE2);
-					delay(100);
+					lcd_print_lne(LINE2, "Signal lost...");
 					iStatus |= NETWORK_DOWN;
 					iOffset = 0;
 					modem_init();
-					lcd_print_line("Reconnecting...", LINE2);
-					delay(100);
+					lcd_print_lne(LINE2, "Reconnecting...");
 					iIdx++;
 				} else {
 					iStatus &= ~NETWORK_DOWN;
@@ -908,14 +903,13 @@ int main(void) {
 					//current sim slot is 1
 					//change to sim slot 2
 					g_pInfoA->cfgSIMSlot = 1;
-					lcd_print_line("Switching SIM: 2", LINE2);
-					delay(100);
+					lcd_print_lne(LINE2, "Switching SIM: 2");
+
 				} else {
 					//current sim slot is 2
 					//change to sim slot 1
 					g_pInfoA->cfgSIMSlot = 0;
-					lcd_print_line("Switching SIM: 1", LINE2);
-					delay(100);
+					lcd_print_lne(LINE2, "Switching SIM: 1");
 				}
 
 				modem_init();
@@ -982,7 +976,7 @@ int main(void) {
 				iIdx = strtol(ATresponse, 0, 10);
 				if (iIdx) {
 					iIdx = 1;
-					lcd_print_line("Msg Processing..", LINE2);
+					lcd_print_lne(LINE2, "Msg Processing..");
 					while (iIdx <= SMS_READ_MAX_MSG_IDX) {
 						memset(ATresponse, 0, sizeof(ATresponse));
 						recvmsg(iIdx, ATresponse);
@@ -1601,102 +1595,6 @@ int dopost_gprs_connection_status(char status) {
 
 }
 
-FRESULT logsampletofile(FIL* fobj, int* tbw) {
-	int bw = 0;	//bytes written
-	char* fn = getCurrentFileName(&currTime);
-
-	if (!(iStatus & TEST_FLAG)) {
-		fr = f_open(fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
-		if (fr == FR_OK) {
-			if (fobj->fsize) {
-				//append to the file
-				f_lseek(fobj, fobj->fsize);
-			}
-		}
-
-		if (iStatus & LOG_TIME_STAMP) {
-			rtc_get(&currTime);
-
-#if 1
-			memset(acLogData, 0, sizeof(acLogData));
-			strcat(acLogData, "$TS=");
-			strcat(acLogData, itoa_withpadding(currTime.tm_year));
-			strcat(acLogData, itoa_withpadding(currTime.tm_mon));
-			strcat(acLogData, itoa_withpadding(currTime.tm_mday));
-			strcat(acLogData, ":");
-			strcat(acLogData, itoa_withpadding(currTime.tm_hour));
-			strcat(acLogData, ":");
-			strcat(acLogData, itoa_withpadding(currTime.tm_min));
-			strcat(acLogData, ":");
-			strcat(acLogData, itoa_withpadding(currTime.tm_sec));
-			strcat(acLogData, ",");
-			strcat(acLogData, "R");	//removed =
-			strcat(acLogData, itoa_withpadding(g_iSamplePeriod));
-			strcat(acLogData, ",");
-			strcat(acLogData, "\n");
-			fr = f_write(fobj, acLogData, strlen(acLogData), (UINT *)&bw);
-#else
-			bw = f_printf(fobj,"$TS=%04d%02d%02d:%02d:%02d:%02d,R=%d,", currTime.tm_year, currTime.tm_mon, currTime.tm_mday,
-					currTime.tm_hour, currTime.tm_min, currTime.tm_sec,g_iSamplePeriod);
-#endif
-			if (bw > 0) {
-				*tbw += bw;
-				iStatus &= ~LOG_TIME_STAMP;
-			}
-		}
-
-		//get battery level
-#ifndef BATTERY_DISABLED
-		iBatteryLevel = batt_getlevel();
-#else
-		iBatteryLevel = 0;
-#endif
-		//log sample period, battery level, power plugged, temperature values
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
-		//bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,E=%s,", iBatteryLevel,
-		//			  !(P4IN & BIT4),Temperature[0],Temperature[1],Temperature[2],Temperature[3],Temperature[4]);
-		memset(acLogData, 0, sizeof(acLogData));
-		strcat(acLogData, "F");
-		strcat(acLogData, itoa_withpadding(iBatteryLevel));
-		strcat(acLogData, ",");
-		strcat(acLogData, "P");
-		if (P4IN & BIT4) {
-			strcat(acLogData, "0,");
-		} else {
-			strcat(acLogData, "1,");
-		}
-		strcat(acLogData, "A");
-		strcat(acLogData, Temperature[0]);
-		strcat(acLogData, ",");
-		strcat(acLogData, "B");
-		strcat(acLogData, Temperature[1]);
-		strcat(acLogData, ",");
-		strcat(acLogData, "C");
-		strcat(acLogData, Temperature[2]);
-		strcat(acLogData, ",");
-		strcat(acLogData, "D");
-		strcat(acLogData, Temperature[3]);
-		strcat(acLogData, ",");
-		strcat(acLogData, "E");
-		strcat(acLogData, Temperature[4]);
-		strcat(acLogData, ",");
-		strcat(acLogData, "\n");
-		fr = f_write(fobj, acLogData, strlen(acLogData), (UINT *)&bw);
-#else
-		bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,", iBatteryLevel,
-				!(P4IN & BIT4),Temperature[0],Temperature[1],Temperature[2],Temperature[3]);
-#endif
-
-		if (bw > 0) {
-			*tbw += bw;
-		}
-
-		f_sync(fobj);
-		return f_close(fobj);
-	} else {
-		return FR_OK;
-	}
-}
 
 int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 		char* seperator, int8_t iFlagVal, char* pcExtSrc, int8_t iFieldSize) {

@@ -38,8 +38,8 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_clear();
-		lcd_print_line("Sync SMS To ", LINE1);
-		lcd_print_line(szPhoneNumber, LINE2);
+		lcd_print_lne(LINE1, "Sync SMS To ");
+		lcd_print_lne(LINE2, szPhoneNumber);
 	}
 
 	lcd_disable_verbose();
@@ -55,8 +55,7 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 	}
 
 	if (res == UART_SUCCESS) {
-		sprintf(g_szTemp, "MSG %d ", msgNumber);
-		lcd_print_line(g_szTemp,LINE2);
+		lcd_print_ext(LINE2, "MSG %d ", msgNumber);
 		_NOP();
 	} else if (res == UART_ERROR) {
 		lcd_print("MODEM ERROR");

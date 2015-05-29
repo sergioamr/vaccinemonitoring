@@ -77,7 +77,7 @@ void modem_getIMEI() {
 			IMEI_OK = true;
 		} else {
 			lcd_clear();
-			lcd_print_line("IMEI Error", LINE2);
+			lcd_print_lne(LINE2, "IMEI Error");
 		}
 	}
 
@@ -134,9 +134,9 @@ void modem_surveyNetwork() {
 		if (attempts != NET_ATTEMPTS) {
 			lcd_clear();
 			sprintf(g_szTemp, "MCC RETRY %d   ", NET_ATTEMPTS - attempts);
-			lcd_print_line(g_szTemp, LINE1);
+			lcd_print_lne(LINE1, g_szTemp);
 		} else {
-			lcd_print_line("MCC DISCOVER", LINE1);
+			lcd_print_lne(LINE1, "MCC DISCOVER");
 		}
 
 		uart_resetbuffer();
@@ -159,7 +159,7 @@ void modem_surveyNetwork() {
 
 			uart_state = uart_getTransactionState();
 			if (uart_state != UART_SUCCESS) {
-				lcd_print_line("NETWORK BUSY", LINE2);
+				lcd_print_lne(LINE2, "NETWORK BUSY");
 				delay(NETWORK_WAITING_TIME);
 			} else if (uart_rx_cleanBuf(ATCMD_CSURVC, ATresponse,
 					sizeof(ATresponse)) == UART_SUCCESS) {
@@ -172,13 +172,12 @@ void modem_surveyNetwork() {
 				lcd_clear();
 				if (g_pInfoA->iCfgMCC[slot] > 0
 						&& g_pInfoA->iCfgMNC[slot] > 0) {
-					lcd_print_line("SUCCESS", LINE1);
-					sprintf(g_szTemp, "MCC %d MNC %d", g_pInfoA->iCfgMCC[slot],
+					lcd_print_lne(LINE1, "SUCCESS");
+					lcd_print_ext(LINE2, "MCC %d MNC %d", g_pInfoA->iCfgMCC[slot],
 							g_pInfoA->iCfgMNC[slot]);
-					lcd_print_line(g_szTemp, LINE2);
 				} else {
 					uart_state = UART_ERROR;
-					lcd_print_line("FAILED", LINE2);
+					lcd_print_lne(LINE2, "FAILED");
 					delay(1000);
 				}
 			}

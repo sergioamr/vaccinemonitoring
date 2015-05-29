@@ -42,7 +42,7 @@ char acLogData[FILE_BUFFER_LEN];
 volatile int32_t ADCvar[MAX_NUM_SENSORS];
 struct tm currTime;
 FIL filr;
-FIL filw;
+
 FRESULT fr;
 int32_t iBytesLogged = 0;
 int g_iCurrDay = 0;
