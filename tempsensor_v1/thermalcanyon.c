@@ -942,8 +942,7 @@ int main(void) {
 #ifndef CALIBRATION
 		//process SMS messages if there is a gap of 2 mins before cfg processing or upload takes place
 		if ((iMinuteTick) && !(iStatus & BACKLOG_UPLOAD_ON)
-				&& ((iMinuteTick - iSMSRxPollElapsed)
-						< (SMS_RX_POLL_INTERVAL - 2))
+				&& ((iMinuteTick - iSMSRxPollElapsed) < (SMS_RX_POLL_INTERVAL - 2))
 				&& ((iMinuteTick - iUploadTimeElapsed) < (g_iUploadPeriod - 2))
 				&& ((iMinuteTick - iMsgRxPollElapsed) >= MSG_REFRESH_INTERVAL)) {
 			iMsgRxPollElapsed = iMinuteTick;
@@ -961,9 +960,9 @@ int main(void) {
 					lcd_print_lne(LINE2, "Msg Processing..");
 					while (iIdx <= SMS_READ_MAX_MSG_IDX) {
 						memset(ATresponse, 0, sizeof(ATresponse));
-						recvmsg(iIdx, ATresponse);
-						if (ATresponse[0] != 0)	//check for $
-								{
+						iModemSuccess = recvmsg(iIdx, ATresponse);
+						if (ATresponse[0] != 0 && iModemSuccess == 0)	//check for $
+						{
 							switch (ATresponse[0]) {
 							case '1':
 								//get temperature values
@@ -1002,14 +1001,15 @@ int main(void) {
 							default:
 								break;
 							}
-							//if(processmsg(ATresponse))
+							if(processmsg(ATresponse))
 							{
 								//send heartbeat on successful processing of SMS message
-								// sendhb();
+								sendhb();
 							}
 						}
 						iIdx++;
 					}
+					iModemSuccess = 0;
 					delallmsg();
 					lcd_show(iDisplayId);
 				}
