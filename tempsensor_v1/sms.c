@@ -38,7 +38,7 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 
 	if (g_iLCDVerbose == 0) {
 		lcd_clear();
-		lcd_print_line("SMS To ", LINE1);
+		lcd_print_line("Sync SMS To ", LINE1);
 		lcd_print_line(szPhoneNumber, LINE2);
 	}
 
@@ -47,7 +47,7 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 
 	sprintf(g_szTemp, "AT+CMGS=\"%s\",129\r\n", szPhoneNumber);
 	if (uart_tx_waitForPrompt(g_szTemp)) {
-		uart_tx(pData);
+		uart_tx_timeout(pData, TIMEOUT_CMGS, 1);
 
 		// TODO Check if ok or RXBuffer contains Error
 		res = uart_rx(ATCMD_CMGS, ATresponse);

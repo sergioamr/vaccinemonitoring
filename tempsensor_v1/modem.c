@@ -98,7 +98,10 @@ void modem_getSimCardInfo() {
 
 	modem_getSMSCenter();
 	modem_getIMEI();
+
+#ifndef _DEBUG
 	modem_surveyNetwork();
+#endif
 
 	delay(100);
 }
@@ -118,12 +121,14 @@ void modem_surveyNetwork() {
 
 	int attempts = NET_ATTEMPTS;
 	int uart_state;
+	int slot = g_pInfoA->cfgSIMSlot;
 	lcd_clear();
 	lcd_disable_verbose();
 
-	uart_setDelayIntervalDivider(64);  // 120000 / 64
+	if (g_pInfoA->iCfgMCC[slot]!=0 && g_pInfoA->iCfgMNC[slot]!=0)
+		return;
 
-	int slot = g_pInfoA->cfgSIMSlot;
+	uart_setDelayIntervalDivider(64);  // 120000 / 64
 
 	do {
 		if (attempts!=NET_ATTEMPTS) {
@@ -135,6 +140,8 @@ void modem_surveyNetwork() {
 		}
 
 		uart_resetbuffer();
+
+		// Displays info for the only serving cell
 		uart_tx("AT#CSURVEXT=0\r\n");
 		uart_state = uart_getTransactionState();
 
@@ -169,7 +176,9 @@ void modem_surveyNetwork() {
 					sprintf(g_szTemp, "MCC %d MNC %d", g_pInfoA->iCfgMCC[slot], g_pInfoA->iCfgMNC[slot]);
 					lcd_print_line(g_szTemp, LINE2);
 				} else {
+					uart_state=UART_ERROR;
 					lcd_print_line("FAILED", LINE2);
+					delay(1000);
 				}
 			}
 		}
@@ -178,8 +187,9 @@ void modem_surveyNetwork() {
 	} while(uart_state!=UART_SUCCESS && attempts>0);
 
 	uart_setDefaultIntervalDivider();
-	lcd_enable_verbose();
 
+	lcd_enable_verbose();
+	delay(60000); // Wait a full minute for the transfer to finish
 }
 
 void modem_init() {
@@ -221,7 +231,7 @@ void modem_init() {
 	uart_tx("AT+CMEE=2\r\n");
 	uart_tx("AT#CMEEMODE=1\r\n");
 	uart_tx("AT#AUTOBND=2\r\n");
-	// Displays info for the only serving cell
+
 	uart_tx("AT#NITZ=1\r\n");
 	uart_tx("AT+CTZU=1\r\n");
 	uart_tx("AT&K4\r\n");

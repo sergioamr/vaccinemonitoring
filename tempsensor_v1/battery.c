@@ -57,7 +57,7 @@ void batt_init()
 	while(!(flags & 0x10))
 	{
 		//i2c_read(SLAVE_ADDR_BATTERY, BATT_FLAGS, 2, &flags);
-		i2c_read(SLAVE_ADDR_BATTERY, BATT_FLAGS, 1, &flags);
+		i2c_read(SLAVE_ADDR_BATTERY, BATT_FLAGS, 1, (uint8_t *) &flags);
 		delay(TRANS_DELAY);
 	}
 
@@ -175,7 +175,7 @@ void batt_init()
 	while((flags & 0x10))
 	{
 		//i2c_read(SLAVE_ADDR_BATTERY, BATT_FLAGS, 2, &flags);
-		i2c_read(SLAVE_ADDR_BATTERY, BATT_FLAGS, 1, &flags);
+		i2c_read(SLAVE_ADDR_BATTERY, BATT_FLAGS, 1, (uint8_t *) &flags);
 		delay(TRANS_DELAY);
 	}
 	data = 0x20;
@@ -211,10 +211,10 @@ void batt_init()
 
 int8_t batt_getlevel()
 {
-	int8_t level = 0;
+	uint8_t level = 0;
 	double adjustedlevel = 0.0;
 
-	i2c_read(SLAVE_ADDR_BATTERY, BATT_STATE_OF_CHARGE, 1, &level);
+	i2c_read(SLAVE_ADDR_BATTERY, BATT_STATE_OF_CHARGE, 1, (uint8_t *) &level);
 
 	adjustedlevel = level*1.15;
 	if(adjustedlevel > 100.0)

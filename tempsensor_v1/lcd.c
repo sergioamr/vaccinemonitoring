@@ -16,35 +16,37 @@ void lcd_setupIO() {
 	PJOUT &= ~BIT7;							// Backlight disable
 }
 
+char lcdBuffer[32];
+
 void lcd_init() {
-	memset(SampleData, 0, LCD_INIT_PARAM_SIZE);
+	memset(lcdBuffer, 0, LCD_INIT_PARAM_SIZE);
 
-	SampleData[0] = 0x38; // Basic
-	SampleData[1] = 0x39; // Extended
-	SampleData[2] = 0x14; // OCS frequency adjustment
-	SampleData[3] = 0x78;
-	SampleData[4] = 0x5E;
-	SampleData[5] = 0x6D;
-	SampleData[6] = 0x0C; // display on
-	SampleData[7] = 0x01; // clear display
-	SampleData[8] = 0x06; // entry mode set
+	lcdBuffer[0] = 0x38; // Basic
+	lcdBuffer[1] = 0x39; // Extended
+	lcdBuffer[2] = 0x14; // OCS frequency adjustment
+	lcdBuffer[3] = 0x78;
+	lcdBuffer[4] = 0x5E;
+	lcdBuffer[5] = 0x6D;
+	lcdBuffer[6] = 0x0C; // display on
+	lcdBuffer[7] = 0x01; // clear display
+	lcdBuffer[8] = 0x06; // entry mode set
 
-	i2c_write(0x3e, 0, LCD_INIT_PARAM_SIZE,  (uint8_t*) SampleData);
+	i2c_write(0x3e, 0, LCD_INIT_PARAM_SIZE,  (uint8_t*) lcdBuffer);
 	delay(100);
 
-	SampleData[0] = 0x40 | 0x80;
-	i2c_write(0x3e, 0, 1, (uint8_t *) SampleData);
+	lcdBuffer[0] = 0x40 | 0x80;
+	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
 
-	//SampleData[0] = 0x43;
-	//SampleData[1] = 0x44;
-	//i2c_write(0x3e, 0x40, 2, SampleData);
+	//lcdBuffer[0] = 0x43;
+	//lcdBuffer[1] = 0x44;
+	//i2c_write(0x3e, 0x40, 2, lcdBuffer);
 	//delay(100);
 #if 0
 	delay(1000);
 
-	SampleData[0] = 0x41;
-	SampleData[1] = 0x42;
-	i2c_write(0x3e,0x40,2,SampleData);
+	lcdBuffer[0] = 0x41;
+	lcdBuffer[1] = 0x42;
+	i2c_write(0x3e,0x40,2,lcdBuffer);
 	delay(100);
 #endif
 
@@ -52,26 +54,26 @@ void lcd_init() {
 }
 
 void lcd_clear() {
-	SampleData[0] = 0x01;
-	i2c_write(0x3e, 0, 1, (uint8_t *) SampleData);
+	lcdBuffer[0] = 0x01;
+	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
 	delay(100);
 }
 
 void lcd_on() {
-	SampleData[0] = 0x0C;
-	i2c_write(0x3e, 0, 1, (uint8_t *) SampleData);
+	lcdBuffer[0] = 0x0C;
+	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
 	delay(100);
 }
 
 void lcd_off() {
-	SampleData[0] = 0x08;
-	i2c_write(0x3e, 0, 1, (uint8_t *) SampleData);
+	lcdBuffer[0] = 0x08;
+	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
 	delay(100);
 }
 
 void lcd_setaddr(int8_t addr) {
-	SampleData[0] = addr | 0x80;
-	i2c_write(0x3e, 0, 1, (uint8_t *) SampleData);
+	lcdBuffer[0] = addr | 0x80;
+	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
 	delay(100);
 }
 
@@ -85,45 +87,45 @@ void lcd_show(int8_t iItemId) {
 	//if(iLastDisplayId != iItemId) lcd_clear();
 	lcd_clear();
 
-	memset(SampleData, 0, LCD_DISPLAY_LEN);
+	memset(lcdBuffer, 0, LCD_DISPLAY_LEN);
 	//get local time
 	rtc_getlocal(&currTime);
-	strcat(SampleData, itoa_withpadding(currTime.tm_year));
-	strcat(SampleData, "/");
-	strcat(SampleData, itoa_withpadding(currTime.tm_mon));
-	strcat(SampleData, "/");
-	strcat(SampleData, itoa_withpadding(currTime.tm_mday));
-	strcat(SampleData, " ");
+	strcat(lcdBuffer, itoa_withpadding(currTime.tm_year));
+	strcat(lcdBuffer, "/");
+	strcat(lcdBuffer, itoa_withpadding(currTime.tm_mon));
+	strcat(lcdBuffer, "/");
+	strcat(lcdBuffer, itoa_withpadding(currTime.tm_mday));
+	strcat(lcdBuffer, " ");
 
-	strcat(SampleData, itoa_withpadding(currTime.tm_hour));
-	strcat(SampleData, ":");
-	strcat(SampleData, itoa_withpadding(currTime.tm_min));
-	iIdx = strlen(SampleData); //marker
+	strcat(lcdBuffer, itoa_withpadding(currTime.tm_hour));
+	strcat(lcdBuffer, ":");
+	strcat(lcdBuffer, itoa_withpadding(currTime.tm_min));
+	iIdx = strlen(lcdBuffer); //marker
 
 	switch (iItemId) {
 	case 0:
 		memset(&Temperature[1][0], 0, TEMP_DATA_LEN + 1);//initialize as it will be used as scratchpad during POST formatting
 		ConvertADCToTemperature(ADCvar[1], &Temperature[1][0], 1);
-		strcat(SampleData, Temperature[1]);
-		strcat(SampleData, "C ");
-		strcat(SampleData, itoa_withpadding(iBatteryLevel));
-		strcat(SampleData, "% ");
+		strcat(lcdBuffer, Temperature[1]);
+		strcat(lcdBuffer, "C ");
+		strcat(lcdBuffer, itoa_withpadding(iBatteryLevel));
+		strcat(lcdBuffer, "% ");
 		//  if(signal_gprs==1){
 		if ((iSignalLevel >= NETWORK_DOWN_SS)
 				&& (iSignalLevel <= NETWORK_MAX_SS)) {
-			//	  strcat(SampleData,"G:");
+			//	  strcat(lcdBuffer,"G:");
 			if (signal_gprs == 1) {
-				strcat(SampleData, "G");
+				strcat(lcdBuffer, "G");
 			} else {
-				strcat(SampleData, "S");
+				strcat(lcdBuffer, "S");
 			}
 			local_signal = iSignalLevel;
 			local_signal = (((local_signal - NETWORK_ZERO)
 					/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
-			strcat(SampleData, itoa_withpadding(local_signal));
-			strcat(SampleData, "%");
+			strcat(lcdBuffer, itoa_withpadding(local_signal));
+			strcat(lcdBuffer, "%");
 		} else {
-			strcat(SampleData, "S --  ");
+			strcat(lcdBuffer, "S --  ");
 		}
 		iCnt = 0xff;
 		break;
@@ -150,64 +152,64 @@ void lcd_show(int8_t iItemId) {
 		case 5: iCnt = 0xff;
 #endif
 
-		strcat(SampleData, itoa_withpadding(iBatteryLevel));
-		strcat(SampleData, "% ");
+		strcat(lcdBuffer, itoa_withpadding(iBatteryLevel));
+		strcat(lcdBuffer, "% ");
 		if (TEMP_ALARM_GET(MAX_NUM_SENSORS) == TEMP_ALERT_CNF) {
-			strcat(SampleData, "BATT ALERT");
+			strcat(lcdBuffer, "BATT ALERT");
 		} else if (P4IN & BIT4)	//power not plugged
 		{
-			strcat(SampleData, "POWER OUT");
+			strcat(lcdBuffer, "POWER OUT");
 		} else if (((P4IN & BIT6)) && (iBatteryLevel == 100)) {
-			strcat(SampleData, "FULL CHARGE");
+			strcat(lcdBuffer, "FULL CHARGE");
 		} else {
-			strcat(SampleData, "CHARGING");
+			strcat(lcdBuffer, "CHARGING");
 		}
 
 		break;
 		// added for new display//
 	case 7:
 		iCnt = 0xff;
-		strcat(SampleData, "SIM1 ");	//current sim slot is 1
+		strcat(lcdBuffer, "SIM1 ");	//current sim slot is 1
 		if (g_pInfoA->cfgSIMSlot != 0) {
-			strcat(SampleData, "  --  ");
+			strcat(lcdBuffer, "  --  ");
 		} else {
 			if ((iSignalLevel > NETWORK_DOWN_SS)
 					&& (iSignalLevel < NETWORK_MAX_SS)) {
 				local_signal = iSignalLevel;
 				local_signal = (((local_signal - NETWORK_ZERO)
 						/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
-				strcat(SampleData, itoa_withpadding(local_signal));
-				strcat(SampleData, "% ");
+				strcat(lcdBuffer, itoa_withpadding(local_signal));
+				strcat(lcdBuffer, "% ");
 				if (signal_gprs == 1) {
-					strcat(SampleData, "G:YES");
+					strcat(lcdBuffer, "G:YES");
 				} else {
-					strcat(SampleData, "G:NO");
+					strcat(lcdBuffer, "G:NO");
 				}
 			} else {
-				strcat(SampleData, "  --  ");
+				strcat(lcdBuffer, "  --  ");
 			}
 		}
 		break;
 	case 8:
 		iCnt = 0xff;
-		strcat(SampleData, "SIM2 ");	//current sim slot is 2
+		strcat(lcdBuffer, "SIM2 ");	//current sim slot is 2
 		if (g_pInfoA->cfgSIMSlot != 1) {
-			strcat(SampleData, "  --  ");
+			strcat(lcdBuffer, "  --  ");
 		} else {
 			if ((iSignalLevel > NETWORK_DOWN_SS)
 					&& (iSignalLevel < NETWORK_MAX_SS)) {
 				local_signal = iSignalLevel;
 				local_signal = (((local_signal - NETWORK_ZERO)
 						/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
-				strcat(SampleData, itoa_withpadding(local_signal));
-				strcat(SampleData, "% ");
+				strcat(lcdBuffer, itoa_withpadding(local_signal));
+				strcat(lcdBuffer, "% ");
 				if (signal_gprs == 1) {
-					strcat(SampleData, "G:YES");
+					strcat(lcdBuffer, "G:YES");
 				} else {
-					strcat(SampleData, "G:NO");
+					strcat(lcdBuffer, "G:NO");
 				}
 			} else {
-				strcat(SampleData, "  --  ");
+				strcat(lcdBuffer, "  --  ");
 			}
 		}
 		break;
@@ -220,25 +222,25 @@ void lcd_show(int8_t iItemId) {
 		ConvertADCToTemperature(ADCvar[iCnt], &Temperature[iCnt][0], iCnt);
 
 		if (TEMP_ALARM_GET(iCnt) == TEMP_ALERT_CNF) {
-			strcat(SampleData, "ALERT ");
-			strcat(SampleData, SensorName[iCnt]);
-			strcat(SampleData, " ");
-			strcat(SampleData, Temperature[iCnt]);
-			strcat(SampleData, "C ");
+			strcat(lcdBuffer, "ALERT ");
+			strcat(lcdBuffer, SensorName[iCnt]);
+			strcat(lcdBuffer, " ");
+			strcat(lcdBuffer, Temperature[iCnt]);
+			strcat(lcdBuffer, "C ");
 		} else {
-			strcat(SampleData, "Sensor ");
-			strcat(SampleData, SensorName[iCnt]);
-			strcat(SampleData, " ");
-			strcat(SampleData, Temperature[iCnt]);
-			strcat(SampleData, "C ");
+			strcat(lcdBuffer, "Sensor ");
+			strcat(lcdBuffer, SensorName[iCnt]);
+			strcat(lcdBuffer, " ");
+			strcat(lcdBuffer, Temperature[iCnt]);
+			strcat(lcdBuffer, "C ");
 		}
 	}
 
 	//display the lines
-	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t *) SampleData);
+	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t *) lcdBuffer);
 	delay(100);
 	lcd_setaddr(0x40);	//go to next line
-	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t *) &SampleData[iIdx]);
+	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t *) &lcdBuffer[iIdx]);
 }
 
 void lcd_print(char* pcData) {
@@ -305,5 +307,5 @@ void lcd_print_debug(const char* pcData, int line) {
 	lcd_setaddr(0x0D);
 	i2c_write(0x3e,0x40,1,(uint8_t *)&display[(++pos)&0x3]);
 #endif
-	delay(10);
+	delay(50);
 }

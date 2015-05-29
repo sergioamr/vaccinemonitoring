@@ -73,12 +73,16 @@ void config_Init() {
 		return; // Memory was initialized, we are fine here.
 	}
 
-	// Setup internal system counters and checks
-	memset(g_pSysCfg, 0, sizeof(CONFIG_SYSTEM));
+	// Init Config InfoA
 	memset(g_pInfoA, 0, sizeof(CONFIG_INFOA));
 
 	// Setup InfoA config data
 	g_pInfoA->cfgSIMSlot=0;
+
+	// Init System internals
+
+	// Setup internal system counters and checks
+	memset(g_pSysCfg, 0, sizeof(CONFIG_SYSTEM));
 
 	// First run
 	g_pSysCfg->numberConfigurationRuns = 1;

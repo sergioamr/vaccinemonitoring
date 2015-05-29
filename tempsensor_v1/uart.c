@@ -79,7 +79,7 @@ int8_t ErrorLength=0;
 
 void uart_setCheckMsg(const char *szOK, const char *szError) {
 	TransmissionEnd=0;
-	g_iUartState=UART_SUCCESS;
+	g_iUartState=UART_INPROCESS;
 
 	if (szError!=NULL) {
 		ErrorIdx=0;
@@ -229,7 +229,7 @@ void sendCommand(const char *cmd) {
 	return;
 }
 
-#define DEFAULT_INTERVAL_DELAY 8
+#define DEFAULT_INTERVAL_DELAY 10
 uint8_t delayDivider = DEFAULT_INTERVAL_DELAY;
 void uart_setDefaultIntervalDivider() {
 	delayDivider = DEFAULT_INTERVAL_DELAY;
@@ -251,14 +251,18 @@ int waitForReady(uint32_t timeoutTimeMs) {
 		count--;
 	}
 
-	g_iUartState=UART_TIMEOUT;
-
 	// Store the maximum size used from this buffer
 	if (g_iRxCountBytes>g_pSysCfg->maxRXBuffer)
 		g_pSysCfg->maxRXBuffer=g_iRxCountBytes;
 
 	delay(100);  // Documentation specifies 30 ms delay between commands
-	return UART_FAILED;
+
+	if (g_iUartState!=UART_SUCCESS) {
+		g_iUartState=UART_TIMEOUT;
+		return UART_FAILED;
+	}
+
+	return UART_SUCCESS;
 }
 
 uint8_t iModemErrors=0;
@@ -269,6 +273,7 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 	while(attempts>0) {
 		sendCommand(cmd);
 		if (!waitForReady(timeout)) {
+			uart_setRingBuffer();
 			return UART_SUCCESS;
 		}
 		attempts--;
@@ -329,7 +334,7 @@ int uart_rx(int atCMD, char* pResponse) {
 
 // Clears the response buffer if len > 0
 int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
-	int count = 0;
+
 	int ret = -1;
 	char* pToken1 = NULL;
 	char* pToken2 = NULL;
@@ -360,7 +365,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			} else {
 				lcd_print_debug((char *) (const char *) &RXBuffer[RXHeadIdx], LINE2);
 			}
-			delay(100);
 #endif
 		}
 	}
@@ -779,10 +783,7 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 			if (uart_numDataPages>0) {
 				uart_numDataPages--;
 				if (uart_numDataPages==0) {
-					UCA0IE &= ~UCRXIE; // Disable interruption, we don't want more data.
-					TransmissionEnd=1;
 					g_iUartState=UART_SUCCESS;
-					return;
 				}
 			}
 		}
@@ -790,7 +791,10 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 		uart_checkOK();
 		uart_checkERROR();
 
-		RXBuffer[RXTailIdx++] = UCA0RXBUF;
+		if (uart_numDataPages!=0) {  // -1 or >1 will be capturing data
+			RXBuffer[RXTailIdx++] = UCA0RXBUF;
+			g_iRxCountBytes++;  // Data transfer check
+		}
 
 		if (UCA0STATW & UCRXERR) {
 			iError++;
@@ -802,7 +806,9 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 			iTxStop = 0;
 		}
 
-		g_iRxCountBytes++;  // Data transfer check
+		if (TransmissionEnd)
+			__bic_SR_register_on_exit(LPM0_bits); // Resume execution
+
 		break;
 
 	case USCI_SPI_UCTXIFG:

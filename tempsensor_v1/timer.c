@@ -8,9 +8,9 @@
 #include "config.h"
 #include "timer.h"
 
-volatile int iTick = 0;
+volatile uint16_t iTick = 0;
 
-volatile int delay_count = 0;
+volatile uint32_t delay_count = 0;
 
 // Timer0_A0 interrupt service routine
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
@@ -22,12 +22,13 @@ void __attribute__ ((interrupt(TIMER0_A0_VECTOR))) Timer0_A0_ISR (void)
 #error Compiler not supported!
 #endif
 {
-	if (++iTick>delay_count)
+	if (++iTick>=delay_count)
 		__bic_SR_register_on_exit(LPM0_bits); // Resume functionality.
 }
 
-void delay(int time)
+void delay(uint32_t time)
 {
+	iTick = 0;
 	delay_count = time/10;
 	TA0CCTL0 = CCIE;                          // TACCR0 interrupt enabled
 	TA0CCR0 = 10000;						  // 10ms (1 cnt = 1us @1MHz timer clk)

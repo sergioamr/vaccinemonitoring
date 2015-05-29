@@ -24,7 +24,7 @@ extern "C"
 //! \return after the expiry of specified time
 //
 //*****************************************************************************
-extern void delay(int time);
+extern void delay(uint32_t time);
 
 //*****************************************************************************
 //
