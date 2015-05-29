@@ -15,6 +15,8 @@
 #include "driverlib.h"
 #include "timer.h"
 
+#define I2C_DELAY 100
+
 #pragma SET_DATA_SECTION(".aggregate_vars")
 volatile int8_t 	I2CRX[I2C_RX_LEN];
 volatile int8_t 	I2CTX[I2C_TX_LEN];
@@ -48,12 +50,8 @@ void i2c_read(uint8_t ucSlaveAddr, uint8_t ucCmd, uint8_t ucLen, uint8_t* pucDat
 	 UCB0CTL1 |= UCTXSTT;                    // I2C start condition
 
 	 while(!(cMode & I2C_DATA_RECEIVED) && iRetry){ iRetry--;
-#ifndef _DEBUG
-	 	 delay(100);
-#else
-	 	delay(10);
-#endif
-	 	 pucData[0] = 0;
+	 	delay(I2C_DELAY);
+	 	pucData[0] = 0;
 	 };
 	 memcpy((void *) pucData,(const void *) I2CRX,ucLen);
 }
@@ -69,9 +67,8 @@ void i2c_write(uint8_t ucSlaveAddr, uint8_t ucCmd, uint8_t ucLen, uint8_t* pucDa
 
 	 UCB0CTL1 |= UCTR;
 	 UCB0CTL1 |= UCTXSTT;                    // I2C start condition
-	 //delay(5);
+	 delay(I2C_DELAY);
 }
-
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
 #pragma vector = USCI_B0_VECTOR

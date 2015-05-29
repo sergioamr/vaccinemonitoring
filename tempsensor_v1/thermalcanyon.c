@@ -165,7 +165,7 @@ void pullTime() {
 /****************************************************************************/
 
 int main(void) {
-	int t;
+
 	char* pcData = NULL;
 	char* pcTmp = NULL;
 	char* pcSrc1 = NULL;
@@ -208,6 +208,8 @@ int main(void) {
 #else
 	lcd_print_lne(LINE2, "(db)" __TIME__);
 #endif
+
+	fat_initDrive();
 
 	sampletemp();
 #ifndef _DEBUG
@@ -281,8 +283,6 @@ int main(void) {
 
 	delay(1000);
 
-	fat_initDrive();
-
 	//get the last read offset from FRAM
 	if (g_pInfoB->dwLastSeek > 0) {
 		dwLastseek = g_pInfoB->dwLastSeek;
@@ -299,6 +299,7 @@ int main(void) {
 	lcd_disable_verbose();
 
 	lcd_print("Finished Boot");
+	log_append("Finished Boot");
 
 	while (1) {
 		//check if conversion is complete
@@ -864,14 +865,13 @@ int main(void) {
 #ifndef CALIBRATION
 		if ((iMinuteTick - iSMSRxPollElapsed) >= SMS_RX_POLL_INTERVAL) {
 			iSMSRxPollElapsed = iMinuteTick;
+			lcd_clear();
 			lcd_print_lne(LINE1, "Configuring...");
 			delay(100);
 
 			//update the signal strength
 			uart_tx("AT+CSQ\r\n");
-			delay(2000);
-			memset(ATresponse, 0, sizeof(ATresponse));
-			uart_rx(ATCMD_CSQ, ATresponse);
+			uart_rx_cleanBuf(ATCMD_CSQ, ATresponse, sizeof(ATresponse));
 
 			if (ATresponse[0] != 0) {
 				iSignalLevel = strtol(ATresponse, 0, 10);

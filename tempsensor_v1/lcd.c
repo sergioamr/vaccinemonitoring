@@ -10,10 +10,6 @@
 #include "rtc.h"
 #include "stringutils.h"
 
-extern _CODE_ACCESS int __TI_printfi(char **_format, va_list _ap, void *_op,
-                                     int (*_outc)(char, void *),
-                                     int (*_outs)(char *, void *,int));
-
 void lcd_setupIO() {
 	PJDIR |= BIT6 | BIT7;      			// set LCD reset and Backlight enable
 	PJOUT |= BIT6;							// LCD reset pulled high
@@ -38,7 +34,6 @@ void lcd_init() {
 	lcdBuffer[8] = 0x06; // entry mode set
 
 	i2c_write(0x3e, 0, LCD_INIT_PARAM_SIZE, (uint8_t*) lcdBuffer);
-	delay(100);
 
 	lcdBuffer[0] = 0x40 | 0x80;
 	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
@@ -48,39 +43,32 @@ void lcd_init() {
 	lcdBuffer[0] = 0x43;
 	lcdBuffer[1] = 0x44;
 	i2c_write(0x3e, 0x40, 2, lcdBuffer);
-	delay(100);
 
 	lcdBuffer[0] = 0x41;
 	lcdBuffer[1] = 0x42;
 	i2c_write(0x3e,0x40,2,lcdBuffer);
-	delay(100);
 #endif
-
 	delay(1000);
 }
 
 void lcd_clear() {
 	lcdBuffer[0] = 0x01;
 	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
-	delay(100);
 }
 
 void lcd_on() {
 	lcdBuffer[0] = 0x0C;
 	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
-	delay(100);
 }
 
 void lcd_off() {
 	lcdBuffer[0] = 0x08;
 	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
-	delay(100);
 }
 
 void lcd_setaddr(int8_t addr) {
 	lcdBuffer[0] = addr | 0x80;
 	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
-	delay(100);
 }
 
 void lcd_show(int8_t iItemId) {
@@ -244,7 +232,6 @@ void lcd_show(int8_t iItemId) {
 
 	//display the lines
 	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t *) lcdBuffer);
-	delay(100);
 	lcd_setaddr(0x40);	//go to next line
 	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t *) &lcdBuffer[iIdx]);
 }
@@ -283,7 +270,6 @@ void lcd_print(char* pcData) {
 	}
 	lcd_clear();
 	i2c_write(0x3e, 0x40, len, (uint8_t *) pcData);
-	delay(100); // Give time for the buffer to be copied through the i2c
 }
 
 void lcd_print_lne(int8_t iLine, const char* pcData) {
@@ -298,7 +284,6 @@ void lcd_print_lne(int8_t iLine, const char* pcData) {
 		lcd_setaddr(0x0);
 	}
 	i2c_write(0x3e, 0x40, len, (uint8_t *) pcData);
-	delay(100); // Give time for the buffer to be copied through the i2c
 }
 
 void lcd_reset() {

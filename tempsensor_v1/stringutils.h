@@ -14,5 +14,8 @@ extern char* itoa_nopadding(int num);
 extern int _outc(char c, void *_op);
 extern int _outs(char *s, void *_op, int len);
 
+extern _CODE_ACCESS int __TI_printfi(char **_format, va_list _ap, void *_op,
+                                     int (*_outc)(char, void *),
+                                     int (*_outs)(char *, void *,int));
 
 #endif /* TEMPSENSOR_V1_STRINGUTILS_H_ */

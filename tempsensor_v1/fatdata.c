@@ -1,4 +1,5 @@
 #include "thermalcanyon.h"
+#include "stringutils.h"
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 char g_szFatFileName[64];
@@ -34,33 +35,50 @@ char* getYMDString(struct tm* timeData) {
 
 char* getCurrentFileName(struct tm* timeData) {
 	if (timeData->tm_mday == 0 && timeData->tm_mon && timeData->tm_year == 0) {
-		strcpy(g_szFatFileName, "/data/unknown.csv");
+		strcpy(g_szFatFileName, LOG_FILE_UNKNOWN);
 		return g_szFatFileName;
 	}
 
-	sprintf(g_szFatFileName, "/data/%s.csv", getYMDString(timeData));
+	sprintf(g_szFatFileName, FOLDER_DATA "/%s.csv", getYMDString(timeData));
 	return g_szFatFileName;
 }
 
-void fat_initDrive() {
-	/* Register work area to the default drive */
-	f_mount(&FatFs, "", 0);
+void fat_checkError(FRESULT fr) {
+	if (fr == FR_OK)
+		return;
 
-	sprintf(g_szTemp, "Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
-	FRESULT fr = log_append(g_szTemp);
-	if (fr != FR_OK) {
-		lcd_print_lne(LINE1, "SD CARD FAILURE");
-		lcd_print_ext(LINE2, "ERROR 0x%x ", fr);
-		delay(10000);
-	}
+	lcd_print_lne(LINE1, "SD CARD FAILURE");
+	lcd_print_ext(LINE2, "ERROR 0x%x ", fr);
+	delay(10000);
 }
 
-FRESULT log_append(char *text) {
+FRESULT fat_initDrive() {
+	FRESULT fr;
+
+	/* Register work area to the default drive */
+	fr=f_mount(&FatFs, "", 0);
+	fat_checkError(fr);
+	if (fr!=FR_OK)
+		return fr;
+
+	fr=f_mkdir(FOLDER_DATA);
+	if (fr!=FR_EXIST)
+		fat_checkError(fr);
+
+	fr=f_mkdir(FOLDER_LOG);
+	if (fr!=FR_EXIST)
+		fat_checkError(fr);
+
+	fr = log_append("Start Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
+	return fr;
+}
+
+FRESULT log_append_text(char *text) {
 
 	FIL fobj;
 	int bw = 0;	//bytes written
 
-	fr = f_open(&fobj, "/var/log/system.log",
+	fr = f_open(&fobj, LOG_FILE_PATH,
 			FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
 	if (fr == FR_OK) {
 		if (fobj.fsize) {
@@ -68,6 +86,7 @@ FRESULT log_append(char *text) {
 			f_lseek(&fobj, fobj.fsize);
 		}
 	} else {
+		fat_checkError(fr);
 		return fr;
 	}
 
@@ -87,6 +106,20 @@ FRESULT log_append(char *text) {
 	return f_close(&fobj);
 }
 
+FRESULT log_append(const char *_format, ...)
+{
+    va_list _ap;
+    char *fptr = (char *)_format;
+    char *out_end = g_szTemp;
+
+    va_start(_ap, _format);
+    __TI_printfi(&fptr, _ap, (void *)&out_end, _outc, _outs);
+    va_end(_ap);
+
+    *out_end = '\0';
+    return log_append_text(g_szTemp);
+}
+
 FRESULT log_sample_to_disk(int* tbw) {
 
 	FIL fobj;
@@ -101,6 +134,9 @@ FRESULT log_sample_to_disk(int* tbw) {
 				//append to the file
 				f_lseek(&fobj, fobj.fsize);
 			}
+		} else {
+			fat_checkError(fr);
+			return fr;
 		}
 
 		if (iStatus & LOG_TIME_STAMP) {
