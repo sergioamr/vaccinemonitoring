@@ -179,7 +179,7 @@ SECTIONS
     .stack      : {} > RAM (HIGH)           /* SOFTWARE SYSTEM STACK             */
 
     .infoA     : {} > INFOA
-    .infoB     : {} > INFOB
+    .infoB     : {} > INFOB type=NOINIT
     .infoC     : {
     	*(.config_vars_infoC)
     } > INFOC

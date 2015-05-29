@@ -380,7 +380,6 @@ int main(void) {
 #endif
 
 				if (!(iStatus & TEST_FLAG)) {
-
 					uart_tx("AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
 					//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
 					delay(MODEM_TX_DELAY2);
@@ -1124,7 +1123,6 @@ void ConvertADCToTemperature(unsigned int ADCval, char* TemperatureVal,
 			iTempIdx = 1;
 			TemperatureVal[0] = '-';
 			A0tempdegCint = abs(A0tempdegCint);
-
 		}
 
 		for (i = 2; i >= 0; i--) {

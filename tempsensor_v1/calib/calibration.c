@@ -319,9 +319,9 @@ int main_calibration(void) {
 
 	delay(1000);
 	lcd_clear();
-	lcd_print_line("CALIBRATION MODE", LINE1);
+	lcd_print_lne("CALIBRATION MODE", LINE1);
 	delay(1000);
-	lcd_print_line("V(" __DATE__ ")",LINE2);
+	lcd_print_lne("V(" __DATE__ ")",LINE2);
 	delay(2000);
 
 	i2c_init(380000);
