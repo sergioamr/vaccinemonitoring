@@ -165,7 +165,6 @@ void pullTime() {
 /****************************************************************************/
 
 int main(void) {
-	int t;
 	char* pcData = NULL;
 	char* pcTmp = NULL;
 	char* pcSrc1 = NULL;
