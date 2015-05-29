@@ -117,7 +117,7 @@ typedef struct __attribute__((__packed__))  {
 	uint16_t maxTXBuffer;
 
 	uint16_t lastCommand; // Command that was last executed to control flow.
-	char lastCommandTime[2+2+1+1]; //
+	char lastCommandTime[2+2+2+1+1+1]; //
 } CONFIG_SYSTEM;
 
 typedef struct {
@@ -130,8 +130,7 @@ double	   calibration[MAX_NUM_SENSORS][2];
 /* Check if there is a hang on next reset																		 */
 /*****************************************************************************************************************/
 #define COMMAND_BOOT 100
-#define COMMAND_TEMPERATURE 200
-#define COMMAND_TEMPERATURE_SAMPLE 250
+#define COMMAND_TEMPERATURE_SAMPLE 200
 #define COMMAND_GPRS 300
 #define COMMAND_MODEMINIT 400
 #define COMMAND_FATINIT 500
@@ -139,6 +138,10 @@ double	   calibration[MAX_NUM_SENSORS][2];
 #define COMMAND_SMS_SEND 700
 #define COMMAND_LCDINIT 800
 #define COMMAND_CALIBRATION 1000
+#define COMMAND_POST 1100
+#define COMMAND_TEMPERATURE 1200
+
+#define COMMAND_END 99
 
 extern void config_Init();
 extern void config_setLastCommand(uint16_t lastCmd);

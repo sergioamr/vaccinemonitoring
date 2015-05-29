@@ -69,6 +69,8 @@ void config_setLastCommand(uint16_t lastCmd)  {
 	rtc_get(&currTime);
 
 	if (lastMin!=currTime.tm_min && lastSec!=currTime.tm_sec) {
+		strcpy(g_pSysCfg->lastCommandTime,itoa_withpadding(currTime.tm_hour));
+		strcat(g_pSysCfg->lastCommandTime,":");
 		strcpy(g_pSysCfg->lastCommandTime,itoa_withpadding(currTime.tm_min));
 		strcat(g_pSysCfg->lastCommandTime,":");
 		strcat(g_pSysCfg->lastCommandTime,itoa_withpadding(currTime.tm_sec));

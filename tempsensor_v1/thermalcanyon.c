@@ -775,6 +775,8 @@ int main(void) {
 #endif
 
 				if (iPOSTstatus) {
+
+					config_setLastCommand(COMMAND_POST);
 					iPOSTstatus = 0;
 					//initialize the RX counters as RX buffer is been used in the aggregrate variables for HTTP POST formation
 					uart_resetbuffer();
@@ -782,16 +784,13 @@ int main(void) {
 					iPOSTstatus = dopost(SampleData);
 					if (iPOSTstatus != 0) {
 						//redo the post
-						uart_tx(
-								"AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
+						// Define Packet Data Protocol Context - +CGDCONT
+						sprintf(g_szTemp, "AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", g_pInfoA->cfgAPN[g_pInfoA->cfgSIMSlot]);
+						uart_tx(g_szTemp);
 						//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
-						delay(MODEM_TX_DELAY2);
 
 						uart_tx("AT#SGACT=1,1\r\n");
-						delay(MODEM_TX_DELAY2);
-
 						uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
-						delay(MODEM_TX_DELAY2);
 #ifdef NO_CODE_SIZE_LIMIT
 						iPOSTstatus = dopost(SampleData);
 						if (iPOSTstatus != 0) {
@@ -824,6 +823,7 @@ int main(void) {
 #ifdef POWER_SAVING_ENABLED
 					modem_enter_powersave_mode();
 #endif
+					config_setLastCommand(COMMAND_POST+COMMAND_END);
 				}
 				lcd_show(iDisplayId);//remove the custom print (e.g transmitting)
 			}
