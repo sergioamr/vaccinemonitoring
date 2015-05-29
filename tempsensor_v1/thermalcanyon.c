@@ -188,6 +188,8 @@ int main(void) {
 
 	setupIO();
 	config_Init();	// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
+
+	config_setLastCommand(COMMAND_BOOT);
 	delay(1000);
 
 	lcd_reset();

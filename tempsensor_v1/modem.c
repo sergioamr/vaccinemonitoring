@@ -196,6 +196,8 @@ void modem_surveyNetwork() {
 
 void modem_init() {
 
+	config_setLastCommand(COMMAND_MODEMINIT);
+
 	uint8_t slot = g_pInfoA->cfgSIMSlot;
 
 	if (slot > 1) {
@@ -241,6 +243,8 @@ void modem_init() {
 	uart_tx("AT&W0\r\n");
 	uart_tx("AT+CSDH=1\r\n");
 	delay(1000);		//some time to enable SMS,POST to work
+
+	config_incLastCmd();
 }
 
 #ifdef POWER_SAVING_ENABLED

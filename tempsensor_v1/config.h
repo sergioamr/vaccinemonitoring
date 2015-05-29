@@ -115,6 +115,9 @@ typedef struct __attribute__((__packed__))  {
 	uint16_t maxATResponse;
 	uint16_t maxRXBuffer;
 	uint16_t maxTXBuffer;
+
+	uint16_t lastCommand; // Command that was last executed to control flow.
+	char lastCommandTime[2+2+1+1]; //
 } CONFIG_SYSTEM;
 
 typedef struct {
@@ -122,6 +125,21 @@ int32_t	   dwLastSeek;
 double	   calibration[MAX_NUM_SENSORS][2];
 } CONFIG_INFOB;
 
+/*****************************************************************************************************************/
+/* DIAGNOSE AND TESTING 			   																		     */
+/* Check if there is a hang on next reset																		 */
+/*****************************************************************************************************************/
+
+#define COMMAND_BOOT 100
+#define COMMAND_TEMPERATURE 200
+#define COMMAND_GPRS 300
+#define COMMAND_MODEMINIT 400
+#define COMMAND_FATINIT 500
+#define COMMAND_FATSAVE 600
+#define COMMAND_SMS_SEND 700
+
 extern void config_Init();
+extern void config_setLastCommand(uint16_t lastCmd);
+extern void config_incLastCmd();
 
 #endif /* TEMPSENSOR_V1_CONFIG_H_ */

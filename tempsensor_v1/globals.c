@@ -29,13 +29,9 @@ char SampleData[SAMPLE_LEN];
 
 //volatile uint8_t iStatus = LOG_TIME_STAMP | TEST_FLAG;	//to test the reading and POST formation, there will be no SMS and POST happening
 volatile uint16_t iStatus = LOG_TIME_STAMP;		//this is recommended setting
-#if MAX_NUM_SENSORS == 5
+
 char SensorName[MAX_NUM_SENSORS][NAME_LEN] = { "A", "B", "C", "D", "E" };
 uint8_t SensorDisplayName[MAX_NUM_SENSORS] = { 0xA, 0xB, 0xC, 0xD, 0xE };
-#else
-char SensorName[MAX_NUM_SENSORS][NAME_LEN] = {"A","B","C","D"};
-uint8_t SensorDisplayName[MAX_NUM_SENSORS] = {0xA,0xB,0xC,0xD};
-#endif
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 char acLogData[FILE_BUFFER_LEN];

@@ -10,6 +10,7 @@
 
 #include "thermalcanyon.h"
 #include "calib/calibration.h"
+#include "time.h"
 
 int g_iSamplePeriod = SAMPLE_PERIOD;
 int g_iUploadPeriod = UPLOAD_PERIOD;
@@ -50,6 +51,27 @@ void calibrate_device() {
 
 void config_SafeMode() {
 	_NOP();
+}
+
+void config_incLastCmd() {
+	g_pSysCfg->lastCommand++;
+}
+
+// Stores what was the last command run and what time
+void config_setLastCommand(uint16_t lastCmd)  {
+
+	static int lastMin = 0;
+	static int lastSec = 0;
+
+	g_pSysCfg->lastCommand = lastCmd;
+
+	rtc_get(&currTime);
+
+	if (lastMin!=currTime.tm_min && lastSec!=currTime.tm_sec) {
+		strcpy(g_pSysCfg->lastCommandTime,itoa_withpadding(currTime.tm_min));
+		strcat(g_pSysCfg->lastCommandTime,":");
+		strcat(g_pSysCfg->lastCommandTime,itoa_withpadding(currTime.tm_sec));
+	}
 }
 
 void config_Init() {
