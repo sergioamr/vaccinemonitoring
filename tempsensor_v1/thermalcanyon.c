@@ -256,6 +256,10 @@ int main(void) {
 		// Disable echo from modem
 		uart_tx("ATE0\r\n");
 		//heartbeat
+		for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
+			memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);
+			ConvertADCToTemperature(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
+		}
 		sendhb();
 	}
 
@@ -304,16 +308,9 @@ int main(void) {
 		if ((isConversionDone) || (iStatus & TEST_FLAG)) {
 			//convert the current sensor ADC value to temperature
 			for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
-				memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);//initialize as it will be used as scratchpad during POST formatting
+				memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);
 				ConvertADCToTemperature(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
 			}
-
-			//Write temperature data to 7 segment display (Writes to a particular position?
-			writetoI2C(0x20, SensorDisplayName[iDisplayId]);//Display channel
-			writetoI2C(0x21, Temperature[iDisplayId][0]);//(A0tempdegCint >> 8));
-			writetoI2C(0x22, Temperature[iDisplayId][1]);//(A0tempdegCint >> 4));
-			writetoI2C(0x23, Temperature[iDisplayId][3]);	//(A0tempdegCint));
-			writetoI2C(0x24, 0x04);
 
 #ifndef  NOTFROMFILE
 			//log to file
@@ -1070,20 +1067,13 @@ int main(void) {
 
 void writetoI2C(uint8_t addressI2C, uint8_t dataI2C) {
 	return; //void function for the new board with LCD
-/*
-#ifndef I2C_DISABLED
-	delay(100);
-	i2c_write(SLAVE_ADDR_DISPLAY, addressI2C, 1, &dataI2C);
-#endif
-*/
 }
 
-void ConvertADCToTemperature(unsigned int ADCval, char* TemperatureVal,
+void ConvertADCToTemperature(int32_t ADCval, char* TemperatureVal,
 		int8_t iSensorIdx) {
-	float A0V2V, A0R2, A0R1 = 10000, A0V1 = 2.5;
+	float A0V2V, A0R2;
 	float A0tempdegC = 0.0;
 	int32_t A0tempdegCint = 0;
-	volatile int32_t A0R2int = 0;
 	int8_t i = 0;
 	int8_t iTempIdx = 0;
 
@@ -1092,12 +1082,10 @@ void ConvertADCToTemperature(unsigned int ADCval, char* TemperatureVal,
 	//NUM = A0V2V*A0R1;
 	//DEN = A0V1-A0V2V;
 
-	A0R2 = (A0V2V * A0R1) / (A0V1 - A0V2V);				//R2= (V2*R1)/(V1-V2)
-
-	A0R2int = A0R2;
+	A0R2 = (A0V2V * 10000.0) / (2.5 - A0V2V);				//R2= (V2*R1)/(V1-V2)
 
 	//Convert resistance to temperature using Steinhart-Hart algorithm
-	A0tempdegC = ConvertoTemp(A0R2int);
+	A0tempdegC = ConvertoTemp(A0R2);
 
 	//use calibration formula
 #ifndef CALIBRATION
@@ -1182,7 +1170,7 @@ void USCIB0_ISR(void)
 float ConvertoTemp(float R) {
 	float A1 = 0.00335, B1 = 0.0002565, C1 = 0.0000026059, D1 = 0.00000006329,
 			tempdegC;
-	int R25 = 9965;
+	float R25 = 9965.0;
 
 	tempdegC = 1
 			/ (A1 + (B1 * log(R / R25)) + (C1 * pow((log(R / R25)), 2))
@@ -1190,7 +1178,7 @@ float ConvertoTemp(float R) {
 
 	tempdegC = tempdegC - 273.15;
 
-	return (float) tempdegC;
+	return tempdegC;
 
 }
 
@@ -2162,8 +2150,8 @@ int8_t processmsg(char* pSMSmsg) {
 void sendhb() {
 
 	char* pcTmp = NULL;
-
 	int slot = g_pInfoA->cfgSIMSlot;
+	int i = 0;
 
 	lcd_print("SMS SYNC");
 	//send heart beat
@@ -2182,11 +2170,13 @@ void sendhb() {
 	strcat(SampleData, ",");
 	strcat(SampleData, itoa_nopadding(g_pInfoA->iCfgMNC[slot]));
 	strcat(SampleData, ",");
-#if MAX_NUM_SENSORS == 5
-	strcat(SampleData, "1,1,1,1,1,");//TODO to be changed based on jack detection
-#else
-	strcat(SampleData,"1,1,1,1,");	//TODO to be changed based on jack detection
-#endif
+	for (i = 0; i < MAX_NUM_SENSORS; i++) {
+		if(Temperature[i][0] == '-') {
+			strcat(SampleData, "0,");
+		} else {
+			strcat(SampleData, "1,");
+		}
+	}
 
 	pcTmp = itoa_withpadding(batt_getlevel());	//opt by directly using tmpstr
 	strcat(SampleData, pcTmp);
