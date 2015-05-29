@@ -244,8 +244,10 @@ void lcd_show(int8_t iItemId) {
 }
 
 void lcd_progress_wait(uint16_t delayTime) {
+	int t;
 	int count = delayTime / 100;
-	for (int t = 0; t < count; t++) {
+
+	for (t = 0; t < count; t++) {
 		delay(50);
 		lcd_print_progress("", LINE2);
 	}
