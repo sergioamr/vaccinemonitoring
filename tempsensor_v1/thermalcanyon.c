@@ -88,7 +88,7 @@ static void setupADC_IO() {
 #ifdef SEQUENCE
 	ADC12MCTL3 = ADC12VRSEL_4 | ADC12INCH_3; // Vr+ = VeREF+ (ext) and Vr-=AVss, 12bit resolution, channel 3
 	ADC12MCTL4 = ADC12VRSEL_4 | ADC12INCH_4; // Vr+ = VeREF+ (ext) and Vr-=AVss, 12bit resolution, channel 4
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
 	ADC12MCTL5 = ADC12VRSEL_4 | ADC12INCH_5; // Vr+ = VeREF+ (ext) and Vr-=AVss,12bit resolution,channel 5,EOS
 	ADC12MCTL6 = ADC12VRSEL_4 | ADC12INCH_10 | ADC12EOS; // Vr+ = VeREF+ (ext) and Vr-=AVss,12bit resolution,channel 5,EOS
 #else
@@ -100,7 +100,7 @@ static void setupADC_IO() {
 
 	//ADC interrupt logic
 	//TODO comment ADC for debugging other interfaces
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
 	ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5 | ADC12IE6; // Enable ADC conv complete interrupt
 #else
 			ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5; // Enable ADC conv complete interrupt
@@ -639,7 +639,7 @@ int main(void) {
 					if ((fr == FR_OK) && pcTmp) {
 						//read so far is successful and time stamp is found
 						memset(SampleData, 0, sizeof(SampleData));
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
 						strcat(SampleData, "IMEI=");
 						if (g_pInfoA->cfgIMEI[0] != 0xFF) {
 							strcat(SampleData, g_pInfoA->cfgIMEI);
@@ -714,7 +714,7 @@ int main(void) {
 							formatfield(pcSrc2, "D", iIdx, "|", iOffset, NULL,
 									0);
 						}
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
 						iOffset = formatfield(pcSrc1, "E", iPOSTstatus, "|", 0,
 								pcSrc2, 8);
 						if (pcSrc2) {
@@ -1251,12 +1251,12 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 		break;
 	case ADC12IV_ADC12IFG5:   		        // Vector 22:  ADC12MEM5
 		ADCvar[3] += ADC12MEM5;                     // Read conversion result
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 4
+#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 4
 		isConversionDone = 1;
 #endif
 		break;
 	case ADC12IV_ADC12IFG6:                 // Vector 24:  ADC12MEM6
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
 		ADCvar[4] += ADC12MEM6;                     // Read conversion result
 		isConversionDone = 1;
 		iSamplesRead++;
@@ -1485,7 +1485,6 @@ int dopost_gprs_connection_status(char status) {
 	return l_file_pointer_enabled_sms_status;
 
 }
-
 
 int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 		char* seperator, int8_t iFlagVal, char* pcExtSrc, int8_t iFieldSize) {
