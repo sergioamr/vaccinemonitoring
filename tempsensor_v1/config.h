@@ -129,14 +129,16 @@ double	   calibration[MAX_NUM_SENSORS][2];
 /* DIAGNOSE AND TESTING 			   																		     */
 /* Check if there is a hang on next reset																		 */
 /*****************************************************************************************************************/
-
 #define COMMAND_BOOT 100
 #define COMMAND_TEMPERATURE 200
+#define COMMAND_TEMPERATURE_SAMPLE 250
 #define COMMAND_GPRS 300
 #define COMMAND_MODEMINIT 400
 #define COMMAND_FATINIT 500
 #define COMMAND_FATSAVE 600
 #define COMMAND_SMS_SEND 700
+#define COMMAND_LCDINIT 800
+#define COMMAND_CALIBRATION 1000
 
 extern void config_Init();
 extern void config_setLastCommand(uint16_t lastCmd);

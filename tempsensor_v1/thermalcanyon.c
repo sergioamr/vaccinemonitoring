@@ -2405,6 +2405,8 @@ void sampletemp() {
 	int iLastSamplesRead = 0;
 	iSamplesRead = 0;
 
+	config_setLastCommand(COMMAND_TEMPERATURE_SAMPLE);
+
 	//initialze ADCvar
 	for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
 		ADCvar[iIdx] = 0;

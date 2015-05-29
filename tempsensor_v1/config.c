@@ -39,6 +39,7 @@ CONFIG_SYSTEM* g_pSysCfg = &g_SystemConfig;
 void calibrate_device() {
 
 #ifdef RUN_CALIBRATION
+	config_setLastCommand(COMMAND_CALIBRATION);
 	main_calibration();
 #endif
 	g_pSysCfg->calibrationFinished = 1;

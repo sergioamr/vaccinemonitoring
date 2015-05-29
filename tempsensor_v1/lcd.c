@@ -19,6 +19,8 @@ void lcd_setupIO() {
 char lcdBuffer[32];
 
 void lcd_init() {
+
+	config_setLastCommand(COMMAND_LCDINIT);
 	memset(lcdBuffer, 0, LCD_INIT_PARAM_SIZE);
 
 	lcdBuffer[0] = 0x38; // Basic
