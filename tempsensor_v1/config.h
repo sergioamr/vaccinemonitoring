@@ -107,7 +107,7 @@ typedef struct __attribute__((__packed__))  {
 	uint32_t numberRuns;
 	uint32_t numberConfigurationRuns;
 	uint8_t calibrationFinished;
-	char firmwareVersion[64];
+	char firmwareVersion[17];
 	uint16_t configStructureSize; // Size to check if there are changes on this structure
 
 	// Stats to control buffer sizes

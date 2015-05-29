@@ -37,12 +37,12 @@ void lcd_init() {
 	lcdBuffer[0] = 0x40 | 0x80;
 	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
 
-	//lcdBuffer[0] = 0x43;
-	//lcdBuffer[1] = 0x44;
-	//i2c_write(0x3e, 0x40, 2, lcdBuffer);
-	//delay(100);
-#if 0
-	delay(1000);
+#if TESTING_LCD
+	// DISPLAY AB CD just for testing
+	lcdBuffer[0] = 0x43;
+	lcdBuffer[1] = 0x44;
+	i2c_write(0x3e, 0x40, 2, lcdBuffer);
+	delay(100);
 
 	lcdBuffer[0] = 0x41;
 	lcdBuffer[1] = 0x42;
@@ -283,28 +283,28 @@ void lcd_bldisable() {
 	PJOUT &= ~BIT7;
 }
 
-int g_iLCDVerbose = -1; // Disable debug
+int g_iLCDVerbose = VERBOSE_DISABLED; // Disable debug
 void lcd_disable_verbose() {
-	g_iLCDVerbose=-1;
+	g_iLCDVerbose=VERBOSE_DISABLED;
 }
 
 void lcd_enable_verbose() {
-	g_iLCDVerbose=0;
+	g_iLCDVerbose=VERBOSE_BOOTING;
 }
 
-void lcd_print_debug(const char* pcData, int line) {
+void lcd_print_progress(const char* pcData, int line) {
 #ifndef _DEBUG
 	static char pos = 0;
 	char display[4] = { '*', '|', '/', '-' };
 #endif
 
-	if (g_iLCDVerbose == -1)
+	if (g_iLCDVerbose == VERBOSE_DISABLED)
 		return;
 
 #ifdef _DEBUG
 	lcd_print_line(pcData, line);
 #else
-	lcd_setaddr(0x0D);
+	lcd_setaddr(0x0F);
 	i2c_write(0x3e,0x40,1,(uint8_t *)&display[(++pos)&0x3]);
 #endif
 	delay(50);

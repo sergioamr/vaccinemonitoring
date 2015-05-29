@@ -277,8 +277,8 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 			return UART_SUCCESS;
 		}
 		attempts--;
-		if (g_iLCDVerbose == 0) {
-			lcd_print_debug("MODEM TIMEOUT", LINE2);
+		if (g_iLCDVerbose == VERBOSE_BOOTING) {
+			lcd_print_progress("MODEM TIMEOUT", LINE2);
 		}
 	}
 
@@ -320,9 +320,11 @@ uint8_t isTransactionOK() {
 
 uint8_t uart_tx(const char *cmd) {
 
-	if (g_iLCDVerbose == 0) {
+	if (g_iLCDVerbose == VERBOSE_BOOTING) {
+#ifdef _DEBUG
 		lcd_clear();
-		lcd_print_debug((char *) cmd, LINE1);
+#endif
+		lcd_print_progress((char *) cmd, LINE1);
 	}
 
 	return uart_tx_timeout(cmd, g_iModemMaxWait, 10);
@@ -354,16 +356,16 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			// ERROR FOUND;
 			delay(2000);
 			lcd_clear();
-			lcd_print_debug((char *) &RXBuffer[RXHeadIdx + 7], LINE1);
+			lcd_print_progress((char *) &RXBuffer[RXHeadIdx + 7], LINE1);
 			delay(5000);
 			return ret;
 		} else {
 #if defined(_DEBUG)
 			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": ");
 			if (pToken1!=NULL) {
-				lcd_print_debug((char *) pToken1+2, LINE2);
+				lcd_print_progress((char *) pToken1+2, LINE2);
 			} else {
-				lcd_print_debug((char *) (const char *) &RXBuffer[RXHeadIdx], LINE2);
+				lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx], LINE2);
 			}
 #endif
 		}

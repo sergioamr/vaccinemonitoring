@@ -92,7 +92,7 @@ void config_Init() {
 	g_pSysCfg->memoryInitialized = 1;
 
 	// Set the date and time of compilation as firmware version
-	strcpy(g_pSysCfg->firmwareVersion, __DATE__ " " __TIME__);
+	strcpy(g_pSysCfg->firmwareVersion, "v(" __DATE__  ")");
 
 	g_pSysCfg->maxSamplebuffer=0;
 	g_pSysCfg->maxATResponse=0;

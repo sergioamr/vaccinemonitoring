@@ -36,7 +36,7 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 	if (iStatus & TEST_FLAG)
 		return UART_SUCCESS;
 
-	if (g_iLCDVerbose == 0) {
+	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_clear();
 		lcd_print_line("Sync SMS To ", LINE1);
 		lcd_print_line(szPhoneNumber, LINE2);

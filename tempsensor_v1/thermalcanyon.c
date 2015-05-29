@@ -198,7 +198,7 @@ int main(void) {
 
 	lcd_init();
 
-	g_iLCDVerbose = 0;         // Booting is not completed
+	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
 
 	sprintf(g_szTemp, "Booting %d",(int) g_pSysCfg->numberConfigurationRuns);
 	lcd_print(g_szTemp);
@@ -295,7 +295,7 @@ int main(void) {
 	iDisplayId = 0;
 
 	// Init finished, we disabled the debugging display
-	g_iLCDVerbose = -1;
+	lcd_disable_verbose();
 
 	lcd_print("Finished Boot");
 	while (1) {

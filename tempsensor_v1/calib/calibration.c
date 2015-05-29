@@ -312,7 +312,7 @@ int main_calibration(void) {
 	memset(TMP, 0, sizeof(TMP));
 	lcd_reset();
 	lcd_blenable();
-	g_iLCDVerbose=0;
+	g_iLCDVerbose = VERBOSE_BOOTING;
 	lcd_init();
 
 	__bis_SR_register(GIE);
