@@ -832,8 +832,8 @@ int main(void) {
 			P4IE &= ~BIT1;				// disable interrupt for button input
 			//lcd_print_lne(LINE2, "Sampling........");
 			//re-trigger the ADC conversion
-			ADC12CTL0 &= ~ADC12ENC;
-			ADC12CTL0 |= ADC12ENC | ADC12SC;
+			//ADC12CTL0 &= ~ADC12ENC;
+			//ADC12CTL0 |= ADC12ENC | ADC12SC;
 			sampletemp();
 			delay(2000);	//to allow the ADC conversion to complete
 
@@ -898,24 +898,9 @@ int main(void) {
 			}
 
 			if (iIdx == MODEM_CHECK_RETRY) {
-				//switch the SIM slot;
-				if (g_pInfoA->cfgSIMSlot != 1) { //value will be 0xFF in case FRAM was not already populated
-					//current sim slot is 1
-					//change to sim slot 2
-					g_pInfoA->cfgSIMSlot = 1;
-					lcd_print_lne(LINE2, "Switching SIM: 2");
-
-				} else {
-					//current sim slot is 2
-					//change to sim slot 1
-					g_pInfoA->cfgSIMSlot = 0;
-					lcd_print_lne(LINE2, "Switching SIM: 1");
-				}
-
-				modem_init();
+				modem_swapSIM();
 			}
 
-#if 1
 			//sms config reception and processing
 			dohttpsetup();
 			memset(ATresponse, 0, sizeof(ATresponse));
@@ -931,7 +916,6 @@ int main(void) {
 				iOffset = -1; //reuse to indicate no cfg msg was received
 			}
 			deactivatehttp();
-#endif
 		}
 #endif
 
@@ -1272,19 +1256,15 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 	case ADC12IV_ADC12IFG1:
 		break;        // Vector 14:  ADC12MEM1
 	case ADC12IV_ADC12IFG2:   		        // Vector 16:  ADC12MEM2
-		//ADCvar[0] = ADC12MEM2;                     // Read conversion result
 		ADCvar[0] += ADC12MEM2;                     // Read conversion result
 		break;
 	case ADC12IV_ADC12IFG3:   		        // Vector 18:  ADC12MEM3
-		//ADCvar[1] = ADC12MEM3;                     // Read conversion result
 		ADCvar[1] += ADC12MEM3;                     // Read conversion result
 		break;
 	case ADC12IV_ADC12IFG4:   		        // Vector 20:  ADC12MEM4
-		//ADCvar[2] = ADC12MEM4;                     // Read conversion result
 		ADCvar[2] += ADC12MEM4;                     // Read conversion result
 		break;
 	case ADC12IV_ADC12IFG5:   		        // Vector 22:  ADC12MEM5
-		//ADCvar[3] = ADC12MEM5;                     // Read conversion result
 		ADCvar[3] += ADC12MEM5;                     // Read conversion result
 #if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 4
 		isConversionDone = 1;
@@ -1292,62 +1272,11 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 		break;
 	case ADC12IV_ADC12IFG6:                 // Vector 24:  ADC12MEM6
 #if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
-		//ADCvar[4] = ADC12MEM6;                     // Read conversion result
 		ADCvar[4] += ADC12MEM6;                     // Read conversion result
 		isConversionDone = 1;
 		iSamplesRead++;
 #endif
 		break;
-	case ADC12IV_ADC12IFG7:
-		break;        // Vector 26:  ADC12MEM7
-	case ADC12IV_ADC12IFG8:
-		break;        // Vector 28:  ADC12MEM8
-	case ADC12IV_ADC12IFG9:
-		break;        // Vector 30:  ADC12MEM9
-	case ADC12IV_ADC12IFG10:
-		break;        // Vector 32:  ADC12MEM10
-	case ADC12IV_ADC12IFG11:
-		break;        // Vector 34:  ADC12MEM11
-	case ADC12IV_ADC12IFG12:
-		break;        // Vector 36:  ADC12MEM12
-	case ADC12IV_ADC12IFG13:
-		break;        // Vector 38:  ADC12MEM13
-	case ADC12IV_ADC12IFG14:
-		break;        // Vector 40:  ADC12MEM14
-	case ADC12IV_ADC12IFG15:
-		break;        // Vector 42:  ADC12MEM15
-	case ADC12IV_ADC12IFG16:
-		break;        // Vector 44:  ADC12MEM16
-	case ADC12IV_ADC12IFG17:
-		break;        // Vector 46:  ADC12MEM17
-	case ADC12IV_ADC12IFG18:
-		break;        // Vector 48:  ADC12MEM18
-	case ADC12IV_ADC12IFG19:
-		break;        // Vector 50:  ADC12MEM19
-	case ADC12IV_ADC12IFG20:
-		break;        // Vector 52:  ADC12MEM20
-	case ADC12IV_ADC12IFG21:
-		break;        // Vector 54:  ADC12MEM21
-	case ADC12IV_ADC12IFG22:
-		break;        // Vector 56:  ADC12MEM22
-	case ADC12IV_ADC12IFG23:
-		break;        // Vector 58:  ADC12MEM23
-	case ADC12IV_ADC12IFG24:
-		break;        // Vector 60:  ADC12MEM24
-	case ADC12IV_ADC12IFG25:
-		break;        // Vector 62:  ADC12MEM25
-	case ADC12IV_ADC12IFG26:
-		break;        // Vector 64:  ADC12MEM26
-	case ADC12IV_ADC12IFG27:
-		break;        // Vector 66:  ADC12MEM27
-	case ADC12IV_ADC12IFG28:
-		break;        // Vector 68:  ADC12MEM28
-	case ADC12IV_ADC12IFG29:
-		break;        // Vector 70:  ADC12MEM29
-	case ADC12IV_ADC12IFG30:
-		break;        // Vector 72:  ADC12MEM30
-	case ADC12IV_ADC12IFG31:
-		break;        // Vector 74:  ADC12MEM31
 	case ADC12IV_ADC12RDYIFG:
 		break;        // Vector 76:  ADC12RDY
 	default:
@@ -1376,17 +1305,6 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 		//P3OUT &= ~BIT4;                           // buzzer off
 		iStatus &= ~BUZZER_ON;
 		break;
-
-	case P2IV_P2IFG3:
-		break;
-	case P2IV_P2IFG4:
-		break;
-	case P2IV_P2IFG5:
-		break;
-	case P2IV_P2IFG6:
-		break;
-	case P2IV_P2IFG7:
-		break;
 	default:
 		break;
 	}
@@ -1409,18 +1327,6 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
 		break;
 	case P4IV_P4IFG1:
 		iDisplayId = (iDisplayId + 1) % MAX_DISPLAY_ID;
-		break;
-	case P4IV_P4IFG2:
-		break;
-	case P4IV_P4IFG3:
-		break;
-	case P4IV_P4IFG4:
-		break;
-	case P4IV_P4IFG5:
-		break;
-	case P4IV_P4IFG6:
-		break;
-	case P4IV_P4IFG7:
 		break;
 	default:
 		break;
@@ -2151,15 +2057,16 @@ int8_t processmsg(char* pSMSmsg) {
 						if (pcTmp) {
 							if (strtol(pcTmp, 0, 10)) {
 								iStatus |= ENABLE_SECOND_SLOT;
-								g_pInfoA->cfgSIMSlot = 1;
+								if (g_pInfoA->cfgSIMSlot == 0) {
+									g_pInfoA->cfgSIMSlot = 1;
+									modem_init();
+								}
 							} else {
 								iStatus &= ~ENABLE_SECOND_SLOT;
-								g_pInfoA->cfgSIMSlot = 0;
-							}
-							if (g_pInfoA->cfgSIMSlot
-									!= g_pInfoA->cfgSIMSlot) {
-								//sim slots need to be switched
-								modem_init();
+								if (g_pInfoA->cfgSIMSlot == 1) {
+									g_pInfoA->cfgSIMSlot = 0;
+									modem_init();
+								}
 							}
 						}
 						iCnt = 1;
@@ -2267,7 +2174,7 @@ void sendhb() {
 	strcat(SampleData, SMS_HB_MSG_TYPE);
 	strcat(SampleData, g_pInfoA->cfgIMEI);
 	strcat(SampleData, ",");
-	if (g_pInfoA->cfgSIMSlot == 1) {
+	if (slot) {
 		strcat(SampleData, "1,");
 	} else {
 		strcat(SampleData, "0,");

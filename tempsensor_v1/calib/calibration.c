@@ -27,7 +27,7 @@
 #include "sms.h"
 
 #define  CALIBRATE 4	//0 - default, 1 = device A, 2 = device B...
-#define SMS_TEST
+//#define SMS_TEST
 #define LCD_TEST
 #define ENABLE_SIM_SLOT		//needed to set on new board, comment it for old board
 
@@ -169,7 +169,7 @@ int main_calibration(void) {
 	UCA1CTLW0 &= ~UCSWRST;// **Initialize USCI state machine**
 
 	//iTxLen = 6;
-	UCA1IE |= UCRXIE | UCTXIE;;// Enable USCI_A0 RX, TX interrupt
+	UCA1IE |= UCRXIE | UCTXIE;// Enable USCI_A0 RX, TX interrupt
 #endif
 
 	timedate = 86400;
@@ -319,9 +319,9 @@ int main_calibration(void) {
 
 	delay(1000);
 	lcd_clear();
-	lcd_print_lne(LINE1, "CALIBRATION MODE");
+	lcd_print_line("CALIBRATION MODE", LINE1);
 	delay(1000);
-	lcd_print_lne(LINE2, "V(" __DATE__ ")");
+	lcd_print_line("V(" __DATE__ ")",LINE2);
 	delay(2000);
 
 	i2c_init(380000);

@@ -25,6 +25,24 @@
 char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
 
+void modem_swapSIM() {
+	if (g_pInfoA->cfgSIMSlot != 1) {
+		//current sim slot is 1
+		//change to sim slot 2
+		g_pInfoA->cfgSIMSlot = 1;
+		lcd_print_lne("Switching SIM: 2", LINE2);
+		delay(100);
+	} else {
+		//current sim slot is 2
+		//change to sim slot 1
+		g_pInfoA->cfgSIMSlot = 0;
+		lcd_print_lne("Switching SIM: 1", LINE2);
+		delay(100);
+	}
+
+	modem_init();
+}
+
 void modem_checkSignal() {
 	if (uart_tx_timeout("AT+CSQ\r\n", TIMEOUT_CSQ, 1) != UART_SUCCESS)
 		return;
