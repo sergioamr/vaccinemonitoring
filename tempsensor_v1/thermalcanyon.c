@@ -206,7 +206,7 @@ int main(void) {
 	lcd_print_lne(LINE2, "(db)" __TIME__);
 #endif
 
-	fat_initDrive();
+	fat_init_drive();
 
 	sampletemp();
 #ifndef _DEBUG
@@ -438,7 +438,7 @@ int main(void) {
 				iPOSTstatus = 0;
 				fr = FR_DENIED;
 				iOffset = 0;
-				char* fn = getCurrentFileName(&currTime);
+				char* fn = get_current_fileName(&currTime);
 
 				//fr = f_read(&filr, acLogData, 1, &iIdx);  /* Read a chunk of source file */
 				memset(ATresponse, 0, sizeof(ATresponse)); //ensure the buffer in aggregate_var section is more than AGGREGATE_SIZE

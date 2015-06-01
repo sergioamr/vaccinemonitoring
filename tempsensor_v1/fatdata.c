@@ -20,7 +20,7 @@ DWORD get_fattime(void) {
 
 char szYMDString[4 + 2 + 2 + 1];
 
-char* getYMDString(struct tm* timeData) {
+char* get_YMD_String(struct tm* timeData) {
 
 	szYMDString[0] = 0;
 	if (timeData->tm_year < 1900 || timeData->tm_year > 3000) // Working for 1000 years?
@@ -33,17 +33,17 @@ char* getYMDString(struct tm* timeData) {
 	return szYMDString;
 }
 
-char* getCurrentFileName(struct tm* timeData) {
+char* get_current_fileName(struct tm* timeData) {
 	if (timeData->tm_mday == 0 && timeData->tm_mon && timeData->tm_year == 0) {
 		strcpy(g_szFatFileName, LOG_FILE_UNKNOWN);
 		return g_szFatFileName;
 	}
 
-	sprintf(g_szFatFileName, FOLDER_DATA "/%s.csv", getYMDString(timeData));
+	sprintf(g_szFatFileName, FOLDER_DATA "/%s.csv", get_YMD_String(timeData));
 	return g_szFatFileName;
 }
 
-void fat_checkError(FRESULT fr) {
+void fat_check_error(FRESULT fr) {
 	if (fr == FR_OK)
 		return;
 
@@ -52,22 +52,22 @@ void fat_checkError(FRESULT fr) {
 	delay(10000);
 }
 
-FRESULT fat_initDrive() {
+FRESULT fat_init_drive() {
 	FRESULT fr;
 
 	/* Register work area to the default drive */
-	fr=f_mount(&FatFs, "", 0);
-	fat_checkError(fr);
-	if (fr!=FR_OK)
+	fr = f_mount(&FatFs, "", 0);
+	fat_check_error(fr);
+	if (fr != FR_OK)
 		return fr;
 
-	fr=f_mkdir(FOLDER_DATA);
-	if (fr!=FR_EXIST)
-		fat_checkError(fr);
+	fr = f_mkdir(FOLDER_DATA);
+	if (fr != FR_EXIST)
+		fat_check_error(fr);
 
-	fr=f_mkdir(FOLDER_LOG);
-	if (fr!=FR_EXIST)
-		fat_checkError(fr);
+	fr = f_mkdir(FOLDER_LOG);
+	if (fr != FR_EXIST)
+		fat_check_error(fr);
 
 	fr = log_append("Start Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
 	return fr;
@@ -80,35 +80,35 @@ FRESULT log_append_text(char *text) {
 	int t = 0;
 
 	fr = f_open(&fobj, LOG_FILE_PATH,
-			FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
+	FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
 	if (fr == FR_OK) {
 		if (fobj.fsize) {
 			//append to the file
 			f_lseek(&fobj, fobj.fsize);
 		}
 	} else {
-		fat_checkError(fr);
+		fat_check_error(fr);
 		return fr;
 	}
 
 	rtc_get(&currTime);
 
-	strcpy(szLog,"[");
-	if (currTime.tm_year>2000) {
-		strcat(szLog,getYMDString(&currTime));
-		strcat(szLog," ");
+	strcpy(szLog, "[");
+	if (currTime.tm_year > 2000) {
+		strcat(szLog, get_YMD_String(&currTime));
+		strcat(szLog, " ");
 		strcat(szLog, itoa_pad(currTime.tm_hour));
 		strcat(szLog, itoa_pad(currTime.tm_min));
 		strcat(szLog, itoa_pad(currTime.tm_sec));
 	} else {
-		for (t=0; t<13; t++) strcat(szLog, "*");
+		for (t = 0; t < 13; t++)
+			strcat(szLog, "*");
 	}
-	strcat(szLog,"]");
+	strcat(szLog, "]");
 
 	strcat(szLog, " ");
 	strcat(szLog, text);
 	strcat(szLog, "\r\n");
-
 
 	fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 
@@ -116,26 +116,24 @@ FRESULT log_append_text(char *text) {
 	return f_close(&fobj);
 }
 
-FRESULT log_append(const char *_format, ...)
-{
-    va_list _ap;
-    char *fptr = (char *)_format;
-    char *out_end = g_szTemp;
+FRESULT log_append(const char *_format, ...) {
+	va_list _ap;
+	char *fptr = (char *) _format;
+	char *out_end = g_szTemp;
 
-    va_start(_ap, _format);
-    __TI_printfi(&fptr, _ap, (void *)&out_end, _outc, _outs);
-    va_end(_ap);
+	va_start(_ap, _format);
+	__TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs);
+	va_end(_ap);
 
-    *out_end = '\0';
-    return log_append_text(g_szTemp);
+	*out_end = '\0';
+	return log_append_text(g_szTemp);
 }
 
 FRESULT log_sample_to_disk(int* tbw) {
-
 	FIL fobj;
 
 	int bw = 0;	//bytes written
-	char* fn = getCurrentFileName(&currTime);
+	char* fn = get_current_fileName(&currTime);
 
 	if (!(iStatus & TEST_FLAG)) {
 		fr = f_open(&fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
@@ -145,7 +143,7 @@ FRESULT log_sample_to_disk(int* tbw) {
 				f_lseek(&fobj, fobj.fsize);
 			}
 		} else {
-			fat_checkError(fr);
+			fat_check_error(fr);
 			return fr;
 		}
 
@@ -191,30 +189,32 @@ FRESULT log_sample_to_disk(int* tbw) {
 		//bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,E=%s,", iBatteryLevel,
 		//			  !(P4IN & BIT4),Temperature[0],Temperature[1],Temperature[2],Temperature[3],Temperature[4]);
 		memset(szLog, 0, sizeof(szLog));
-		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,E%s,F%s\n", itoa_pad(iBatteryLevel), !(P4IN&BIT4), Temperature[0],Temperature[1],Temperature[2],Temperature[3],Temperature[4]);
+		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,E%s,F%s\n", itoa_pad(iBatteryLevel),
+				!(P4IN & BIT4), Temperature[0], Temperature[1], Temperature[2],
+				Temperature[3], Temperature[4]);
 		/*
-		strcat(szLog, "F");
-		strcat(szLog, itoa_pad(iBatteryLevel));
-		strcat(szLog, ",");
-		strcat(szLog, "P");
-		if (P4IN & BIT4) {
-			strcat(szLog, "0,");
-		} else {
-			strcat(szLog, "1,");
-		}
-		strcat(szLog, "A");
-		strcat(szLog, Temperature[0]);
-		strcat(szLog, ",B");
-		strcat(szLog, Temperature[1]);
-		strcat(szLog, ",C");
-		strcat(szLog, Temperature[2]);
-		strcat(szLog, ",D");
-		strcat(szLog, Temperature[3]);
-		strcat(szLog, ",E");
-		strcat(szLog, Temperature[4]);
-		strcat(szLog, ",");
-		strcat(szLog, "\n");
-		*/
+		 strcat(szLog, "F");
+		 strcat(szLog, itoa_pad(iBatteryLevel));
+		 strcat(szLog, ",");
+		 strcat(szLog, "P");
+		 if (P4IN & BIT4) {
+		 strcat(szLog, "0,");
+		 } else {
+		 strcat(szLog, "1,");
+		 }
+		 strcat(szLog, "A");
+		 strcat(szLog, Temperature[0]);
+		 strcat(szLog, ",B");
+		 strcat(szLog, Temperature[1]);
+		 strcat(szLog, ",C");
+		 strcat(szLog, Temperature[2]);
+		 strcat(szLog, ",D");
+		 strcat(szLog, Temperature[3]);
+		 strcat(szLog, ",E");
+		 strcat(szLog, Temperature[4]);
+		 strcat(szLog, ",");
+		 strcat(szLog, "\n");
+		 */
 
 		fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 #else
