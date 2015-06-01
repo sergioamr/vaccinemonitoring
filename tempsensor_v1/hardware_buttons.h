@@ -9,5 +9,6 @@
 #define HARDWARE_BUTTONS_H_
 
 void switchers_setupIO();
+uint8_t switch_check_service_pressed();
 
 #endif /* HARDWARE_BUTTONS_H_ */

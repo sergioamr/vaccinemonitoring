@@ -13,6 +13,7 @@
 #include "calib/calibration.h"
 #include "time.h"
 #include "stringutils.h"
+#include "hardware_buttons.h"
 
 int g_iSamplePeriod = SAMPLE_PERIOD;
 int g_iUploadPeriod = UPLOAD_PERIOD;
@@ -48,6 +49,13 @@ void calibrate_device() {
 
 #ifdef RUN_CALIBRATION
 	config_setLastCommand(COMMAND_CALIBRATION);
+
+	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
+	lcd_clear();
+	lcd_print_ext(LINE1, "Service Mode");
+	lcd_print_lne(LINE2, g_pSysCfg->firmwareVersion); // Show the firmware version
+	delay(HUMAN_DISPLAY_INFO_DELAY);
+
 	main_calibration();
 #endif
 	g_pSysCfg->calibrationFinished = 1;
@@ -93,6 +101,11 @@ void config_setup_extra_button() {
 }
 
 void config_init() {
+
+	// Check if the user is pressing the service mode
+	// Service Button was pressed during bootup. Rerun calibration
+	if (switch_check_service_pressed())
+		g_pSysCfg->calibrationFinished=0;
 
 	if (g_pSysCfg->memoryInitialized != 0xFF
 			&& g_pSysCfg->memoryInitialized != 0x00) {

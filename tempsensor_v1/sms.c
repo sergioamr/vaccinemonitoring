@@ -323,7 +323,7 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_clear();
-		lcd_print_ext(LINE1, "SYNC SMS %d TO:", g_pInfoA->cfgSIMSlot+1);
+		lcd_print_ext(LINE1, "SYNC SMS %d ", g_pInfoA->cfgSIMSlot+1);
 		lcd_print_lne(LINE2, szPhoneNumber);
 	}
 
@@ -342,7 +342,7 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 
 	if (res == UART_SUCCESS) {
 		lcd_clear();
-		lcd_print_lne(LINE1, "SMS Confirmation");
+		lcd_print_lne(LINE1, "SMS Confirm ");
 		lcd_print_ext(LINE2, "MSG %d ", msgNumber);
 		_NOP();
 	} else if (res == UART_ERROR) {

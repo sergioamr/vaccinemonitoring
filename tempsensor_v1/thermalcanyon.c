@@ -135,11 +135,6 @@ static void setup_IO() {
 #endif
 
 	__bis_SR_register(GIE);		//enable interrupt globally
-
-	// System Button was pressed during bootup. Rerun calibration
-	if (g_iSystemSetup==-1) {
-		_NOP();
-	}
 }
 
 /****************************************************************************/
@@ -170,7 +165,8 @@ int main(void) {
 	config_setLastCommand(COMMAND_BOOT);
 
 	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
-	lcd_print_ext(LINE1, "Booting %d",
+	lcd_clear();
+	lcd_print_ext(LINE1, "Thermal Canyon %d",
 			(int) g_pSysCfg->numberConfigurationRuns);
 
 #ifndef _DEBUG

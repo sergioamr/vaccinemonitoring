@@ -115,26 +115,5 @@ int main_calibration(void) {
 	g_pInfoB->calibration[4][1] = 1.010953;
 
 #endif
-
-#ifdef LCD_TEST
-	//test the LCD
-	memset(TMP, 0, sizeof(TMP));
-	lcd_reset();
-	lcd_blenable();
-	g_iLCDVerbose = VERBOSE_BOOTING;
-	lcd_init();
-
-	__bis_SR_register(GIE);
-
-	delay(1000);
-	lcd_clear();
-	lcd_print_lne("CALIBRATION MODE", LINE1);
-	delay(1000);
-	lcd_print_lne("V(" __FDATE__ ")",LINE2);
-	delay(2000);
-
-	i2c_init(380000);
-
-#endif
 	return 1;
 }

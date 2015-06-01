@@ -68,7 +68,8 @@ int8_t modem_first_init() {
 void modem_swap_SIM() {
 	config_incLastCmd();
 	g_pInfoA->cfgSIMSlot = !g_pInfoA->cfgSIMSlot;
-	lcd_print_ext(LINE2, "Activate SIM: %d", g_pInfoA->cfgSIMSlot+1);
+	lcd_clear();
+	lcd_print_ext(LINE1, "Activate SIM: %d", g_pInfoA->cfgSIMSlot+1);
 	modem_init();
 	modem_getExtraInfo();
 	sms_send_heart_beat();
@@ -336,7 +337,7 @@ void modem_init() {
 
 	uart_tx_timeout("AT+CMGF=?\r\n", MODEM_TX_DELAY2, 5); // set sms format to text mode
 
-#ifndef _DEBUG
+#if defined(CAPTURE_MCC_MNC) && defined(_DEBUG)
 	modem_survey_network();
 #endif
 
@@ -352,7 +353,6 @@ void modem_init() {
 	// Have to call twice to guarantee a genuine result
 	modem_checkSignal();
 
-	lcd_print("Checking GPRS");
 	/// added for gprs connection..//
 	signal_gprs = dopost_gprs_connection_status(GPRS);
 	gprs_network_indication = dopost_gprs_connection_status(GSM);

@@ -8,6 +8,10 @@
 
 // Interrupt services
 
+uint8_t switch_check_service_pressed() {
+	return !(P3IN&BIT5);
+}
+
 void switchers_setupIO() {
 	// Setup buttons
 	P4IE |= BIT1;							// enable interrupt for button input
