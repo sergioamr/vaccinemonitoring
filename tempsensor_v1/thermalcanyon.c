@@ -166,7 +166,7 @@ int main(void) {
 
 	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
 	lcd_clear();
-	lcd_print_ext(LINE1, "Thermal Canyon %d",
+	lcd_print_ext(LINE1, "Boot %d",
 			(int) g_pSysCfg->numberConfigurationRuns);
 
 #ifndef _DEBUG

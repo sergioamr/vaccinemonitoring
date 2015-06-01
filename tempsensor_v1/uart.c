@@ -22,6 +22,8 @@ char AT_MSG_OK[]={ 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
 char AT_MSG_PROMPT[]={ 0x0D, 0x0A, '>', 0};	// Used for SMS message sending
 char AT_MSG_LONG_PROMPT[]={ 0x0D, 0x0A, '>','>','>', 0};  // Used for http post transactions
 char AT_CME_ERROR[]= "+CME ERROR:";
+char AT_CMS_ERROR[]= "+CMS ERROR:"; // Sim error
+char AT_ERROR[]= " ERROR:";
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 volatile char RXBuffer[RX_LEN + 1];
@@ -33,7 +35,7 @@ volatile static char TransmissionEnd = 0;
 volatile int RXTailIdx = 0;
 volatile int RXHeadIdx = 0;
 
-volatile int g_iUartState = 0;
+volatile int8_t g_iUartState = 0;
 volatile int g_iRxCountBytes = 0;
 //volatile char* TX;
 volatile int TXIdx = 0;
@@ -105,16 +107,22 @@ inline void uart_checkERROR() {
 	if (ErrorLength==-1)
 		return;
 
+	if (g_iUartState==UART_ERROR) {
+		if (UCA0RXBUF=='\n')
+			TransmissionEnd=1;
+		return;
+	}
+
 	if (UCA0RXBUF!=g_szError[++ErrorIdx]) {
 		ErrorIdx=0;
 		return;
 	}
 
 	if (ErrorIdx==ErrorLength) {
-		TransmissionEnd=1;
 		g_iUartState=UART_ERROR;
 		ErrorIdx=0;
 	}
+
 }
 
 
@@ -179,7 +187,7 @@ void uart_init() {
 	UCA0IE |= UCRXIE;                // Enable USCI_A0 RX interrupt
 }
 
-uint8_t uart_getTransactionState() {
+int8_t uart_getTransactionState() {
 	return g_iUartState;
 }
 
@@ -344,30 +352,37 @@ uint8_t uart_tx_ext(const char *_format, ...) {
 
 uint8_t uart_tx(const char *cmd) {
 	char* pToken1;
-	int error = uart_tx_timeout(cmd, g_iModemMaxWait, 10);
+	char* pToken2;
+	int transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 10);
 
 	if (RXHeadIdx > RXTailIdx)
-		return error;
+		return transaction_completed;
 
-	if (error != UART_SUCCESS) {
-		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx],
-				"CMS ERROR:");
+	int uart_state = uart_getTransactionState();
+	if (uart_state == UART_ERROR) {
+		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], AT_ERROR);
 		if (pToken1 != NULL) { // ERROR FOUND;
-			delay(2000);
 			lcd_clear();
-			lcd_print_progress((char *) &RXBuffer[RXHeadIdx + 7], LINE1);
+			if (*(pToken1-1)=='S')
+				lcd_print_lne(LINE1, "SERVICE ERROR");
+			else
+				lcd_print_lne(LINE1, "MODEM ERROR");
+
+			lcd_print_lne(LINE2, (char *) (pToken1+sizeof(AT_ERROR)));
 			delay(5000);
 		}
+	}
 
-	} else {
-		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": \"");  // Display the command returned
-		if (pToken1!=NULL) {
-			lcd_print_progress((char *) pToken1+3, LINE2);
+	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
+		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": \""); // Display the command returned
+		if (pToken1 != NULL) {
+			lcd_print_progress((char *) pToken1 + 3, LINE2);
 		} else {
-			lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx+2], LINE2); // Display the OK message
+			lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2],
+			LINE2); // Display the OK message
 		}
 	}
-	return error;
+	return uart_state;
 }
 
 int uart_rx(int atCMD, char* pResponse) {
@@ -795,15 +810,15 @@ int searchtoken(char* pToken, char** ppTokenPos) {
 }
 
 void uart_setHTTPPromptMode() {
-	uart_setCheckMsg(AT_MSG_LONG_PROMPT, AT_CME_ERROR);
+	uart_setCheckMsg(AT_MSG_LONG_PROMPT, AT_ERROR);
 }
 
 void uart_setSMSPromptMode() {
-	uart_setCheckMsg(AT_MSG_PROMPT, AT_CME_ERROR);
+	uart_setCheckMsg(AT_MSG_PROMPT, AT_ERROR);
 }
 
 void uart_setOKMode() {
-	uart_setCheckMsg(AT_MSG_OK, AT_CME_ERROR);
+	uart_setCheckMsg(AT_MSG_OK, AT_ERROR);
 }
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)

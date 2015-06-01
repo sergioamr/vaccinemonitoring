@@ -48,8 +48,20 @@ int8_t modem_first_init() {
 	}
 
 	if (iStatus & MODEM_POWERED_ON) {
+		uart_setOKMode();
+
+		lcd_disable_verbose();
+		uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted
+		uart_tx_timeout("AT\r\n", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
+		lcd_enable_verbose();
+
+#ifndef _DEBUG
 		modem_swap_SIM(); // Send hearbeat from SIM
 		modem_swap_SIM();
+#else
+		modem_init();
+#endif
+
 		lcd_print_lne(LINE2, "Success      ");
 
 		//heartbeat
@@ -297,13 +309,6 @@ void modem_init() {
 		// Memory not initialized
 		g_pInfoA->cfgSIMSlot = slot = 0;
 	}
-
-	uart_setOKMode();
-
-	lcd_disable_verbose();
-	uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted
-	uart_tx_timeout("AT\r\n", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
-	lcd_enable_verbose();
 
 	uart_tx("AT\r\n"); // Display OK
 

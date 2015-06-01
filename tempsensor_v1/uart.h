@@ -74,7 +74,7 @@ extern void uart_setupIO();
 //! \param pointer to transmit buffer
 //! \return UART_SUCCESS UART_ERROR or UART_TIMEOUT
 //*****************************************************************************
-extern uint8_t uart_getTransactionState();
+extern int8_t uart_getTransactionState();
 
 extern void uart_setNumberOfPages(int numPages);
 extern void uart_setRingBuffer();
