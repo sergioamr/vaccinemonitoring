@@ -383,6 +383,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 	int iEndIdx = 0;
 	uint16_t mcc = 0;
 	uint16_t mnc = 0;
+	uint8_t numberLen = 0;
 
 	iRXCommandProcessed = 0;
 	if (reponseLen > 0)
@@ -490,6 +491,26 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			}
 			break;
 
+		case ATCMD_CPMS_ALL:
+			pToken1 = strstr((const char *) RXBuffer, "CPMS:");
+			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
+				pResponse[0] = 0;
+				pToken1 = strtok(pToken1, ",");
+				while (pToken1 != NULL) {
+					if	(iEndIdx == 1) {
+						pToken2 = pToken1;
+					} else if (iEndIdx == 2) {
+						numberLen = pToken1 - pToken2;
+						strncpy(pResponse, pToken1, numberLen+1);
+						pResponse[numberLen] = '\0';
+						return UART_SUCCESS;
+					}
+					pToken1 = strtok(NULL, ",");
+					iEndIdx++;
+				}
+			}
+			break;
+
 		case ATCMD_CGSN:
 			pToken1 = strstr((const char *) RXBuffer, "OK");
 			if (pToken1 != NULL) {
@@ -508,6 +529,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 				}
 				return UART_SUCCESS;
 			}						//	break;
+
 		case ATCMD_HTTPSND:
 			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ">>>");
 			if (pToken1 != NULL) {

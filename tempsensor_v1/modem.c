@@ -264,6 +264,13 @@ void modem_parse_time(char* pDatetime, struct tm* pTime) {
 	}
 }
 
+void modem_set_max_messages() {
+	//check if messages are available
+	uart_tx("AT+CPMS?\r\n");
+	uart_rx_cleanBuf(ATCMD_CPMS_ALL, ATresponse, sizeof(ATresponse));
+	g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] = atoi(ATresponse);
+}
+
 void modem_pull_time() {
 	int i;
 	for (i = 0; i < MAX_TIME_ATTEMPTS; i++) {
@@ -353,6 +360,12 @@ void modem_init() {
 	// Have to call twice to guarantee a genuine result
 	modem_checkSignal();
 
+	if(g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] == 0xFF
+			|| g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] == 0x00) {
+		modem_set_max_messages();
+	}
+
+	lcd_print("Checking GPRS");
 	/// added for gprs connection..//
 	signal_gprs = dopost_gprs_connection_status(GPRS);
 	gprs_network_indication = dopost_gprs_connection_status(GSM);

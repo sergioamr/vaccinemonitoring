@@ -105,6 +105,7 @@ char    				cfgIMEI[IMEI_MAX_LEN + 1];
 char    				cfgGateway[GW_MAX_LEN + 1];
 char    				cfgSMSCenter[NUM_SIM_CARDS][GW_MAX_LEN + 1]; // Service Message Center number
 char    				cfgAPN[NUM_SIM_CARDS][APN_MAX_LEN + 1];
+uint8_t					iMaxMessages[NUM_SIM_CARDS];
 uint16_t 				iCfgMCC[NUM_SIM_CARDS];
 uint16_t 				iCfgMNC[NUM_SIM_CARDS];
 } CONFIG_INFOA;
