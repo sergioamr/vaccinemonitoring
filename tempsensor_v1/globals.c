@@ -59,6 +59,7 @@ int8_t iSignalLevel = 99;
 //opt
 uint8_t iPostSuccess = 0;
 uint8_t iPostFail = 0;
+int8_t iModemSuccess = -1;
 //uint8_t iHTTPRetryFailed=0;
 //uint8_t iHTTPRetrySucceeded=0;
 uint8_t iHTTPRespDelayCnt = 0;

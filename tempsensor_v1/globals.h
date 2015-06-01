@@ -35,7 +35,7 @@ extern int8_t iSignalLevel;
 extern uint8_t iBatteryLevel;
 extern char signal_gprs;
 
-extern void ConvertADCToTemperature(unsigned int ADCval, char* TemperatureVal,
+extern void ConvertADCToTemperature(int32_t ADCval, char* TemperatureVal,
 		int8_t iSensorIdx);
 
 extern char szLog[FILE_BUFFER_LEN];
@@ -64,6 +64,7 @@ extern uint32_t iSampleTimeElapsed;
 extern uint32_t iSMSRxPollElapsed;
 extern uint32_t iLCDShowElapsed;
 extern uint32_t iMsgRxPollElapsed;
+extern int8_t iModemSuccess;
 extern int8_t g_iLastCfgSeq;
 extern volatile uint16_t iStatus;
 

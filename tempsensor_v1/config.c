@@ -16,6 +16,8 @@
 int g_iSamplePeriod = SAMPLE_PERIOD;
 int g_iUploadPeriod = UPLOAD_PERIOD;
 
+#define RUN_CALIBRATION
+
 /************************** BEGIN CONFIGURATION MEMORY ****************************************/
 
 #pragma SET_DATA_SECTION(".ConfigurationArea")

@@ -336,8 +336,6 @@ int uart_rx(int atCMD, char* pResponse) {
 
 // Clears the response buffer if len > 0
 int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
-
-	int ret = -1;
 	char* pToken1 = NULL;
 	char* pToken2 = NULL;
 	int bytestoread = 0;
@@ -358,7 +356,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			lcd_clear();
 			lcd_print_progress((char *) &RXBuffer[RXHeadIdx + 7], LINE1);
 			delay(5000);
-			return ret;
+			return UART_ERROR;
 		} else {
 #if defined(_DEBUG)
 			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": ");
@@ -412,15 +410,15 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 				// TODO Parse the format "+CSCA: address,address_type"
 				pToken2 = strstr(&pToken1[5], "\""); // Find begin of number on format "Address"
 				if (pToken2 == NULL)
-					return -1;
+					return UART_ERROR;
 
 				pToken2++;
 				pToken1 = strstr(pToken2, "\""); // Find end of number
 				if (pToken1 == NULL)
-					return -1;
+					return UART_ERROR;
 
 				memcpy(pResponse, pToken2, pToken1 - pToken2);
-				return 0;
+				return UART_SUCCESS;
 			}
 			break;
 
@@ -438,11 +436,8 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 					bytestoread = CCLK_RESP_LEN;
 				}
 				memcpy(pResponse, pToken1, bytestoread);
-				ret = 0;
-			} else {
-
+				return UART_SUCCESS;
 			}
-
 			break;
 
 		case ATCMD_CSQ:
@@ -455,7 +450,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 				} else {
 					pResponse[0] = 0;
 				}
-				ret = 0;
+				return UART_SUCCESS;
 			}
 			break;
 
@@ -470,7 +465,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 				} else {
 					pResponse[0] = 0;
 				}
-				ret = 0;
+				return UART_SUCCESS;
 			}
 			break;
 
@@ -490,7 +485,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 				} else {
 					strcpy(pResponse, "INVALID IMEI");
 				}
-				ret = 0;
+				return UART_SUCCESS;
 			}						//	break;
 		case ATCMD_HTTPSND:
 			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ">>>");
@@ -508,7 +503,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 						|| (RXTailIdx < RXHeadIdx)) {
 					strcpy(pResponse, ">>>");
 					RXHeadIdx = RXTailIdx;
-					ret = 0;
+					return UART_SUCCESS;
 				}
 			} else if (RXTailIdx < RXHeadIdx) {
 				//rollover
@@ -516,7 +511,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 				if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
 					strcpy(pResponse, ">>>");
 					RXHeadIdx = RXTailIdx;
-					ret = 0;
+					return UART_SUCCESS;
 				}
 				//check http post response is splitted
 				else if (((RXBuffer[iRxLen - 2] == '>') && (RXBuffer[iRxLen - 1] == '>')
@@ -525,7 +520,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 								&& (RXBuffer[1] == '>'))) {
 					strcpy(pResponse, ">>>");
 					RXHeadIdx = RXTailIdx;
-					ret = 0;
+					return UART_SUCCESS;
 				} else {
 					pResponse[0] = 0;
 				}
@@ -578,6 +573,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 				//check if not null, this token contains the senders phone number
 				if (pToken1) {
 					strncpy(&pResponse[2], pToken1, PHONE_NUM_LEN);
+					return UART_SUCCESS;
 				} else {
 					pResponse[0] = 0; //ingore the message
 				}
@@ -607,7 +603,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 							}
 							memcpy(pResponse, (const char *) &RXBuffer[iStartIdx],
 									bytestoread);
-							ret = 0;
 						} else {
 							//rollover
 							bytestoread = iRxLen - iStartIdx;
@@ -618,8 +613,8 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 									bytestoread);
 							memcpy(&pResponse[bytestoread], (const char *) RXBuffer,
 									iEndIdx);
-							ret = 0;
 						}
+						return UART_SUCCESS;
 					}
 				}
 			} else {
@@ -649,7 +644,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 							}
 							memcpy(pResponse, (const char *) &RXBuffer[iStartIdx],
 									bytestoread);
-							ret = 0;
 						} else {
 							//rollover
 							bytestoread = iRxLen - iStartIdx;
@@ -660,8 +654,8 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 									bytestoread);
 							memcpy(&pResponse[bytestoread], (const char *) RXBuffer,
 									iEndIdx);
-							ret = 0;
 						}
+						return UART_SUCCESS;
 					}
 				}
 			} else {
@@ -697,7 +691,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 								bytestoread = CMGL_RSP_LEN;
 							}
 							memcpy(pResponse, (const char *) &RXBuffer[iStartIdx], bytestoread);
-							ret = 0;
 						} else {
 							//rollover
 							bytestoread = iRxLen - iStartIdx;
@@ -706,8 +699,8 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 							}
 							memcpy(pResponse, (const char *)  &RXBuffer[iStartIdx], bytestoread);
 							memcpy(&pResponse[bytestoread], (const char *) RXBuffer, iEndIdx);
-							ret = 0;
 						}
+						return UART_SUCCESS;
 					}
 				}
 			}
@@ -716,7 +709,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			break;
 		}
 	}
-	return ret;
+	return UART_FAILED;
 }
 
 int searchtoken(char* pToken, char** ppTokenPos) {
