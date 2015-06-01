@@ -192,9 +192,9 @@ int main(void) {
 	sms_send_heart_beat();
 
 	iBatteryLevel=batt_check_level();
-		modem_pull_time();
-		modem_checkSignal();
-		modem_getSMSCenter();
+	modem_pull_time();
+	modem_checkSignal();
+	modem_getSMSCenter();
 
 	iUploadTimeElapsed = iMinuteTick;		//initialize POST minute counter
 	iSampleTimeElapsed = iMinuteTick;
@@ -257,10 +257,6 @@ int main(void) {
 		if ((iMinuteTick - iSampleTimeElapsed) >= g_iSamplePeriod) {
 			iSampleTimeElapsed = iMinuteTick;
 			P4IE &= ~BIT1;				// disable interrupt for button input
-			//lcd_print_lne(LINE2, "Sampling........");
-			//re-trigger the ADC conversion
-			//ADC12CTL0 &= ~ADC12ENC;
-			//ADC12CTL0 |= ADC12ENC | ADC12SC;
 			sampletemp();
 			delay(2000);	//to allow the ADC conversion to complete
 
