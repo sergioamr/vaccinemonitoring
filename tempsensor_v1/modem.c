@@ -6,13 +6,14 @@
  */
 
 #include <msp430.h>
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
 
+#include "driverlib.h"
 #include "config.h"
 #include "modem.h"
 #include "common.h"
-#include "driverlib.h"
-#include "stdlib.h"
-#include "string.h"
 #include "uart.h"
 #include "MMC.h"
 #include "pmm.h"
@@ -20,12 +21,16 @@
 #include "globals.h"
 #include "sms.h"
 #include "timer.h"
-#include "stdio.h"
+#include "time.h"
+#include "rtc.h"
+#include "http.h"
 
 char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
 
 void modem_swapSIM() {
+	config_incLastCmd();
+
 	if (g_pInfoA->cfgSIMSlot != 1) {
 		//current sim slot is 1
 		//change to sim slot 2
@@ -36,7 +41,7 @@ void modem_swapSIM() {
 		//current sim slot is 2
 		//change to sim slot 1
 		g_pInfoA->cfgSIMSlot = 0;
-		lcd_print_lne(LINE2,"Switching SIM: 1");
+		lcd_print_lne(LINE2, "Switching SIM: 1");
 		delay(100);
 	}
 
@@ -44,6 +49,8 @@ void modem_swapSIM() {
 }
 
 void modem_checkSignal() {
+	config_incLastCmd();
+
 	if (uart_tx_timeout("AT+CSQ\r\n", TIMEOUT_CSQ, 1) != UART_SUCCESS)
 		return;
 
@@ -60,8 +67,8 @@ void modem_checkSignal() {
 }
 
 void modem_getSMSCenter() {
-
 	uint8_t slot = g_pInfoA->cfgSIMSlot;
+	config_incLastCmd();
 
 	// Reading the Service Center Address to use as message gateway
 	// http://www.developershome.com/sms/cscaCommand.asp
@@ -82,8 +89,8 @@ void modem_getSMSCenter() {
 
 void modem_getIMEI() {
 	// added for IMEI number//
-
 	char IMEI_OK = false;
+	config_incLastCmd();
 
 	uart_resetbuffer();
 	uart_tx("AT+CGSN\r\n");
@@ -134,11 +141,13 @@ void modem_surveyNetwork() {
 	int attempts = NET_ATTEMPTS;
 	int uart_state;
 	int slot = g_pInfoA->cfgSIMSlot;
-	lcd_clear();
-	lcd_disable_verbose();
+	config_incLastCmd();
 
 	if (g_pInfoA->iCfgMCC[slot] != 0 && g_pInfoA->iCfgMNC[slot] != 0)
 		return;
+
+	lcd_clear();
+	lcd_disable_verbose();
 
 	uart_setDelayIntervalDivider(64);  // 120000 / 64
 
@@ -185,8 +194,8 @@ void modem_surveyNetwork() {
 				if (g_pInfoA->iCfgMCC[slot] > 0
 						&& g_pInfoA->iCfgMNC[slot] > 0) {
 					lcd_print_lne(LINE1, "SUCCESS");
-					lcd_print_ext(LINE2, "MCC %d MNC %d", g_pInfoA->iCfgMCC[slot],
-							g_pInfoA->iCfgMNC[slot]);
+					lcd_print_ext(LINE2, "MCC %d MNC %d",
+							g_pInfoA->iCfgMCC[slot], g_pInfoA->iCfgMNC[slot]);
 				} else {
 					uart_state = UART_ERROR;
 					lcd_print_lne(LINE2, "FAILED");
@@ -203,6 +212,48 @@ void modem_surveyNetwork() {
 	lcd_enable_verbose();
 	lcd_progress_wait(10000); // Wait 10 seconds to make sure the modem finished transfering.
 							  // It should be clear already but next transaction
+}
+
+void modem_parse_time(char* pDatetime, struct tm* pTime) {
+	char* pToken1 = NULL;
+	char* pToken2 = NULL;
+	char* pDelimiter = "\"/,:+-";
+
+	if ((pDatetime) && (pTime)) {
+		//string format "yy/MM/dd,hh:mm:ss�zz"
+		pToken1 = strtok(pDatetime, pDelimiter);
+		if (pToken1) {
+			pToken2 = strtok(NULL, pDelimiter);		//skip the first :
+			pToken2 = strtok(NULL, pDelimiter);
+			pTime->tm_year = atoi(pToken2) + 2000;	//to get absolute year value
+			pToken2 = strtok(NULL, pDelimiter);
+			pTime->tm_mon = atoi(pToken2);
+			pToken2 = strtok(NULL, pDelimiter);
+			pTime->tm_mday = atoi(pToken2);
+			pToken2 = strtok(NULL, pDelimiter);
+			pTime->tm_hour = atoi(pToken2);
+			pToken2 = strtok(NULL, pDelimiter);
+			pTime->tm_min = atoi(pToken2);
+			pToken2 = strtok(NULL, pDelimiter);
+			pTime->tm_sec = atoi(pToken2);
+		}
+	}
+}
+
+void modem_pull_time() {
+	int i;
+	for (i = 0; i < MAX_TIME_ATTEMPTS; i++) {
+		uart_tx("AT+CCLK?\r\n");
+		uart_rx_cleanBuf(ATCMD_CCLK, ATresponse, sizeof(ATresponse));
+		modem_parse_time(ATresponse, &currTime);
+		rtc_init(&currTime);
+
+		if (currTime.tm_year!=0) {
+			// Day has changed so save the new date TODO keep trying until date is set. Call function ONCE PER DAY
+			g_iCurrDay = currTime.tm_mday;
+			break;
+		}
+	}
 }
 
 void modem_init() {
@@ -242,7 +293,7 @@ void modem_init() {
 	uart_tx_timeout("AT#SIMDET=1\r\n", MODEM_TX_DELAY2, 10);
 	//uart_tx("AT#SIMDET=2\r\n");
 
-	uart_tx_timeout("AT+CMGF=1\r\n", MODEM_TX_DELAY2, 5);// set sms format to text mode
+	uart_tx_timeout("AT+CMGF=1\r\n", MODEM_TX_DELAY2, 5); // set sms format to text mode
 	uart_tx("AT+CMEE=2\r\n");
 	uart_tx("AT#CMEEMODE=1\r\n");
 	uart_tx("AT#AUTOBND=2\r\n");
@@ -261,7 +312,22 @@ void modem_init() {
 	modem_surveyNetwork();
 #endif
 
-	config_incLastCmd();
+#ifdef POWER_SAVING_ENABLED
+	uart_tx("AT+CFUN=5\r\n"); //full modem functionality with power saving enabled (triggered via DTR)
+	delay(MODEM_TX_DELAY1);
+
+	uart_tx("AT+CFUN?\r\n");//full modem functionality with power saving enabled (triggered via DTR)
+	delay(MODEM_TX_DELAY1);
+#endif
+
+	modem_pull_time();
+
+	lcd_print("Checking GPRS");
+	/// added for gprs connection..//
+	signal_gprs = dopost_gprs_connection_status(GPRS);
+
+	// Disable echo from modem
+	uart_tx("ATE0\r\n");
 }
 
 #ifdef POWER_SAVING_ENABLED

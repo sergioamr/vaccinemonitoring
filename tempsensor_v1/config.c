@@ -12,6 +12,7 @@
 #include "thermalcanyon.h"
 #include "calib/calibration.h"
 #include "time.h"
+#include "stringutils.h"
 
 int g_iSamplePeriod = SAMPLE_PERIOD;
 int g_iUploadPeriod = UPLOAD_PERIOD;

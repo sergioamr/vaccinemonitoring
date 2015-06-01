@@ -141,23 +141,6 @@ static void setupIO() {
 	__bis_SR_register(GIE);		//enable interrupt globally
 }
 
-void pullTime() {
-	int i;
-	for (i = 0; i < MAX_TIME_ATTEMPTS; i++) {
-		uart_resetbuffer();
-		uart_tx("AT+CCLK?\r\n");
-		uart_rx_cleanBuf(ATCMD_CCLK, ATresponse, sizeof(ATresponse));
-		parsetime(ATresponse, &currTime);
-		rtc_init(&currTime);
-
-		if (currTime.tm_year!=0) {
-			// Day has changed so save the new date TODO keep trying until date is set. Call function ONCE PER DAY
-			g_iCurrDay = currTime.tm_mday;
-			break;
-		}
-	}
-}
-
 /****************************************************************************/
 /*  MAIN                                                                    */
 /****************************************************************************/
@@ -183,7 +166,7 @@ int main(void) {
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 
 	setupIO();
-	config_init();	// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
+	config_init();// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
 
 	config_setLastCommand(COMMAND_BOOT);
 
@@ -197,10 +180,11 @@ int main(void) {
 	lcd_init();
 
 	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
-	lcd_print_ext(LINE1, "Booting %d",(int) g_pSysCfg->numberConfigurationRuns);
+	lcd_print_ext(LINE1, "Booting %d",
+			(int) g_pSysCfg->numberConfigurationRuns);
 
 #ifndef _DEBUG
-	lcd_print_lne(LINE2, g_pSysCfg->firmwareVersion);  // Show the firmware version
+	lcd_print_lne(LINE2, g_pSysCfg->firmwareVersion); // Show the firmware version
 	delay(5000);
 #else
 	lcd_print_lne(LINE2, "(db)" __TIME__);
@@ -211,7 +195,7 @@ int main(void) {
 	sampletemp();
 #ifndef _DEBUG
 	// to allow conversion to get over and prevent any side-effects to other interface like modem
-    // TODO is this delay to help on the following bug from texas instruments ? (http://www.ti.com/lit/er/slaz627b/slaz627b.pdf)
+	// TODO is this delay to help on the following bug from texas instruments ? (http://www.ti.com/lit/er/slaz627b/slaz627b.pdf)
 
 	lcd_progress_wait(2000);
 #endif
@@ -231,31 +215,14 @@ int main(void) {
 
 	if (iStatus & MODEM_POWERED_ON) {
 		modem_init();
-
-#ifdef POWER_SAVING_ENABLED
-		uart_tx("AT+CFUN=5\r\n");//full modem functionality with power saving enabled (triggered via DTR)
-		delay(MODEM_TX_DELAY1);
-
-		uart_tx("AT+CFUN?\r\n");//full modem functionality with power saving enabled (triggered via DTR)
-		delay(MODEM_TX_DELAY1);
-#endif
-
-		pullTime();
-
 		modem_getExtraInfo();
 
-		lcd_print("Checking GPRS");
-		/// added for gprs connection..//
-		signal_gprs = dopost_gprs_connection_status(GPRS);
-
-		// Disable echo from modem
-		uart_tx("ATE0\r\n");
 		//heartbeat
 		for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
 			memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);
 			ConvertADCToTemperature(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
 		}
-		sendhb();
+		sms_send_heart_beat();
 	}
 
 	lcd_print("Battery check");
@@ -303,7 +270,8 @@ int main(void) {
 			//convert the current sensor ADC value to temperature
 			for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
 				memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);
-				ConvertADCToTemperature(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
+				ConvertADCToTemperature(ADCvar[iIdx], &Temperature[iIdx][0],
+						iIdx);
 			}
 
 #ifndef  NOTFROMFILE
@@ -371,7 +339,8 @@ int main(void) {
 #endif
 
 				if (!(iStatus & TEST_FLAG)) {
-					uart_tx("AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
+					uart_tx(
+							"AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
 					//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
 					uart_tx("AT#SGACT=1,1\r\n");
 					uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
@@ -455,10 +424,11 @@ int main(void) {
 					iOffset = dwLastseek % SECTOR_SIZE;
 					//check the position is in first half of sector
 					if ((SECTOR_SIZE - iOffset) > sizeof(ATresponse)) {
-						fr = f_read(&filr, ATresponse, sizeof(ATresponse),(UINT *) &iIdx); /* Read first chunk of sector*/
+						fr = f_read(&filr, ATresponse, sizeof(ATresponse),
+								(UINT *) &iIdx); /* Read first chunk of sector*/
 						if ((fr == FR_OK) && (iIdx > 0)) {
 							iStatus &= ~SPLIT_TIME_STAMP;//clear the last status of splitted data
-							pcData = (char *) FatFs.win;	//reuse the buffer maintained by the file system
+							pcData = (char *) FatFs.win;//reuse the buffer maintained by the file system
 							//check for first time stamp
 							//pcTmp = strstr(&pcData[iOffset],"$TS");
 							pcTmp = strstr(&pcData[iOffset], "$");//to prevent $TS rollover case
@@ -581,7 +551,7 @@ int main(void) {
 										f_lseek(&filr, dwLastseek);
 										fr = f_read(&filr, &dummy, 1, &iIdx); /* dummy read to load the next sector */
 										if ((fr == FR_OK) && (iIdx > 0)) {
-											pcData = (char *) FatFs.win;	//resuse the buffer maintained by the file system
+											pcData = (char *) FatFs.win;//resuse the buffer maintained by the file system
 											//update final lseek for next sample
 											//pcSrc1 = strstr(pcData,"$TS");
 											pcSrc1 = strstr(pcData, "$");
@@ -638,7 +608,7 @@ int main(void) {
 						strcat(SampleData,
 								"&ph=8455523642&v=1.20140817.1&sid=0|1|2|3|4&"); //SERIAL
 #else
-						strcat(SampleData,"IMEI=358072043113601&ph=8455523642&v=1.20140817.1&sid=0|1|2|3&"); //SERIAL
+								strcat(SampleData,"IMEI=358072043113601&ph=8455523642&v=1.20140817.1&sid=0|1|2|3&"); //SERIAL
 #endif
 						//check if time stamp is split across the two sources
 						iOffset = iPOSTstatus - (int) pcTmp; //reuse, iPOSTstatus is end of first src
@@ -766,7 +736,9 @@ int main(void) {
 					if (iPOSTstatus != 0) {
 						//redo the post
 						// Define Packet Data Protocol Context - +CGDCONT
-						sprintf(g_szTemp, "AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", g_pInfoA->cfgAPN[g_pInfoA->cfgSIMSlot]);
+						sprintf(g_szTemp,
+								"AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n",
+								g_pInfoA->cfgAPN[g_pInfoA->cfgSIMSlot]);
 						uart_tx(g_szTemp);
 						//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
 
@@ -804,7 +776,7 @@ int main(void) {
 #ifdef POWER_SAVING_ENABLED
 					modem_enter_powersave_mode();
 #endif
-					config_setLastCommand(COMMAND_POST+COMMAND_END);
+					config_setLastCommand(COMMAND_POST + COMMAND_END);
 				}
 				lcd_show(iDisplayId);//remove the custom print (e.g transmitting)
 			}
@@ -824,7 +796,7 @@ int main(void) {
 			if (iStatus & NETWORK_DOWN) {
 				delay(2000);//additional delay to enable ADC conversion to complete
 				//check for signal strength
-				pullTime();
+				modem_pull_time();
 				uart_resetbuffer();
 				uart_tx("AT+CSQ\r\n");
 				delay(MODEM_TX_DELAY1);
@@ -839,7 +811,7 @@ int main(void) {
 					//update the network state
 					iStatus &= ~NETWORK_DOWN;
 					//send heartbeat
-					sendhb();
+					sms_send_heart_beat();
 				}
 			}
 
@@ -865,7 +837,7 @@ int main(void) {
 			iIdx = 0;
 			while (iIdx < MODEM_CHECK_RETRY) {
 				gprs_network_indication = dopost_gprs_connection_status(GSM);
-				if((gprs_network_indication == 0)
+				if ((gprs_network_indication == 0)
 						|| ((iSignalLevel < NETWORK_DOWN_SS)
 								|| (iSignalLevel > NETWORK_MAX_SS))) {
 					lcd_print_lne(LINE2, "Signal lost...");
@@ -889,9 +861,9 @@ int main(void) {
 			memset(ATresponse, 0, sizeof(ATresponse));
 			doget(ATresponse);
 			if (ATresponse[0] == '$') {
-				if (processmsg(ATresponse)) {
+				if (sms_process_msg(ATresponse)) {
 					//send heartbeat on successful processing of SMS message
-					sendhb();
+					sms_send_heart_beat();
 				}
 			} else {
 				//no cfg message recevied
@@ -927,78 +899,12 @@ int main(void) {
 #ifndef CALIBRATION
 		//process SMS messages if there is a gap of 2 mins before cfg processing or upload takes place
 		if ((iMinuteTick) && !(iStatus & BACKLOG_UPLOAD_ON)
-				&& ((iMinuteTick - iSMSRxPollElapsed) < (SMS_RX_POLL_INTERVAL - 2))
+				&& ((iMinuteTick - iSMSRxPollElapsed)
+						< (SMS_RX_POLL_INTERVAL - 2))
 				&& ((iMinuteTick - iUploadTimeElapsed) < (g_iUploadPeriod - 2))
 				&& ((iMinuteTick - iMsgRxPollElapsed) >= MSG_REFRESH_INTERVAL)) {
-			iMsgRxPollElapsed = iMinuteTick;
-			//check if messages are available
-			uart_resetbuffer();
 
-			uart_tx("AT+CPMS?\r\n");
-			delay(1000);
-			memset(ATresponse, 0, sizeof(ATresponse));
-			uart_rx(ATCMD_CPMS, ATresponse);
-			if (ATresponse[0] != 0) {
-				iIdx = strtol(ATresponse, 0, 10);
-				if (iIdx) {
-					iIdx = 1;
-					lcd_print_lne(LINE2, "Msg Processing..");
-					while (iIdx <= SMS_READ_MAX_MSG_IDX) {
-						memset(ATresponse, 0, sizeof(ATresponse));
-						iModemSuccess = recvmsg(iIdx, ATresponse);
-						if (ATresponse[0] != 0 && iModemSuccess == 0)	//check for $
-						{
-							switch (ATresponse[0]) {
-							case '1':
-								//get temperature values
-								memset(SampleData, 0, MSG_RESPONSE_LEN);
-								for (iOffset = 0; iOffset < MAX_NUM_SENSORS;
-										iOffset++) {
-									strcat(SampleData, SensorName[iOffset]);
-									strcat(SampleData, "=");
-									strcat(SampleData, Temperature[iOffset]);
-									strcat(SampleData, "C, ");
-								}
-
-								// added for show msg//
-								strcat(SampleData, "Battery:");
-								strcat(SampleData, itoa_pad(iBatteryLevel));
-								strcat(SampleData, "%, ");
-								if (P4IN & BIT4)	//power not plugged
-								{
-									strcat(SampleData, "POWER OUT");
-								} else if (((P4IN & BIT6))
-										&& (iBatteryLevel == 100)) {
-									strcat(SampleData, "FULL CHARGE");
-								} else {
-									strcat(SampleData, "CHARGING");
-								}
-								iOffset = strlen(SampleData);
-
-								sendmsg_number(&ATresponse[6], SampleData);
-								break;
-
-							case '2':
-								//reset the board by issuing a SW BOR
-								PMM_trigBOR();
-								while (1);	//code should not come here
-
-							default:
-								break;
-							}
-							if(processmsg(ATresponse))
-							{
-								//send heartbeat on successful processing of SMS message
-								sendhb();
-							}
-						}
-						iIdx++;
-					}
-					iModemSuccess = 0;
-					delallmsg();
-					lcd_show(iDisplayId);
-				}
-			}
+			sms_process_messages(iMinuteTick, iDisplayId);
 		}
 
 		//low power behavior
@@ -1053,10 +959,6 @@ int main(void) {
 	}
 }
 
-void writetoI2C(uint8_t addressI2C, uint8_t dataI2C) {
-	return; //void function for the new board with LCD
-}
-
 void ConvertADCToTemperature(int32_t ADCval, char* TemperatureVal,
 		int8_t iSensorIdx) {
 	float A0V2V, A0R2;
@@ -1070,7 +972,7 @@ void ConvertADCToTemperature(int32_t ADCval, char* TemperatureVal,
 	//NUM = A0V2V*A0R1;
 	//DEN = A0V1-A0V2V;
 
-	A0R2 = (A0V2V * 10000.0) / (2.5 - A0V2V);				//R2= (V2*R1)/(V1-V2)
+	A0R2 = (A0V2V * 10000.0) / (2.5 - A0V2V);			//R2= (V2*R1)/(V1-V2)
 
 	//Convert resistance to temperature using Steinhart-Hart algorithm
 	A0tempdegC = ConvertoTemp(A0R2);
@@ -1170,33 +1072,6 @@ float ConvertoTemp(float R) {
 
 }
 
-void parsetime(char* pDatetime, struct tm* pTime) {
-	char* pToken1 = NULL;
-	char* pToken2 = NULL;
-	char* pDelimiter = "\"/,:+-";
-
-	if ((pDatetime) && (pTime)) {
-		//string format "yy/MM/dd,hh:mm:ss�zz"
-		pToken1 = strtok(pDatetime, pDelimiter);
-		if (pToken1) {
-			pToken2 = strtok(NULL, pDelimiter);		//skip the first :
-			pToken2 = strtok(NULL, pDelimiter);
-			pTime->tm_year = atoi(pToken2) + 2000;	//to get absolute year value
-			pToken2 = strtok(NULL, pDelimiter);
-			pTime->tm_mon = atoi(pToken2);
-			pToken2 = strtok(NULL, pDelimiter);
-			pTime->tm_mday = atoi(pToken2);
-			pToken2 = strtok(NULL, pDelimiter);
-			pTime->tm_hour = atoi(pToken2);
-			pToken2 = strtok(NULL, pDelimiter);
-			pTime->tm_min = atoi(pToken2);
-			pToken2 = strtok(NULL, pDelimiter);
-			pTime->tm_sec = atoi(pToken2);
-
-		}
-	}
-}
-
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
 #pragma vector = ADC12_VECTOR
 __interrupt void ADC12_ISR(void)
@@ -1240,7 +1115,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 	case ADC12IV_ADC12IFG5:   		        // Vector 22:  ADC12MEM5
 		ADCvar[3] += ADC12MEM5;                     // Read conversion result
 #if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 4
-		isConversionDone = 1;
+				isConversionDone = 1;
 #endif
 		break;
 	case ADC12IV_ADC12IFG6:                 // Vector 24:  ADC12MEM6
@@ -1537,8 +1412,7 @@ void validatealarmthreshold() {
 			LOW_TEMP_THRESHOLD;
 		}
 
-		if ((g_pInfoA->stTempAlertParams[iCnt].mincold
-				< MIN_CNF_TEMP_THRESHOLD)
+		if ((g_pInfoA->stTempAlertParams[iCnt].mincold < MIN_CNF_TEMP_THRESHOLD)
 				|| (g_pInfoA->stTempAlertParams[iCnt].mincold
 						> MAX_CNF_TEMP_THRESHOLD)) {
 			g_pInfoA->stTempAlertParams[iCnt].mincold =
@@ -1551,8 +1425,7 @@ void validatealarmthreshold() {
 			g_pInfoA->stTempAlertParams[iCnt].threshhot =
 			HIGH_TEMP_THRESHOLD;
 		}
-		if ((g_pInfoA->stTempAlertParams[iCnt].minhot
-				< MIN_CNF_TEMP_THRESHOLD)
+		if ((g_pInfoA->stTempAlertParams[iCnt].minhot < MIN_CNF_TEMP_THRESHOLD)
 				|| (g_pInfoA->stTempAlertParams[iCnt].minhot
 						> MAX_CNF_TEMP_THRESHOLD)) {
 			g_pInfoA->stTempAlertParams[iCnt].minhot =
@@ -1749,213 +1622,6 @@ void uploadsms() {
 
 	}
 	sendmsg(ATresponse);
-
-}
-
-int8_t processmsg(char* pSMSmsg) {
-	char* pcTmp = NULL;
-	int8_t iCnt = 0;
-	int8_t iCurrSeq = 0;
-
-	pcTmp = strtok(pSMSmsg, ",");
-
-	while ((pcTmp) && (iCurrSeq != -1)) {
-		if (pcTmp) {
-			//get msg type
-			switch (pcTmp[3]) {
-			case '1':
-				pcTmp = strtok(NULL, ",");
-				if (pcTmp) {
-					strncpy(g_pInfoA->cfgSMSCenter[g_pInfoA->cfgSIMSlot], pcTmp, strlen(pcTmp));
-
-					pcTmp = strtok(NULL, ",");
-					if (pcTmp) {
-						//get upload mode
-						g_pInfoA->cfgUploadMode = strtol(pcTmp, 0, 10);
-						pcTmp = strtok(NULL, ",");
-						if (pcTmp) {
-							//get APN
-							memcpy(g_pInfoA->cfgAPN, pcTmp, strlen(pcTmp));
-							pcTmp = strtok(NULL, ",");
-							if (pcTmp) {
-								//get upload interval
-								g_iUploadPeriod = strtol(pcTmp, 0, 10);
-								pcTmp = strtok(NULL, ",");
-								if (pcTmp) {
-									g_iSamplePeriod = strtol(pcTmp, 0, 10);
-									pcTmp = strtok(NULL, ",");
-								}
-							}
-						}
-					}
-
-					if (pcTmp) {
-						if (strtol(pcTmp, 0, 10)) {
-							iStatus |= RESET_ALERT;
-							//set buzzer OFF
-							iStatus &= ~BUZZER_ON;
-							//reset alarm state and counters
-							for (iCnt = 0; iCnt < MAX_NUM_SENSORS; iCnt++) {
-								//reset the alarm
-								TEMP_ALARM_CLR(iCnt);
-								//initialize confirmation counter
-								g_iAlarmCnfCnt[iCnt] = 0;
-							}
-						} else {
-							iStatus &= ~RESET_ALERT;
-						}
-						pcTmp = strtok(NULL, ",");
-						if (pcTmp) {
-							if (strtol(pcTmp, 0, 10)) {
-								iStatus |= ENABLE_SECOND_SLOT;
-								if (g_pInfoA->cfgSIMSlot == 0) {
-									g_pInfoA->cfgSIMSlot = 1;
-									modem_init();
-								}
-							} else {
-								iStatus &= ~ENABLE_SECOND_SLOT;
-								if (g_pInfoA->cfgSIMSlot == 1) {
-									g_pInfoA->cfgSIMSlot = 0;
-									modem_init();
-								}
-							}
-						}
-						iCnt = 1;
-					}
-				}
-				break;
-			case '2':
-				pcTmp = strtok(NULL, ",");
-#if 1
-				if (pcTmp) {
-					iCurrSeq = strtol(pcTmp, 0, 10);
-					pcTmp = strtok(NULL, ",");
-				}
-
-				if (iCurrSeq != g_iLastCfgSeq) {
-					g_iLastCfgSeq = iCurrSeq;
-#else
-					if(pcTmp)
-					{
-#endif
-					for (iCnt = 0; (iCnt < MAX_NUM_SENSORS) && (pcTmp);
-							iCnt++) {
-						g_pInfoA->stTempAlertParams[iCnt].mincold = strtol(
-								pcTmp, 0, 10);
-						pcTmp = strtok(NULL, ",");
-						if (pcTmp) {
-							g_pInfoA->stTempAlertParams[iCnt].threshcold =
-									strtod(pcTmp, NULL);
-							pcTmp = strtok(NULL, ",");
-							if (pcTmp) {
-								g_pInfoA->stTempAlertParams[iCnt].minhot =
-										strtol(pcTmp, 0, 10);
-								pcTmp = strtok(NULL, ",");
-								if (pcTmp) {
-									g_pInfoA->stTempAlertParams[iCnt].threshhot =
-											strtod(pcTmp, NULL);
-									pcTmp = strtok(NULL, ",");
-								}
-							}
-						}
-					}
-					if (pcTmp) {
-						g_pInfoA->stBattPowerAlertParam.minutespower =
-								strtol(pcTmp, 0, 10);
-						pcTmp = strtok(NULL, ",");
-						if (pcTmp) {
-							g_pInfoA->stBattPowerAlertParam.enablepoweralert =
-									strtol(pcTmp, 0, 10);
-							pcTmp = strtok(NULL, ",");
-							if (pcTmp) {
-								g_pInfoA->stBattPowerAlertParam.minutesbathresh =
-										strtol(pcTmp, 0, 10);
-								pcTmp = strtok(NULL, ",");
-								if (pcTmp) {
-									g_pInfoA->stBattPowerAlertParam.battthreshold =
-											strtol(pcTmp, 0, 10);
-								}
-							}
-						}
-
-					} else {
-						g_pInfoA->stBattPowerAlertParam.enablepoweralert = 0;
-						g_pInfoA->stBattPowerAlertParam.battthreshold = 101;
-					}
-					iCnt = 1;
-				} else {
-					iCurrSeq = -1; //stop further processing as cfg is identical
-				}
-				break;
-			case '3':
-				iCnt = 0;
-#if 0
-				//defunct SMS destination number configuration
-				pcTmp = strtok(NULL,",");
-				if(pcTmp)
-				{
-					g_pInfoB->iDAcount=0;
-					for(iCnt; (iCnt < MAX_SMS_NUM) && (pcTmp); iCnt++)
-					{
-						memcpy(g_pInfoB->cfgSMSDA[iCnt],pcTmp,strlen(pcTmp));
-						pcTmp = strtok(NULL,",");
-					}
-					g_pInfoB->iDAcount = iCnt;
-				}
-#endif
-				break;
-			case '4':
-				break;
-			}
-			pcTmp = strtok(NULL, ","); //get next mesg
-		}
-	}
-	return iCnt;
-}
-
-void sendhb() {
-
-	char* pcTmp = NULL;
-	int slot = g_pInfoA->cfgSIMSlot;
-	int i = 0;
-
-	lcd_print("SMS SYNC");
-	//send heart beat
-	memset(SampleData, 0, sizeof(SampleData));
-	strcat(SampleData, SMS_HB_MSG_TYPE);
-	strcat(SampleData, g_pInfoA->cfgIMEI);
-	strcat(SampleData, ",");
-	if (slot) {
-		strcat(SampleData, "1,");
-	} else {
-		strcat(SampleData, "0,");
-	}
-	strcat(SampleData, &g_pInfoA->cfgSMSCenter[slot][0]);
-	strcat(SampleData, ",");
-	strcat(SampleData, itoa_nopadding(g_pInfoA->iCfgMCC[slot]));
-	strcat(SampleData, ",");
-	strcat(SampleData, itoa_nopadding(g_pInfoA->iCfgMNC[slot]));
-	strcat(SampleData, ",");
-	for (i = 0; i < MAX_NUM_SENSORS; i++) {
-		if(Temperature[i][0] == '-') {
-			strcat(SampleData, "0,");
-		} else {
-			strcat(SampleData, "1,");
-		}
-	}
-
-	pcTmp = itoa_pad(batt_getlevel());	//opt by directly using tmpstr
-	strcat(SampleData, pcTmp);
-	if (P4IN & BIT4) {
-		strcat(SampleData, ",0");
-	} else {
-		strcat(SampleData, ",1");
-	}
-
-#ifdef _DEBUG
-	strcat(SampleData, ",(db)" __TIME__);
-#endif
-	sendmsg(SampleData);
 }
 
 void sampletemp() {
@@ -1973,7 +1639,8 @@ void sampletemp() {
 	for (iIdx = 0; iIdx < SAMPLE_COUNT; iIdx++) {
 		ADC12CTL0 &= ~ADC12ENC;
 		ADC12CTL0 |= ADC12ENC | ADC12SC;
-		while ((iSamplesRead - iLastSamplesRead) == 0);
+		while ((iSamplesRead - iLastSamplesRead) == 0)
+			;
 		iLastSamplesRead = iSamplesRead;
 //		delay(10);	//to allow the ADC conversion to complete
 	}

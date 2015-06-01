@@ -34,5 +34,7 @@ extern void delreadmsg();
 extern void delallmsg();
 extern void delmsg(int8_t iMsgIdx, char* pData);
 
+extern void sms_send_heart_beat();
+extern void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId);
 
 #endif /* TEMPSENSOR_V1_SMS_H_ */

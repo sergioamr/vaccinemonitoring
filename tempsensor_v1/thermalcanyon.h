@@ -35,31 +35,23 @@
 #include "fatdata.h"
 #include "http.h"
 #include "stdio.h"
+#include "stringutils.h"
 
 //------------- FUNCTIONS MOVED FROM MAIN - WAITING CLEANUP -------------------
 
 #define FORMAT_FIELD_OFF	1		//2 if field name is 1 character & equal, 3 if field name is 2 character & equal...
 extern volatile uint32_t iMinuteTick;
 extern char* g_TmpSMScmdBuffer;
-extern char __STACK_END; /* the type does not matter! */
-extern char __STACK_SIZE; /* the type does not matter! */
 
 //local functions
 
 static void writetoI2C(uint8_t addressI2C, uint8_t dataI2C);
 static float ConvertoTemp(float R);
-char* itoa_pad(int num);
-char* itoa_nopadding(int num);	//TODO remove this function for final release
 static void parsetime(char* pDatetime, struct tm* pTime);
 
 void uploadsms();
-int8_t processmsg(char* pSMSmsg);
-void sendhb();
-int dopost_sms_status(void);
-int dopost_gprs_connection_status(char status);
+int8_t sms_process_msg(char* pSMSmsg);
 void sampletemp();
-void modem_init();
-void pullTime();
 void monitoralarm();
 
 extern void encode(double input_val, char output_chars[]); // Encode function from encode.c

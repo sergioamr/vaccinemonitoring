@@ -15,5 +15,6 @@ extern int dopost(char* postdata);
 extern int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 		char* seperator, int8_t iFlagVal, char* pcExtSrc, int8_t iFieldSize);
 
-
+extern int dopost_gprs_connection_status(char status);
+extern int dopost_sms_status(void);
 #endif /* TEMPSENSOR_V1_HTTP_H_ */

@@ -7,6 +7,7 @@
 
 //uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n");
 #include "thermalcanyon.h"
+#include "stringutils.h"
 
 #define HTTP_RESPONSE_RETRY	10
 
@@ -23,7 +24,6 @@ void dohttpsetup() {
 }
 
 void deactivatehttp() {
-
 	// LONG TIMEOUT
 	uart_tx("AT#SGACT=1,0\r\n");	//deactivate GPRS context
 }
