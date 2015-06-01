@@ -1,0 +1,477 @@
+/*
+ * data_transmit.c
+ *
+ *  Created on: Jun 1, 2015
+ *      Author: sergioam
+ */
+
+#include "thermalcanyon.h"
+#include "config.h"
+
+#define TS_SIZE				21
+#define TS_FIELD_OFFSET		1	//1 - $, 3 - $TS
+
+int data_transmit(uint8_t *pSampleCnt) {
+	int iPOSTstatus = 0;
+
+	char *dummy = NULL;
+	char* pcTmp = NULL;
+	char* pcData = NULL;
+	char* pcSrc1 = NULL;
+	char* pcSrc2 = NULL;
+
+	int32_t dwFinalSeek = 0;
+	int32_t iSize = 0;
+	int16_t iOffset = 0;
+	int32_t dw_file_pointer_back_log = 0; // for error condition /// need to be tested.
+	char file_pointer_enabled_sms_status = 0; // for sms condtition enabling.../// need to be tested
+	int iIdx = 0;
+
+	lcd_print_lne(LINE2, "Transmitting....");
+//iStatus &= ~TEST_FLAG;
+#ifdef SMS_ALERT
+	iStatus &= ~SMSED_HIGH_TEMP;
+	iStatus &= ~SMSED_LOW_TEMP;
+#endif
+	if ((iMinuteTick - iUploadTimeElapsed) >= g_iUploadPeriod) {
+		//if(((g_iUploadPeriod/g_iSamplePeriod) < MAX_NUM_CONTINOUS_SAMPLES) ||
+		//    (iStatus & ALERT_UPLOAD_ON))
+		if ((g_iUploadPeriod / g_iSamplePeriod) < MAX_NUM_CONTINOUS_SAMPLES) {
+			//trigger a new timestamp
+			iStatus |= LOG_TIME_STAMP;
+			*pSampleCnt = 0;
+			//iStatus &= ~ALERT_UPLOAD_ON;	//reset alert upload indication
+		}
+
+		iUploadTimeElapsed = iMinuteTick;
+	} else if ((iStatus & ALERT_UPLOAD_ON)
+			&& (*pSampleCnt < MAX_NUM_CONTINOUS_SAMPLES)) {
+		//trigger a new timestamp
+		iStatus |= LOG_TIME_STAMP;
+		*pSampleCnt = 0;
+	}
+
+//reset the alert uplaod indication
+	if (iStatus & ALERT_UPLOAD_ON) {
+		iStatus &= ~ALERT_UPLOAD_ON;
+	}
+
+#ifdef POWER_SAVING_ENABLED
+	modem_exit_powersave_mode();
+#endif
+
+	if (!(iStatus & TEST_FLAG)) {
+		uart_tx("AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
+		//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
+		uart_tx("AT#SGACT=1,1\r\n");
+		uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
+	}
+
+#ifdef NOTFROMFILE
+	iPOSTstatus = 0;	//set to 1 if post and sms should happen
+	memset(SampleData,0,sizeof(SampleData));
+	strcat(SampleData,"IMEI=358072043113601&phone=8455523642&uploadversion=1.20140817.1&sensorid=0|1|2|3&");//SERIAL
+	rtc_get(&currTime);
+	strcat(SampleData,"sampledatetime=");
+	for(iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++)
+	{
+		strcat(SampleData,itoa_pad(currTime.tm_year)); strcat(SampleData,"/");
+		strcat(SampleData,itoa_pad(currTime.tm_mon)); strcat(SampleData,"/");
+		strcat(SampleData,itoa_pad(currTime.tm_mday)); strcat(SampleData,":");
+		strcat(SampleData,itoa_pad(currTime.tm_hour)); strcat(SampleData,":");
+		strcat(SampleData,itoa_pad(currTime.tm_min)); strcat(SampleData,":");
+		strcat(SampleData,itoa_pad(currTime.tm_sec));
+		if(iIdx != (MAX_NUM_SENSORS - 1))
+		{
+			strcat(SampleData, "|");
+		}
+	}
+	strcat(SampleData,"&");
+
+	strcat(SampleData,"interval=10|10|10|10&");
+
+	strcat(SampleData,"temp=");
+	for(iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++)
+	{
+		strcat(SampleData,&Temperature[iIdx][0]);
+		if(iIdx != (MAX_NUM_SENSORS - 1))
+		{
+			strcat(SampleData, "|");
+		}
+	}
+	strcat(SampleData,"&");
+
+	pcData = itoa_pad(batt_getlevel());;
+	strcat(SampleData,"batterylevel=");
+	for(iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++)
+	{
+		strcat(SampleData,pcData);
+		if(iIdx != (MAX_NUM_SENSORS - 1))
+		{
+			strcat(SampleData, "|");
+		}
+	}
+	strcat(SampleData,"&");
+
+	if(P4IN & BIT4)
+	{
+		strcat(SampleData,"powerplugged=0|0|0|0");
+	}
+	else
+	{
+		strcat(SampleData,"powerplugged=1|1|1|1");
+	}
+#else
+//disable UART RX as RX will be used for HTTP POST formating
+	pcTmp = pcData = pcSrc1 = pcSrc2 = NULL;
+	iIdx = 0;
+	iPOSTstatus = 0;
+	fr = FR_DENIED;
+	iOffset = 0;
+	char* fn = get_current_fileName(&currTime);
+
+//fr = f_read(&filr, acLogData, 1, &iIdx);  /* Read a chunk of source file */
+	memset(ATresponse, 0, sizeof(ATresponse));//ensure the buffer in aggregate_var section is more than AGGREGATE_SIZE
+	fr = f_open(&filr, fn, FA_READ | FA_OPEN_ALWAYS);
+	if (fr == FR_OK) {
+		dw_file_pointer_back_log = g_pInfoB->dwLastSeek; // added for dummy storing///
+		//seek if offset is valid and not greater than existing size else read from the beginning
+		if ((g_pInfoB->dwLastSeek != 0)
+				&& (filr.fsize >= g_pInfoB->dwLastSeek)) {
+			f_lseek(&filr, g_pInfoB->dwLastSeek);
+		} else {
+			g_pInfoB->dwLastSeek = 0;
+		}
+
+		iOffset = g_pInfoB->dwLastSeek % SECTOR_SIZE;
+		//check the position is in first half of sector
+		if ((SECTOR_SIZE - iOffset) > sizeof(ATresponse)) {
+			fr = f_read(&filr, ATresponse, sizeof(ATresponse), (UINT *) &iIdx); /* Read first chunk of sector*/
+			if ((fr == FR_OK) && (iIdx > 0)) {
+				iStatus &= ~SPLIT_TIME_STAMP;//clear the last status of splitted data
+				pcData = (char *) FatFs.win;//reuse the buffer maintained by the file system
+				//check for first time stamp
+				//pcTmp = strstr(&pcData[iOffset],"$TS");
+				pcTmp = strstr(&pcData[iOffset], "$");//to prevent $TS rollover case
+				if ((pcTmp) && (pcTmp < &pcData[SECTOR_SIZE])) {
+					iIdx = (uint32_t) pcTmp; //start position
+					//check for second time stamp
+					//pcTmp = strstr(&pcTmp[TS_FIELD_OFFSET],"$TS");
+					pcTmp = strstr(&pcTmp[TS_FIELD_OFFSET], "$");
+					if ((pcTmp) && (pcTmp < &pcData[SECTOR_SIZE])) {
+						iPOSTstatus = pcTmp; //first src end postion
+						iStatus &= ~SPLIT_TIME_STAMP; //all data in FATFS buffer
+					} else {
+						iPOSTstatus = &pcData[SECTOR_SIZE];	//mark first source end position as end of sector boundary
+						iStatus |= SPLIT_TIME_STAMP;
+					}
+					pcTmp = iIdx;	//re-initialize to first time stamp
+
+					//is all data within FATFS
+					if (!(iStatus & SPLIT_TIME_STAMP)) {
+						//first src is in FATFS buffer, second src is NULL
+						pcSrc1 = pcTmp;
+						pcSrc2 = NULL;
+						//update lseek
+						g_pInfoB->dwLastSeek += (iPOSTstatus - (int) pcSrc1);	//seek to the next time stamp
+					}
+					//check to read some more data
+					else if ((filr.fsize - g_pInfoB->dwLastSeek)
+							> (SECTOR_SIZE - iOffset)) {
+						//update the seek to next sector
+						g_pInfoB->dwLastSeek += SECTOR_SIZE - iOffset;
+						//seek
+						//f_lseek(&filr, g_pInfoB->dwLastSeek);
+						//fr = f_read(&filr, ATresponse, AGGREGATE_SIZE, &iIdx);  /* Read next data of AGGREGATE_SIZE */
+						//if((fr == FR_OK) && (iIdx > 0))
+						//if(disk_read_ex(0,ATresponse,filr.dsect+1,AGGREGATE_SIZE) == RES_OK)
+						if (disk_read_ex(0, (BYTE *) ATresponse, filr.dsect + 1,
+								512) == RES_OK) {
+							//calculate bytes read
+							iSize = filr.fsize - g_pInfoB->dwLastSeek;
+							if (iSize >= sizeof(ATresponse)) {
+								iIdx = sizeof(ATresponse);
+							} else {
+								iIdx = iSize;
+							}
+							//update final lseek for next sample
+							//pcSrc1 = strstr(ATresponse,"$TS");
+							pcSrc1 = strstr(ATresponse, "$");
+							if (pcSrc1) {
+								dwFinalSeek = g_pInfoB->dwLastSeek
+										+ (pcSrc1 - ATresponse);//seek to the next TS
+								iIdx = pcSrc1;		//second src end position
+							}
+							//no next time stamp found
+							else {
+								dwFinalSeek = g_pInfoB->dwLastSeek + iIdx;//update with bytes read
+								g_pInfoB->dwLastSeek = &ATresponse[iIdx];//get postion of last byte
+								iIdx = g_pInfoB->dwLastSeek;//end position for second src
+							}
+							//first src is in FATFS buffer, second src is ATresponse
+							pcSrc1 = pcTmp;
+							pcSrc2 = ATresponse;
+						}
+					} else {
+						//first src is in FATFS buffer, second src is NULL
+						pcSrc1 = pcTmp;
+						pcSrc2 = NULL;
+						//update lseek
+						dwFinalSeek = filr.fsize;//EOF - update with file size
+
+					}
+				} else {
+					//control should not come here ideally
+					//update the seek to next sector to skip the bad logged data
+					g_pInfoB->dwLastSeek += SECTOR_SIZE - iOffset;
+				}
+			} else {
+				//file system issue TODO
+			}
+		} else {
+			//the position is second half of sector
+			fr = f_read(&filr, ATresponse, SECTOR_SIZE - iOffset, &iIdx); /* Read data till the end of sector */
+			if ((fr == FR_OK) && (iIdx > 0)) {
+				iStatus &= ~SPLIT_TIME_STAMP;//clear the last status of splitted data
+				//get position of first time stamp
+				//pcTmp = strstr(ATresponse,"$TS");
+				pcTmp = strstr(ATresponse, "$");
+
+				if ((pcTmp) && (pcTmp < &ATresponse[iIdx])) {
+					//check there are enough bytes to check for second time stamp postion
+					if (iIdx > TS_FIELD_OFFSET) {
+						//check if all data is in ATresponse
+						//pcSrc1 = strstr(&ATresponse[TS_FIELD_OFFSET],"$TS");
+						pcSrc1 = strstr(&pcTmp[TS_FIELD_OFFSET], "$");
+						if ((pcSrc1) && (pcSrc1 < &ATresponse[iIdx])) {
+							iPOSTstatus = pcSrc1;	//first src end position;
+							iStatus &= ~SPLIT_TIME_STAMP;//all data in FATFS buffer
+						} else {
+							iPOSTstatus = &ATresponse[iIdx]; //first src end position;
+							iStatus |= SPLIT_TIME_STAMP;
+						}
+					} else {
+						iPOSTstatus = &ATresponse[iIdx]; //first src end position;
+						iStatus |= SPLIT_TIME_STAMP;
+					}
+
+					//check if data is splitted across
+					if (iStatus & SPLIT_TIME_STAMP) {
+						//check to read some more data
+						if ((filr.fsize - g_pInfoB->dwLastSeek)
+								> (SECTOR_SIZE - iOffset)) {
+							//update the seek to next sector
+							g_pInfoB->dwLastSeek += SECTOR_SIZE - iOffset;
+							//seek
+							f_lseek(&filr, g_pInfoB->dwLastSeek);
+							fr = f_read(&filr, &dummy, 1, &iIdx); /* dummy read to load the next sector */
+							if ((fr == FR_OK) && (iIdx > 0)) {
+								pcData = (char *) FatFs.win; //resuse the buffer maintained by the file system
+								//update final lseek for next sample
+								//pcSrc1 = strstr(pcData,"$TS");
+								pcSrc1 = strstr(pcData, "$");
+								if ((pcSrc1)
+										&& (pcSrc1 < &pcData[SECTOR_SIZE])) {
+									g_pInfoB->dwLastSeek += (pcSrc1 - pcData);//seek to the next TS
+									iIdx = pcSrc1;//end position for second src
+								} else {
+									dwFinalSeek = filr.fsize;//EOF - update with file size
+									iIdx = &pcData[dwFinalSeek % SECTOR_SIZE];//end position for second src
+								}
+								//first src is in ATresponse buffer, second src is FATFS
+								pcSrc1 = pcTmp;
+								pcSrc2 = pcData;
+							}
+						} else {
+							//first src is in ATresponse buffer, second src is NULL
+							pcSrc1 = pcTmp;
+							pcSrc2 = NULL;
+							//update lseek
+							dwFinalSeek = filr.fsize;//EOF - update with file size
+						}
+					} else {
+						//all data in ATresponse
+						pcSrc1 = pcTmp;
+						pcSrc2 = NULL;
+						//update lseek
+						g_pInfoB->dwLastSeek = g_pInfoB->dwLastSeek
+								+ (iPOSTstatus - (int) pcSrc1);	//seek to the next time stamp
+					}
+				} else {
+					//control should not come here ideally
+					//update the seek to skip the bad logged data read
+					g_pInfoB->dwLastSeek += iIdx;
+				}
+			} else {
+				//file system issue TODO
+			}
+		}
+
+		if ((fr == FR_OK) && pcTmp) {
+			//read so far is successful and time stamp is found
+			memset(SampleData, 0, sizeof(SampleData));
+#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
+			strcat(SampleData, "IMEI=");
+			if (g_pInfoA->cfgIMEI[0] != 0xFF) {
+				strcat(SampleData, g_pInfoA->cfgIMEI);
+			} else {
+				strcat(SampleData, DEF_IMEI);//be careful as devices with unprogrammed IMEI will need up using same DEF_IMEI
+			}
+			strcat(SampleData, "&ph=8455523642&v=1.20140817.1&sid=0|1|2|3|4&"); //SERIAL
+#else
+					strcat(SampleData,
+							"IMEI=358072043113601&ph=8455523642&v=1.20140817.1&sid=0|1|2|3&"); //SERIAL
+#endif
+			//check if time stamp is split across the two sources
+			iOffset = iPOSTstatus - (int) pcTmp; //reuse, iPOSTstatus is end of first src
+			if ((iOffset > 0) && (iOffset < TS_SIZE)) {
+				//reuse the SampleData tail part to store the complete timestamp
+				pcData = &SampleData[SAMPLE_LEN - 1] - TS_SIZE - 1; //to prevent overwrite
+				//memset(g_TmpSMScmdBuffer,0,SMS_CMD_LEN);
+				//pcData = &g_TmpSMScmdBuffer[0];
+				memcpy(pcData, pcTmp, iOffset);
+				memcpy(&pcData[iOffset], pcSrc2, TS_SIZE - iOffset);
+				pcTmp = pcData;			//point to the copied timestamp
+			}
+
+			//format the timestamp
+			strcat(SampleData, "sdt=");
+			strncat(SampleData, &pcTmp[4], 4);
+			strcat(SampleData, "/");
+			strncat(SampleData, &pcTmp[8], 2);
+			strcat(SampleData, "/");
+			strncat(SampleData, &pcTmp[10], 2);
+			strcat(SampleData, ":");
+			strncat(SampleData, &pcTmp[13], 2);
+			strcat(SampleData, ":");
+			strncat(SampleData, &pcTmp[16], 2);
+			strcat(SampleData, ":");
+			strncat(SampleData, &pcTmp[19], 2);
+			strcat(SampleData, "&");
+
+			//format the interval
+			strcat(SampleData, "i=");
+			iOffset = formatfield(pcSrc1, "R", iPOSTstatus, NULL, 0, pcSrc2, 7);
+			if ((!iOffset) && (pcSrc2)) {
+				//format SP from second source
+				formatfield(pcSrc2, "R", iIdx, NULL, 0, NULL, 0);
+			}
+			strcat(SampleData, "&");
+
+			//format the temperature
+			strcat(SampleData, "t=");
+			iOffset = formatfield(pcSrc1, "A", iPOSTstatus, NULL, 0, pcSrc2, 8);
+			if (pcSrc2) {
+				formatfield(pcSrc2, "A", iIdx, NULL, iOffset, NULL, 0);
+			}
+			iOffset = formatfield(pcSrc1, "B", iPOSTstatus, "|", 0, pcSrc2, 8);
+			if (pcSrc2) {
+				formatfield(pcSrc2, "B", iIdx, "|", iOffset, NULL, 0);
+			}
+			iOffset = formatfield(pcSrc1, "C", iPOSTstatus, "|", 0, pcSrc2, 8);
+			if (pcSrc2) {
+				formatfield(pcSrc2, "C", iIdx, "|", iOffset, NULL, 0);
+			}
+			iOffset = formatfield(pcSrc1, "D", iPOSTstatus, "|", 0, pcSrc2, 8);
+			if (pcSrc2) {
+				formatfield(pcSrc2, "D", iIdx, "|", iOffset, NULL, 0);
+			}
+#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
+			iOffset = formatfield(pcSrc1, "E", iPOSTstatus, "|", 0, pcSrc2, 8);
+			if (pcSrc2) {
+				formatfield(pcSrc2, "E", iIdx, "|", iOffset, NULL, 0);
+			}
+#endif
+			strcat(SampleData, "&");
+
+			strcat(SampleData, "b=");
+			iOffset = formatfield(pcSrc1, "F", iPOSTstatus, NULL, 0, pcSrc2, 7);
+			if (pcSrc2) {
+				formatfield(pcSrc2, "F", iIdx, NULL, iOffset, NULL, 0);
+			}
+			strcat(SampleData, "&");
+
+			strcat(SampleData, "p=");
+			iOffset = formatfield(pcSrc1, "P", iPOSTstatus, NULL, 0, pcSrc2, 5);
+			if (pcSrc2) {
+				formatfield(pcSrc2, "P", iIdx, NULL, iOffset, NULL, 0);
+			}
+
+			//update seek for the next sample
+			g_pInfoB->dwLastSeek = dwFinalSeek;
+#ifndef CALIBRATION
+			if (!(iStatus & TEST_FLAG)) {
+				iPOSTstatus = 1;	//indicate data is available for POST & SMS
+			} else {
+				iPOSTstatus = 0;	//indicate data is available for POST & SMS
+			}
+#else
+			iPOSTstatus = 0; //no need to send data for POST & SMS for device under calibration
+#endif
+
+			//check if catch is needed due to backlog
+			if ((filr.fsize - g_pInfoB->dwLastSeek) > sizeof(SampleData)) {
+				iStatus |= BACKLOG_UPLOAD_ON;
+			} else {
+				iStatus &= ~BACKLOG_UPLOAD_ON;
+			}
+
+		}
+		f_close(&filr);
+	}
+#endif
+
+	if (iPOSTstatus) {
+
+		config_setLastCommand(COMMAND_POST);
+		iPOSTstatus = 0;
+		//initialize the RX counters as RX buffer is been used in the aggregrate variables for HTTP POST formation
+		uart_resetbuffer();
+
+		iPOSTstatus = dopost(SampleData);
+		if (iPOSTstatus != 0) {
+			//redo the post
+			// Define Packet Data Protocol Context - +CGDCONT
+			sprintf(g_szTemp, "AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n",
+					g_pInfoA->cfgAPN[g_pInfoA->cfgSIMSlot]);
+			uart_tx(g_szTemp);
+			//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
+
+			uart_tx("AT#SGACT=1,1\r\n");
+			uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
+#ifdef NO_CODE_SIZE_LIMIT
+			iPOSTstatus = dopost(SampleData);
+			if (iPOSTstatus != 0) {
+				//iHTTPRetryFailed++;
+				//trigger sms failover
+				__no_operation();
+			} else {
+				//iHTTPRetrySucceeded++;
+				__no_operation();
+			}
+#endif
+		}
+		//iTimeCnt = 0;
+		uart_tx("AT#SGACT=1,0\r\n");			//deactivate GPRS context
+		delay(MODEM_TX_DELAY2);
+
+		//if upload sms
+		delay(5000);			//opt sleep to get http post response
+		uploadsms();
+		// added for sms retry and file pointer movement..//
+		file_pointer_enabled_sms_status = dopost_sms_status();
+		if ((file_pointer_enabled_sms_status)
+				|| (file_pointer_enabled_gprs_status)) {
+			__no_operation();
+		} else {
+			g_pInfoB->dwLastSeek = dw_file_pointer_back_log;// file pointer moved to original position need to tested.//
+		}
+
+#ifdef POWER_SAVING_ENABLED
+		modem_enter_powersave_mode();
+#endif
+		config_setLastCommand(COMMAND_POST + COMMAND_END);
+	}
+
+	return iPOSTstatus;
+}
