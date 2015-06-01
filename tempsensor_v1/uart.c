@@ -272,6 +272,13 @@ uint8_t iModemErrors=0;
 // Try a command until success with timeout and number of attempts to be made at running it
 uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 
+	if (g_iLCDVerbose == VERBOSE_BOOTING) {
+#ifdef _DEBUG
+		lcd_clear();
+#endif
+		lcd_print_progress((char *) cmd, LINE1);
+	}
+
 	while(attempts>0) {
 		sendCommand(cmd);
 		if (!waitForReady(timeout)) {
@@ -336,15 +343,31 @@ uint8_t uart_tx_ext(const char *_format, ...) {
 }
 
 uint8_t uart_tx(const char *cmd) {
+	char* pToken1;
+	int error = uart_tx_timeout(cmd, g_iModemMaxWait, 10);
 
-	if (g_iLCDVerbose == VERBOSE_BOOTING) {
-#ifdef _DEBUG
-		lcd_clear();
-#endif
-		lcd_print_progress((char *) cmd, LINE1);
+	if (RXHeadIdx > RXTailIdx)
+		return error;
+
+	if (error != UART_SUCCESS) {
+		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx],
+				"CMS ERROR:");
+		if (pToken1 != NULL) { // ERROR FOUND;
+			delay(2000);
+			lcd_clear();
+			lcd_print_progress((char *) &RXBuffer[RXHeadIdx + 7], LINE1);
+			delay(5000);
+		}
+
+	} else {
+		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": \"");  // Display the command returned
+		if (pToken1!=NULL) {
+			lcd_print_progress((char *) pToken1+3, LINE2);
+		} else {
+			lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx+2], LINE2); // Display the OK message
+		}
 	}
-
-	return uart_tx_timeout(cmd, g_iModemMaxWait, 10);
+	return error;
 }
 
 int uart_rx(int atCMD, char* pResponse) {
@@ -365,30 +388,12 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 	if (reponseLen > 0)
 		memset(pResponse, 0, reponseLen);
 
-	if (RXHeadIdx < RXTailIdx) {
-		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "CMS ERROR:");
-		if (pToken1 != NULL) {
-			// ERROR FOUND;
-			delay(2000);
-			lcd_clear();
-			lcd_print_progress((char *) &RXBuffer[RXHeadIdx + 7], LINE1);
-			delay(5000);
-			return UART_ERROR;
-		} else {
-#if defined(_DEBUG)
-			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": ");
-			if (pToken1!=NULL) {
-				lcd_print_progress((char *) pToken1+2, LINE2);
-			} else {
-				lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx], LINE2);
-			}
-#endif
-		}
-	}
-
 	//input check
 	if (pResponse) {
 		switch (atCMD) {
+		case ATCMD_GPIO:
+			return UART_SUCCESS;
+			break;
 		case ATCMD_CSURVC:
 			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "ERROR");
 			if (pToken1 != NULL)

@@ -16,6 +16,7 @@
 #include "timer.h"
 
 #define I2C_DELAY 100
+#define I2C_DELAY_WRITE 1000
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 volatile int8_t 	I2CRX[I2C_RX_LEN];
@@ -67,7 +68,7 @@ void i2c_write(uint8_t ucSlaveAddr, uint8_t ucCmd, uint8_t ucLen, uint8_t* pucDa
 
 	 UCB0CTL1 |= UCTR;
 	 UCB0CTL1 |= UCTXSTT;                    // I2C start condition
-	 delay(I2C_DELAY);
+	 delay(I2C_DELAY_WRITE);
 }
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)

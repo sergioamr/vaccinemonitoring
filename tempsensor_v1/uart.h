@@ -26,6 +26,7 @@
 #define ATCMD_CMGS			11
 #define ATCMD_HTTPQRY       12
 #define ATCMD_CSURVC		13
+#define ATCMD_GPIO 			14
 
 #define UART_SUCCESS 0
 #define UART_ERROR -1

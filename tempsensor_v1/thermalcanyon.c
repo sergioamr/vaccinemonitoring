@@ -156,8 +156,6 @@ int main(void) {
 
 	setup_IO();
 
-	config_init();// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
-
 	lcd_reset();
 	lcd_blenable();
 
@@ -166,6 +164,8 @@ int main(void) {
 #endif
 
 	lcd_init();
+
+	config_init();// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
 
 	config_setLastCommand(COMMAND_BOOT);
 

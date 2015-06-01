@@ -311,6 +311,12 @@ void modem_init() {
 
 	uart_tx("AT\r\n"); // Display OK
 
+	// GPIO [PIN, DIR, MODE]
+	// Execution command sets the value of the general purpose output pin
+	// GPIO<pin> according to <dir> and <mode> parameter.
+
+	uart_tx("AT#SIMDET=2\r\n"); // Enable automatic pin sim detection
+
 #ifdef ENABLE_SIM_SLOT
 	if (slot != 1) {
 		//enable SIM A (slot 1)
@@ -324,11 +330,8 @@ void modem_init() {
 		uart_tx("AT#GPIO=3,1,1\r\n");
 	}
 #endif
-	uart_tx_timeout("AT#SIMDET=0\r\n", MODEM_TX_DELAY2, 10);
-	uart_tx_timeout("AT#SIMDET=1\r\n", MODEM_TX_DELAY2, 10);
-	//uart_tx("AT#SIMDET=2\r\n");
+	uart_tx_timeout("AT#SIMDET=1\r\n", MODEM_TX_DELAY2, 10); // Disable sim detection. Is it not plugged in hardware?
 
-	uart_tx_timeout("AT+CMGF=1\r\n", MODEM_TX_DELAY2, 5); // set sms format to text mode
 	uart_tx("AT+CMEE=2\r\n");
 	uart_tx("AT#CMEEMODE=1\r\n");
 	uart_tx("AT#AUTOBND=2\r\n");
@@ -342,6 +345,8 @@ void modem_init() {
 
 	modem_getSMSCenter();
 	modem_checkSignal();
+
+	uart_tx_timeout("AT+CMGF=?\r\n", MODEM_TX_DELAY2, 5); // set sms format to text mode
 
 #ifndef _DEBUG
 	modem_survey_network();
