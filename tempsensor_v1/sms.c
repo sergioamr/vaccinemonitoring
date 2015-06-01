@@ -193,71 +193,70 @@ void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 	iMsgRxPollElapsed = iMinuteTick;
 	//check if messages are available
 	uart_tx("AT+CPMS?\r\n");
-	delay(1000);
-	memset(ATresponse, 0, sizeof(ATresponse));
 	uart_rx(ATCMD_CPMS, ATresponse);
 	if (ATresponse[0] != 0) {
 		iIdx = strtol(ATresponse, 0, 10);
 		if (iIdx) {
 			iIdx = 1;
 			lcd_print_lne(LINE2, "Msg Processing..");
-			while (iIdx <= SMS_READ_MAX_MSG_IDX) {
-				memset(ATresponse, 0, sizeof(ATresponse));
-				iModemSuccess = recvmsg(iIdx, ATresponse);
-				if (ATresponse[0] != 0 && iModemSuccess == 0)//check for $
-						{
-					switch (ATresponse[0]) {
-					case '1':
-						//get temperature values
-						memset(SampleData, 0, MSG_RESPONSE_LEN);
-						for (iOffset = 0; iOffset < MAX_NUM_SENSORS;
-								iOffset++) {
-							strcat(SampleData, SensorName[iOffset]);
-							strcat(SampleData, "=");
-							strcat(SampleData, Temperature[iOffset]);
-							strcat(SampleData, "C, ");
+			if (g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] != 0xFF
+					&& g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] != 0x00) {
+				while (iIdx <= SMS_READ_MAX_MSG_IDX) {
+					memset(ATresponse, 0, sizeof(ATresponse));
+					iModemSuccess = recvmsg(iIdx, ATresponse);
+					if (ATresponse[0] != 0 && iModemSuccess == 0) {
+						switch (ATresponse[0]) {
+						case '1':
+							//get temperature values
+							memset(SampleData, 0, MSG_RESPONSE_LEN);
+							for (iOffset = 0; iOffset < MAX_NUM_SENSORS;
+									iOffset++) {
+								strcat(SampleData, SensorName[iOffset]);
+								strcat(SampleData, "=");
+								strcat(SampleData, Temperature[iOffset]);
+								strcat(SampleData, "C, ");
+							}
+
+							// added for show msg//
+							strcat(SampleData, "Battery:");
+							strcat(SampleData, itoa_pad(iBatteryLevel));
+							strcat(SampleData, "%, ");
+							if (P4IN & BIT4)	//power not plugged
+							{
+								strcat(SampleData, "POWER OUT");
+							} else if (((P4IN & BIT6))
+									&& (iBatteryLevel == 100)) {
+								strcat(SampleData, "FULL CHARGE");
+							} else {
+								strcat(SampleData, "CHARGING");
+							}
+							iOffset = strlen(SampleData);
+
+							sendmsg_number(&ATresponse[6], SampleData);
+							break;
+
+						case '2':
+							//reset the board by issuing a SW BOR
+							PMM_trigBOR();
+							while (1);	//code should not come here
+						default:
+							break;
 						}
-
-						// added for show msg//
-						strcat(SampleData, "Battery:");
-						strcat(SampleData, itoa_pad(iBatteryLevel));
-						strcat(SampleData, "%, ");
-						if (P4IN & BIT4)	//power not plugged
-						{
-							strcat(SampleData, "POWER OUT");
-						} else if (((P4IN & BIT6))
-								&& (iBatteryLevel == 100)) {
-							strcat(SampleData, "FULL CHARGE");
-						} else {
-							strcat(SampleData, "CHARGING");
+						if (sms_process_msg(ATresponse)) {
+							//send heartbeat on successful processing of SMS message
+							sms_send_heart_beat();
 						}
-						iOffset = strlen(SampleData);
-
-						sendmsg_number(&ATresponse[6], SampleData);
-						break;
-
-					case '2':
-						//reset the board by issuing a SW BOR
-						PMM_trigBOR();
-						while (1)
-							;	//code should not come here
-
-					default:
-						break;
 					}
-					if (sms_process_msg(ATresponse)) {
-						//send heartbeat on successful processing of SMS message
-						sms_send_heart_beat();
-					}
+					iIdx++;
 				}
-				iIdx++;
+			} else {
+				// TODO try to rediscover max messages
 			}
 			iModemSuccess = 0;
 			delallmsg();
 			lcd_show(iDisplayId);
 		}
 	}
-
 }
 void sms_send_heart_beat() {
 
