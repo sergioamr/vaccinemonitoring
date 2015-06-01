@@ -48,8 +48,12 @@ void calibrate_device() {
 	g_pSysCfg->calibrationFinished = 1;
 	//reset the board by issuing a SW BOR
 #ifdef RUN_CALIBRATION
+
+	// Only reset the device in release mode
+#ifndef _DEBUG
 	PMM_trigBOR();
 	while(1);
+#endif
 #endif
 }
 
