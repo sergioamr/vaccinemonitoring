@@ -35,6 +35,7 @@ extern struct tm currTime;
 extern int8_t iSignalLevel;
 extern uint8_t iBatteryLevel;
 extern char signal_gprs;
+extern char gprs_network_indication;
 
 extern void ConvertADCToTemperature(int32_t ADCval, char* TemperatureVal,
 		int8_t iSensorIdx);

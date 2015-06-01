@@ -356,10 +356,13 @@ void modem_init() {
 #endif
 
 	modem_pull_time();
+	// Have to call twice to guarantee a genuine result
+	modem_checkSignal();
 
 	lcd_print("Checking GPRS");
 	/// added for gprs connection..//
 	signal_gprs = dopost_gprs_connection_status(GPRS);
+	gprs_network_indication = dopost_gprs_connection_status(GSM);
 
 	// Disable echo from modem
 	uart_tx("ATE0\r\n");
