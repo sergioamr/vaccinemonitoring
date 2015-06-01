@@ -8,7 +8,7 @@
 #ifndef TEMPSENSOR_V1_STRINGUTILS_H_
 #define TEMPSENSOR_V1_STRINGUTILS_H_
 
-extern char* itoa_withpadding(int num);
+extern char* itoa_pad(int num);
 extern char* itoa_nopadding(int num);
 
 extern int _outc(char c, void *_op);

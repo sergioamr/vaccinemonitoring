@@ -84,16 +84,16 @@ void lcd_show(int8_t iItemId) {
 	memset(lcdBuffer, 0, LCD_DISPLAY_LEN);
 	//get local time
 	rtc_getlocal(&currTime);
-	strcat(lcdBuffer, itoa_withpadding(currTime.tm_year));
+	strcat(lcdBuffer, itoa_pad(currTime.tm_year));
 	strcat(lcdBuffer, "/");
-	strcat(lcdBuffer, itoa_withpadding(currTime.tm_mon));
+	strcat(lcdBuffer, itoa_pad(currTime.tm_mon));
 	strcat(lcdBuffer, "/");
-	strcat(lcdBuffer, itoa_withpadding(currTime.tm_mday));
+	strcat(lcdBuffer, itoa_pad(currTime.tm_mday));
 	strcat(lcdBuffer, " ");
 
-	strcat(lcdBuffer, itoa_withpadding(currTime.tm_hour));
+	strcat(lcdBuffer, itoa_pad(currTime.tm_hour));
 	strcat(lcdBuffer, ":");
-	strcat(lcdBuffer, itoa_withpadding(currTime.tm_min));
+	strcat(lcdBuffer, itoa_pad(currTime.tm_min));
 	iIdx = strlen(lcdBuffer); //marker
 
 	switch (iItemId) {
@@ -102,7 +102,7 @@ void lcd_show(int8_t iItemId) {
 		ConvertADCToTemperature(ADCvar[1], &Temperature[1][0], 1);
 		strcat(lcdBuffer, Temperature[1]);
 		strcat(lcdBuffer, "C ");
-		strcat(lcdBuffer, itoa_withpadding(iBatteryLevel));
+		strcat(lcdBuffer, itoa_pad(iBatteryLevel));
 		strcat(lcdBuffer, "% ");
 		//  if(signal_gprs==1){
 		if ((iSignalLevel >= NETWORK_DOWN_SS)
@@ -116,7 +116,7 @@ void lcd_show(int8_t iItemId) {
 			local_signal = iSignalLevel;
 			local_signal = (((local_signal - NETWORK_ZERO)
 					/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
-			strcat(lcdBuffer, itoa_withpadding(local_signal));
+			strcat(lcdBuffer, itoa_pad(local_signal));
 			strcat(lcdBuffer, "%");
 		} else {
 			strcat(lcdBuffer, "S --  ");
@@ -146,7 +146,7 @@ void lcd_show(int8_t iItemId) {
 		case 5: iCnt = 0xff;
 #endif
 
-		strcat(lcdBuffer, itoa_withpadding(iBatteryLevel));
+		strcat(lcdBuffer, itoa_pad(iBatteryLevel));
 		strcat(lcdBuffer, "% ");
 		if (TEMP_ALARM_GET(MAX_NUM_SENSORS) == TEMP_ALERT_CNF) {
 			strcat(lcdBuffer, "BATT ALERT");
@@ -172,7 +172,7 @@ void lcd_show(int8_t iItemId) {
 				local_signal = iSignalLevel;
 				local_signal = (((local_signal - NETWORK_ZERO)
 						/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
-				strcat(lcdBuffer, itoa_withpadding(local_signal));
+				strcat(lcdBuffer, itoa_pad(local_signal));
 				strcat(lcdBuffer, "% ");
 				if (signal_gprs == 1) {
 					strcat(lcdBuffer, "G:YES");
@@ -195,7 +195,7 @@ void lcd_show(int8_t iItemId) {
 				local_signal = iSignalLevel;
 				local_signal = (((local_signal - NETWORK_ZERO)
 						/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
-				strcat(lcdBuffer, itoa_withpadding(local_signal));
+				strcat(lcdBuffer, itoa_pad(local_signal));
 				strcat(lcdBuffer, "% ");
 				if (signal_gprs == 1) {
 					strcat(lcdBuffer, "G:YES");

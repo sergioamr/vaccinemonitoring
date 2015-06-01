@@ -18,7 +18,8 @@
 
 // AT Messages returns to check.
 char AT_MSG_OK[]={ 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
-char AT_MSG_PROMPT[]={ 0x0D, 0x0A, '>', 0};
+char AT_MSG_PROMPT[]={ 0x0D, 0x0A, '>', 0};	// Used for SMS message sending
+char AT_MSG_LONG_PROMPT[]={ 0x0D, 0x0A, '>','>','>', 0};  // Used for http post transactions
 char AT_CME_ERROR[]= "+CME ERROR:";
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
@@ -296,10 +297,9 @@ void uart_tx_nowait(const char *cmd) {
 	sendCommand(cmd);
 }
 
-uint8_t uart_tx_waitForPrompt(const char *cmd) {
-	uart_setPromptMode();
+uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime) {
 	sendCommand(cmd);
-	if (!waitForReady(5000)) {
+	if (!waitForReady(promptTime)) {
 		uart_setOKMode();
 		return 1; // We found a prompt
 	}
@@ -758,7 +758,11 @@ int searchtoken(char* pToken, char** ppTokenPos) {
 	return ret;
 }
 
-void uart_setPromptMode() {
+void uart_setHTTPPromptMode() {
+	uart_setCheckMsg(AT_MSG_LONG_PROMPT, AT_CME_ERROR);
+}
+
+void uart_setSMSPromptMode() {
 	uart_setCheckMsg(AT_MSG_PROMPT, AT_CME_ERROR);
 }
 

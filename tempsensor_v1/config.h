@@ -143,7 +143,7 @@ double	   calibration[MAX_NUM_SENSORS][2];
 
 #define COMMAND_END 99
 
-extern void config_Init();
+extern void config_init();
 extern void config_setLastCommand(uint16_t lastCmd);
 extern void config_incLastCmd();
 

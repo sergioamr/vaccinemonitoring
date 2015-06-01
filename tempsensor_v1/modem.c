@@ -94,15 +94,9 @@ void modem_getIMEI() {
 
 }
 
-void modem_getSimCardInfo() {
+void modem_getExtraInfo() {
 
-	modem_getSMSCenter();
 	modem_getIMEI();
-
-#ifndef _DEBUG
-	modem_surveyNetwork();
-#endif
-
 	delay(100);
 }
 
@@ -241,7 +235,13 @@ void modem_init() {
 	uart_tx("AT&P0\r\n");
 	uart_tx("AT&W0\r\n");
 	uart_tx("AT+CSDH=1\r\n");
-	delay(1000);		//some time to enable SMS,POST to work
+
+	modem_getSMSCenter();
+	modem_checkSignal();
+
+#ifndef _DEBUG
+	modem_surveyNetwork();
+#endif
 
 	config_incLastCmd();
 }

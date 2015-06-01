@@ -346,7 +346,7 @@ int main_calibration(void) {
 	if (iStatus & MODEM_POWERED_ON)
 	for (t = 0; t < NUM_SMS_TESTS; t++) {
 		modem_init();
-		modem_getSimCardInfo();
+		modem_getExtraInfo();
 #if 1
 		sprintf(ATresponse, "IMEI %s Calibration test %d for %s ",
 				g_pInfoA->cfgIMEI, t, g_pInfoA->cfgSMSCenter[iSlot]);

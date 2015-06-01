@@ -46,7 +46,8 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 	strcat(pData, ctrlZ);
 
 	sprintf(g_szTemp, "AT+CMGS=\"%s\",129\r\n", szPhoneNumber);
-	if (uart_tx_waitForPrompt(g_szTemp)) {
+	uart_setSMSPromptMode();
+	if (uart_tx_waitForPrompt(g_szTemp, TIMEOUT_CMGS_PROMPT)) {
 		uart_tx_timeout(pData, TIMEOUT_CMGS, 1);
 
 		// TODO Check if ok or RXBuffer contains Error
@@ -55,6 +56,8 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 	}
 
 	if (res == UART_SUCCESS) {
+		lcd_clear();
+		lcd_print_lne(LINE1, "SMS Confirmation");
 		lcd_print_ext(LINE2, "MSG %d ", msgNumber);
 		_NOP();
 	} else if (res == UART_ERROR) {

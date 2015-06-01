@@ -30,7 +30,7 @@ int _outs(char *s, void *_op, int len)
 }
 
 
-char* itoa_withpadding(int num) {
+char* itoa_pad(int num) {
 	uint8_t digit = 0;
 	uint8_t iIdx = 0;
 	uint8_t iCnt = 0;

@@ -56,10 +56,10 @@ extern int iRxLen;
 extern volatile char RXBuffer[RX_LEN+1];
 
 extern void uart_setOKMode();
-extern uint8_t uart_tx_waitForPrompt(const char *cmd);
 
 extern void uart_setClock(); // Initializes the speed and the bauds of the UCA0
-extern void uart_setPromptMode();
+extern void uart_setHTTPPromptMode();
+extern void uart_setSMSPromptMode();
 
 //*****************************************************************************
 // Set tail and head to 0 for easy parsing.
@@ -89,6 +89,7 @@ extern void uart_setDelayIntervalDivider(uint8_t divider);
 extern uint8_t uart_tx(const char* pTxData);
 extern uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts);
 extern void uart_tx_nowait(const char *cmd);
+extern uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime);
 
 //*****************************************************************************
 //

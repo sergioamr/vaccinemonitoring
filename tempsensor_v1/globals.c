@@ -34,7 +34,7 @@ char SensorName[MAX_NUM_SENSORS][NAME_LEN] = { "A", "B", "C", "D", "E" };
 uint8_t SensorDisplayName[MAX_NUM_SENSORS] = { 0xA, 0xB, 0xC, 0xD, 0xE };
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
-char acLogData[FILE_BUFFER_LEN];
+char szLog[FILE_BUFFER_LEN];
 #pragma SET_DATA_SECTION()
 
 #pragma SET_DATA_SECTION(".config_vars_infoC")

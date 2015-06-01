@@ -20,7 +20,7 @@ int8_t modem_exit_powersave_mode();
 
 extern void modem_checkSignal();
 extern void modem_init();
-extern void modem_getSimCardInfo();
+extern void modem_getExtraInfo();
 extern void modem_surveyNetwork();
 
 #endif /* TEMPSENSOR_V1_MODEM_H_ */

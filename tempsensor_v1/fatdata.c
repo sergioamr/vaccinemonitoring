@@ -28,8 +28,8 @@ char* getYMDString(struct tm* timeData) {
 	else
 		strcpy(szYMDString, itoa_nopadding(timeData->tm_year));
 
-	strcat(szYMDString, itoa_withpadding(timeData->tm_mon + 1));
-	strcat(szYMDString, itoa_withpadding(timeData->tm_mday));
+	strcat(szYMDString, itoa_pad(timeData->tm_mon + 1));
+	strcat(szYMDString, itoa_pad(timeData->tm_mday));
 	return szYMDString;
 }
 
@@ -77,6 +77,7 @@ FRESULT log_append_text(char *text) {
 
 	FIL fobj;
 	int bw = 0;	//bytes written
+	int t = 0;
 
 	fr = f_open(&fobj, LOG_FILE_PATH,
 			FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
@@ -91,16 +92,25 @@ FRESULT log_append_text(char *text) {
 	}
 
 	rtc_get(&currTime);
-	strcat(acLogData, getYMDString(&currTime));
-	strcat(acLogData, " ");
-	strcpy(acLogData, itoa_withpadding(currTime.tm_hour));
-	strcat(acLogData, itoa_withpadding(currTime.tm_min));
-	strcat(acLogData, itoa_withpadding(currTime.tm_sec));
-	strcat(acLogData, " ");
-	strcat(acLogData, text);
-	strcat(acLogData, "\r\n");
 
-	fr = f_write(&fobj, acLogData, strlen(acLogData), (UINT *) &bw);
+	strcpy(szLog,"[");
+	if (currTime.tm_year>2000) {
+		strcat(szLog,getYMDString(&currTime));
+		strcat(szLog," ");
+		strcat(szLog, itoa_pad(currTime.tm_hour));
+		strcat(szLog, itoa_pad(currTime.tm_min));
+		strcat(szLog, itoa_pad(currTime.tm_sec));
+	} else {
+		for (t=0; t<13; t++) strcat(szLog, "*");
+	}
+	strcat(szLog,"]");
+
+	strcat(szLog, " ");
+	strcat(szLog, text);
+	strcat(szLog, "\r\n");
+
+
+	fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 
 	f_sync(&fobj);
 	return f_close(&fobj);
@@ -143,23 +153,23 @@ FRESULT log_sample_to_disk(int* tbw) {
 			rtc_get(&currTime);
 
 #if 1
-			memset(acLogData, 0, sizeof(acLogData));
-			strcat(acLogData, "$TS=");
-			strcat(acLogData, itoa_withpadding(currTime.tm_year));
-			strcat(acLogData, itoa_withpadding(currTime.tm_mon));
-			strcat(acLogData, itoa_withpadding(currTime.tm_mday));
-			strcat(acLogData, ":");
-			strcat(acLogData, itoa_withpadding(currTime.tm_hour));
-			strcat(acLogData, ":");
-			strcat(acLogData, itoa_withpadding(currTime.tm_min));
-			strcat(acLogData, ":");
-			strcat(acLogData, itoa_withpadding(currTime.tm_sec));
-			strcat(acLogData, ",");
-			strcat(acLogData, "R");	//removed =
-			strcat(acLogData, itoa_withpadding(g_iSamplePeriod));
-			strcat(acLogData, ",");
-			strcat(acLogData, "\n");
-			fr = f_write(&fobj, acLogData, strlen(acLogData), (UINT *) &bw);
+			memset(szLog, 0, sizeof(szLog));
+			strcat(szLog, "$TS=");
+			strcat(szLog, itoa_pad(currTime.tm_year));
+			strcat(szLog, itoa_pad(currTime.tm_mon));
+			strcat(szLog, itoa_pad(currTime.tm_mday));
+			strcat(szLog, ":");
+			strcat(szLog, itoa_pad(currTime.tm_hour));
+			strcat(szLog, ":");
+			strcat(szLog, itoa_pad(currTime.tm_min));
+			strcat(szLog, ":");
+			strcat(szLog, itoa_pad(currTime.tm_sec));
+			strcat(szLog, ",");
+			strcat(szLog, "R");	//removed =
+			strcat(szLog, itoa_pad(g_iSamplePeriod));
+			strcat(szLog, ",");
+			strcat(szLog, "\n");
+			fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 #else
 			bw = f_printf(fobj,"$TS=%04d%02d%02d:%02d:%02d:%02d,R=%d,", currTime.tm_year, currTime.tm_mon, currTime.tm_mday,
 					currTime.tm_hour, currTime.tm_min, currTime.tm_sec,g_iSamplePeriod);
@@ -180,33 +190,33 @@ FRESULT log_sample_to_disk(int* tbw) {
 #if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
 		//bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,E=%s,", iBatteryLevel,
 		//			  !(P4IN & BIT4),Temperature[0],Temperature[1],Temperature[2],Temperature[3],Temperature[4]);
-		memset(acLogData, 0, sizeof(acLogData));
-		strcat(acLogData, "F");
-		strcat(acLogData, itoa_withpadding(iBatteryLevel));
-		strcat(acLogData, ",");
-		strcat(acLogData, "P");
+		memset(szLog, 0, sizeof(szLog));
+		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,E%s,F%s\n", itoa_pad(iBatteryLevel), !(P4IN&BIT4), Temperature[0],Temperature[1],Temperature[2],Temperature[3],Temperature[4]);
+		/*
+		strcat(szLog, "F");
+		strcat(szLog, itoa_pad(iBatteryLevel));
+		strcat(szLog, ",");
+		strcat(szLog, "P");
 		if (P4IN & BIT4) {
-			strcat(acLogData, "0,");
+			strcat(szLog, "0,");
 		} else {
-			strcat(acLogData, "1,");
+			strcat(szLog, "1,");
 		}
-		strcat(acLogData, "A");
-		strcat(acLogData, Temperature[0]);
-		strcat(acLogData, ",");
-		strcat(acLogData, "B");
-		strcat(acLogData, Temperature[1]);
-		strcat(acLogData, ",");
-		strcat(acLogData, "C");
-		strcat(acLogData, Temperature[2]);
-		strcat(acLogData, ",");
-		strcat(acLogData, "D");
-		strcat(acLogData, Temperature[3]);
-		strcat(acLogData, ",");
-		strcat(acLogData, "E");
-		strcat(acLogData, Temperature[4]);
-		strcat(acLogData, ",");
-		strcat(acLogData, "\n");
-		fr = f_write(&fobj, acLogData, strlen(acLogData), (UINT *) &bw);
+		strcat(szLog, "A");
+		strcat(szLog, Temperature[0]);
+		strcat(szLog, ",B");
+		strcat(szLog, Temperature[1]);
+		strcat(szLog, ",C");
+		strcat(szLog, Temperature[2]);
+		strcat(szLog, ",D");
+		strcat(szLog, Temperature[3]);
+		strcat(szLog, ",E");
+		strcat(szLog, Temperature[4]);
+		strcat(szLog, ",");
+		strcat(szLog, "\n");
+		*/
+
+		fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 #else
 		bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,", iBatteryLevel,
 				!(P4IN & BIT4),Temperature[0],Temperature[1],Temperature[2],Temperature[3]);

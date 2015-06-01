@@ -11,5 +11,9 @@
 extern void dohttpsetup();
 extern void deactivatehttp();
 extern int doget();
+extern int dopost(char* postdata);
+extern int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
+		char* seperator, int8_t iFlagVal, char* pcExtSrc, int8_t iFieldSize);
+
 
 #endif /* TEMPSENSOR_V1_HTTP_H_ */

@@ -7,6 +7,7 @@
  */
 #define CONFIG_C_
 
+//#define RUN_CALIBRATION
 
 #include "thermalcanyon.h"
 #include "calib/calibration.h"
@@ -69,15 +70,15 @@ void config_setLastCommand(uint16_t lastCmd)  {
 	rtc_get(&currTime);
 
 	if (lastMin!=currTime.tm_min && lastSec!=currTime.tm_sec) {
-		strcpy(g_pSysCfg->lastCommandTime,itoa_withpadding(currTime.tm_hour));
+		strcpy(g_pSysCfg->lastCommandTime,itoa_pad(currTime.tm_hour));
 		strcat(g_pSysCfg->lastCommandTime,":");
-		strcpy(g_pSysCfg->lastCommandTime,itoa_withpadding(currTime.tm_min));
+		strcpy(g_pSysCfg->lastCommandTime,itoa_pad(currTime.tm_min));
 		strcat(g_pSysCfg->lastCommandTime,":");
-		strcat(g_pSysCfg->lastCommandTime,itoa_withpadding(currTime.tm_sec));
+		strcat(g_pSysCfg->lastCommandTime,itoa_pad(currTime.tm_sec));
 	}
 }
 
-void config_Init() {
+void config_init() {
 
 	if (g_pSysCfg->memoryInitialized != 0xFF
 			&& g_pSysCfg->memoryInitialized != 0x00) {

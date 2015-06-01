@@ -38,7 +38,7 @@ extern char signal_gprs;
 extern void ConvertADCToTemperature(unsigned int ADCval, char* TemperatureVal,
 		int8_t iSensorIdx);
 
-extern char acLogData[FILE_BUFFER_LEN];
+extern char szLog[FILE_BUFFER_LEN];
 
 //now moved to INFOD FRAM to optimize repeated temperature conversion
 extern struct tm currTime;
