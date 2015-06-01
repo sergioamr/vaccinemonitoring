@@ -11,6 +11,193 @@
 #define TS_SIZE				21
 #define TS_FIELD_OFFSET		1	//1 - $, 3 - $TS
 
+void data_upload_sms() {
+	char* pcData = NULL;
+	char* pcTmp = NULL;
+	char* pcSrc1 = NULL;
+	char* pcSrc2 = NULL;
+	int iIdx = 0;
+	int iPOSTstatus = 0;
+	char sensorId[2] = { 0, 0 };
+
+	iPOSTstatus = strlen(SampleData);
+
+	memset(sensorId, 0, sizeof(sensorId));
+	memset(ATresponse, 0, sizeof(ATresponse));
+	strcat(ATresponse, SMS_DATA_MSG_TYPE);
+
+	pcSrc1 = strstr(SampleData, "sdt=");	//start of TS
+	pcSrc2 = strstr(pcSrc1, "&");	//end of TS
+	pcTmp = strtok(&pcSrc1[4], "/:");
+
+	if ((pcTmp) && (pcTmp < pcSrc2)) {
+		strcat(ATresponse, pcTmp);	//get year
+		pcTmp = strtok(NULL, "/:");
+		if ((pcTmp) && (pcTmp < pcSrc2)) {
+			strcat(ATresponse, pcTmp);	//get month
+			pcTmp = strtok(NULL, "/:");
+			if ((pcTmp) && (pcTmp < pcSrc2)) {
+				strcat(ATresponse, pcTmp);	//get day
+				strcat(ATresponse, ":");
+			}
+		}
+
+		//fetch time
+		pcTmp = strtok(NULL, "/:");
+		if ((pcTmp) && (pcTmp < pcSrc2)) {
+			strcat(ATresponse, pcTmp);	//get hour
+			pcTmp = strtok(NULL, "/:");
+			if ((pcTmp) && (pcTmp < pcSrc2)) {
+				strcat(ATresponse, pcTmp);	//get minute
+				pcTmp = strtok(NULL, "&");
+				if ((pcTmp) && (pcTmp < pcSrc2)) {
+					strcat(ATresponse, pcTmp);	//get sec
+					strcat(ATresponse, ",");
+				}
+			}
+		}
+	}
+
+	pcSrc1 = strstr(pcSrc2 + 1, "i=");	//start of interval
+	pcSrc2 = strstr(pcSrc1, "&");	//end of interval
+	pcTmp = strtok(&pcSrc1[2], "&");
+	if ((pcTmp) && (pcTmp < pcSrc2)) {
+		strcat(ATresponse, pcTmp);
+		strcat(ATresponse, ",");
+	}
+
+	pcSrc1 = strstr(pcSrc2 + 1, "t=");	//start of temperature
+	pcData = strstr(pcSrc1, "&");	//end of temperature
+	pcSrc2 = strstr(pcSrc1, ",");
+	if ((pcSrc2) && (pcSrc2 < pcData)) {
+		iIdx = 0xA5A5;	//temperature has series values
+	} else {
+		iIdx = 0xDEAD;	//temperature has single value
+	}
+
+	//check if temperature values are in series
+	if (iIdx == 0xDEAD) {
+		//pcSrc1 is t=23.1|24.1|25.1|26.1|28.1
+		pcTmp = strtok(&pcSrc1[2], "|&");
+		for (iIdx = 0; (iIdx < MAX_NUM_SENSORS) && (pcTmp); iIdx++) {
+			sensorId[0] = iIdx + 0x30;
+			strcat(ATresponse, sensorId);	//add sensor id
+			strcat(ATresponse, ",");
+
+			//encode the temp value
+			memset(&ATresponse[SMS_ENCODED_LEN], 0, ENCODED_TEMP_LEN);
+			//check temp is --.- in case of sensor plugged out
+			if (pcTmp[1] != '-') {
+				pcSrc2 = &ATresponse[SMS_ENCODED_LEN]; //reuse
+				encode(strtod(pcTmp, NULL), pcSrc2);
+				strcat(ATresponse, pcSrc2);	//add encoded temp value
+			} else {
+				strcat(ATresponse, "/W");	//add encoded temp value
+			}
+			strcat(ATresponse, ",");
+
+			pcTmp = strtok(NULL, "|&");
+
+		}
+	} else {
+		iIdx = 0;
+		pcSrc2 = strstr(pcSrc1, "|");	//end of first sensor
+		if (!pcSrc2)
+			pcSrc2 = pcData;
+		pcTmp = strtok(&pcSrc1[2], ",|&");  //get first temp value
+
+		while ((pcTmp) && (pcTmp < pcSrc2)) {
+			sensorId[0] = iIdx + 0x30;
+			strcat(ATresponse, sensorId);	//add sensor id
+			strcat(ATresponse, ",");
+
+			//encode the temp value
+			memset(&ATresponse[SMS_ENCODED_LEN], 0, ENCODED_TEMP_LEN);
+			//check temp is --.- in case of sensor plugged out
+			if (pcTmp[1] != '-') {
+				pcSrc1 = &ATresponse[SMS_ENCODED_LEN]; //reuse
+				encode(strtod(pcTmp, NULL), pcSrc1);
+				strcat(ATresponse, pcSrc1);	//add encoded temp value
+			} else {
+				strcat(ATresponse, "/W");	//add encoded temp value
+			}
+
+			pcTmp = strtok(NULL, ",|&");
+			while ((pcTmp) && (pcTmp < pcSrc2)) {
+				//encode the temp value
+				memset(&ATresponse[SMS_ENCODED_LEN], 0, ENCODED_TEMP_LEN);
+				//check temp is --.- in case of sensor plugged out
+				if (pcTmp[1] != '-') {
+					pcSrc1 = &ATresponse[SMS_ENCODED_LEN]; //reuse
+					encode(strtod(pcTmp, NULL), pcSrc1);
+					strcat(ATresponse, pcSrc1);	//add encoded temp value
+				} else {
+					strcat(ATresponse, "/W");	//add encoded temp value
+				}
+				pcTmp = strtok(NULL, ",|&");
+
+			}
+
+			//check if we can start with next temp series
+			if ((pcTmp) && (pcTmp < pcData)) {
+				strcat(ATresponse, ",");
+				iIdx++;	//start with next sensor
+				pcSrc2 = strstr(&pcTmp[strlen(pcTmp) + 1], "|"); //adjust the last postion to next sensor end
+				if (!pcSrc2) {
+					//no more temperature series available
+					pcSrc2 = pcData;
+				}
+			}
+
+		}
+	}
+
+	pcSrc1 = pcTmp + strlen(pcTmp) + 1;	//pcTmp is b=yyy
+	//check if battery has series values
+	if (*pcSrc1 != 'p') {
+		pcSrc2 = strstr(pcSrc1, "&");	//end of battery
+		pcTmp = strtok(pcSrc1, "&");	//get all series values except the first
+		if ((pcTmp) && (pcTmp < pcSrc2)) {
+			strcat(ATresponse, ",");
+			pcSrc1 = strrchr(pcTmp, ','); //postion to the last battery level  (e.g pcTmp 100 or 100,100,..
+			if (pcSrc1) {
+				strcat(ATresponse, pcSrc1 + 1); //past the last comma
+			} else {
+				strcat(ATresponse, pcTmp); //no comma
+			}
+			strcat(ATresponse, ",");
+
+			pcSrc1 = strrchr(pcSrc2 + 1, ','); //postion to the last power plugged state
+			if ((pcSrc1) && (pcSrc1 < &SampleData[iPOSTstatus])) {
+				strcat(ATresponse, pcSrc1 + 1);
+			} else {
+				//power plugged does not have series values
+				pcTmp = pcSrc2 + 1;
+				strcat(ATresponse, &pcTmp[2]); //pcTmp contains p=yyy
+			}
+
+		}
+
+	} else {
+		//battery does not have series values
+		//strcat(ATresponse,",");
+		strcat(ATresponse, &pcTmp[2]); //pcTmp contains b=yyy
+
+		strcat(ATresponse, ",");
+		pcSrc2 = pcTmp + strlen(pcTmp);  //end of battery
+		pcSrc1 = strrchr(pcSrc2 + 1, ','); //postion to the last power plugged state
+		if ((pcSrc1) && (pcSrc1 < &SampleData[iPOSTstatus])) {
+			strcat(ATresponse, pcSrc1 + 1);	//last power plugged values is followed by null
+		} else {
+			//power plugged does not have series values
+			pcTmp = pcSrc2 + 1;
+			strcat(ATresponse, &pcTmp[2]); //pcTmp contains p=yyy
+		}
+
+	}
+	sendmsg(ATresponse);
+}
+
 int data_transmit(uint8_t *pSampleCnt) {
 	int iPOSTstatus = 0;
 
@@ -453,11 +640,10 @@ int data_transmit(uint8_t *pSampleCnt) {
 		}
 		//iTimeCnt = 0;
 		uart_tx("AT#SGACT=1,0\r\n");			//deactivate GPRS context
-		delay(MODEM_TX_DELAY2);
 
 		//if upload sms
 		delay(5000);			//opt sleep to get http post response
-		uploadsms();
+		data_upload_sms();
 		// added for sms retry and file pointer movement..//
 		file_pointer_enabled_sms_status = dopost_sms_status();
 		if ((file_pointer_enabled_sms_status)

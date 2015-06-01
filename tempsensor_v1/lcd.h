@@ -17,7 +17,7 @@
 
 // Time to display an error to a human
 #define HUMAN_DISPLAY_ERROR_DELAY 10000
-#define HUMAN_DISPLAY_INFO_DELAY 1000
+#define HUMAN_DISPLAY_INFO_DELAY 3000
 
 extern int g_iLCDVerbose;
 

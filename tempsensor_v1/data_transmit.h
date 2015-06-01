@@ -9,5 +9,5 @@
 #define DATA_TRANSMIT_H_
 
 extern int data_transmit(uint8_t *pSampleCnt);
-
+extern void data_uploadsms();
 #endif /* DATA_TRANSMIT_H_ */
