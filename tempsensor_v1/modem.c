@@ -30,13 +30,13 @@ void modem_swapSIM() {
 		//current sim slot is 1
 		//change to sim slot 2
 		g_pInfoA->cfgSIMSlot = 1;
-		lcd_print_lne("Switching SIM: 2", LINE2);
+		lcd_print_lne(LINE2, "Switching SIM: 2");
 		delay(100);
 	} else {
 		//current sim slot is 2
 		//change to sim slot 1
 		g_pInfoA->cfgSIMSlot = 0;
-		lcd_print_lne("Switching SIM: 1", LINE2);
+		lcd_print_lne(LINE2,"Switching SIM: 1");
 		delay(100);
 	}
 
