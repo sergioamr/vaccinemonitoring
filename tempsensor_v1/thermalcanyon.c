@@ -192,6 +192,9 @@ int main(void) {
 	sms_send_heart_beat();
 
 	iBatteryLevel=batt_check_level();
+		modem_pull_time();
+		modem_checkSignal();
+		modem_getSMSCenter();
 
 	iUploadTimeElapsed = iMinuteTick;		//initialize POST minute counter
 	iSampleTimeElapsed = iMinuteTick;
@@ -264,20 +267,11 @@ int main(void) {
 			if (iStatus & NETWORK_DOWN) {
 				delay(2000);//additional delay to enable ADC conversion to complete
 				//check for signal strength
-				modem_pull_time();
-				uart_resetbuffer();
-				uart_tx("AT+CSQ\r\n");
-				delay(MODEM_TX_DELAY1);
-				memset(ATresponse, 0, sizeof(ATresponse));
-				uart_rx(ATCMD_CSQ, ATresponse);
-				if (ATresponse[0] != 0) {
-					iSignalLevel = strtol(ATresponse, 0, 10);
-				}
 
-				if ((iSignalLevel > NETWORK_UP_SS)
+				modem_pull_time();
+				modem_checkSignal();
+				if ((iSignalLevel > NETWORK_DOWN_SS)
 						&& (iSignalLevel < NETWORK_MAX_SS)) {
-					//update the network state
-					iStatus &= ~NETWORK_DOWN;
 					//send heartbeat
 					sms_send_heart_beat();
 				}
@@ -292,14 +286,7 @@ int main(void) {
 			lcd_print_lne(LINE1, "Configuring...");
 			delay(100);
 
-			//update the signal strength
-			uart_tx("AT+CSQ\r\n");
-			uart_rx_cleanBuf(ATCMD_CSQ, ATresponse, sizeof(ATresponse));
-
-			if (ATresponse[0] != 0) {
-				iSignalLevel = strtol(ATresponse, 0, 10);
-			}
-
+			modem_checkSignal();
 			signal_gprs = dopost_gprs_connection_status(GPRS);
 
 			iIdx = 0;

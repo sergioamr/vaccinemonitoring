@@ -25,5 +25,6 @@ extern void modem_survey_network();
 extern void modem_swapSIM();
 extern void modem_pull_time();
 extern int8_t modem_first_init();
+extern void modem_getSMSCenter();
 
 #endif /* TEMPSENSOR_V1_MODEM_H_ */

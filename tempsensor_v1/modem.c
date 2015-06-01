@@ -94,11 +94,11 @@ void modem_checkSignal() {
 	uart_rx_cleanBuf(ATCMD_CSQ, ATresponse, sizeof(ATresponse));
 	if (ATresponse[0] != 0) {
 		iSignalLevel = strtol(ATresponse, 0, 10);
-		if ((iSignalLevel <= NETWORK_DOWN_SS)
-				|| (iSignalLevel >= NETWORK_MAX_SS)) {
-			signal_gprs = 0;
+		if ((iSignalLevel < NETWORK_DOWN_SS)
+				|| (iSignalLevel > NETWORK_MAX_SS)) {
+			iStatus |= NETWORK_DOWN;
 		} else {
-			signal_gprs = 1;
+			iStatus &= ~NETWORK_DOWN;
 		}
 	}
 }
@@ -157,7 +157,6 @@ void modem_getIMEI() {
 }
 
 void modem_getExtraInfo() {
-
 	modem_getIMEI();
 	delay(100);
 }
