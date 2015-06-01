@@ -198,9 +198,6 @@ int main(void) {
 	sms_send_heart_beat();
 
 	iBatteryLevel=batt_check_level();
-	modem_pull_time();
-	modem_checkSignal();
-	modem_getSMSCenter();
 
 	iUploadTimeElapsed = iMinuteTick;		//initialize POST minute counter
 	iSampleTimeElapsed = iMinuteTick;
