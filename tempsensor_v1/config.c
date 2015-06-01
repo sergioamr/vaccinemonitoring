@@ -51,10 +51,6 @@ void calibrate_device() {
 	config_setLastCommand(COMMAND_CALIBRATION);
 
 	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
-	lcd_clear();
-	lcd_print_ext(LINE1, "Service Mode");
-	lcd_print_lne(LINE2, g_pSysCfg->firmwareVersion); // Show the firmware version
-	delay(HUMAN_DISPLAY_INFO_DELAY);
 
 	main_calibration();
 #endif
@@ -102,13 +98,18 @@ void config_setup_extra_button() {
 
 void config_init() {
 
-	// Check if the user is pressing the service mode
-	// Service Button was pressed during bootup. Rerun calibration
-	if (switch_check_service_pressed())
-		g_pSysCfg->calibrationFinished=0;
-
 	if (g_pSysCfg->memoryInitialized != 0xFF
 			&& g_pSysCfg->memoryInitialized != 0x00) {
+
+		// Check if the user is pressing the service mode
+		// Service Button was pressed during bootup. Rerun calibration
+		if (switch_check_service_pressed()) {
+			lcd_clear();
+			lcd_print_ext(LINE1, "Service Mode");
+			lcd_print_lne(LINE2, g_pSysCfg->firmwareVersion); // Show the firmware version
+			delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
+			g_pSysCfg->calibrationFinished=0;
+		}
 
 		// Data structure changed, something failed.
 		// Check firmware version?
@@ -152,6 +153,11 @@ void config_init() {
 	g_pSysCfg->maxATResponse=0;
 	g_pSysCfg->maxRXBuffer=0;
 	g_pSysCfg->maxTXBuffer=0;
+
+	lcd_clear();
+	lcd_print_ext(LINE1, "CONFIG MODE");
+	lcd_print_lne(LINE2, g_pSysCfg->firmwareVersion); // Show the firmware version
+	delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 
 	// First initalization, calibration code.
 	calibrate_device();
