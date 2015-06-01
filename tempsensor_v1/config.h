@@ -102,6 +102,7 @@ int8_t					cfgSIMSlot;
 TEMP_ALERT_PARAM		stTempAlertParams[MAX_NUM_SENSORS];
 BATT_POWER_ALERT_PARAM	stBattPowerAlertParam;
 char    				cfgIMEI[IMEI_MAX_LEN + 1];
+char    				cfgGateway[GW_MAX_LEN + 1];
 char    				cfgSMSCenter[NUM_SIM_CARDS][GW_MAX_LEN + 1]; // Service Message Center number
 char    				cfgAPN[NUM_SIM_CARDS][APN_MAX_LEN + 1];
 uint16_t 				iCfgMCC[NUM_SIM_CARDS];

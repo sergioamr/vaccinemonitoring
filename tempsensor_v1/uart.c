@@ -393,7 +393,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 		switch (atCMD) {
 		case ATCMD_GPIO:
 			return UART_SUCCESS;
-			break;
 		case ATCMD_CSURVC:
 			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "ERROR");
 			if (pToken1 != NULL)

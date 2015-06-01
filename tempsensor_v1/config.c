@@ -118,6 +118,7 @@ void config_init() {
 
 	// Setup InfoA config data
 	g_pInfoA->cfgSIMSlot=0;
+	strcpy(g_pInfoA->cfgGateway,SMS_NEXLEAF_GATEWAY); // Gateway to nextleaf
 
 	// Init System internals
 

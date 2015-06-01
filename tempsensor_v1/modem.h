@@ -22,7 +22,7 @@ extern void modem_checkSignal();
 extern void modem_init();
 extern void modem_getExtraInfo();
 extern void modem_survey_network();
-extern void modem_swapSIM();
+extern void modem_swap_SIM();
 extern void modem_pull_time();
 extern int8_t modem_first_init();
 extern void modem_getSMSCenter();

@@ -195,7 +195,6 @@ int main(void) {
 	if (modem_first_init()!=1) {
 		_NOP(); // Modem failed to power on
 	};
-	sms_send_heart_beat();
 
 	iBatteryLevel=batt_check_level();
 
@@ -313,7 +312,7 @@ int main(void) {
 			}
 
 			if (iIdx == MODEM_CHECK_RETRY) {
-				modem_swapSIM();
+				modem_swap_SIM();
 			}
 
 			//sms config reception and processing

@@ -48,9 +48,9 @@ int8_t modem_first_init() {
 	}
 
 	if (iStatus & MODEM_POWERED_ON) {
-		modem_init();
-		modem_getExtraInfo();
-		lcd_print_lne(LINE2, "Success");
+		modem_swap_SIM(); // Send hearbeat from SIM
+		modem_swap_SIM();
+		lcd_print_lne(LINE2, "Success      ");
 
 		//heartbeat
 		for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
@@ -58,31 +58,20 @@ int8_t modem_first_init() {
 			ConvertADCToTemperature(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
 		}
 	} else {
-		lcd_print_lne(LINE2, "Failed");
+		lcd_print_lne(LINE2, "Failed      ");
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	}
 
 	return iStatus;
 }
 
-void modem_swapSIM() {
+void modem_swap_SIM() {
 	config_incLastCmd();
-
-	if (g_pInfoA->cfgSIMSlot != 1) {
-		//current sim slot is 1
-		//change to sim slot 2
-		g_pInfoA->cfgSIMSlot = 1;
-		lcd_print_lne(LINE2, "Switching SIM: 2");
-		delay(100);
-	} else {
-		//current sim slot is 2
-		//change to sim slot 1
-		g_pInfoA->cfgSIMSlot = 0;
-		lcd_print_lne(LINE2, "Switching SIM: 1");
-		delay(100);
-	}
-
+	g_pInfoA->cfgSIMSlot = !g_pInfoA->cfgSIMSlot;
+	lcd_print_ext(LINE2, "Activate SIM: %d", g_pInfoA->cfgSIMSlot+1);
 	modem_init();
+	modem_getExtraInfo();
+	sms_send_heart_beat();
 }
 
 void modem_checkSignal() {
@@ -118,9 +107,8 @@ void modem_getSMSCenter() {
 	if (uart_rx_cleanBuf(ATCMD_CSCA, ATresponse,
 			sizeof(ATresponse))==UART_SUCCESS) {
 
-		memcpy(&g_pInfoA->cfgSMSCenter[slot][0], ATresponse,
+		memcpy(g_pInfoA->cfgSMSCenter[slot], ATresponse,
 				strlen(ATresponse));
-
 	}
 }
 

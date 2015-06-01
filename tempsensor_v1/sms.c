@@ -276,11 +276,9 @@ void sms_send_heart_beat() {
 	} else {
 		strcat(SampleData, "0,");
 	}
+	strcat(SampleData, &g_pInfoA->cfgGateway[0]);
+	strcat(SampleData, ",");
 	strcat(SampleData, &g_pInfoA->cfgSMSCenter[slot][0]);
-	strcat(SampleData, ",");
-	strcat(SampleData, itoa_nopadding(g_pInfoA->iCfgMCC[slot]));
-	strcat(SampleData, ",");
-	strcat(SampleData, itoa_nopadding(g_pInfoA->iCfgMNC[slot]));
 	strcat(SampleData, ",");
 	for (i = 0; i < MAX_NUM_SENSORS; i++) {
 		if(Temperature[i][0] == '-') {
@@ -298,9 +296,14 @@ void sms_send_heart_beat() {
 		strcat(SampleData, ",1");
 	}
 
+	// Attach Fimware release date
+	strcat(SampleData, ",");
+	strcat(SampleData, g_pSysCfg->firmwareVersion);
 #ifdef _DEBUG
-	strcat(SampleData, ",(db)" __TIME__);
+	strcat(SampleData, " dev");
 #endif
+	strcat(SampleData, "");
+
 	sendmsg(SampleData);
 }
 
@@ -320,7 +323,7 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_clear();
-		lcd_print_lne(LINE1, "Sync SMS To ");
+		lcd_print_ext(LINE1, "SYNC SMS %d TO:", g_pInfoA->cfgSIMSlot+1);
 		lcd_print_lne(LINE2, szPhoneNumber);
 	}
 
