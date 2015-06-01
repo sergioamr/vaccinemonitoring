@@ -225,6 +225,8 @@ int main(void) {
 		sms_send_heart_beat();
 	}
 
+	// Battery checks
+	lcd_clear();
 	lcd_print("Battery check");
 
 #ifndef BATTERY_DISABLED
@@ -234,17 +236,18 @@ int main(void) {
 #endif
 
 	if (iBatteryLevel == 0)
-		lcd_print("Battery FAIL");
+		lcd_print_lne(LINE2, "Battery FAIL");
 	else if (iBatteryLevel > 100)
-		lcd_print("Battery UNKNOWN");
+		lcd_print_lne(LINE2, "Battery UNKNOWN");
 	else if (iBatteryLevel > 99)
-		lcd_print("Battery FULL");
+		lcd_print_lne(LINE2, "Battery FULL");
 	else if (iBatteryLevel > 15)
-		lcd_print("Battery OK");
+		lcd_print_lne(LINE2, "Battery OK");
 	else if (iBatteryLevel)
-		lcd_print("Battery LOW");
+		lcd_print_lne(LINE2, "Battery LOW");
 
-	delay(1000);
+	if (iBatteryLevel<15 || iBatteryLevel>100)
+		delay(10000); // Delay to display that there is a state to show
 
 	//get the last read offset from FRAM
 	if (g_pInfoB->dwLastSeek > 0) {
@@ -304,6 +307,7 @@ int main(void) {
 					|| (iStatus & TEST_FLAG) || (iStatus & BACKLOG_UPLOAD_ON)
 					|| (iStatus & ALERT_UPLOAD_ON))
 					&& !(iStatus & NETWORK_DOWN)) {
+
 				lcd_print_lne(LINE2, "Transmitting....");
 				//iStatus &= ~TEST_FLAG;
 #ifdef SMS_ALERT
@@ -1015,47 +1019,6 @@ void ConvertADCToTemperature(int32_t ADCval, char* TemperatureVal,
 	}
 
 }
-
-#if 0
-//------------------------------------------------------------------------------
-// The USCIAB0TX_ISR is structured such that it can be used to transmit any
-// number of bytes by pre-loading TXByteCtr with the byte count. Also, TXData
-// points to the next byte to transmit.
-//------------------------------------------------------------------------------
-#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
-#pragma vector=USCI_B0_VECTOR
-__interrupt
-#elif defined(__GNUC__)
-__attribute__((interrupt(USCI_B0_VECTOR)))
-#endif
-void USCIB0_ISR(void)
-{
-	switch(__even_in_range(UCB0IV,0x1E))
-	{
-		case 0x00: break;                      // Vector 0: No interrupts break;
-		case 0x02: break;
-		case 0x04:
-		//resend start if NACK
-		EUSCI_B_I2C_masterSendStart(EUSCI_B0_BASE);
-		break;// Vector 4: NACKIFG break;
-		case 0x18:
-		if(TXByteCtr)// Check TX byte counter
-		{
-			EUSCI_B_I2C_masterMultiByteSendNext(EUSCI_B0_BASE,
-					TXData);
-			TXByteCtr--;                        // Decrement TX byte counter
-		}
-		else
-		{
-			EUSCI_B_I2C_masterMultiByteSendStop(EUSCI_B0_BASE);
-
-			__bic_SR_register_on_exit(CPUOFF);    // Exit LPM0
-		}
-		break;                                // Vector 26: TXIFG0 break;
-		default: break;
-	}
-}
-#endif
 
 float ConvertoTemp(float R) {
 	float A1 = 0.00335, B1 = 0.0002565, C1 = 0.0000026059, D1 = 0.00000006329,
