@@ -329,21 +329,21 @@ int main_calibration(void) {
 #endif
 
 #ifdef SMS_TEST
-	int8_t iStatus = 0;
+	int8_t g_iStatus = 0;
 	iIdx = 0;
 
 	//check Modem is powered on
 	for (iIdx = 0; iIdx < MODEM_CHECK_RETRY; iIdx++) {
 		if ((P4IN & BIT0) == 0) {
-			iStatus |= MODEM_POWERED_ON;
+			g_iStatus |= MODEM_POWERED_ON;
 			break;
 		} else {
-			iStatus &= ~MODEM_POWERED_ON;
+			g_iStatus &= ~MODEM_POWERED_ON;
 			delay(100);
 		}
 	}
 
-	if (iStatus & MODEM_POWERED_ON)
+	if (g_iStatus & MODEM_POWERED_ON)
 	for (t = 0; t < NUM_SMS_TESTS; t++) {
 		modem_init();
 		modem_getSimCardInfo();
@@ -649,16 +649,16 @@ void processmsg_local(char* pSMSmsg) {
 
 				if (pcTmp) {
 					if (strtol(pcTmp, 0, 10)) {
-						iStatus |= RESET_ALERT;
+						g_iStatus |= RESET_ALERT;
 					} else {
-						iStatus &= ~RESET_ALERT;
+						g_iStatus &= ~RESET_ALERT;
 					}
 					pcTmp = strtok(NULL, ",");
 					if (pcTmp) {
 						if (strtol(pcTmp, 0, 10)) {
-							iStatus |= ENABLE_SLOT1;
+							g_iStatus |= ENABLE_SLOT1;
 						} else {
-							iStatus &= ~ENABLE_SLOT1;
+							g_iStatus &= ~ENABLE_SLOT1;
 						}
 					}
 				}

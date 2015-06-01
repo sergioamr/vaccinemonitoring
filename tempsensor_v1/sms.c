@@ -64,9 +64,9 @@ int8_t sms_process_msg(char* pSMSmsg) {
 
 					if (pcTmp) {
 						if (strtol(pcTmp, 0, 10)) {
-							iStatus |= RESET_ALERT;
+							g_iStatus |= RESET_ALERT;
 							//set buzzer OFF
-							iStatus &= ~BUZZER_ON;
+							g_iStatus &= ~BUZZER_ON;
 							//reset alarm state and counters
 							for (iCnt = 0; iCnt < MAX_NUM_SENSORS; iCnt++) {
 								//reset the alarm
@@ -75,18 +75,18 @@ int8_t sms_process_msg(char* pSMSmsg) {
 								g_iAlarmCnfCnt[iCnt] = 0;
 							}
 						} else {
-							iStatus &= ~RESET_ALERT;
+							g_iStatus &= ~RESET_ALERT;
 						}
 						pcTmp = strtok(NULL, ",");
 						if (pcTmp) {
 							if (strtol(pcTmp, 0, 10)) {
-								iStatus |= ENABLE_SECOND_SLOT;
+								g_iStatus |= ENABLE_SECOND_SLOT;
 								if (g_pInfoA->cfgSIMSlot == 0) {
 									g_pInfoA->cfgSIMSlot = 1;
 									modem_init();
 								}
 							} else {
-								iStatus &= ~ENABLE_SECOND_SLOT;
+								g_iStatus &= ~ENABLE_SECOND_SLOT;
 								if (g_pInfoA->cfgSIMSlot == 1) {
 									g_pInfoA->cfgSIMSlot = 0;
 									modem_init();
@@ -311,11 +311,11 @@ extern char* itoa_nopadding(int num);
 //#pragma SET_DATA_SECTION()
 
 uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
-
+	char szCmd[64];
 	uint16_t msgNumber=0;  // Validation number from the network returned by the CMGS command
 	int res=UART_ERROR;
 
-	if (iStatus & TEST_FLAG)
+	if (g_iStatus & TEST_FLAG)
 		return UART_SUCCESS;
 
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
@@ -327,9 +327,9 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 	lcd_disable_verbose();
 	strcat(pData, ctrlZ);
 
-	sprintf(g_szTemp, "AT+CMGS=\"%s\",129\r\n", szPhoneNumber);
+	sprintf(szCmd, "AT+CMGS=\"%s\",129\r\n", szPhoneNumber);
 	uart_setSMSPromptMode();
-	if (uart_tx_waitForPrompt(g_szTemp, TIMEOUT_CMGS_PROMPT)) {
+	if (uart_tx_waitForPrompt(szCmd, TIMEOUT_CMGS_PROMPT)) {
 		uart_tx_timeout(pData, TIMEOUT_CMGS, 1);
 
 		// TODO Check if ok or RXBuffer contains Error
@@ -357,20 +357,11 @@ uint8_t sendmsg(char* pData) {
 int recvmsg(int8_t iMsgIdx, char* pData) {
 	int ret = -1;
 
-	//reset the RX counters to reuse memory from POST DATA
-	RXTailIdx = RXHeadIdx = 0;
-	iRxLen = RX_LEN;
-	RXBuffer[RX_LEN] = 0; //null termination ... Outside the array??? wtf
-
 	//uart_tx("AT+CMGL=\"REC UNREAD\"\r\n");
 	//uart_tx("AT+CMGL=\"REC READ\"\r\n");
 	//uart_tx("AT+CMGL=\"ALL\"\r\n");
 
-	strcat(pData, "AT+CMGR="); //resuse to format CMGR (sms read)
-	strcat(pData, itoa_nopadding(iMsgIdx));
-	strcat(pData, "\r\n");
-	uart_tx(pData);
-	delay(1000);	//opt
+	uart_tx_ext("AT+CMGR=%d\r\n", iMsgIdx);
 	ret = uart_rx(ATCMD_CMGR, pData);	//copy RX to pData
 
 	RXTailIdx = RXHeadIdx = 0;
@@ -384,11 +375,9 @@ void delallmsg() {
 }
 
 void delmsg(int8_t iMsgIdx, char* pData) {
-
-	strcat(pData, "AT+CMGD=");
-	strcat(pData, itoa_nopadding(iMsgIdx));
-	strcat(pData, ",0\r\n");
-	uart_tx(pData);
+	char szCmd[64];
+	sprintf(szCmd, "AT+CMGD=%d,0\r\n",iMsgIdx);
+	uart_tx(szCmd);
 	delay(2000);	//opt
 }
 #endif

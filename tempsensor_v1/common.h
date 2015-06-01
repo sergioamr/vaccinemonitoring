@@ -122,6 +122,7 @@ extern "C"
 #define TEST_FLAG			0x0080
 #define BACKLOG_UPLOAD_ON	0x0100
 #define NETWORK_DOWN		0x0200
+#define SYSTEM_SETUP  		0x0400
 
 #define LOW_RANGE_MIN 		0
 #define LOW_RANGE_MAX 		10

@@ -17,6 +17,10 @@
 int g_iSamplePeriod = SAMPLE_PERIOD;
 int g_iUploadPeriod = UPLOAD_PERIOD;
 
+// Setup mode in which we are at the moment
+// Triggered by the Switch 3 button
+int8_t g_iSystemSetup = -1;
+
 #define RUN_CALIBRATION
 
 /************************** BEGIN CONFIGURATION MEMORY ****************************************/
@@ -83,6 +87,9 @@ void config_setLastCommand(uint16_t lastCmd)  {
 		strcat(g_pSysCfg->lastCommandTime,":");
 		strcat(g_pSysCfg->lastCommandTime,itoa_pad(currTime.tm_sec));
 	}
+}
+
+void config_setup_extra_button() {
 }
 
 void config_init() {

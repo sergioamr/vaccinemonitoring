@@ -15,6 +15,10 @@
 
 #define MAX_NUM_CONTINOUS_SAMPLES 10
 
+// Setup mode in which we are at the moment
+// Triggered by the Switch 3 button
+EXTERN int8_t g_iSystemSetup;
+
 //Temperature cut off
 #define TEMP_CUTOFF				-800		//-80 deg C
 #define MODEM_CHECK_RETRY 	3

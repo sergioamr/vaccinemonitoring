@@ -246,19 +246,19 @@ void lcd_progress_wait(uint16_t delayTime) {
 	}
 }
 
-int lcd_print_ext(int line, const char *_format, ...)
-{
+int lcd_print_ext(int line, const char *_format, ...) {
+	char szTemp[32];
     va_list _ap;
     int   rval;
     char *fptr = (char *)_format;
-    char *out_end = g_szTemp;
+    char *out_end = szTemp;
 
     va_start(_ap, _format);
     rval = __TI_printfi(&fptr, _ap, (void *)&out_end, _outc, _outs);
     va_end(_ap);
 
     *out_end = '\0';
-    lcd_print_lne(line, g_szTemp);
+    lcd_print_lne(line, szTemp);
     return (rval);
 }
 

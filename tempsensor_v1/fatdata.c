@@ -117,16 +117,18 @@ FRESULT log_append_text(char *text) {
 }
 
 FRESULT log_append(const char *_format, ...) {
+	char szTemp[128];
+
 	va_list _ap;
 	char *fptr = (char *) _format;
-	char *out_end = g_szTemp;
+	char *out_end = szTemp;
 
 	va_start(_ap, _format);
 	__TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs);
 	va_end(_ap);
 
 	*out_end = '\0';
-	return log_append_text(g_szTemp);
+	return log_append_text(szTemp);
 }
 
 FRESULT log_sample_to_disk(int* tbw) {
@@ -135,7 +137,7 @@ FRESULT log_sample_to_disk(int* tbw) {
 	int bw = 0;	//bytes written
 	char* fn = get_current_fileName(&currTime);
 
-	if (!(iStatus & TEST_FLAG)) {
+	if (!(g_iStatus & TEST_FLAG)) {
 		fr = f_open(&fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
 		if (fr == FR_OK) {
 			if (fobj.fsize) {
@@ -147,7 +149,7 @@ FRESULT log_sample_to_disk(int* tbw) {
 			return fr;
 		}
 
-		if (iStatus & LOG_TIME_STAMP) {
+		if (g_iStatus & LOG_TIME_STAMP) {
 			rtc_get(&currTime);
 
 #if 1
@@ -174,7 +176,7 @@ FRESULT log_sample_to_disk(int* tbw) {
 #endif
 			if (bw > 0) {
 				*tbw += bw;
-				iStatus &= ~LOG_TIME_STAMP;
+				g_iStatus &= ~LOG_TIME_STAMP;
 			}
 		}
 

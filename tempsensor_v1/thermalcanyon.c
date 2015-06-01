@@ -28,9 +28,9 @@
 
 #include "thermalcanyon.h"
 #include "data_transmit.h"
+#include "hardware_buttons.h"
 
 volatile char isConversionDone = 0;
-volatile uint8_t iDisplayId = 0;
 volatile int iSamplesRead = 0;
 
 _Sigfun * signal(int i, _Sigfun *proc) {
@@ -41,7 +41,7 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 // Setup Pinout for I2C, and SPI transactions.
 // http://www.ti.com/lit/ug/slau535a/slau535a.pdf
 
-void setupClock_IO() {
+void system_setupIO_clock() {
 	// Startup clock system with max DCO setting ~8MHz
 	CSCTL0_H = CSKEY >> 8;                    // Unlock clock registers
 	CSCTL1 = DCOFSEL_3 | DCORSEL;             // Set DCO to 8MHz
@@ -56,7 +56,7 @@ void setupClock_IO() {
 	CSCTL0_H = 0;                             // Lock CS registers
 }
 
-static void setupADC_IO() {
+static void ADC_setupIO() {
 
 	P1SELC |= BIT0 | BIT1;                    // Enable VEREF-,+
 	P1SELC |= BIT2;                           // Enable A/D channel A2
@@ -102,32 +102,32 @@ static void setupADC_IO() {
 
 }
 
-static void setupIO() {
-
-	// Configure GPIO
+static void system_setupIO_SPI_I2C() {
 	P2DIR |= BIT3;							// SPI CS
 	P2OUT |= BIT3;					// drive SPI CS high to deactive the chip
 	P2SEL1 |= BIT4 | BIT5 | BIT6;             // enable SPI CLK, SIMO, SOMI
 	PJSEL0 |= BIT4 | BIT5;                    // For XT1
 	P1SEL1 |= BIT6 | BIT7;					// Enable I2C SDA and CLK
+}
 
-	uart_setIO();
+static void setup_IO() {
 
-	P4IE |= BIT1;							// enable interrupt for button input
-	P2IE |= BIT2;							// enable interrupt for buzzer off
+	// Configure GPIO
+	system_setupIO_SPI_I2C();
+	uart_setupIO();
+	switchers_setupIO();
+
 	P3DIR |= BIT4;      						// Set P3.4 buzzer output
 
 	lcd_setupIO();
-
-	P2IE |= BIT2;							// enable interrupt for buzzer off
 
 	// Disable the GPIO power-on default high-impedance mode to activate
 	// previously configured port settings
 	PM5CTL0 &= ~LOCKLPM5;
 
-	setupClock_IO();
-	uart_setClock();
-	setupADC_IO();
+	system_setupIO_clock();
+	uart_setupIO_clock();
+	ADC_setupIO();
 
 #ifndef I2C_DISABLED
 	//i2c_init(EUSCI_B_I2C_SET_DATA_RATE_400KBPS);
@@ -135,6 +135,11 @@ static void setupIO() {
 #endif
 
 	__bis_SR_register(GIE);		//enable interrupt globally
+
+	// System Button was pressed during bootup. Rerun calibration
+	if (g_iSystemSetup==-1) {
+		_NOP();
+	}
 }
 
 /****************************************************************************/
@@ -149,10 +154,7 @@ int main(void) {
 
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 
-	setupIO();
-	config_init();// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
-
-	config_setLastCommand(COMMAND_BOOT);
+	setup_IO();
 
 	lcd_reset();
 	lcd_blenable();
@@ -162,6 +164,10 @@ int main(void) {
 #endif
 
 	lcd_init();
+
+	config_init();// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
+
+	config_setLastCommand(COMMAND_BOOT);
 
 	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
 	lcd_print_ext(LINE1, "Booting %d",
@@ -201,7 +207,7 @@ int main(void) {
 	iSMSRxPollElapsed = iMinuteTick;
 	iLCDShowElapsed = iMinuteTick;
 	iMsgRxPollElapsed = iMinuteTick;
-	iDisplayId = 0;
+	g_iDisplayId = 0;
 
 	// Init finished, we disabled the debugging display
 	lcd_disable_verbose();
@@ -210,8 +216,15 @@ int main(void) {
 	log_append("Finished Boot");
 
 	while (1) {
+
+		if (g_iStatus & SYSTEM_SETUP) {
+			lcd_clear();
+			lcd_print("RUN CALIBRATION?");
+			lcd_print("PRESS AGAIN TO RUN");
+		}
+
 		//check if conversion is complete
-		if ((isConversionDone) || (iStatus & TEST_FLAG)) {
+		if ((isConversionDone) || (g_iStatus & TEST_FLAG)) {
 			//convert the current sensor ADC value to temperature
 			for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
 				memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);
@@ -225,7 +238,7 @@ int main(void) {
 			if (fr == FR_OK) {
 				iSampleCnt++;
 				if (iSampleCnt >= MAX_NUM_CONTINOUS_SAMPLES) {
-					iStatus |= LOG_TIME_STAMP;
+					g_iStatus |= LOG_TIME_STAMP;
 					iSampleCnt = 0;
 				}
 			}
@@ -235,7 +248,7 @@ int main(void) {
 
 #ifdef SMS
 			memset(MSGData,0,sizeof(MSGData));
-			strcat(MSGData,SensorName[iDisplayId]);
+			strcat(MSGData,SensorName[g_iDisplayId]);
 			strcat(MSGData," ");
 			strcat(MSGData,Temperature);
 			sendmsg(MSGData);
@@ -244,12 +257,12 @@ int main(void) {
 			isConversionDone = 0;
 
 			if ((((iMinuteTick - iUploadTimeElapsed) >= g_iUploadPeriod)
-					|| (iStatus & TEST_FLAG) || (iStatus & BACKLOG_UPLOAD_ON)
-					|| (iStatus & ALERT_UPLOAD_ON))
-					&& !(iStatus & NETWORK_DOWN)) {
+					|| (g_iStatus & TEST_FLAG) || (g_iStatus & BACKLOG_UPLOAD_ON)
+					|| (g_iStatus & ALERT_UPLOAD_ON))
+					&& !(g_iStatus & NETWORK_DOWN)) {
 
 				data_transmit(&iSampleCnt);
-				lcd_show(iDisplayId);//remove the custom print (e.g transmitting)
+				lcd_show(g_iDisplayId);//remove the custom print (e.g transmitting)
 			}
 			P4IE |= BIT1;					// enable interrupt for button input
 		}
@@ -264,7 +277,7 @@ int main(void) {
 			sampletemp();
 			delay(2000);	//to allow the ADC conversion to complete
 
-			if (iStatus & NETWORK_DOWN) {
+			if (g_iStatus & NETWORK_DOWN) {
 				delay(2000);//additional delay to enable ADC conversion to complete
 				//check for signal strength
 
@@ -295,13 +308,13 @@ int main(void) {
 						|| ((iSignalLevel < NETWORK_DOWN_SS)
 								|| (iSignalLevel > NETWORK_MAX_SS))) {
 					lcd_print_lne(LINE2, "Signal lost...");
-					iStatus |= NETWORK_DOWN;
+					g_iStatus |= NETWORK_DOWN;
 					//iOffset = 0;  // Whyy??? whyyy?????
 					modem_init();
 					lcd_print_lne(LINE2, "Reconnecting...");
 					iIdx++;
 				} else {
-					iStatus &= ~NETWORK_DOWN;
+					g_iStatus &= ~NETWORK_DOWN;
 					break;
 				}
 			}
@@ -329,10 +342,10 @@ int main(void) {
 #endif
 
 #ifndef BUZZER_DISABLED
-		if(iStatus & BUZZER_ON)
+		if(g_iStatus & BUZZER_ON)
 		{
 			iIdx = 10;	//TODO fine-tune for 5 to 10 secs
-			while((iIdx--) && (iStatus & BUZZER_ON))
+			while((iIdx--) && (g_iStatus & BUZZER_ON))
 			{
 				P3OUT |= BIT4;
 				delayus(1);
@@ -343,22 +356,22 @@ int main(void) {
 #endif
 
 		if (((iMinuteTick - iLCDShowElapsed) >= LCD_REFRESH_INTERVAL)
-				|| (iLastDisplayId != iDisplayId)) {
-			iLastDisplayId = iDisplayId;
+				|| (iLastDisplayId != g_iDisplayId)) {
+			iLastDisplayId = g_iDisplayId;
 			iLCDShowElapsed = iMinuteTick;
-			lcd_show(iDisplayId);
+			lcd_show(g_iDisplayId);
 		}
 		//iTimeCnt++;
 
 #ifndef CALIBRATION
 		//process SMS messages if there is a gap of 2 mins before cfg processing or upload takes place
-		if ((iMinuteTick) && !(iStatus & BACKLOG_UPLOAD_ON)
+		if ((iMinuteTick) && !(g_iStatus & BACKLOG_UPLOAD_ON)
 				&& ((iMinuteTick - iSMSRxPollElapsed)
 						< (SMS_RX_POLL_INTERVAL - 2))
 				&& ((iMinuteTick - iUploadTimeElapsed) < (g_iUploadPeriod - 2))
 				&& ((iMinuteTick - iMsgRxPollElapsed) >= MSG_REFRESH_INTERVAL)) {
 
-			sms_process_messages(iMinuteTick, iDisplayId);
+			sms_process_messages(iMinuteTick, g_iDisplayId);
 		}
 
 		//low power behavior
@@ -374,8 +387,8 @@ int main(void) {
 
 			//loop for charger pluging
 			while (iBatteryLevel <= 10) {
-				if (iLastDisplayId != iDisplayId) {
-					iLastDisplayId = iDisplayId;
+				if (iLastDisplayId != g_iDisplayId) {
+					iLastDisplayId = g_iDisplayId;
 					//enable backlight
 					lcd_blenable();
 					//lcd reset
@@ -396,8 +409,8 @@ int main(void) {
 					lcd_on();
 					lcd_print("Starting...");
 					modem_init();
-					iLastDisplayId = iDisplayId = 0;
-					lcd_show(iDisplayId);
+					iLastDisplayId = g_iDisplayId = 0;
+					lcd_show(g_iDisplayId);
 					break;
 				}
 			}
@@ -540,55 +553,6 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 	}
 }
 
-// Port 2 interrupt service routine
-#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
-#pragma vector=PORT2_VECTOR
-__interrupt void Port_2(void)
-#elif defined(__GNUC__)
-void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
-#else
-#error Compiler not supported!
-#endif
-{
-	switch (__even_in_range(P2IV, P2IV_P2IFG7)) {
-	case P2IV_NONE:
-		break;
-	case P2IV_P2IFG0:
-		break;
-	case P2IV_P2IFG1:
-		break;
-	case P2IV_P2IFG2:
-		//P3OUT &= ~BIT4;                           // buzzer off
-		iStatus &= ~BUZZER_ON;
-		break;
-	default:
-		break;
-	}
-}
-
-// Port 4 interrupt service routine
-#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
-#pragma vector=PORT4_VECTOR
-__interrupt void Port_4(void)
-#elif defined(__GNUC__)
-void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
-#else
-#error Compiler not supported!
-#endif
-{
-	switch (__even_in_range(P4IV, P4IV_P4IFG7)) {
-	case P4IV_NONE:
-		break;
-	case P4IV_P4IFG0:
-		break;
-	case P4IV_P4IFG1:
-		iDisplayId = (iDisplayId + 1) % MAX_DISPLAY_ID;
-		break;
-	default:
-		break;
-	}
-}
-
 #if 1
 
 void monitoralarm() {
@@ -625,19 +589,19 @@ void monitoralarm() {
 						>= g_pInfoA->stTempAlertParams[iCnt].mincold) {
 					TEMP_ALARM_SET(iCnt, TEMP_ALERT_CNF);
 #ifndef ALERT_UPLOAD_DISABLED
-					if(!(iStatus & BACKLOG_UPLOAD_ON))
+					if(!(g_iStatus & BACKLOG_UPLOAD_ON))
 					{
-						iStatus |= ALERT_UPLOAD_ON;	//indicate to upload sampled data if backlog is not progress
+						g_iStatus |= ALERT_UPLOAD_ON;	//indicate to upload sampled data if backlog is not progress
 					}
 #endif
 					//set buzzer if not set
-					if (!(iStatus & BUZZER_ON)) {
+					if (!(g_iStatus & BUZZER_ON)) {
 						//P3OUT |= BIT4;
-						iStatus |= BUZZER_ON;
+						g_iStatus |= BUZZER_ON;
 					}
 #ifdef SMS_ALERT
 					//send sms if not send already
-					if(!(iStatus & SMSED_LOW_TEMP))
+					if(!(g_iStatus & SMSED_LOW_TEMP))
 					{
 						memset(SampleData,0,SMS_ENCODED_LEN);
 						strcat(SampleData, "Alert Sensor ");
@@ -650,7 +614,7 @@ void monitoralarm() {
 						strcat(SampleData,"degC. Take ACTION immediately.");
 						sendmsg(SampleData);
 
-						iStatus |= SMSED_LOW_TEMP;
+						g_iStatus |= SMSED_LOW_TEMP;
 					}
 #endif
 
@@ -675,19 +639,19 @@ void monitoralarm() {
 						>= g_pInfoA->stTempAlertParams[iCnt].minhot) {
 					TEMP_ALARM_SET(iCnt, TEMP_ALERT_CNF);
 #ifndef ALERT_UPLOAD_DISABLED
-					if(!(iStatus & BACKLOG_UPLOAD_ON))
+					if(!(g_iStatus & BACKLOG_UPLOAD_ON))
 					{
-						iStatus |= ALERT_UPLOAD_ON;	//indicate to upload sampled data if backlog is not progress
+						g_iStatus |= ALERT_UPLOAD_ON;	//indicate to upload sampled data if backlog is not progress
 					}
 #endif
 					//set buzzer if not set
-					if (!(iStatus & BUZZER_ON)) {
+					if (!(g_iStatus & BUZZER_ON)) {
 						//P3OUT |= BIT4;
-						iStatus |= BUZZER_ON;
+						g_iStatus |= BUZZER_ON;
 					}
 #ifdef SMS_ALERT
 					//send sms if not send already
-					if(!(iStatus & SMSED_HIGH_TEMP))
+					if(!(g_iStatus & SMSED_HIGH_TEMP))
 					{
 						memset(SampleData,0,SMS_ENCODED_LEN);
 						strcat(SampleData, "Alert Sensor ");
@@ -700,7 +664,7 @@ void monitoralarm() {
 						strcat(SampleData,"degC. Take ACTION immediately.");
 						sendmsg(SampleData);
 
-						iStatus |= SMSED_HIGH_TEMP;
+						g_iStatus |= SMSED_HIGH_TEMP;
 					}
 #endif
 					//initialize confirmation counter
@@ -737,9 +701,9 @@ void monitoralarm() {
 					>= g_pInfoA->stBattPowerAlertParam.minutesbathresh) {
 				TEMP_ALARM_SET(iCnt, TEMP_ALERT_CNF);
 				//set buzzer if not set
-				if (!(iStatus & BUZZER_ON)) {
+				if (!(g_iStatus & BUZZER_ON)) {
 					//P3OUT |= BIT4;
-					iStatus |= BUZZER_ON;
+					g_iStatus |= BUZZER_ON;
 				}
 #ifdef SMS_ALERT
 				//send sms LOW Battery: ColdTrace has now 15% battery left. Charge your device immediately.
@@ -779,9 +743,9 @@ void monitoralarm() {
 						>= g_pInfoA->stBattPowerAlertParam.minutespower) {
 					TEMP_ALARM_SET(iCnt, TEMP_ALERT_CNF);
 					//set buzzer if not set
-					if (!(iStatus & BUZZER_ON)) {
+					if (!(g_iStatus & BUZZER_ON)) {
 						//P3OUT |= BIT4;
-						iStatus |= BUZZER_ON;
+						g_iStatus |= BUZZER_ON;
 					}
 #ifdef SMS_ALERT
 					//send sms Power Outage: ATTENTION! Power is out in your clinic. Monitor the fridge temperature closely.
@@ -802,8 +766,8 @@ void monitoralarm() {
 	}
 
 	//disable buzzer if it was ON and all alerts are gone
-	if ((iStatus & BUZZER_ON) && (g_iAlarmStatus == 0)) {
-		iStatus &= ~BUZZER_ON;
+	if ((g_iStatus & BUZZER_ON) && (g_iAlarmStatus == 0)) {
+		g_iStatus &= ~BUZZER_ON;
 	}
 
 }

@@ -17,7 +17,11 @@
 #include "timer.h"
 #include "globals.h"
 
-char g_szTemp[64];
+// Current display view
+volatile uint8_t g_iDisplayId = 0;
+
+// Stores several states of the system
+volatile uint16_t g_iStatus = LOG_TIME_STAMP;
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 char ATresponse[ATRESP_MAX_LEN] = { };
@@ -26,9 +30,6 @@ char ATresponse[ATRESP_MAX_LEN] = { };
 #pragma SET_DATA_SECTION(".xbigdata_vars")
 char SampleData[SAMPLE_LEN];
 #pragma SET_DATA_SECTION()
-
-//volatile uint8_t iStatus = LOG_TIME_STAMP | TEST_FLAG;	//to test the reading and POST formation, there will be no SMS and POST happening
-volatile uint16_t iStatus = LOG_TIME_STAMP;		//this is recommended setting
 
 char SensorName[MAX_NUM_SENSORS][NAME_LEN] = { "A", "B", "C", "D", "E" };
 uint8_t SensorDisplayName[MAX_NUM_SENSORS] = { 0xA, 0xB, 0xC, 0xD, 0xE };

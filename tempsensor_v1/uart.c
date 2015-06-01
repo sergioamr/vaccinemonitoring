@@ -15,6 +15,7 @@
 #include "globals.h"
 #include "stdio.h"
 #include "string.h"
+#include "stringutils.h"
 
 // AT Messages returns to check.
 char AT_MSG_OK[]={ 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
@@ -146,7 +147,7 @@ inline void uart_checkOK() {
 	}
 }
 
-void uart_setIO() {
+void uart_setupIO() {
 	// P2.0 UCA0SIMO
 	// P2.1 UCA0RXD/ UCA0SOMI
 
@@ -316,6 +317,22 @@ void uart_setDelay(uint32_t delay) {
 
 uint8_t isTransactionOK() {
 	return ErrorIdx;
+}
+
+uint8_t uart_tx_ext(const char *_format, ...) {
+	char szTemp[128];
+    va_list _ap;
+    char *fptr = (char *)_format;
+    char *out_end = szTemp;
+
+    va_start(_ap, _format);
+    if (__TI_printfi(&fptr, _ap, (void *)&out_end, _outc, _outs)>128) {
+    	_NOP();
+    }
+    va_end(_ap);
+
+    *out_end = '\0';
+    return uart_tx( szTemp);
 }
 
 uint8_t uart_tx(const char *cmd) {
@@ -825,7 +842,7 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 	}
 }
 
-void uart_setClock() {
+void uart_setupIO_clock() {
 	// Configure USCI_A0 for UART mode
 	UCA0CTLW0 = UCSWRST;                      // Put eUSCI in reset
 	UCA0CTLW0 |= UCSSEL__SMCLK;               // CLK = SMCLK

@@ -96,9 +96,9 @@ void modem_checkSignal() {
 		iSignalLevel = strtol(ATresponse, 0, 10);
 		if ((iSignalLevel < NETWORK_DOWN_SS)
 				|| (iSignalLevel > NETWORK_MAX_SS)) {
-			iStatus |= NETWORK_DOWN;
+			g_iStatus |= NETWORK_DOWN;
 		} else {
-			iStatus &= ~NETWORK_DOWN;
+			g_iStatus &= ~NETWORK_DOWN;
 		}
 	}
 }
@@ -190,8 +190,7 @@ void modem_survey_network() {
 	do {
 		if (attempts != NET_ATTEMPTS) {
 			lcd_clear();
-			sprintf(g_szTemp, "MCC RETRY %d   ", NET_ATTEMPTS - attempts);
-			lcd_print_lne(LINE1, g_szTemp);
+			lcd_print_ext(LINE1, "MCC RETRY %d   ", NET_ATTEMPTS - attempts);
 		} else {
 			lcd_print_lne(LINE1, "MCC DISCOVER");
 		}

@@ -30,15 +30,10 @@ void deactivatehttp() {
 
 //WARNING: doget() should not be used in parallel to HTTP POST
 int doget() {
-	uart_resetbuffer();
-	iRxLen = RX_LEN;
-	RXBuffer[RX_LEN] = 0;	//null termination
+	char szTemp[128];
 
-	strcpy(g_szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/");
-	strcat(g_szTemp, g_pInfoA->cfgIMEI);
-	strcat(g_szTemp, "/1/\"\r\n");
-	uart_tx_timeout(g_szTemp, 10000, 1);
-
+	sprintf(szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/%s/1/\"\r\n",g_pInfoA->cfgIMEI);
+	uart_tx_timeout(szTemp, 10000, 1);
 	uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 1);		//get the configuartion
 
 	memset(ATresponse, 0, sizeof(ATresponse));
@@ -54,7 +49,7 @@ int dopost_sms_status(void) {
 	int isHTTPResponseAvailable = 0;
 	int i = 0, j = 0;
 
-	if (iStatus & TEST_FLAG)
+	if (g_iStatus & TEST_FLAG)
 		return l_file_pointer_enabled_sms_status;
 	iHTTPRespDelayCnt = 0;
 	while ((!isHTTPResponseAvailable)
@@ -85,7 +80,7 @@ int dopost_gprs_connection_status(char status) {
 	int isHTTPResponseAvailable = 0;
 	int i = 0, j = 0;
 
-	if (iStatus & TEST_FLAG)
+	if (g_iStatus & TEST_FLAG)
 		return l_file_pointer_enabled_sms_status;
 	iHTTPRespDelayCnt = 0;
 	if (status == GSM) {
@@ -141,7 +136,7 @@ int dopost(char* postdata) {
 	int isHTTPResponseAvailable = 0;
 	int iRetVal = -1;
 
-	if (iStatus & TEST_FLAG)
+	if (g_iStatus & TEST_FLAG)
 		return iRetVal;
 #ifndef SAMPLE_POST
 	memset(ATresponse, 0, sizeof(ATresponse));

@@ -217,37 +217,37 @@ int data_transmit(uint8_t *pSampleCnt) {
 	lcd_print_lne(LINE2, "Transmitting....");
 //iStatus &= ~TEST_FLAG;
 #ifdef SMS_ALERT
-	iStatus &= ~SMSED_HIGH_TEMP;
-	iStatus &= ~SMSED_LOW_TEMP;
+	g_iStatus &= ~SMSED_HIGH_TEMP;
+	g_iStatus &= ~SMSED_LOW_TEMP;
 #endif
 	if ((iMinuteTick - iUploadTimeElapsed) >= g_iUploadPeriod) {
 		//if(((g_iUploadPeriod/g_iSamplePeriod) < MAX_NUM_CONTINOUS_SAMPLES) ||
 		//    (iStatus & ALERT_UPLOAD_ON))
 		if ((g_iUploadPeriod / g_iSamplePeriod) < MAX_NUM_CONTINOUS_SAMPLES) {
 			//trigger a new timestamp
-			iStatus |= LOG_TIME_STAMP;
+			g_iStatus |= LOG_TIME_STAMP;
 			*pSampleCnt = 0;
 			//iStatus &= ~ALERT_UPLOAD_ON;	//reset alert upload indication
 		}
 
 		iUploadTimeElapsed = iMinuteTick;
-	} else if ((iStatus & ALERT_UPLOAD_ON)
+	} else if ((g_iStatus & ALERT_UPLOAD_ON)
 			&& (*pSampleCnt < MAX_NUM_CONTINOUS_SAMPLES)) {
 		//trigger a new timestamp
-		iStatus |= LOG_TIME_STAMP;
+		g_iStatus |= LOG_TIME_STAMP;
 		*pSampleCnt = 0;
 	}
 
 //reset the alert uplaod indication
-	if (iStatus & ALERT_UPLOAD_ON) {
-		iStatus &= ~ALERT_UPLOAD_ON;
+	if (g_iStatus & ALERT_UPLOAD_ON) {
+		g_iStatus &= ~ALERT_UPLOAD_ON;
 	}
 
 #ifdef POWER_SAVING_ENABLED
 	modem_exit_powersave_mode();
 #endif
 
-	if (!(iStatus & TEST_FLAG)) {
+	if (!(g_iStatus & TEST_FLAG)) {
 		uart_tx("AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
 		//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
 		uart_tx("AT#SGACT=1,1\r\n");
@@ -335,7 +335,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 		if ((SECTOR_SIZE - iOffset) > sizeof(ATresponse)) {
 			fr = f_read(&filr, ATresponse, sizeof(ATresponse), (UINT *) &iIdx); /* Read first chunk of sector*/
 			if ((fr == FR_OK) && (iIdx > 0)) {
-				iStatus &= ~SPLIT_TIME_STAMP;//clear the last status of splitted data
+				g_iStatus &= ~SPLIT_TIME_STAMP;//clear the last status of splitted data
 				pcData = (char *) FatFs.win;//reuse the buffer maintained by the file system
 				//check for first time stamp
 				//pcTmp = strstr(&pcData[iOffset],"$TS");
@@ -347,15 +347,15 @@ int data_transmit(uint8_t *pSampleCnt) {
 					pcTmp = strstr(&pcTmp[TS_FIELD_OFFSET], "$");
 					if ((pcTmp) && (pcTmp < &pcData[SECTOR_SIZE])) {
 						iPOSTstatus = pcTmp; //first src end postion
-						iStatus &= ~SPLIT_TIME_STAMP; //all data in FATFS buffer
+						g_iStatus &= ~SPLIT_TIME_STAMP; //all data in FATFS buffer
 					} else {
 						iPOSTstatus = &pcData[SECTOR_SIZE];	//mark first source end position as end of sector boundary
-						iStatus |= SPLIT_TIME_STAMP;
+						g_iStatus |= SPLIT_TIME_STAMP;
 					}
 					pcTmp = iIdx;	//re-initialize to first time stamp
 
 					//is all data within FATFS
-					if (!(iStatus & SPLIT_TIME_STAMP)) {
+					if (!(g_iStatus & SPLIT_TIME_STAMP)) {
 						//first src is in FATFS buffer, second src is NULL
 						pcSrc1 = pcTmp;
 						pcSrc2 = NULL;
@@ -419,7 +419,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 			//the position is second half of sector
 			fr = f_read(&filr, ATresponse, SECTOR_SIZE - iOffset, &iIdx); /* Read data till the end of sector */
 			if ((fr == FR_OK) && (iIdx > 0)) {
-				iStatus &= ~SPLIT_TIME_STAMP;//clear the last status of splitted data
+				g_iStatus &= ~SPLIT_TIME_STAMP;//clear the last status of splitted data
 				//get position of first time stamp
 				//pcTmp = strstr(ATresponse,"$TS");
 				pcTmp = strstr(ATresponse, "$");
@@ -432,18 +432,18 @@ int data_transmit(uint8_t *pSampleCnt) {
 						pcSrc1 = strstr(&pcTmp[TS_FIELD_OFFSET], "$");
 						if ((pcSrc1) && (pcSrc1 < &ATresponse[iIdx])) {
 							iPOSTstatus = pcSrc1;	//first src end position;
-							iStatus &= ~SPLIT_TIME_STAMP;//all data in FATFS buffer
+							g_iStatus &= ~SPLIT_TIME_STAMP;//all data in FATFS buffer
 						} else {
 							iPOSTstatus = &ATresponse[iIdx]; //first src end position;
-							iStatus |= SPLIT_TIME_STAMP;
+							g_iStatus |= SPLIT_TIME_STAMP;
 						}
 					} else {
 						iPOSTstatus = &ATresponse[iIdx]; //first src end position;
-						iStatus |= SPLIT_TIME_STAMP;
+						g_iStatus |= SPLIT_TIME_STAMP;
 					}
 
 					//check if data is splitted across
-					if (iStatus & SPLIT_TIME_STAMP) {
+					if (g_iStatus & SPLIT_TIME_STAMP) {
 						//check to read some more data
 						if ((filr.fsize - g_pInfoB->dwLastSeek)
 								> (SECTOR_SIZE - iOffset)) {
@@ -587,7 +587,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 			//update seek for the next sample
 			g_pInfoB->dwLastSeek = dwFinalSeek;
 #ifndef CALIBRATION
-			if (!(iStatus & TEST_FLAG)) {
+			if (!(g_iStatus & TEST_FLAG)) {
 				iPOSTstatus = 1;	//indicate data is available for POST & SMS
 			} else {
 				iPOSTstatus = 0;	//indicate data is available for POST & SMS
@@ -598,9 +598,9 @@ int data_transmit(uint8_t *pSampleCnt) {
 
 			//check if catch is needed due to backlog
 			if ((filr.fsize - g_pInfoB->dwLastSeek) > sizeof(SampleData)) {
-				iStatus |= BACKLOG_UPLOAD_ON;
+				g_iStatus |= BACKLOG_UPLOAD_ON;
 			} else {
-				iStatus &= ~BACKLOG_UPLOAD_ON;
+				g_iStatus &= ~BACKLOG_UPLOAD_ON;
 			}
 
 		}
@@ -619,9 +619,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 		if (iPOSTstatus != 0) {
 			//redo the post
 			// Define Packet Data Protocol Context - +CGDCONT
-			sprintf(g_szTemp, "AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n",
-					g_pInfoA->cfgAPN[g_pInfoA->cfgSIMSlot]);
-			uart_tx(g_szTemp);
+			 uart_tx_ext("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", g_pInfoA->cfgAPN[g_pInfoA->cfgSIMSlot]);
 			//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
 
 			uart_tx("AT#SGACT=1,1\r\n");

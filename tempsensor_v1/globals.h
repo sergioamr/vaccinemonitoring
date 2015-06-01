@@ -20,6 +20,7 @@ extern CONFIG_INFOB* g_pInfoB;
 extern CONFIG_SYSTEM* g_pSysCfg; // System configuration
 
 extern uint32_t g_iAlarmStatus;
+extern volatile uint8_t g_iDisplayId;
 
 extern char SensorName[MAX_NUM_SENSORS][NAME_LEN];
 extern char Temperature[MAX_NUM_SENSORS][TEMP_DATA_LEN + 1];
@@ -66,10 +67,8 @@ extern uint32_t iLCDShowElapsed;
 extern uint32_t iMsgRxPollElapsed;
 extern int8_t iModemSuccess;
 extern int8_t g_iLastCfgSeq;
-extern volatile uint16_t iStatus;
+extern volatile uint16_t g_iStatus;
 
 extern char file_pointer_enabled_gprs_status; // for gprs condtition enabling.../// need to be tested..//
-
-extern char g_szTemp[64]; // Temporal string to use for display and string operations
 
 #endif /* TEMPSENSOR_V1_GLOBALS_H_ */
