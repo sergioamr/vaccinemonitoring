@@ -120,7 +120,6 @@ void modem_getIMEI() {
 }
 
 void modem_getExtraInfo() {
-
 	modem_getIMEI();
 	delay(100);
 }

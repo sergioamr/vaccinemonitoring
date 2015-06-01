@@ -216,9 +216,10 @@ int main(void) {
 	if (iStatus & MODEM_POWERED_ON) {
 		modem_init();
 		modem_getExtraInfo();
+		modem_pull_time();
+		modem_checkSignal();
+		modem_getSMSCenter();
 
-<<<<<<< HEAD
-=======
 #ifdef POWER_SAVING_ENABLED
 		uart_tx("AT+CFUN=5\r\n");//full modem functionality with power saving enabled (triggered via DTR)
 		delay(MODEM_TX_DELAY1);
@@ -226,11 +227,6 @@ int main(void) {
 		uart_tx("AT+CFUN?\r\n");//full modem functionality with power saving enabled (triggered via DTR)
 		delay(MODEM_TX_DELAY1);
 #endif
-
-		pullTime();
-
-		modem_getSimCardInfo();
-		modem_checkSignal();
 
 		lcd_print("Checking GPRS");
 		/// added for gprs connection..//
@@ -243,7 +239,6 @@ int main(void) {
 		//uart_resetbuffer();
 		// Disable echo from modem
 		uart_tx("ATE0\r\n");
->>>>>>> Changing signal checking to set correct variables
 		//heartbeat
 		for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
 			memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);
@@ -827,23 +822,10 @@ int main(void) {
 			if (iStatus & NETWORK_DOWN) {
 				delay(2000);//additional delay to enable ADC conversion to complete
 				//check for signal strength
-<<<<<<< HEAD
-				modem_pull_time();
-				uart_resetbuffer();
-				uart_tx("AT+CSQ\r\n");
-				delay(MODEM_TX_DELAY1);
-				memset(ATresponse, 0, sizeof(ATresponse));
-				uart_rx(ATCMD_CSQ, ATresponse);
-				if (ATresponse[0] != 0) {
-					iSignalLevel = strtol(ATresponse, 0, 10);
-				}
 
-				if ((iSignalLevel > NETWORK_UP_SS)
-=======
-				pullTime();
+				modem_pull_time();
 				modem_checkSignal();
 				if ((iSignalLevel > NETWORK_DOWN_SS)
->>>>>>> Changing signal checking to set correct variables
 						&& (iSignalLevel < NETWORK_MAX_SS)) {
 					//send heartbeat
 					sms_send_heart_beat();
@@ -859,18 +841,7 @@ int main(void) {
 			lcd_print_lne(LINE1, "Configuring...");
 			delay(100);
 
-<<<<<<< HEAD
-			//update the signal strength
-			uart_tx("AT+CSQ\r\n");
-			uart_rx_cleanBuf(ATCMD_CSQ, ATresponse, sizeof(ATresponse));
-
-			if (ATresponse[0] != 0) {
-				iSignalLevel = strtol(ATresponse, 0, 10);
-			}
-
-=======
 			modem_checkSignal();
->>>>>>> Changing signal checking to set correct variables
 			signal_gprs = dopost_gprs_connection_status(GPRS);
 
 			iIdx = 0;

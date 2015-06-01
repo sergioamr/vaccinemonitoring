@@ -24,5 +24,6 @@ extern void modem_getExtraInfo();
 extern void modem_surveyNetwork();
 extern void modem_swapSIM();
 extern void modem_pull_time();
+extern void modem_getSMSCenter();
 
 #endif /* TEMPSENSOR_V1_MODEM_H_ */
