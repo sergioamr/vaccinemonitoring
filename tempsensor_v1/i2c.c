@@ -130,6 +130,7 @@ void __attribute__ ((interrupt(USCI_B0_VECTOR))) USCIB0_ISR (void)
 	    	  {
 	    		  //trigger a stop condition
 	    		  UCB0CTL1 |= UCTXSTP;
+	    		  __bic_SR_register_on_exit(LPM0_bits); // Transfer finished restore CPU so we can interrupt the i2c write delay
 	    	  }
 	      }
 	      break;

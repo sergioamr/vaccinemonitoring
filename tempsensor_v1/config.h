@@ -13,6 +13,8 @@
 #include "stdint.h"
 #include "common.h"
 
+#define MAX_NUM_CONTINOUS_SAMPLES 10
+
 //Temperature cut off
 #define TEMP_CUTOFF				-800		//-80 deg C
 #define MODEM_CHECK_RETRY 	3

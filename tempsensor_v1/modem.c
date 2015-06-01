@@ -28,6 +28,43 @@
 char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
 
+int8_t modem_first_init() {
+
+	int iIdx;
+	int iStatus=0;
+
+	lcd_clear();
+	lcd_print_lne(LINE1, "Modem POWER ON");
+
+	//check Modem is powered on
+	for (iIdx = 0; iIdx < MODEM_CHECK_RETRY; iIdx++) {
+		if ((P4IN & BIT0) == 0) {
+			iStatus |= MODEM_POWERED_ON;
+			break;
+		} else {
+			iStatus &= ~MODEM_POWERED_ON;
+			delay(100);
+		}
+	}
+
+	if (iStatus & MODEM_POWERED_ON) {
+		modem_init();
+		modem_getExtraInfo();
+		lcd_print_lne(LINE2, "Success");
+
+		//heartbeat
+		for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
+			memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);
+			ConvertADCToTemperature(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
+		}
+	} else {
+		lcd_print_lne(LINE2, "Failed");
+		delay(HUMAN_DISPLAY_ERROR_DELAY);
+	}
+
+	return iStatus;
+}
+
 void modem_swapSIM() {
 	config_incLastCmd();
 
@@ -136,7 +173,7 @@ void modem_getExtraInfo() {
 #define NET_ATTEMPTS 10
 #endif
 
-void modem_surveyNetwork() {
+void modem_survey_network() {
 
 	int attempts = NET_ATTEMPTS;
 	int uart_state;
@@ -309,7 +346,7 @@ void modem_init() {
 	modem_checkSignal();
 
 #ifndef _DEBUG
-	modem_surveyNetwork();
+	modem_survey_network();
 #endif
 
 #ifdef POWER_SAVING_ENABLED

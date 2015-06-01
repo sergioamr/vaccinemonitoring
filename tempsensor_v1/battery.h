@@ -56,7 +56,10 @@ extern void batt_init();
 //! \return battery remaining capacity in percentage
 //
 //*****************************************************************************
-extern int8_t batt_getlevel();
+extern uint8_t batt_getlevel();
+
+// Checks level, displays a message with the result
+extern uint8_t batt_check_level();
 
 #ifdef __cplusplus
 }
