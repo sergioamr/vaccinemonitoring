@@ -77,7 +77,6 @@ int dopost_sms_status(void) {
 
 int dopost_gprs_connection_status(char status) {
 	int l_file_pointer_enabled_sms_status = 0;
-	int isHTTPResponseAvailable = 0;
 	int i = 0, j = 0;
 
 	if (g_iStatus & TEST_FLAG)
@@ -86,22 +85,21 @@ int dopost_gprs_connection_status(char status) {
 	if (status == GSM) {
 		uart_tx("AT+CREG?\r\n");
 		for (i = 0; i < 102; i++) {
-
 			j = i + 1;
 			if (j > 101) {
 				j = j - 101;
 			}
 			if ((RXBuffer[i] == '+') && (RXBuffer[j] == 'C')
 					&& (RXBuffer[j + 1] == 'R') && (RXBuffer[j + 2] == 'E')
-					&& (RXBuffer[j + 3] == 'G') && (RXBuffer[j + 4] == ':')
-					&& (RXBuffer[j + 8] == '1')) {
-				isHTTPResponseAvailable = 1;
-				l_file_pointer_enabled_sms_status = 1; // set for sms packet.....///
-				break;
+					&& (RXBuffer[j + 3] == 'G') && (RXBuffer[j + 4] == ':')) {
+				if (RXBuffer[j + 8] == '1') {
+					l_file_pointer_enabled_sms_status = 1; // set for sms packet.....///
+					break;
+				} else {
+					l_file_pointer_enabled_sms_status = 0; // reset for sms packet.....///
+					break;
+				}
 			}
-		}
-		if (isHTTPResponseAvailable == 0) {
-			l_file_pointer_enabled_sms_status = 0; // reset for sms packet.....///
 		}
 	}
 
@@ -116,16 +114,17 @@ int dopost_gprs_connection_status(char status) {
 			if ((RXBuffer[i] == '+') && (RXBuffer[j] == 'C')
 					&& (RXBuffer[j + 1] == 'G') && (RXBuffer[j + 2] == 'R')
 					&& (RXBuffer[j + 3] == 'E') && (RXBuffer[j + 4] == 'G')
-					&& (RXBuffer[j + 5] == ':') && (RXBuffer[j + 7] == '0')
-					&& (RXBuffer[j + 8] == ',') && (RXBuffer[j + 9] == '1')) {
-				isHTTPResponseAvailable = 1;
-				l_file_pointer_enabled_sms_status = 1; // set for sms packet.....///
-				break;
+					&& (RXBuffer[j + 5] == ':')) {
+				if((RXBuffer[j + 7] == '0') && (RXBuffer[j + 8] == ',')
+						&& (RXBuffer[j + 9] == '1')) {
+					l_file_pointer_enabled_sms_status = 1; // set for sms packet.....///
+					break;
+				} else {
+					uart_tx("AT+CGATT=1\r\n");
+					l_file_pointer_enabled_sms_status = 0; // reset for sms packet.....///
+					break;
+				}
 			}
-		}
-		if (isHTTPResponseAvailable == 0) {
-			uart_tx_timeout("AT+CGATT=1\r\n", TIMEOUT_CGATT,5);
-			l_file_pointer_enabled_sms_status = 0; // reset for sms packet.....///
 		}
 	}
 
