@@ -424,13 +424,14 @@ void modem_init() {
 	delay(MODEM_TX_DELAY1);
 #endif
 
+	if(g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] == 0xFF
+			|| g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] == 0x00) {
+		modem_set_max_messages();
+	}
+
 	modem_pull_time();
 	// Have to call twice to guarantee a genuine result
 	modem_checkSignal();
-
-	if (sim->iMaxMessages == 0xFF || sim->iMaxMessages == 0x00) {
-		modem_set_max_messages();
-	}
 
 	lcd_print("Checking GPRS");
 	/// added for gprs connection..//
