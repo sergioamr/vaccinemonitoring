@@ -141,7 +141,7 @@ int main(void) {
 
 	if (modem_first_init()!=1) {
 		_NOP(); // Modem failed to power on
-	};
+	}
 
 	iBatteryLevel=batt_check_level();
 

@@ -18,7 +18,7 @@
 #define ATCMD_HTTPRCV		3
 #define ATCMD_CSQ			4
 #define ATCMD_CGSN			5
-#define ATCMD_CPMS			6
+#define ATCMD_CPMS_CURRENT	6
 #define ATCMD_CMGR			7
 #define ATCMD_CPIN          8
 #define ATCMD_CSCA 			9
@@ -27,7 +27,7 @@
 #define ATCMD_HTTPQRY       12
 #define ATCMD_CSURVC		13
 #define ATCMD_GPIO 			14
-#define ATCMD_CPMS_ALL		15
+#define ATCMD_CPMS_MAX		15
 
 #define UART_SUCCESS 0
 #define UART_ERROR -1

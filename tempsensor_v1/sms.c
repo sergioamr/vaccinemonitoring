@@ -188,16 +188,18 @@ void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 	iMsgRxPollElapsed = iMinuteTick;
 	//check if messages are available
 	uart_tx("AT+CPMS?\r\n");
-	uart_rx(ATCMD_CPMS, ATresponse);
-	if (ATresponse[0] != 0) {
+	uart_rx(ATCMD_CPMS_CURRENT, ATresponse);
+	if (ATresponse[0] != '0') {
 		iIdx = strtol(ATresponse, 0, 10);
 		if (iIdx) {
 			iIdx = 1;
 			lcd_print_lne(LINE2, "Msg Processing..");
-			if (sim->iMaxMessages != 0xFF && sim->iMaxMessages != 0x00) {
-				while (iIdx <= SMS_READ_MAX_MSG_IDX) {
+			if (g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] != 0xFF
+					&& g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] != 0x00) {
+				while (iIdx < g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot]) {
+					memset(ATresponse, 0, sizeof(ATresponse));
 					iModemSuccess = recvmsg(iIdx, ATresponse);
-					if (ATresponse[0] != 0 && iModemSuccess == 0) {
+					if (ATresponse[0] != 0 && iModemSuccess == ((int8_t)0)) {
 						switch (ATresponse[0]) {
 						case '1':
 							//get temperature values
@@ -244,7 +246,7 @@ void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 					iIdx++;
 				}
 			} else {
-				// TODO try to rediscover max messages
+				modem_set_max_messages();
 			}
 			iModemSuccess = 0;
 			delallmsg();
@@ -252,6 +254,7 @@ void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 		}
 	}
 }
+
 void sms_send_heart_beat() {
 
 	char* pcTmp = NULL;

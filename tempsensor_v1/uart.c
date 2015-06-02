@@ -420,6 +420,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 	uint16_t mcc = 0;
 	uint16_t mnc = 0;
 	uint8_t numberLen = 0;
+	uint8_t iMaxTok = 3;
 
 	iRXCommandProcessed = 0;
 	if (reponseLen > 0)
@@ -502,7 +503,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			pToken1 = strstr((const char *) RXBuffer, "CSQ:");
 			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
 				pToken2 = strtok(&pToken1[5], ",");
-
 				if (pToken2 != NULL) {
 					strncpy(pResponse, pToken2, strlen(pToken2));
 				} else {
@@ -512,32 +512,19 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			}
 			break;
 
-		case ATCMD_CPMS:
+		case ATCMD_CPMS_CURRENT:
+			iMaxTok = 2;
+		case ATCMD_CPMS_MAX:
 			pToken1 = strstr((const char *) RXBuffer, "CPMS:");
 			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
-				pToken2 = strtok(&pToken1[5], ",");
-
-				if (pToken2 != NULL) {
-					pToken2 = strtok(NULL, ",");
-					strncpy(pResponse, pToken2, strlen(pToken2));
-				} else {
-					pResponse[0] = 0;
-				}
-				return UART_SUCCESS;
-			}
-			break;
-
-		case ATCMD_CPMS_ALL:
-			pToken1 = strstr((const char *) RXBuffer, "CPMS:");
-			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
-				pResponse[0] = 0;
-				pToken1 = strtok(pToken1, ",");
+				pResponse[0] = '0';
+				pToken1 = strtok(&pToken1[5], ",");
 				while (pToken1 != NULL) {
-					if	(iEndIdx == 1) {
+					if (iEndIdx < iMaxTok) {
 						pToken2 = pToken1;
-					} else if (iEndIdx == 2) {
+					} else if (iEndIdx == iMaxTok) {
 						numberLen = pToken1 - pToken2;
-						strncpy(pResponse, pToken1, numberLen+1);
+						strncpy(pResponse, pToken2, numberLen);
 						pResponse[numberLen] = '\0';
 						return UART_SUCCESS;
 					}
