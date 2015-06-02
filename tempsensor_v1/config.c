@@ -73,6 +73,7 @@ void config_reset_error(SIM_CARD_CONFIG *sim) {
 void config_setSIMError(SIM_CARD_CONFIG *sim, uint16_t errorID, const char *error) {
 	if (error == NULL || sim == NULL)
 		return;
+	memset(sim->simLastError, 0, sizeof(sim->simLastError));
 	strncpy(sim->simLastError, error, sizeof(sim->simLastError)-1);
 	sim->iErrorState = errorID;
 }

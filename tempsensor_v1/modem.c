@@ -373,7 +373,7 @@ void modem_set_max_messages() {
 	//check if messages are available
 	uart_tx("AT+CPMS?\r\n");
 	uart_rx_cleanBuf(ATCMD_CPMS_MAX, ATresponse, sizeof(ATresponse));
-	g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] = atoi(ATresponse);
+	config_getSIM()->iMaxMessages = atoi(ATresponse);
 }
 
 void modem_pull_time() {
@@ -466,10 +466,8 @@ void modem_init() {
 	delay(MODEM_TX_DELAY1);
 #endif
 
-	if(g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] == 0xFF
-			|| g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] == 0x00) {
+	if(sim->iMaxMessages == 0xFF|| sim->iMaxMessages == 0x00)
 		modem_set_max_messages();
-	}
 
 	modem_pull_time();
 	// Have to call twice to guarantee a genuine result

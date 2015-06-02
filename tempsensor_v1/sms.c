@@ -194,12 +194,10 @@ void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 		if (iIdx) {
 			iIdx = 1;
 			lcd_print_lne(LINE2, "Msg Processing..");
-			if (g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] != 0xFF
-					&& g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] != 0x00) {
-				while (iIdx < g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot]) {
-					memset(ATresponse, 0, sizeof(ATresponse));
-					iModemSuccess = recvmsg(iIdx, ATresponse);
-					if (ATresponse[0] != 0 && iModemSuccess == ((int8_t)0)) {
+			if (sim->iMaxMessages != 0xFF && sim->iMaxMessages != 0x00) {
+				while (iIdx < sim->iMaxMessages) {
+					iModemSuccess = sms_recv_message(iIdx, ATresponse);
+					if (ATresponse[0] != 0 && iModemSuccess == ((int8_t) 0)) {
 						switch (ATresponse[0]) {
 						case '1':
 							//get temperature values
@@ -338,7 +336,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 		msgNumber = atoi(ATresponse);
 	}
 
-	if (verbose==VERBOSE_BOOTING)
+	if (verbose == VERBOSE_BOOTING)
 		lcd_enable_verbose();
 
 	if (res == UART_SUCCESS) {
@@ -349,7 +347,8 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 		_NOP();
 	} else if (res == UART_ERROR) {
 		lcd_print_ext(LINE2, "MODEM ERROR     ");
-		log_append("ERROR: SIM %d FAILED [%s]", config_getSelectedSIM(), config_getSIM()->simLastError);
+		log_append("ERROR: SIM %d FAILED [%s]", config_getSelectedSIM(),
+				config_getSIM()->simLastError);
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	} else {
 		lcd_print("MODEM TIMEOUT");
@@ -364,7 +363,7 @@ uint8_t sms_send_message(char* pData) {
 	return sms_send_message_number(SMS_NEXLEAF_GATEWAY, pData);
 }
 
-int recvmsg(int8_t iMsgIdx, char* pData) {
+int sms_recv_message(int8_t iMsgIdx, char* pData) {
 	int ret = -1;
 
 	//uart_tx("AT+CMGL=\"REC UNREAD\"\r\n");
@@ -373,9 +372,6 @@ int recvmsg(int8_t iMsgIdx, char* pData) {
 
 	uart_tx_ext("AT+CMGR=%d\r\n", iMsgIdx);
 	ret = uart_rx(ATCMD_CMGR, pData);	//copy RX to pData
-
-	RXTailIdx = RXHeadIdx = 0;
-	iRxLen = RX_LEN;
 
 	return ret;
 }

@@ -22,7 +22,7 @@ extern uint8_t sms_send_message_number(char *szPhoneNumber, char* pData);
 //! 	   is available for reading
 //! \return 0 on success, -1 on failure
 //*****************************************************************************
-extern int recvmsg(int8_t iMsgIdx,char* pData);
+extern int sms_recv_message(int8_t iMsgIdx,char* pData);
 
 //*****************************************************************************
 //! \brief delete the sms msg(s) read and sent successfully
