@@ -214,6 +214,8 @@ int data_transmit(uint8_t *pSampleCnt) {
 	char file_pointer_enabled_sms_status = 0; // for sms condtition enabling.../// need to be tested
 	int iIdx = 0;
 
+	SIM_CARD_CONFIG *sim = config_getSIM();
+
 	lcd_print_lne(LINE2, "Transmitting....");
 //iStatus &= ~TEST_FLAG;
 #ifdef SMS_ALERT
@@ -619,7 +621,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 		if (iPOSTstatus != 0) {
 			//redo the post
 			// Define Packet Data Protocol Context - +CGDCONT
-			 uart_tx_ext("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", g_pInfoA->cfgAPN[g_pInfoA->cfgSIMSlot]);
+			 uart_tx_ext("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN);
 			//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
 
 			uart_tx("AT#SGACT=1,1\r\n");

@@ -124,7 +124,7 @@ int dopost_gprs_connection_status(char status) {
 			}
 		}
 		if (isHTTPResponseAvailable == 0) {
-			uart_tx("AT+CGATT=1\r\n");
+			uart_tx_timeout("AT+CGATT=1\r\n", TIMEOUT_CGATT,5);
 			l_file_pointer_enabled_sms_status = 0; // reset for sms packet.....///
 		}
 	}

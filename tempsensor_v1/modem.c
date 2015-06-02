@@ -29,10 +29,35 @@
 char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
 
+uint16_t modem_parse_error(const char *error) {
+	uint16_t errorNum = NO_ERROR;
+	if (!strcmp(error, "SIM not inserted\r\n")) {
+		SIM_CARD_CONFIG *sim = config_getSIM();
+		config_setSIMError(sim, ERROR_SIM_NOT_INSERTED, error);
+		return ERROR_SIM_NOT_INSERTED;
+	}
+
+	_NOP();
+	return errorNum;
+}
+
+void modem_setNumericError(int16_t errorCode) {
+	char szCode[16];
+	if (config_getSimLastError()==errorCode)
+		return;
+
+	sprintf(szCode,"ERROR %d", errorCode);
+	SIM_CARD_CONFIG *sim = config_getSIM();
+	config_setSIMError(sim, errorCode, szCode);
+	return;
+}
+
 int8_t modem_first_init() {
 
+	int t = 0;
 	int iIdx;
-	int iStatus=0;
+	int iStatus = 0;
+	int iSIM_Error = 0;
 
 	lcd_clear();
 	lcd_print_lne(LINE1, "Modem POWER ON");
@@ -56,14 +81,34 @@ int8_t modem_first_init() {
 		uart_tx_timeout("AT\r\n", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
 		lcd_enable_verbose();
 
-#ifndef _DEBUG
-		modem_swap_SIM(); // Send hearbeat from SIM
-		modem_swap_SIM();
-#else
-		modem_init();
-#endif
+		for (t = 0; t < NUM_SIM_CARDS; t++) {
+			modem_swap_SIM(); // Send hearbeat from SIM
+			if (config_getSimLastError() != NO_ERROR) {
+				lcd_clear();
+				lcd_print_ext(LINE1, "ERROR INIT SIM %d ", config_getSelectedSIM()+1);
+				lcd_print_ext(LINE2, config_getSIM()->simLastError);
+				delay(HUMAN_DISPLAY_ERROR_DELAY);
+				iSIM_Error ++;
+			}
+		}
 
-		lcd_print_lne(LINE2, "Success      ");
+		// One or more of the sims had a catastrofic failure on init, set the device
+		switch(iSIM_Error) {
+			case 1:
+				for (t = 0; t < NUM_SIM_CARDS; t++)
+					if (config_getSIMError(t)==NO_ERROR) {
+						if (config_getSelectedSIM()!=t) {
+							g_pInfoA->cfgSIM_slot = t;
+							modem_init();
+						}
+					}
+			break;
+			case 2:
+				lcd_clear();
+				lcd_print_ext(LINE1, "BOTH SIMS FAILED ");
+				delay(HUMAN_DISPLAY_ERROR_DELAY);
+			break;
+		}
 
 		//heartbeat
 		for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
@@ -71,7 +116,7 @@ int8_t modem_first_init() {
 			digital_amp_to_temp_string(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
 		}
 	} else {
-		lcd_print_lne(LINE2, "Failed      ");
+		lcd_print_lne(LINE2, "Failed Power On");
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	}
 
@@ -80,15 +125,22 @@ int8_t modem_first_init() {
 
 void modem_swap_SIM() {
 	config_incLastCmd();
-	g_pInfoA->cfgSIMSlot = !g_pInfoA->cfgSIMSlot;
+	g_pInfoA->cfgSIM_slot = !g_pInfoA->cfgSIM_slot;
 	lcd_clear();
-	lcd_print_ext(LINE1, "Activate SIM: %d", g_pInfoA->cfgSIMSlot+1);
+	lcd_print_ext(LINE1, "Activate SIM: %d", g_pInfoA->cfgSIM_slot + 1);
 	modem_init();
 	modem_getExtraInfo();
-	sms_send_heart_beat();
+
+#ifdef _DEBUG
+	if (config_getSIMError(config_getSelectedSIM())==NO_ERROR)
+#endif
+	{
+		sms_send_heart_beat();
+	}
 }
 
 void modem_checkSignal() {
+
 	config_incLastCmd();
 
 	if (uart_tx_timeout("AT+CSQ\r\n", TIMEOUT_CSQ, 1) != UART_SUCCESS)
@@ -107,7 +159,8 @@ void modem_checkSignal() {
 }
 
 void modem_getSMSCenter() {
-	uint8_t slot = g_pInfoA->cfgSIMSlot;
+
+	SIM_CARD_CONFIG *sim = config_getSIM();
 	config_incLastCmd();
 
 	// Reading the Service Center Address to use as message gateway
@@ -115,14 +168,12 @@ void modem_getSMSCenter() {
 	// Get service center address; format "+CSCA: address,address_type"
 
 	// added for SMS Message center number to be sent in the heart beat
-	uart_resetbuffer();
 	uart_tx("AT+CSCA?\r\n");
 
 	if (uart_rx_cleanBuf(ATCMD_CSCA, ATresponse,
 			sizeof(ATresponse))==UART_SUCCESS) {
 
-		memcpy(g_pInfoA->cfgSMSCenter[slot], ATresponse,
-				strlen(ATresponse));
+		memcpy(sim->cfgSMSCenter, ATresponse, strlen(ATresponse));
 	}
 }
 
@@ -131,7 +182,6 @@ void modem_getIMEI() {
 	char IMEI_OK = false;
 	config_incLastCmd();
 
-	uart_resetbuffer();
 	uart_tx("AT+CGSN\r\n");
 	if (uart_rx_cleanBuf(ATCMD_CGSN, ATresponse,
 			sizeof(ATresponse))==UART_SUCCESS) {
@@ -178,10 +228,11 @@ void modem_survey_network() {
 
 	int attempts = NET_ATTEMPTS;
 	int uart_state;
-	int slot = g_pInfoA->cfgSIMSlot;
 	config_incLastCmd();
 
-	if (g_pInfoA->iCfgMCC[slot] != 0 && g_pInfoA->iCfgMNC[slot] != 0)
+	SIM_CARD_CONFIG *sim = config_getSIM();
+
+	if (sim->iCfgMCC != 0 && sim->iCfgMNC != 0)
 		return;
 
 	lcd_clear();
@@ -223,16 +274,15 @@ void modem_survey_network() {
 					sizeof(ATresponse)) == UART_SUCCESS) {
 				// Get MCC then MNC (the next in the list)
 				char* surveyResult = strtok(ATresponse, ",");
-				g_pInfoA->iCfgMCC[slot] = atoi(surveyResult);
+				sim->iCfgMCC = atoi(surveyResult);
 				surveyResult = strtok(NULL, ",");
-				g_pInfoA->iCfgMNC[slot] = atoi(surveyResult);
+				sim->iCfgMNC = atoi(surveyResult);
 
 				lcd_clear();
-				if (g_pInfoA->iCfgMCC[slot] > 0
-						&& g_pInfoA->iCfgMNC[slot] > 0) {
+				if (sim->iCfgMCC > 0 && sim->iCfgMNC > 0) {
 					lcd_print_lne(LINE1, "SUCCESS");
-					lcd_print_ext(LINE2, "MCC %d MNC %d",
-							g_pInfoA->iCfgMCC[slot], g_pInfoA->iCfgMNC[slot]);
+					lcd_print_ext(LINE2, "MCC %d MNC %d", sim->iCfgMCC,
+							sim->iCfgMNC);
 				} else {
 					uart_state = UART_ERROR;
 					lcd_print_lne(LINE2, "FAILED");
@@ -281,7 +331,7 @@ void modem_set_max_messages() {
 	//check if messages are available
 	uart_tx("AT+CPMS?\r\n");
 	uart_rx_cleanBuf(ATCMD_CPMS_ALL, ATresponse, sizeof(ATresponse));
-	g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] = atoi(ATresponse);
+	config_getSIM()->iMaxMessages = atoi(ATresponse);
 }
 
 void modem_pull_time() {
@@ -292,7 +342,7 @@ void modem_pull_time() {
 		modem_parse_time(ATresponse, &currTime);
 		rtc_init(&currTime);
 
-		if (currTime.tm_year!=0) {
+		if (currTime.tm_year != 0) {
 			// Day has changed so save the new date TODO keep trying until date is set. Call function ONCE PER DAY
 			g_iCurrDay = currTime.tm_mday;
 			break;
@@ -300,16 +350,25 @@ void modem_pull_time() {
 	}
 }
 
+// Read command returns the selected PLMN selector <list> from the SIM/USIM
+void modem_getPreferredOperatorList() {
+	// List of networks for roaming
+	uart_tx("AT+CPOL?\r\n");
+}
+
 void modem_init() {
 
 	config_setLastCommand(COMMAND_MODEMINIT);
 
-	uint8_t slot = g_pInfoA->cfgSIMSlot;
-
-	if (slot > 1) {
+	if (config_getSelectedSIM() > 1) {
 		// Memory not initialized
-		g_pInfoA->cfgSIMSlot = slot = 0;
+		g_pInfoA->cfgSIM_slot = 0;
 	}
+
+	SIM_CARD_CONFIG *sim = config_getSIM();
+
+	// Reset error state so we try to initialize the modem.
+	config_reset_error(sim);
 
 	uart_tx("AT\r\n"); // Display OK
 
@@ -320,7 +379,7 @@ void modem_init() {
 	uart_tx("AT#SIMDET=2\r\n"); // Enable automatic pin sim detection
 
 #ifdef ENABLE_SIM_SLOT
-	if (slot != 1) {
+	if (config_getSelectedSIM() != 1) {
 		//enable SIM A (slot 1)
 		uart_tx_timeout("AT#GPIO=2,0,1\r\n", TIMEOUT_GPO, 5); // First command always has a chance of timeout
 		uart_tx("AT#GPIO=4,1,1\r\n");
@@ -339,6 +398,8 @@ void modem_init() {
 	uart_tx("AT#AUTOBND=2\r\n");
 
 	uart_tx("AT#NITZ=1\r\n");
+
+
 	uart_tx("AT+CTZU=1\r\n");
 	uart_tx("AT&K4\r\n");
 	uart_tx("AT&P0\r\n");
@@ -366,18 +427,18 @@ void modem_init() {
 	// Have to call twice to guarantee a genuine result
 	modem_checkSignal();
 
-	if(g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] == 0xFF
-			|| g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] == 0x00) {
+	if (sim->iMaxMessages == 0xFF || sim->iMaxMessages == 0x00) {
 		modem_set_max_messages();
 	}
 
 	lcd_print("Checking GPRS");
 	/// added for gprs connection..//
-	signal_gprs = dopost_gprs_connection_status(GPRS);
-	gprs_network_indication = dopost_gprs_connection_status(GSM);
+	g_iSignal_gprs = dopost_gprs_connection_status(GPRS);
+	g_iGprs_network_indication = dopost_gprs_connection_status(GSM);
 
 	// Disable echo from modem
 	uart_tx("ATE0\r\n");
+
 }
 
 #ifdef POWER_SAVING_ENABLED

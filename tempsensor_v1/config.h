@@ -96,18 +96,24 @@ EXTERN int8_t g_iAlarmBatteryPeriod;
 
 #define NUM_SIM_CARDS 2
 
+typedef struct __attribute__((__packed__)) {
+	char    				cfgSMSCenter[GW_MAX_LEN + 1]; // Service Message Center number
+	char    				cfgAPN[APN_MAX_LEN + 1];
+	uint8_t					iMaxMessages;
+	uint16_t 				iCfgMCC;
+	uint16_t 				iCfgMNC;
+	uint16_t				iErrorState;
+	int8_t 				    cfgUploadMode;
+	char    				simLastError[ERROR_MAX_LEN];
+} SIM_CARD_CONFIG ;
+
 typedef struct __attribute__((__packed__))  {
-int8_t 				    cfgUploadMode;
-int8_t					cfgSIMSlot;
-TEMP_ALERT_PARAM		stTempAlertParams[MAX_NUM_SENSORS];
-BATT_POWER_ALERT_PARAM	stBattPowerAlertParam;
-char    				cfgIMEI[IMEI_MAX_LEN + 1];
-char    				cfgGateway[GW_MAX_LEN + 1];
-char    				cfgSMSCenter[NUM_SIM_CARDS][GW_MAX_LEN + 1]; // Service Message Center number
-char    				cfgAPN[NUM_SIM_CARDS][APN_MAX_LEN + 1];
-uint8_t					iMaxMessages[NUM_SIM_CARDS];
-uint16_t 				iCfgMCC[NUM_SIM_CARDS];
-uint16_t 				iCfgMNC[NUM_SIM_CARDS];
+	int8_t					cfgSIM_slot;
+	TEMP_ALERT_PARAM		stTempAlertParams[MAX_NUM_SENSORS];
+	BATT_POWER_ALERT_PARAM	stBattPowerAlertParam;
+	char    				cfgIMEI[IMEI_MAX_LEN + 1];
+	char    				cfgGateway[GW_MAX_LEN + 1];
+	SIM_CARD_CONFIG			SIM[NUM_SIM_CARDS];
 } CONFIG_INFOA;
 
 typedef struct __attribute__((__packed__))  {
@@ -132,6 +138,18 @@ typedef struct {
 int32_t	   dwLastSeek;
 double	   calibration[MAX_NUM_SENSORS][2];
 } CONFIG_INFOB;
+
+// Returns the current structure containing the info for the current SIM selected
+SIM_CARD_CONFIG *config_getSIM();
+
+// Returns current sim selected range [0..1]
+uint8_t config_getSelectedSIM();
+
+// Store the error of the SIM in memory to be displayed
+void config_setSIMError(SIM_CARD_CONFIG *sim, uint16_t errorID, const char *error);
+uint16_t config_getSIMError(int slot);
+void config_reset_error(SIM_CARD_CONFIG *sim);
+uint16_t config_getSimLastError();
 
 /*****************************************************************************************************************/
 /* DIAGNOSE AND TESTING 			   																		     */

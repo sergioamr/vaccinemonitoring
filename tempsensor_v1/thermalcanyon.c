@@ -284,7 +284,7 @@ int main(void) {
 			lcd_print_lne(LINE1, "Configuring...");
 
 			modem_checkSignal();
-			signal_gprs = dopost_gprs_connection_status(GPRS);
+			g_iSignal_gprs = dopost_gprs_connection_status(GPRS);
 
 			iIdx = 0;
 			while (iIdx < MODEM_CHECK_RETRY) {

@@ -16,6 +16,7 @@
 #include "stdio.h"
 #include "string.h"
 #include "stringutils.h"
+#include "modem.h"
 
 // AT Messages returns to check.
 char AT_MSG_OK[]={ 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
@@ -252,6 +253,12 @@ void uart_setDelayIntervalDivider(uint8_t divider) {
 int waitForReady(uint32_t timeoutTimeMs) {
 	uint32_t delayTime = timeoutTimeMs/delayDivider;
 	int count=delayDivider;
+
+	if (delayTime<=100) {
+		delayTime=100;
+		count=1;
+	}
+
 	while (count>0) {
 		delay(delayTime);
 		if (TransmissionEnd==1) {
@@ -351,10 +358,12 @@ uint8_t uart_tx_ext(const char *_format, ...) {
 }
 
 uint8_t uart_tx(const char *cmd) {
-	char* pToken1;
-	char* pToken2;
-	int transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 10);
 
+	char errorToken=0;
+	char* pToken1;
+	uart_resetbuffer();
+
+	int transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 5);
 	if (RXHeadIdx > RXTailIdx)
 		return transaction_completed;
 
@@ -362,15 +371,27 @@ uint8_t uart_tx(const char *cmd) {
 	if (uart_state == UART_ERROR) {
 		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], AT_ERROR);
 		if (pToken1 != NULL) { // ERROR FOUND;
-			lcd_clear();
-			if (*(pToken1-1)=='S')
-				lcd_print_lne(LINE1, "SERVICE ERROR");
-			else
-				lcd_print_lne(LINE1, "MODEM ERROR");
+			char *error = (char *) (pToken1+sizeof(AT_ERROR));
+			modem_parse_error(error);
 
-			lcd_print_lne(LINE2, (char *) (pToken1+sizeof(AT_ERROR)));
-			delay(5000);
+			errorToken=*(pToken1-1);
+#ifndef _DEBUG
+			lcd_clear();
+			if (errorToken=='S') {
+				lcd_print_lne(LINE1, "SERVICE ERROR");
+			} else
+				lcd_print_lne(LINE1, "MODEM ERROR");
+#endif
+			if (errorToken=='E') {
+				lcd_print_lne(LINE2, error);
+				//
+			} else {
+				modem_setNumericError(atoi(error));
+				lcd_print_lne(LINE2, error);
+			}
 		}
+
+		delay(5000);
 	}
 
 	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {

@@ -66,6 +66,35 @@ void calibrate_device() {
 #endif
 }
 
+void config_reset_error(SIM_CARD_CONFIG *sim) {
+	sim->iErrorState= NO_ERROR;
+}
+
+void config_setSIMError(SIM_CARD_CONFIG *sim, uint16_t errorID, const char *error) {
+	if (error == NULL || sim == NULL)
+		return;
+	strncpy(sim->simLastError, error, sizeof(sim->simLastError)-1);
+	sim->iErrorState = errorID;
+}
+
+// Returns the current structure containing the info for the current SIM selected
+uint16_t config_getSIMError(int slot) {
+	return g_pInfoA->SIM[slot].iErrorState;
+}
+
+// Returns the current structure containing the info for the current SIM selected
+SIM_CARD_CONFIG *config_getSIM() {
+	return &g_pInfoA->SIM[g_pInfoA->cfgSIM_slot];
+}
+
+uint8_t config_getSelectedSIM() {
+	return g_pInfoA->cfgSIM_slot;
+}
+
+uint16_t config_getSimLastError() {
+	return g_pInfoA->SIM[g_pInfoA->cfgSIM_slot].iErrorState;
+}
+
 void config_SafeMode() {
 	_NOP();
 }
@@ -131,8 +160,12 @@ void config_init() {
 	memset(g_pInfoA, 0, sizeof(CONFIG_INFOA));
 
 	// Setup InfoA config data
-	g_pInfoA->cfgSIMSlot=0;
+	g_pInfoA->cfgSIM_slot=0;
+
 	strcpy(g_pInfoA->cfgGateway,SMS_NEXLEAF_GATEWAY); // Gateway to nextleaf
+
+	config_setSIMError(&g_pInfoA->SIM[0], NO_ERROR, "FIRST SIM");
+	config_setSIMError(&g_pInfoA->SIM[1], NO_ERROR, "SECOND SIM");
 
 	// Init System internals
 
@@ -157,7 +190,9 @@ void config_init() {
 	lcd_clear();
 	lcd_print_ext(LINE1, "CONFIG MODE");
 	lcd_print_lne(LINE2, g_pSysCfg->firmwareVersion); // Show the firmware version
+#ifndef _DEBUG
 	delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
+#endif
 
 	// First initalization, calibration code.
 	calibrate_device();

@@ -109,7 +109,7 @@ void lcd_show(int8_t iItemId) {
 		if ((iSignalLevel >= NETWORK_DOWN_SS)
 				&& (iSignalLevel <= NETWORK_MAX_SS)) {
 			//	  strcat(lcdBuffer,"G:");
-			if (signal_gprs == 1) {
+			if (g_iSignal_gprs == 1) {
 				strcat(lcdBuffer, "G");
 			} else {
 				strcat(lcdBuffer, "S");
@@ -165,7 +165,7 @@ void lcd_show(int8_t iItemId) {
 	case 7:
 		iCnt = 0xff;
 		strcat(lcdBuffer, "SIM1 ");	//current sim slot is 1
-		if (g_pInfoA->cfgSIMSlot != 0) {
+		if (config_getSelectedSIM() != 0) {
 			strcat(lcdBuffer, "  --  ");
 		} else {
 			if ((iSignalLevel > NETWORK_DOWN_SS)
@@ -175,7 +175,7 @@ void lcd_show(int8_t iItemId) {
 						/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
 				strcat(lcdBuffer, itoa_pad(local_signal));
 				strcat(lcdBuffer, "% ");
-				if (signal_gprs == 1) {
+				if (g_iSignal_gprs == 1) {
 					strcat(lcdBuffer, "G:YES");
 				} else {
 					strcat(lcdBuffer, "G:NO");
@@ -188,7 +188,7 @@ void lcd_show(int8_t iItemId) {
 	case 8:
 		iCnt = 0xff;
 		strcat(lcdBuffer, "SIM2 ");	//current sim slot is 2
-		if (g_pInfoA->cfgSIMSlot != 1) {
+		if (config_getSelectedSIM() != 1) {
 			strcat(lcdBuffer, "  --  ");
 		} else {
 			if ((iSignalLevel > NETWORK_DOWN_SS)
@@ -198,7 +198,7 @@ void lcd_show(int8_t iItemId) {
 						/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
 				strcat(lcdBuffer, itoa_pad(local_signal));
 				strcat(lcdBuffer, "% ");
-				if (signal_gprs == 1) {
+				if (g_iSignal_gprs == 1) {
 					strcat(lcdBuffer, "G:YES");
 				} else {
 					strcat(lcdBuffer, "G:NO");

@@ -28,6 +28,7 @@ int8_t sms_process_msg(char* pSMSmsg) {
 	char* pcTmp = NULL;
 	int8_t iCnt = 0;
 	int8_t iCurrSeq = 0;
+	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	pcTmp = strtok(pSMSmsg, ",");
 
@@ -38,17 +39,16 @@ int8_t sms_process_msg(char* pSMSmsg) {
 			case '1':
 				pcTmp = strtok(NULL, ",");
 				if (pcTmp) {
-					strncpy(g_pInfoA->cfgSMSCenter[g_pInfoA->cfgSIMSlot], pcTmp,
-							strlen(pcTmp));
+					strncpy(sim->cfgSMSCenter, pcTmp, strlen(pcTmp));
 
 					pcTmp = strtok(NULL, ",");
 					if (pcTmp) {
 						//get upload mode
-						g_pInfoA->cfgUploadMode = strtol(pcTmp, 0, 10);
+						sim->cfgUploadMode = strtol(pcTmp, 0, 10);
 						pcTmp = strtok(NULL, ",");
 						if (pcTmp) {
 							//get APN
-							memcpy(g_pInfoA->cfgAPN, pcTmp, strlen(pcTmp));
+							memcpy(sim->cfgAPN, pcTmp, strlen(pcTmp));
 							pcTmp = strtok(NULL, ",");
 							if (pcTmp) {
 								//get upload interval
@@ -81,16 +81,10 @@ int8_t sms_process_msg(char* pSMSmsg) {
 						if (pcTmp) {
 							if (strtol(pcTmp, 0, 10)) {
 								g_iStatus |= ENABLE_SECOND_SLOT;
-								if (g_pInfoA->cfgSIMSlot == 0) {
-									g_pInfoA->cfgSIMSlot = 1;
-									modem_init();
-								}
+								modem_swap_SIM();
 							} else {
 								g_iStatus &= ~ENABLE_SECOND_SLOT;
-								if (g_pInfoA->cfgSIMSlot == 1) {
-									g_pInfoA->cfgSIMSlot = 0;
-									modem_init();
-								}
+								modem_swap_SIM();
 							}
 						}
 						iCnt = 1;
@@ -189,6 +183,7 @@ int8_t sms_process_msg(char* pSMSmsg) {
 // TODO to be tested
 void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 	uint32_t iIdx, iOffset;
+	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	iMsgRxPollElapsed = iMinuteTick;
 	//check if messages are available
@@ -199,10 +194,8 @@ void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 		if (iIdx) {
 			iIdx = 1;
 			lcd_print_lne(LINE2, "Msg Processing..");
-			if (g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] != 0xFF
-					&& g_pInfoA->iMaxMessages[g_pInfoA->cfgSIMSlot] != 0x00) {
+			if (sim->iMaxMessages != 0xFF && sim->iMaxMessages != 0x00) {
 				while (iIdx <= SMS_READ_MAX_MSG_IDX) {
-					memset(ATresponse, 0, sizeof(ATresponse));
 					iModemSuccess = recvmsg(iIdx, ATresponse);
 					if (ATresponse[0] != 0 && iModemSuccess == 0) {
 						switch (ATresponse[0]) {
@@ -238,7 +231,8 @@ void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 						case '2':
 							//reset the board by issuing a SW BOR
 							PMM_trigBOR();
-							while (1);	//code should not come here
+							while (1)
+								;	//code should not come here
 						default:
 							break;
 						}
@@ -261,7 +255,8 @@ void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 void sms_send_heart_beat() {
 
 	char* pcTmp = NULL;
-	int slot = g_pInfoA->cfgSIMSlot;
+	SIM_CARD_CONFIG *sim = config_getSIM();
+
 	int i = 0;
 
 	lcd_print("SMS SYNC");
@@ -270,17 +265,17 @@ void sms_send_heart_beat() {
 	strcat(SampleData, SMS_HB_MSG_TYPE);
 	strcat(SampleData, g_pInfoA->cfgIMEI);
 	strcat(SampleData, ",");
-	if (slot) {
+	if (config_getSelectedSIM()) {
 		strcat(SampleData, "1,");
 	} else {
 		strcat(SampleData, "0,");
 	}
-	strcat(SampleData, &g_pInfoA->cfgGateway[0]);
+	strcat(SampleData, g_pInfoA->cfgGateway);
 	strcat(SampleData, ",");
-	strcat(SampleData, &g_pInfoA->cfgSMSCenter[slot][0]);
+	strcat(SampleData, sim->cfgSMSCenter);
 	strcat(SampleData, ",");
 	for (i = 0; i < MAX_NUM_SENSORS; i++) {
-		if(Temperature[i][0] == '-') {
+		if (Temperature[i][0] == '-') {
 			strcat(SampleData, "0,");
 		} else {
 			strcat(SampleData, "1,");
@@ -314,19 +309,20 @@ extern char* itoa_nopadding(int num);
 
 uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 	char szCmd[64];
-	uint16_t msgNumber=0;  // Validation number from the network returned by the CMGS command
-	int res=UART_ERROR;
+	uint16_t msgNumber = 0; // Validation number from the network returned by the CMGS command
+	int res = UART_ERROR;
+	int verbose = g_iLCDVerbose;
 
 	if (g_iStatus & TEST_FLAG)
 		return UART_SUCCESS;
 
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_clear();
-		lcd_print_ext(LINE1, "SYNC SMS %d ", g_pInfoA->cfgSIMSlot+1);
+		lcd_print_ext(LINE1, "SYNC SMS %d ", g_pInfoA->cfgSIM_slot + 1);
 		lcd_print_lne(LINE2, szPhoneNumber);
+		lcd_disable_verbose();
 	}
 
-	lcd_disable_verbose();
 	strcat(pData, ctrlZ);
 
 	sprintf(szCmd, "AT+CMGS=\"%s\",129\r\n", szPhoneNumber);
@@ -338,6 +334,9 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 		res = uart_rx(ATCMD_CMGS, ATresponse);
 		msgNumber = atoi(ATresponse);
 	}
+
+	if (verbose==VERBOSE_BOOTING)
+		lcd_enable_verbose();
 
 	if (res == UART_SUCCESS) {
 		lcd_clear();
@@ -378,7 +377,7 @@ void delallmsg() {
 
 void delmsg(int8_t iMsgIdx, char* pData) {
 	char szCmd[64];
-	sprintf(szCmd, "AT+CMGD=%d,0\r\n",iMsgIdx);
+	sprintf(szCmd, "AT+CMGD=%d,0\r\n", iMsgIdx);
 	uart_tx(szCmd);
 	delay(2000);	//opt
 }

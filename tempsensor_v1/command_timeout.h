@@ -9,7 +9,7 @@
 #define COMMAND_TIMEOUT_H_
 
 // Timeouts for the telit commands in seconds
-#define TIMEOUT_DEFAULT 100
+#define TIMEOUT_DEFAULT 1000
 #define TIMEOUT_CBST 200
 #define TIMEOUT_CR 200
 #define TIMEOUT_CRC 200
@@ -25,6 +25,7 @@
 #define TIMEOUT_CREG 5000
 #define TIMEOUT_COPS 180000
 #define TIMEOUT_CLCK 180000
+#define TIMEOUT_CGATT 180000
 #define TIMEOUT_CSURV 120000
 #define TIMEOUT_HTTPSND_PROMPT 5000
 #define TIMEOUT_HTTPSND 12000
