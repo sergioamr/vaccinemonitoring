@@ -83,18 +83,19 @@ void lcd_show(int8_t iItemId) {
 	lcd_clear();
 
 	memset(lcdBuffer, 0, LCD_DISPLAY_LEN);
+
 	//get local time
-	rtc_getlocal(&currTime);
-	strcat(lcdBuffer, itoa_pad(currTime.tm_year));
+	rtc_getlocal(&g_tmCurrTime);
+	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_year));
 	strcat(lcdBuffer, "/");
-	strcat(lcdBuffer, itoa_pad(currTime.tm_mon));
+	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_mon));
 	strcat(lcdBuffer, "/");
-	strcat(lcdBuffer, itoa_pad(currTime.tm_mday));
+	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_mday));
 	strcat(lcdBuffer, " ");
 
-	strcat(lcdBuffer, itoa_pad(currTime.tm_hour));
+	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_hour));
 	strcat(lcdBuffer, ":");
-	strcat(lcdBuffer, itoa_pad(currTime.tm_min));
+	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_min));
 	iIdx = strlen(lcdBuffer); //marker
 
 	switch (iItemId) {

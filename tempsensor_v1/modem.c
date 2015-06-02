@@ -381,12 +381,28 @@ void modem_pull_time() {
 	for (i = 0; i < MAX_TIME_ATTEMPTS; i++) {
 		uart_tx("AT+CCLK?\r\n");
 		uart_rx_cleanBuf(ATCMD_CCLK, ATresponse, sizeof(ATresponse));
-		modem_parse_time(ATresponse, &currTime);
-		rtc_init(&currTime);
+		modem_parse_time(ATresponse, &g_tmCurrTime);
 
-		if (currTime.tm_year != 0) {
+		if (g_tmCurrTime.tm_year>=2015 && g_tmCurrTime.tm_year<2115) {  // 100 years ?
+			rtc_init(&g_tmCurrTime);
+			config_update_system_time();
+		} else {
+			lcd_clear();
+			lcd_print_ext(LINE1, "WRONG DATE SIM %d ", config_getSelectedSIM());
+			lcd_print_ext(LINE2, get_YMD_String(&g_tmCurrTime));
+			delay(HUMAN_DISPLAY_INFO_DELAY);
+			rtc_init(&g_pInfoA->lastSystemTime);
+
+			lcd_clear();
+			lcd_print_ext(LINE1, "LAST DATE ");
+			rtc_get(&g_tmCurrTime);
+			lcd_print_ext(LINE2, get_YMD_String(&g_tmCurrTime));
+			delay(HUMAN_DISPLAY_INFO_DELAY);
+		}
+
+		if (g_tmCurrTime.tm_year != 0) {
 			// Day has changed so save the new date TODO keep trying until date is set. Call function ONCE PER DAY
-			g_iCurrDay = currTime.tm_mday;
+			g_iCurrDay = g_tmCurrTime.tm_mday;
 			break;
 		}
 	}

@@ -12,6 +12,7 @@
 
 #include "stdint.h"
 #include "common.h"
+#include "time.h"
 
 #define MAX_NUM_CONTINOUS_SAMPLES 10
 
@@ -114,6 +115,7 @@ typedef struct __attribute__((__packed__))  {
 	char    				cfgIMEI[IMEI_MAX_LEN + 1];
 	char    				cfgGateway[GW_MAX_LEN + 1];
 	SIM_CARD_CONFIG			SIM[NUM_SIM_CARDS];
+	struct tm				lastSystemTime;
 } CONFIG_INFOA;
 
 typedef struct __attribute__((__packed__))  {
@@ -172,5 +174,6 @@ uint16_t config_getSimLastError();
 extern void config_init();
 extern void config_setLastCommand(uint16_t lastCmd);
 extern void config_incLastCmd();
+extern void config_update_system_time();
 
 #endif /* TEMPSENSOR_V1_CONFIG_H_ */

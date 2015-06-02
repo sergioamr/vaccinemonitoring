@@ -9,12 +9,12 @@ FATFS FatFs; /* Work area (file system object) for logical drive */
 DWORD get_fattime(void) {
 	DWORD tmr;
 
-	rtc_getlocal(&currTime);
+	rtc_getlocal(&g_tmCurrTime);
 	/* Pack date and time into a DWORD variable */
-	tmr = (((DWORD) currTime.tm_year - 1980) << 25)
-			| ((DWORD) currTime.tm_mon << 21) | ((DWORD) currTime.tm_mday << 16)
-			| (WORD) (currTime.tm_hour << 11) | (WORD) (currTime.tm_min << 5)
-			| (WORD) (currTime.tm_sec >> 1);
+	tmr = (((DWORD) g_tmCurrTime.tm_year - 1980) << 25)
+			| ((DWORD) g_tmCurrTime.tm_mon << 21) | ((DWORD) g_tmCurrTime.tm_mday << 16)
+			| (WORD) (g_tmCurrTime.tm_hour << 11) | (WORD) (g_tmCurrTime.tm_min << 5)
+			| (WORD) (g_tmCurrTime.tm_sec >> 1);
 	return tmr;
 }
 
@@ -94,15 +94,15 @@ FRESULT log_append_text(char *text) {
 		return fr;
 	}
 
-	rtc_get(&currTime);
+	rtc_get(&g_tmCurrTime);
 
 	strcpy(szLog, "[");
-	if (currTime.tm_year > 2000) {
-		strcat(szLog, get_YMD_String(&currTime));
+	if (g_tmCurrTime.tm_year > 2000) {
+		strcat(szLog, get_YMD_String(&g_tmCurrTime));
 		strcat(szLog, " ");
-		strcat(szLog, itoa_pad(currTime.tm_hour));
-		strcat(szLog, itoa_pad(currTime.tm_min));
-		strcat(szLog, itoa_pad(currTime.tm_sec));
+		strcat(szLog, itoa_pad(g_tmCurrTime.tm_hour));
+		strcat(szLog, itoa_pad(g_tmCurrTime.tm_min));
+		strcat(szLog, itoa_pad(g_tmCurrTime.tm_sec));
 	} else {
 		for (t = 0; t < 13; t++)
 			strcat(szLog, "*");
@@ -141,7 +141,7 @@ FRESULT log_sample_to_disk(int* tbw) {
 	FIL fobj;
 
 	int bw = 0;	//bytes written
-	char* fn = get_current_fileName(&currTime);
+	char* fn = get_current_fileName(&g_tmCurrTime);
 
 	if (!(g_iStatus & TEST_FLAG)) {
 		fr = f_open(&fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
@@ -156,20 +156,20 @@ FRESULT log_sample_to_disk(int* tbw) {
 		}
 
 		if (g_iStatus & LOG_TIME_STAMP) {
-			rtc_get(&currTime);
+			rtc_get(&g_tmCurrTime);
 
 #if 1
 			memset(szLog, 0, sizeof(szLog));
 			strcat(szLog, "$TS=");
-			strcat(szLog, itoa_pad(currTime.tm_year));
-			strcat(szLog, itoa_pad(currTime.tm_mon));
-			strcat(szLog, itoa_pad(currTime.tm_mday));
+			strcat(szLog, itoa_pad(g_tmCurrTime.tm_year));
+			strcat(szLog, itoa_pad(g_tmCurrTime.tm_mon));
+			strcat(szLog, itoa_pad(g_tmCurrTime.tm_mday));
 			strcat(szLog, ":");
-			strcat(szLog, itoa_pad(currTime.tm_hour));
+			strcat(szLog, itoa_pad(g_tmCurrTime.tm_hour));
 			strcat(szLog, ":");
-			strcat(szLog, itoa_pad(currTime.tm_min));
+			strcat(szLog, itoa_pad(g_tmCurrTime.tm_min));
 			strcat(szLog, ":");
-			strcat(szLog, itoa_pad(currTime.tm_sec));
+			strcat(szLog, itoa_pad(g_tmCurrTime.tm_sec));
 			strcat(szLog, ",");
 			strcat(szLog, "R");	//removed =
 			strcat(szLog, itoa_pad(g_iSamplePeriod));
@@ -177,8 +177,8 @@ FRESULT log_sample_to_disk(int* tbw) {
 			strcat(szLog, "\n");
 			fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 #else
-			bw = f_printf(fobj,"$TS=%04d%02d%02d:%02d:%02d:%02d,R=%d,", currTime.tm_year, currTime.tm_mon, currTime.tm_mday,
-					currTime.tm_hour, currTime.tm_min, currTime.tm_sec,g_iSamplePeriod);
+			bw = f_printf(fobj,"$TS=%04d%02d%02d:%02d:%02d:%02d,R=%d,", g_tmCurrTime.tm_year, g_tmCurrTime.tm_mon, g_tmCurrTime.tm_mday,
+					g_tmCurrTime.tm_hour, g_tmCurrTime.tm_min, g_tmCurrTime.tm_sec,g_iSamplePeriod);
 #endif
 			if (bw > 0) {
 				*tbw += bw;

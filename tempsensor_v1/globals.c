@@ -41,7 +41,7 @@ char szLog[FILE_BUFFER_LEN];
 #pragma SET_DATA_SECTION(".config_vars_infoC")
 //put all variables that are written less frequently
 volatile int32_t ADCvar[MAX_NUM_SENSORS];
-struct tm currTime;
+struct tm g_tmCurrTime;
 FIL filr;
 
 FRESULT fr;

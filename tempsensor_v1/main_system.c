@@ -31,10 +31,9 @@
 #include "hardware_buttons.h"
 #include "fatdata.h"
 
-_Sigfun * signal(int i, _Sigfun *proc) {
-	__no_operation();
-	return NULL;
-}
+/****************************************************************************/
+/*  IO SETUP                                                                */
+/****************************************************************************/
 
 // Setup Pinout for I2C, and SPI transactions.
 // http://www.ti.com/lit/ug/slau535a/slau535a.pdf
@@ -98,16 +97,14 @@ void system_boot() {
 	setup_IO();
 
 	lcd_reset();
-	lcd_blenable();
+	lcd_blenable();  // For some reason, lcd has to be enabled before battery init. Probably something with the i2c, still checking what is the problem here.
 
 #ifndef BATTERY_DISABLED
 	batt_init();
 #endif
 
 	lcd_init();
-
 	config_init();// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
-
 	config_setLastCommand(COMMAND_BOOT);
 
 	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
@@ -145,6 +142,11 @@ void system_boot() {
 
 	lcd_print("Finished Boot");
 	log_append("Finished Boot");
+}
+
+_Sigfun * signal(int i, _Sigfun *proc) {
+	__no_operation();
+	return NULL;
 }
 
 /****************************************************************************/

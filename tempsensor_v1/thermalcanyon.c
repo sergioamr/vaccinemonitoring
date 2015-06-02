@@ -45,6 +45,8 @@ void thermal_canyon_loop(void) {
 
 	while (1) {
 
+		config_update_system_time();
+
 		if (g_iSystemSetup > 0) {
 			lcd_clear();
 			lcd_print("RUN CALIBRATION?");

@@ -30,7 +30,7 @@ extern volatile int32_t ADCvar[MAX_NUM_SENSORS];
 extern char ATresponse[ATRESP_MAX_LEN];
 
 extern char SampleData[SAMPLE_LEN];
-extern struct tm currTime;
+extern struct tm g_tmCurrTime;
 
 extern int8_t iSignalLevel;
 extern uint8_t g_iBatteryLevel;
@@ -43,7 +43,7 @@ extern void ConvertADCToTemperature(int32_t ADCval, char* TemperatureVal,
 extern char szLog[FILE_BUFFER_LEN];
 
 //now moved to INFOD FRAM to optimize repeated temperature conversion
-extern struct tm currTime;
+extern struct tm g_tmCurrTime;
 extern FIL filr;
 extern FRESULT fr;
 extern int32_t iBytesLogged;

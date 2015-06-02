@@ -260,16 +260,16 @@ int data_transmit(uint8_t *pSampleCnt) {
 	iPOSTstatus = 0;	//set to 1 if post and sms should happen
 	memset(SampleData,0,sizeof(SampleData));
 	strcat(SampleData,"IMEI=358072043113601&phone=8455523642&uploadversion=1.20140817.1&sensorid=0|1|2|3&");//SERIAL
-	rtc_get(&currTime);
+	rtc_get(&g_tmCurrTime);
 	strcat(SampleData,"sampledatetime=");
 	for(iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++)
 	{
-		strcat(SampleData,itoa_pad(currTime.tm_year)); strcat(SampleData,"/");
-		strcat(SampleData,itoa_pad(currTime.tm_mon)); strcat(SampleData,"/");
-		strcat(SampleData,itoa_pad(currTime.tm_mday)); strcat(SampleData,":");
-		strcat(SampleData,itoa_pad(currTime.tm_hour)); strcat(SampleData,":");
-		strcat(SampleData,itoa_pad(currTime.tm_min)); strcat(SampleData,":");
-		strcat(SampleData,itoa_pad(currTime.tm_sec));
+		strcat(SampleData,itoa_pad(g_tmCurrTime.tm_year)); strcat(SampleData,"/");
+		strcat(SampleData,itoa_pad(g_tmCurrTime.tm_mon)); strcat(SampleData,"/");
+		strcat(SampleData,itoa_pad(g_tmCurrTime.tm_mday)); strcat(SampleData,":");
+		strcat(SampleData,itoa_pad(g_tmCurrTime.tm_hour)); strcat(SampleData,":");
+		strcat(SampleData,itoa_pad(g_tmCurrTime.tm_min)); strcat(SampleData,":");
+		strcat(SampleData,itoa_pad(g_tmCurrTime.tm_sec));
 		if(iIdx != (MAX_NUM_SENSORS - 1))
 		{
 			strcat(SampleData, "|");
@@ -317,7 +317,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 	iPOSTstatus = 0;
 	fr = FR_DENIED;
 	iOffset = 0;
-	char* fn = get_current_fileName(&currTime);
+	char* fn = get_current_fileName(&g_tmCurrTime);
 
 //fr = f_read(&filr, acLogData, 1, &iIdx);  /* Read a chunk of source file */
 	memset(ATresponse, 0, sizeof(ATresponse));//ensure the buffer in aggregate_var section is more than AGGREGATE_SIZE

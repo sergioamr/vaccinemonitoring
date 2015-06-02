@@ -14,6 +14,7 @@
 #include "time.h"
 #include "stringutils.h"
 #include "hardware_buttons.h"
+#include "time.h"
 
 int g_iSamplePeriod = SAMPLE_PERIOD;
 int g_iUploadPeriod = UPLOAD_PERIOD;
@@ -114,14 +115,14 @@ void config_setLastCommand(uint16_t lastCmd)  {
 
 	g_pSysCfg->lastCommand = lastCmd;
 
-	rtc_get(&currTime);
+	rtc_get(&g_tmCurrTime);
 
-	if (lastMin!=currTime.tm_min && lastSec!=currTime.tm_sec) {
-		strcpy(g_pSysCfg->lastCommandTime,itoa_pad(currTime.tm_hour));
+	if (lastMin!=g_tmCurrTime.tm_min && lastSec!=g_tmCurrTime.tm_sec) {
+		strcpy(g_pSysCfg->lastCommandTime,itoa_pad(g_tmCurrTime.tm_hour));
 		strcat(g_pSysCfg->lastCommandTime,":");
-		strcpy(g_pSysCfg->lastCommandTime,itoa_pad(currTime.tm_min));
+		strcpy(g_pSysCfg->lastCommandTime,itoa_pad(g_tmCurrTime.tm_min));
 		strcat(g_pSysCfg->lastCommandTime,":");
-		strcat(g_pSysCfg->lastCommandTime,itoa_pad(currTime.tm_sec));
+		strcat(g_pSysCfg->lastCommandTime,itoa_pad(g_tmCurrTime.tm_sec));
 	}
 }
 
@@ -167,8 +168,8 @@ void config_init() {
 
 	strcpy(g_pInfoA->cfgGateway,SMS_NEXLEAF_GATEWAY); // Gateway to nextleaf
 
-	config_setSIMError(&g_pInfoA->SIM[0], NO_ERROR, "FIRST SIM");
-	config_setSIMError(&g_pInfoA->SIM[1], NO_ERROR, "SECOND SIM");
+	config_setSIMError(&g_pInfoA->SIM[0], NO_ERROR, "***FIRST SIM***");
+	config_setSIMError(&g_pInfoA->SIM[1], NO_ERROR, "**SECOND  SIM**");
 
 	// Init System internals
 
@@ -199,4 +200,12 @@ void config_init() {
 
 	// First initalization, calibration code.
 	calibrate_device();
+}
+
+void config_update_system_time()
+{
+	// Gets the current time and stores it in FRAM
+	rtc_get(&g_tmCurrTime);
+	memcpy(&g_pInfoA->lastSystemTime, &g_tmCurrTime, sizeof(g_tmCurrTime));
+	_NOP();
 }
