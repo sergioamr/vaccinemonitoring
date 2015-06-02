@@ -371,6 +371,7 @@ void modem_init() {
 	config_reset_error(sim);
 
 	uart_tx("AT\r\n"); // Display OK
+	uart_tx("ATE1\r\n");
 
 	// GPIO [PIN, DIR, MODE]
 	// Execution command sets the value of the general purpose output pin

@@ -53,52 +53,6 @@ void system_setupIO_clock() {
 	CSCTL0_H = 0;                             // Lock CS registers
 }
 
-static void ADC_setupIO() {
-
-	P1SELC |= BIT0 | BIT1;                    // Enable VEREF-,+
-	P1SELC |= BIT2;                           // Enable A/D channel A2
-#ifdef SEQUENCE
-	P1SELC |= BIT3 | BIT4 | BIT5;          // Enable A/D channel A3-A5
-#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
-	P4SELC |= BIT2;          				// Enable A/D channel A10
-#endif
-#endif
-
-#ifdef POWER_SAVING_ENABLED
-	P3DIR |= BIT3;							// Modem DTR
-	P3OUT &= ~BIT3;// DTR ON (low)
-#endif
-	//P1SEL0 |= BIT2;
-
-	// Configure ADC12
-	ADC12CTL0 = ADC12ON | ADC12SHT0_2;       // Turn on ADC12, set sampling time
-	ADC12CTL1 = ADC12SHP;                     // Use pulse mode
-	ADC12CTL2 = ADC12RES_2;                   // 12bit resolution
-	ADC12CTL3 |= ADC12CSTARTADD_2;			// A2 start channel
-	ADC12MCTL2 = ADC12VRSEL_4 | ADC12INCH_2; // Vr+ = VeREF+ (ext) and Vr-=AVss, 12bit resolution, channel 2
-#ifdef SEQUENCE
-	ADC12MCTL3 = ADC12VRSEL_4 | ADC12INCH_3; // Vr+ = VeREF+ (ext) and Vr-=AVss, 12bit resolution, channel 3
-	ADC12MCTL4 = ADC12VRSEL_4 | ADC12INCH_4; // Vr+ = VeREF+ (ext) and Vr-=AVss, 12bit resolution, channel 4
-#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
-	ADC12MCTL5 = ADC12VRSEL_4 | ADC12INCH_5; // Vr+ = VeREF+ (ext) and Vr-=AVss,12bit resolution,channel 5,EOS
-	ADC12MCTL6 = ADC12VRSEL_4 | ADC12INCH_10 | ADC12EOS; // Vr+ = VeREF+ (ext) and Vr-=AVss,12bit resolution,channel 5,EOS
-#else
-			ADC12MCTL5 = ADC12VRSEL_4 | ADC12INCH_5 | ADC12EOS; // Vr+ = VeREF+ (ext) and Vr-=AVss,12bit resolution,channel 5,EOS
-#endif
-	ADC12CTL1 = ADC12SHP | ADC12CONSEQ_1;                   // sample a sequence
-	ADC12CTL0 |= ADC12MSC; //first sample by trigger and rest automatic trigger by prior conversion
-#endif
-
-	//ADC interrupt logic
-	//TODO comment ADC for debugging other interfaces
-#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
-	ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5 | ADC12IE6; // Enable ADC conv complete interrupt
-#else
-			ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5; // Enable ADC conv complete interrupt
-#endif
-
-}
-
 static void system_setupIO_SPI_I2C() {
 	P2DIR |= BIT3;							// SPI CS
 	P2OUT |= BIT3;					// drive SPI CS high to deactive the chip
