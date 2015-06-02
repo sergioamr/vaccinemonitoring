@@ -43,16 +43,12 @@
 extern volatile uint32_t iMinuteTick;
 extern char* g_TmpSMScmdBuffer;
 
-//local functions
-
-static void writetoI2C(uint8_t addressI2C, uint8_t dataI2C);
-static float ConvertoTemp(float R);
-static void parsetime(char* pDatetime, struct tm* pTime);
-
 void uploadsms();
 int8_t sms_process_msg(char* pSMSmsg);
 void sampletemp();
 void monitoralarm();
+
+extern void thermal_canyon_loop();
 
 extern void encode(double input_val, char output_chars[]); // Encode function from encode.c
 
