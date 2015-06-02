@@ -76,8 +76,11 @@ FRESULT fat_init_drive() {
 FRESULT log_append_text(char *text) {
 
 	FIL fobj;
-	int bw = 0;	//bytes written
 	int t = 0;
+	int len = 0;
+
+	if (text == NULL)
+		return FR_OK;
 
 	fr = f_open(&fobj, LOG_FILE_PATH,
 	FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
@@ -104,13 +107,16 @@ FRESULT log_append_text(char *text) {
 		for (t = 0; t < 13; t++)
 			strcat(szLog, "*");
 	}
-	strcat(szLog, "]");
+	strcat(szLog, "] ");
 
-	strcat(szLog, " ");
+	len = strlen(text);
+	for (t = 0; t < len; t++) {
+		if (text[t] == '\n' || text[t] == '\r')
+			text[t] = ' ';
+	}
 	strcat(szLog, text);
 	strcat(szLog, "\r\n");
 
-	fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 
 	f_sync(&fobj);
 	return f_close(&fobj);
@@ -182,18 +188,18 @@ FRESULT log_sample_to_disk(int* tbw) {
 
 		//get battery level
 #ifndef BATTERY_DISABLED
-		iBatteryLevel = batt_getlevel();
+		g_iBatteryLevel = batt_getlevel();
 #else
-		iBatteryLevel = 0;
+		g_iBatteryLevel = 0;
 #endif
 		//log sample period, battery level, power plugged, temperature values
 #if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
 		//bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,E=%s,", iBatteryLevel,
 		//			  !(P4IN & BIT4),Temperature[0],Temperature[1],Temperature[2],Temperature[3],Temperature[4]);
 		memset(szLog, 0, sizeof(szLog));
-		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,E%s,F%s\n", itoa_pad(iBatteryLevel),
-				!(P4IN & BIT4), Temperature[0], Temperature[1], Temperature[2],
-				Temperature[3], Temperature[4]);
+		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,E%s,F%s\n",
+				itoa_pad(g_iBatteryLevel), !(P4IN & BIT4), Temperature[0],
+				Temperature[1], Temperature[2], Temperature[3], Temperature[4]);
 		/*
 		 strcat(szLog, "F");
 		 strcat(szLog, itoa_pad(iBatteryLevel));
@@ -220,7 +226,7 @@ FRESULT log_sample_to_disk(int* tbw) {
 
 		fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 #else
-		bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,", iBatteryLevel,
+		bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,", g_iBatteryLevel,
 				!(P4IN & BIT4),Temperature[0],Temperature[1],Temperature[2],Temperature[3]);
 #endif
 

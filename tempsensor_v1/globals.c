@@ -55,7 +55,7 @@ uint32_t g_iAlarmStatus = 0;
 double iTemp = 0.0;
 int16_t g_iAlarmCnfCnt[MAX_NUM_SENSORS + 2];//additional two for power and battery alert
 
-uint8_t iBatteryLevel = 100;
+uint8_t g_iBatteryLevel = 100;
 int8_t iSignalLevel = 99;
 //opt
 uint8_t iPostSuccess = 0;

@@ -93,13 +93,7 @@ static void setup_IO() {
 /*  MAIN                                                                    */
 /****************************************************************************/
 
-int main(void) {
-
-	uint32_t iIdx = 0;
-	uint8_t iSampleCnt = 0;
-	char gprs_network_indication = 0;
-
-	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
+void system_boot() {
 
 	setup_IO();
 
@@ -144,27 +138,39 @@ int main(void) {
 		_NOP(); // Modem failed to power on
 	}
 
-	iBatteryLevel=batt_check_level();
+	g_iBatteryLevel=batt_check_level();
+
+	// Init finished, we disabled the debugging display
+	g_iDisplayId = 0;
+	lcd_disable_verbose();
+
+	lcd_print("Finished Boot");
+	log_append("Finished Boot");
+}
+
+int main(void) {
+
+	uint32_t iIdx = 0;
+	uint8_t iSampleCnt = 0;
+	char gprs_network_indication = 0;
+
+	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
+
+	system_boot();
 
 	iUploadTimeElapsed = iMinuteTick;		//initialize POST minute counter
 	iSampleTimeElapsed = iMinuteTick;
 	iSMSRxPollElapsed = iMinuteTick;
 	iLCDShowElapsed = iMinuteTick;
 	iMsgRxPollElapsed = iMinuteTick;
-	g_iDisplayId = 0;
-
-	// Init finished, we disabled the debugging display
-	lcd_disable_verbose();
-
-	lcd_print("Finished Boot");
-	log_append("Finished Boot");
 
 	while (1) {
 
-		if (g_iStatus & SYSTEM_SETUP) {
+		if (g_iSystemSetup>0) {
 			lcd_clear();
 			lcd_print("RUN CALIBRATION?");
 			lcd_print("PRESS AGAIN TO RUN");
+			g_iSystemSetup=0;
 		}
 
 		//check if conversion is complete
@@ -315,7 +321,7 @@ int main(void) {
 		}
 
 		//low power behavior
-		if ((iBatteryLevel <= 10) && (P4IN & BIT4)) {
+		if ((g_iBatteryLevel <= 10) && (P4IN & BIT4)) {
 			lcd_clear();
 			lcd_print("Low Battery     ");
 			delay(HUMAN_DISPLAY_INFO_DELAY);
@@ -326,7 +332,7 @@ int main(void) {
 			lcd_off();
 
 			//loop for charger pluging
-			while (iBatteryLevel <= 10) {
+			while (g_iBatteryLevel <= 10) {
 				if (iLastDisplayId != g_iDisplayId) {
 					iLastDisplayId = g_iDisplayId;
 					//enable backlight
@@ -494,7 +500,7 @@ void monitoralarm() {
 
 	//check for battery alert
 	iCnt = MAX_NUM_SENSORS;
-	if (iBatteryLevel < g_pInfoA->stBattPowerAlertParam.battthreshold) {
+	if (g_iBatteryLevel < g_pInfoA->stBattPowerAlertParam.battthreshold) {
 		//check if battery alarm is set
 		if (TEMP_ALARM_GET(iCnt) != BATT_ALARM_ON) {
 			TEMP_ALARM_CLR(iCnt);//reset the alarm in case it was earlier confirmed
@@ -517,7 +523,7 @@ void monitoralarm() {
 				//send sms LOW Battery: ColdTrace has now 15% battery left. Charge your device immediately.
 				memset(SampleData,0,SMS_ENCODED_LEN);
 				strcat(SampleData, "LOW Battery: ColdTrace has now ");
-				strcat(SampleData,itoa_pad(iBatteryLevel));
+				strcat(SampleData,itoa_pad(g_iBatteryLevel));
 				strcat(SampleData, "battery left. Charge your device immediately.");
 				sendmsg(SampleData);
 #endif

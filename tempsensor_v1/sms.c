@@ -212,13 +212,13 @@ void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 
 							// added for show msg//
 							strcat(SampleData, "Battery:");
-							strcat(SampleData, itoa_pad(iBatteryLevel));
+							strcat(SampleData, itoa_pad(g_iBatteryLevel));
 							strcat(SampleData, "%, ");
 							if (P4IN & BIT4)	//power not plugged
 							{
 								strcat(SampleData, "POWER OUT");
 							} else if (((P4IN & BIT6))
-									&& (iBatteryLevel == 100)) {
+									&& (g_iBatteryLevel == 100)) {
 								strcat(SampleData, "FULL CHARGE");
 							} else {
 								strcat(SampleData, "CHARGING");
