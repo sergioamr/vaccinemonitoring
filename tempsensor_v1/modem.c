@@ -25,6 +25,7 @@
 #include "rtc.h"
 #include "http.h"
 #include "temperature.h"
+#include "fatdata.h"
 
 char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
@@ -50,6 +51,42 @@ void modem_setNumericError(int16_t errorCode) {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	config_setSIMError(sim, errorCode, szCode);
 	return;
+}
+
+static const char AT_ERROR[]= " ERROR: ";
+
+void modem_check_uart_error() {
+	char *pToken1;
+	char errorToken;
+
+	int uart_state = uart_getTransactionState();
+	if (uart_state != UART_ERROR)
+		return;
+
+	pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], (const char *) AT_ERROR);
+	if (pToken1 != NULL) { // ERROR FOUND;
+		char *error = (char *) (pToken1+strlen(AT_ERROR));
+
+		log_append("ERROR: SIM %d cmd[%s]", config_getSelectedSIM(), error);
+		modem_parse_error(error);
+		errorToken=*(pToken1-1);
+#ifndef _DEBUG
+		lcd_clear();
+		if (errorToken=='S') {
+			lcd_print_lne(LINE1, "SERVICE ERROR");
+		} else
+			lcd_print_lne(LINE1, "MODEM ERROR");
+#endif
+		if (errorToken=='E') {
+			lcd_print_lne(LINE2, error);
+			//
+		} else {
+			modem_setNumericError(atoi(error));
+			lcd_print_lne(LINE2, error);
+		}
+	}
+
+	delay(5000);
 }
 
 int8_t modem_first_init() {
@@ -87,6 +124,8 @@ int8_t modem_first_init() {
 				lcd_clear();
 				lcd_print_ext(LINE1, "ERROR INIT SIM %d ", config_getSelectedSIM()+1);
 				lcd_print_ext(LINE2, config_getSIM()->simLastError);
+
+				log_append("ERROR: SIM %d FAILED [%s]", config_getSelectedSIM(), config_getSIM()->simLastError);
 				delay(HUMAN_DISPLAY_ERROR_DELAY);
 				iSIM_Error ++;
 			}
@@ -106,6 +145,7 @@ int8_t modem_first_init() {
 			case 2:
 				lcd_clear();
 				lcd_print_ext(LINE1, "BOTH SIMS FAILED ");
+				log_append("ERROR: BOTH SIMS FAILED ON INIT ");
 				delay(HUMAN_DISPLAY_ERROR_DELAY);
 			break;
 		}
@@ -131,6 +171,8 @@ void modem_swap_SIM() {
 	modem_init();
 	modem_getExtraInfo();
 
+	// Wait for the modem to be ready to send messages
+	delay(1000);
 #ifdef _DEBUG
 	if (config_getSIMError(config_getSelectedSIM())==NO_ERROR)
 #endif
@@ -371,7 +413,7 @@ void modem_init() {
 	config_reset_error(sim);
 
 	uart_tx("AT\r\n"); // Display OK
-	uart_tx("ATE1\r\n");
+	uart_tx("ATE0\r\n");
 
 	// GPIO [PIN, DIR, MODE]
 	// Execution command sets the value of the general purpose output pin

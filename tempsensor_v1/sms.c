@@ -5,7 +5,6 @@
  *      Author: rajeevnx
  */
 
-#if 1
 #define SMS_C_
 
 #include "stdint.h"
@@ -23,6 +22,7 @@
 #include "stdlib.h"
 #include "battery.h"
 #include "pmm.h"
+#include "fatdata.h"
 
 int8_t sms_process_msg(char* pSMSmsg) {
 	char* pcTmp = NULL;
@@ -225,7 +225,7 @@ void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 							}
 							iOffset = strlen(SampleData);
 
-							sendmsg_number(&ATresponse[6], SampleData);
+							sms_send_message_number(&ATresponse[6], SampleData);
 							break;
 
 						case '2':
@@ -298,7 +298,7 @@ void sms_send_heart_beat() {
 #endif
 	strcat(SampleData, "");
 
-	sendmsg(SampleData);
+	sms_send_message(SampleData);
 }
 
 extern char* itoa_nopadding(int num);
@@ -307,7 +307,7 @@ extern char* itoa_nopadding(int num);
 //char g_TmpSMScmdBuffer[SMS_CMD_LEN];
 //#pragma SET_DATA_SECTION()
 
-uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
+uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	char szCmd[64];
 	uint16_t msgNumber = 0; // Validation number from the network returned by the CMGS command
 	int res = UART_ERROR;
@@ -340,19 +340,25 @@ uint8_t sendmsg_number(char *szPhoneNumber, char* pData) {
 
 	if (res == UART_SUCCESS) {
 		lcd_clear();
-		lcd_print_lne(LINE1, "SMS Confirm ");
+		lcd_print_lne(LINE1, "SMS Confirm    ");
 		lcd_print_ext(LINE2, "MSG %d ", msgNumber);
+		delay(HUMAN_DISPLAY_INFO_DELAY);
 		_NOP();
 	} else if (res == UART_ERROR) {
-		lcd_print("MODEM ERROR");
+		lcd_print_ext(LINE2, "MODEM ERROR     ");
+		log_append("ERROR: SIM %d FAILED [%s]", config_getSelectedSIM(), config_getSIM()->simLastError);
+		delay(HUMAN_DISPLAY_ERROR_DELAY);
+	} else {
+		lcd_print("MODEM TIMEOUT");
+		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	}
 
 	_NOP();
 	return res;
 }
 
-uint8_t sendmsg(char* pData) {
-	return sendmsg_number(SMS_NEXLEAF_GATEWAY, pData);
+uint8_t sms_send_message(char* pData) {
+	return sms_send_message_number(SMS_NEXLEAF_GATEWAY, pData);
 }
 
 int recvmsg(int8_t iMsgIdx, char* pData) {
@@ -381,4 +387,4 @@ void delmsg(int8_t iMsgIdx, char* pData) {
 	uart_tx(szCmd);
 	delay(2000);	//opt
 }
-#endif
+

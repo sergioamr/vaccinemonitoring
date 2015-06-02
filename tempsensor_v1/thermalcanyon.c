@@ -29,6 +29,7 @@
 #include "thermalcanyon.h"
 #include "data_transmit.h"
 #include "hardware_buttons.h"
+#include "fatdata.h"
 
 _Sigfun * signal(int i, _Sigfun *proc) {
 	__no_operation();

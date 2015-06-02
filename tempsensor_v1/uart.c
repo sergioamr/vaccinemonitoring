@@ -17,14 +17,15 @@
 #include "string.h"
 #include "stringutils.h"
 #include "modem.h"
+#include "fatdata.h"
 
 // AT Messages returns to check.
-char AT_MSG_OK[]={ 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
-char AT_MSG_PROMPT[]={ 0x0D, 0x0A, '>', 0};	// Used for SMS message sending
-char AT_MSG_LONG_PROMPT[]={ 0x0D, 0x0A, '>','>','>', 0};  // Used for http post transactions
-char AT_CME_ERROR[]= "+CME ERROR:";
-char AT_CMS_ERROR[]= "+CMS ERROR:"; // Sim error
-char AT_ERROR[]= " ERROR:";
+const char AT_MSG_OK[]={ 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
+const char AT_MSG_PROMPT[]={ 0x0D, 0x0A, '>', 0};	// Used for SMS message sending
+const char AT_MSG_LONG_PROMPT[]={ 0x0D, 0x0A, '>','>','>', 0};  // Used for http post transactions
+const char AT_CME_ERROR[]= "+CME ERROR:";
+const char AT_CMS_ERROR[]= "+CMS ERROR:"; // Sim error
+const char AT_ERROR[]= " ERROR:";
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 volatile char RXBuffer[RX_LEN + 1];
@@ -240,7 +241,7 @@ void sendCommand(const char *cmd) {
 	return;
 }
 
-#define DEFAULT_INTERVAL_DELAY 10
+#define DEFAULT_INTERVAL_DELAY 2
 uint8_t delayDivider = DEFAULT_INTERVAL_DELAY;
 void uart_setDefaultIntervalDivider() {
 	delayDivider = DEFAULT_INTERVAL_DELAY;
@@ -297,19 +298,21 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 	while(attempts>0) {
 		sendCommand(cmd);
 		if (!waitForReady(timeout)) {
+
+			// Transaction could be sucessful but the modem could have return an error.
+			modem_check_uart_error();
 			uart_setRingBuffer();
 			return UART_SUCCESS;
 		}
 		attempts--;
 		if (g_iLCDVerbose == VERBOSE_BOOTING) {
 			lcd_print_progress("MODEM TIMEOUT", LINE2);
+			log_append("TIMEOUT: SIM %d cmd[%s]", config_getSelectedSIM(), cmd);
 		}
 	}
 
 	// If there was an error we have to wait a bit to retrieve everything that is left from the transaction, like the error message
-	int uart_state = uart_getTransactionState();
-	if (uart_state==UART_ERROR)
-		delay(500);
+	modem_check_uart_error();
 
 	iModemErrors++;
 	uart_setRingBuffer(); // Restore the ring buffer if it was changed.
@@ -359,7 +362,6 @@ uint8_t uart_tx_ext(const char *_format, ...) {
 
 uint8_t uart_tx(const char *cmd) {
 
-	char errorToken=0;
 	char* pToken1;
 	uart_resetbuffer();
 
@@ -368,32 +370,6 @@ uint8_t uart_tx(const char *cmd) {
 		return transaction_completed;
 
 	int uart_state = uart_getTransactionState();
-	if (uart_state == UART_ERROR) {
-		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], AT_ERROR);
-		if (pToken1 != NULL) { // ERROR FOUND;
-			char *error = (char *) (pToken1+sizeof(AT_ERROR));
-			modem_parse_error(error);
-
-			errorToken=*(pToken1-1);
-#ifndef _DEBUG
-			lcd_clear();
-			if (errorToken=='S') {
-				lcd_print_lne(LINE1, "SERVICE ERROR");
-			} else
-				lcd_print_lne(LINE1, "MODEM ERROR");
-#endif
-			if (errorToken=='E') {
-				lcd_print_lne(LINE2, error);
-				//
-			} else {
-				modem_setNumericError(atoi(error));
-				lcd_print_lne(LINE2, error);
-			}
-		}
-
-		delay(5000);
-	}
-
 	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
 		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": \""); // Display the command returned
 		if (pToken1 != NULL) {
@@ -402,7 +378,9 @@ uint8_t uart_tx(const char *cmd) {
 			lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2],
 			LINE2); // Display the OK message
 		}
-	}
+	} else
+		modem_check_uart_error();
+
 	return uart_state;
 }
 
@@ -835,7 +813,7 @@ void uart_setHTTPPromptMode() {
 }
 
 void uart_setSMSPromptMode() {
-	uart_setCheckMsg(AT_MSG_PROMPT, AT_ERROR);
+	uart_setCheckMsg(AT_MSG_PROMPT, AT_CMS_ERROR);
 }
 
 void uart_setOKMode() {

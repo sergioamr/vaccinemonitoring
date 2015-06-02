@@ -117,7 +117,7 @@ FRESULT log_append_text(char *text) {
 }
 
 FRESULT log_append(const char *_format, ...) {
-	char szTemp[128];
+	char szTemp[180];
 
 	va_list _ap;
 	char *fptr = (char *) _format;

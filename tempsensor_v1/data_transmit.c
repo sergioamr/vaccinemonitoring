@@ -195,7 +195,7 @@ void data_upload_sms() {
 		}
 
 	}
-	sendmsg(ATresponse);
+	sms_send_message(ATresponse);
 }
 
 int data_transmit(uint8_t *pSampleCnt) {

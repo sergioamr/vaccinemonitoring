@@ -31,5 +31,6 @@ extern void modem_getSMSCenter();
 
 extern void modem_setNumericError(int16_t errorCode);
 extern uint16_t modem_parse_error(const char *error);
+extern void modem_check_uart_error();
 
 #endif /* TEMPSENSOR_V1_MODEM_H_ */

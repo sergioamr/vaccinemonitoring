@@ -13,8 +13,8 @@
 //! \param pointer to sms text contents
 //! \return UART_SUCCESS or UART_ERROR
 //*****************************************************************************
-extern uint8_t sendmsg(char* pData);
-extern uint8_t sendmsg_number(char *szPhoneNumber, char* pData);
+extern uint8_t sms_send_message(char* pData);
+extern uint8_t sms_send_message_number(char *szPhoneNumber, char* pData);
 
 //*****************************************************************************
 //! \brief receive sms msg
