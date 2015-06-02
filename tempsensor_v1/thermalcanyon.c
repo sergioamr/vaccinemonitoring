@@ -30,9 +30,6 @@
 #include "data_transmit.h"
 #include "hardware_buttons.h"
 
-volatile char isConversionDone = 0;
-volatile int iSamplesRead = 0;
-
 _Sigfun * signal(int i, _Sigfun *proc) {
 	__no_operation();
 	return NULL;
@@ -178,7 +175,7 @@ int main(void) {
 
 	fat_init_drive();
 
-	sampletemp();
+	sample_temperature();
 #ifndef _DEBUG
 	// to allow conversion to get over and prevent any side-effects to other interface like modem
 	// TODO is this delay to help on the following bug from texas instruments ? (http://www.ti.com/lit/er/slaz627b/slaz627b.pdf)
@@ -216,11 +213,11 @@ int main(void) {
 		}
 
 		//check if conversion is complete
-		if ((isConversionDone) || (g_iStatus & TEST_FLAG)) {
+		if ((g_isConversionDone) || (g_iStatus & TEST_FLAG)) {
 			//convert the current sensor ADC value to temperature
 			for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
 				memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);
-				ConvertADCToTemperature(ADCvar[iIdx], &Temperature[iIdx][0],
+				digital_amp_to_temp_string(ADCvar[iIdx], &Temperature[iIdx][0],
 						iIdx);
 			}
 
@@ -246,7 +243,7 @@ int main(void) {
 			sendmsg(MSGData);
 #endif
 
-			isConversionDone = 0;
+			g_isConversionDone = 0;
 
 			if ((((iMinuteTick - iUploadTimeElapsed) >= g_iUploadPeriod)
 					|| (g_iStatus & TEST_FLAG) || (g_iStatus & BACKLOG_UPLOAD_ON)
@@ -262,7 +259,7 @@ int main(void) {
 		if ((iMinuteTick - iSampleTimeElapsed) >= g_iSamplePeriod) {
 			iSampleTimeElapsed = iMinuteTick;
 			P4IE &= ~BIT1;				// disable interrupt for button input
-			sampletemp();
+			sample_temperature();
 			delay(2000);	//to allow the ADC conversion to complete
 
 			if (g_iStatus & NETWORK_DOWN) {
@@ -406,138 +403,6 @@ int main(void) {
 		}
 #endif
 		__no_operation();                       // SET BREAKPOINT HERE
-	}
-}
-
-void ConvertADCToTemperature(int32_t ADCval, char* TemperatureVal,
-		int8_t iSensorIdx) {
-	float A0V2V, A0R2;
-	float A0tempdegC = 0.0;
-	int32_t A0tempdegCint = 0;
-	int8_t i = 0;
-	int8_t iTempIdx = 0;
-
-	A0V2V = 0.00061 * ADCval;		//Converting to voltage. 2.5/4096 = 0.00061
-
-	//NUM = A0V2V*A0R1;
-	//DEN = A0V1-A0V2V;
-
-	A0R2 = (A0V2V * 10000.0) / (2.5 - A0V2V);			//R2= (V2*R1)/(V1-V2)
-
-	//Convert resistance to temperature using Steinhart-Hart algorithm
-	A0tempdegC = ConvertoTemp(A0R2);
-
-	//use calibration formula
-#ifndef CALIBRATION
-	if ((g_pInfoB->calibration[iSensorIdx][0] > -2.0)
-			&& (g_pInfoB->calibration[iSensorIdx][0] < 2.0)
-			&& (g_pInfoB->calibration[iSensorIdx][1] > -2.0)
-			&& (g_pInfoB->calibration[iSensorIdx][1] < 2.0)) {
-		A0tempdegC = A0tempdegC * g_pInfoB->calibration[iSensorIdx][1]
-				+ g_pInfoB->calibration[iSensorIdx][0];
-	}
-#endif
-	//Round to one digit after decimal point
-	A0tempdegCint = (int32_t) (A0tempdegC * 10);
-	//A0tempdegC = A0tempdegC/100;
-
-	if (A0tempdegCint < TEMP_CUTOFF) {
-		TemperatureVal[0] = '-';
-		TemperatureVal[1] = '-';
-		TemperatureVal[2] = '.';
-		TemperatureVal[3] = '-';
-	} else {
-		if (A0tempdegCint < 0) {
-			iTempIdx = 1;
-			TemperatureVal[0] = '-';
-			A0tempdegCint = abs(A0tempdegCint);
-		}
-
-		for (i = 2; i >= 0; i--) {
-			TemperatureVal[i + iTempIdx] = A0tempdegCint % 10 + 0x30;
-			A0tempdegCint = A0tempdegCint / 10;
-
-		}
-		TemperatureVal[3 + iTempIdx] = TemperatureVal[2 + iTempIdx];
-		//TemperatureVal[0] = (char)results[0];
-		//TemperatureVal[1] = (char)results[1];
-		TemperatureVal[2 + iTempIdx] = (char) '.';
-	}
-
-}
-
-float ConvertoTemp(float R) {
-	float A1 = 0.00335, B1 = 0.0002565, C1 = 0.0000026059, D1 = 0.00000006329,
-			tempdegC;
-	float R25 = 9965.0;
-
-	tempdegC = 1
-			/ (A1 + (B1 * log(R / R25)) + (C1 * pow((log(R / R25)), 2))
-					+ (D1 * pow((log(R / R25)), 3)));
-
-	tempdegC = tempdegC - 273.15;
-
-	return tempdegC;
-
-}
-
-#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
-#pragma vector = ADC12_VECTOR
-__interrupt void ADC12_ISR(void)
-#elif defined(__GNUC__)
-void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
-#else
-#error Compiler not supported!
-#endif
-{
-	switch (__even_in_range(ADC12IV, ADC12IV_ADC12RDYIFG)) {
-	case ADC12IV_NONE:
-		break;        // Vector  0:  No interrupt
-	case ADC12IV_ADC12OVIFG:
-		break;        // Vector  2:  ADC12MEMx Overflow
-	case ADC12IV_ADC12TOVIFG:
-		break;        // Vector  4:  Conversion time overflow
-	case ADC12IV_ADC12HIIFG:
-		break;        // Vector  6:  ADC12BHI
-	case ADC12IV_ADC12LOIFG:
-		break;        // Vector  8:  ADC12BLO
-	case ADC12IV_ADC12INIFG:
-		break;        // Vector 10:  ADC12BIN
-	case ADC12IV_ADC12IFG0:                 // Vector 12:  ADC12MEM0 Interrupt
-		if (ADC12MEM0 >= 0x7ff)               // ADC12MEM0 = A1 > 0.5AVcc?
-			P1OUT |= BIT0;                      // P1.0 = 1
-		else
-			P1OUT &= ~BIT0;                     // P1.0 = 0
-		__bic_SR_register_on_exit(LPM0_bits); // Exit active CPU
-		break;                                // Clear CPUOFF bit from 0(SR)
-	case ADC12IV_ADC12IFG1:
-		break;        // Vector 14:  ADC12MEM1
-	case ADC12IV_ADC12IFG2:   		        // Vector 16:  ADC12MEM2
-		ADCvar[0] += ADC12MEM2;                     // Read conversion result
-		break;
-	case ADC12IV_ADC12IFG3:   		        // Vector 18:  ADC12MEM3
-		ADCvar[1] += ADC12MEM3;                     // Read conversion result
-		break;
-	case ADC12IV_ADC12IFG4:   		        // Vector 20:  ADC12MEM4
-		ADCvar[2] += ADC12MEM4;                     // Read conversion result
-		break;
-	case ADC12IV_ADC12IFG5:   		        // Vector 22:  ADC12MEM5
-		ADCvar[3] += ADC12MEM5;                     // Read conversion result
-#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 4
-				isConversionDone = 1;
-#endif
-		break;
-	case ADC12IV_ADC12IFG6:                 // Vector 24:  ADC12MEM6
-#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
-		ADCvar[4] += ADC12MEM6;                     // Read conversion result
-		isConversionDone = 1;
-		iSamplesRead++;
-#endif
-		break;
-	case ADC12IV_ADC12RDYIFG:
-		break;        // Vector 76:  ADC12RDY
-	default:
-		break;
 	}
 }
 
@@ -796,32 +661,3 @@ void validatealarmthreshold() {
 
 }
 #endif
-
-void sampletemp() {
-	int iIdx = 0;
-	int iLastSamplesRead = 0;
-	iSamplesRead = 0;
-
-	config_setLastCommand(COMMAND_TEMPERATURE_SAMPLE);
-
-	//initialze ADCvar
-	for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
-		ADCvar[iIdx] = 0;
-	}
-
-	for (iIdx = 0; iIdx < SAMPLE_COUNT; iIdx++) {
-		ADC12CTL0 &= ~ADC12ENC;
-		ADC12CTL0 |= ADC12ENC | ADC12SC;
-		while ((iSamplesRead - iLastSamplesRead) == 0)
-			;
-		iLastSamplesRead = iSamplesRead;
-//		delay(10);	//to allow the ADC conversion to complete
-	}
-
-	if ((isConversionDone) && (iSamplesRead > 0)) {
-		for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
-			ADCvar[iIdx] /= iSamplesRead;
-		}
-	}
-
-}

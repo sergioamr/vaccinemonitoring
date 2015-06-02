@@ -17,7 +17,6 @@
 #include "stdlib.h"
 #include "string.h"
 #include "time.h"
-#include "math.h"
 #include "i2c.h"
 #include "timer.h"
 #include "uart.h"
@@ -36,6 +35,7 @@
 #include "http.h"
 #include "stdio.h"
 #include "stringutils.h"
+#include "temperature.h"
 
 //------------- FUNCTIONS MOVED FROM MAIN - WAITING CLEANUP -------------------
 

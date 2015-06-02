@@ -24,6 +24,7 @@
 #include "time.h"
 #include "rtc.h"
 #include "http.h"
+#include "temperature.h"
 
 char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
@@ -67,7 +68,7 @@ int8_t modem_first_init() {
 		//heartbeat
 		for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
 			memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);
-			ConvertADCToTemperature(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
+			digital_amp_to_temp_string(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
 		}
 	} else {
 		lcd_print_lne(LINE2, "Failed      ");

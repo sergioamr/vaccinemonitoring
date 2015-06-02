@@ -9,6 +9,7 @@
 #include "globals.h"
 #include "rtc.h"
 #include "stringutils.h"
+#include "temperature.h"
 
 void lcd_setupIO() {
 	PJDIR |= BIT6 | BIT7;      			// set LCD reset and Backlight enable
@@ -99,7 +100,7 @@ void lcd_show(int8_t iItemId) {
 	switch (iItemId) {
 	case 0:
 		memset(&Temperature[1][0], 0, TEMP_DATA_LEN + 1); //initialize as it will be used as scratchpad during POST formatting
-		ConvertADCToTemperature(ADCvar[1], &Temperature[1][0], 1);
+		digital_amp_to_temp_string(ADCvar[1], &Temperature[1][0], 1);
 		strcat(lcdBuffer, Temperature[1]);
 		strcat(lcdBuffer, "C ");
 		strcat(lcdBuffer, itoa_pad(iBatteryLevel));
@@ -213,7 +214,7 @@ void lcd_show(int8_t iItemId) {
 
 	if (iCnt != 0xff) {
 		memset(&Temperature[iCnt], 0, TEMP_DATA_LEN + 1);//initialize as it will be used as scratchpad during POST formatting
-		ConvertADCToTemperature(ADCvar[iCnt], &Temperature[iCnt][0], iCnt);
+		digital_amp_to_temp_string(ADCvar[iCnt], &Temperature[iCnt][0], iCnt);
 
 		if (TEMP_ALARM_GET(iCnt) == TEMP_ALERT_CNF) {
 			strcat(lcdBuffer, "ALERT ");
