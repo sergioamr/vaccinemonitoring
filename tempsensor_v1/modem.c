@@ -172,7 +172,11 @@ void modem_swap_SIM() {
 	modem_getExtraInfo();
 
 	// Wait for the modem to be ready to send messages
-	delay(1000);
+#ifndef _DEBUG
+	lcd_progress_wait(10000);
+#endif
+
+	// Just send the message if we dont have errors.
 #ifdef _DEBUG
 	if (config_getSIMError(config_getSelectedSIM())==NO_ERROR)
 #endif
