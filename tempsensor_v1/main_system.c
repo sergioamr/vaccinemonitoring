@@ -131,6 +131,13 @@ void system_boot() {
 
 	P4OUT &= ~BIT0;                           // Reset high
 
+	// Test delay //TODO apply sufficient delay for completion
+	delay(5000);
+	int iIdx;
+	for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
+		digital_amp_to_temp_string(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
+	}
+
 	if (modem_first_init() != 1) {
 		_NOP(); // Modem failed to power on
 	}
