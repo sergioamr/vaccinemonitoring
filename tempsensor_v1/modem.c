@@ -67,7 +67,7 @@ char ESC[2] = { 0x1B, 0 };
  */
 
 const char NETWORK_MODE_0[] = "Network disabled";
-const char *const NETWORK_STATUS[6] = {"not connected", "home network",  "searching net", "reg denied", "unknown", "roaming"};
+const char *const NETWORK_STATUS[6] = {"not connected", "connected home",  "searching net", "reg denied", "unknown", "roaming"};
 const char NETWORK_MODE_2[] = "Registered";
 const char NETWORK_UNKNOWN_STATUS[] = "Unknown";
 
@@ -126,7 +126,7 @@ int modem_connect_network(uint8_t attempts) {
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
 
 			lcd_clear();
-			lcd_printl(LINE1, "Network Status");
+			lcd_printf(LINE1, "Network %d Status", config_getSelectedSIM()+1);
 			lcd_printl(LINE2,
 					(char *) modem_getNetworkStatusText(net_mode, net_status));
 
@@ -292,7 +292,7 @@ void modem_swap_SIM() {
 
 	// Wait for the modem to be ready to send messages
 #ifndef _DEBUG
-	lcd_progress_wait(10000);
+	lcd_progress_wait(1000);
 #endif
 
 	// Just send the message if we dont have errors.
@@ -581,12 +581,15 @@ void modem_init() {
 	uart_tx("AT#CMEEMODE=1\r\n"); // This command allows to extend the set of error codes reported by CMEE to the GPRS related error codes.
 	uart_tx("AT#AUTOBND=2\r\n");  // Set command enables/disables the automatic band selection at power-on.  if automatic band selection is enabled the band changes every about 90 seconds through available bands until a GSM cell is found.
 
-	// TODO Wait for the modem to be ready to send messages and for the network registration
+	// We have to wait for the network to be ready, it will take some time. In debug we just wait on connect.
 #ifndef _DEBUG
-	lcd_progress_wait(10000);
-#else
 	lcd_progress_wait(1000);
 #endif
+	// After autoband it could take up to 90 seconds for the bands trial and error.
+	// So we have to wait for the modem to be ready.
+
+	// Wait until connnection and registration is successful. (Just try NETWORK_CONNECTION_ATTEMPTS) network could be definitly down or not available.
+	modem_connect_network(NETWORK_CONNECTION_ATTEMPTS);
 
 	uart_tx("AT#NITZ=1\r\n");   // #NITZ - Network Timezone
 
@@ -594,12 +597,6 @@ void modem_init() {
 	uart_tx("AT&K4\r\n");		// [Flow Control - &K]
 	uart_tx("AT&P0\r\n");   	// [Default Reset Full Profile Designation - &P] Execution command defines which full profile will be loaded on startup.
 	uart_tx("AT&W0\r\n");		// [Store Current Configuration - &W] 			 Execution command stores on profile <n> the complete configuration of the	device
-
-	// After autoband it could take up to 90 seconds for the bands trial and error.
-	// So we have to wait for the modem to be ready.
-
-	// Wait until connnection and registration is successful. (Just try NETWORK_CONNECTION_ATTEMPTS) network could be definitly down or not available.
-	modem_connect_network(NETWORK_CONNECTION_ATTEMPTS);
 
 	modem_getSMSCenter();
 	modem_checkSignal();
