@@ -106,10 +106,8 @@ void lcd_show(int8_t iItemId) {
 		strcat(lcdBuffer, "C ");
 		strcat(lcdBuffer, itoa_pad(g_iBatteryLevel));
 		strcat(lcdBuffer, "% ");
-		//  if(signal_gprs==1){
 		if ((iSignalLevel >= NETWORK_DOWN_SS)
 				&& (iSignalLevel <= NETWORK_MAX_SS)) {
-			//	  strcat(lcdBuffer,"G:");
 			if (g_iSignal_gprs == 1) {
 				strcat(lcdBuffer, "G");
 			} else {

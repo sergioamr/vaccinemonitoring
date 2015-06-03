@@ -119,8 +119,9 @@ void system_boot() {
 #endif
 
 	fat_init_drive();
-
+	// Initial trigger of temperature required
 	sample_temperature();
+
 #ifndef _DEBUG
 	// to allow conversion to get over and prevent any side-effects to other interface like modem
 	// TODO is this delay to help on the following bug from texas instruments ? (http://www.ti.com/lit/er/slaz627b/slaz627b.pdf)

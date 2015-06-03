@@ -191,8 +191,8 @@ void config_init() {
 
 	strcpy(g_pInfoA->cfgGateway,SMS_NEXLEAF_GATEWAY); // Gateway to nextleaf
 
-	config_setSIMError(&g_pInfoA->SIM[0], '+', NO_ERROR, "***FIRST SIM***");
-	config_setSIMError(&g_pInfoA->SIM[1], '+', NO_ERROR, "**SECOND  SIM**");
+	config_setSIMError(&g_pInfoA->SIM[0], '+',NO_ERROR, "***FIRST SIM***");
+	config_setSIMError(&g_pInfoA->SIM[1], '+',NO_ERROR, "**SECOND SIM**");
 
 	// Init System internals
 

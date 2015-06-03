@@ -117,7 +117,6 @@ void thermal_canyon_loop(void) {
 					sms_send_heart_beat();
 				}
 			}
-
 		}
 
 #ifndef CALIBRATION

@@ -115,7 +115,6 @@ void converttoUTC(struct tm* pTime)
 	uint8_t    adjustTime = 0;
 	uint8_t    lastmday = 0;
 
-
 	multiply16(pTime->tm_min, 60, &timeinsecs);
 	multiply16(pTime->tm_hour, 3600, &tmpsecs);
 	timeinsecs += tmpsecs;
@@ -195,7 +194,6 @@ void multiply16(int16_t op1, int16_t op2, uint32_t* pResult)
   *pResult = RESHI;
   *pResult = *pResult << 16;
   *pResult = *pResult | RESLO;
-
 }
 
 void multiply32(int16_t op1, int32_t op2, uint32_t* pResult)
