@@ -14,6 +14,18 @@
 #include "common.h"
 #include "time.h"
 
+// Poll times trying to connect to the network.
+// After autoband it could take up to 90 seconds for the bands trial and error.
+// So we have to wait for the modem to be ready.
+
+#ifdef _DEBUG
+#define NETWORK_CONNECTION_ATTEMPTS 10
+#define NETWORK_CONNECTION_DELAY 500
+#else
+#define NETWORK_CONNECTION_ATTEMPTS 10
+#define NETWORK_CONNECTION_DELAY 5000
+#endif
+
 #define MAX_NUM_CONTINOUS_SAMPLES 10
 
 // Setup mode in which we are at the moment
@@ -97,66 +109,73 @@ EXTERN int8_t g_iAlarmBatteryPeriod;
 
 #define NUM_SIM_CARDS 2
 
-typedef struct __attribute__((__packed__)) {
-	char    				cfgSMSCenter[GW_MAX_LEN + 1]; // Service Message Center number
-	char    				cfgAPN[APN_MAX_LEN + 1];
-	uint8_t					iMaxMessages;
-	uint16_t 				iCfgMCC;
-	uint16_t 				iCfgMNC;
-	uint16_t				iErrorState;
-	int8_t 				    cfgUploadMode;
-	char    				simLastError[ERROR_MAX_LEN];
-} SIM_CARD_CONFIG ;
+typedef struct
+	__attribute__((__packed__)) {
+		char cfgSMSCenter[GW_MAX_LEN + 1]; // Service Message Center number
+		char cfgAPN[APN_MAX_LEN + 1];
+		uint8_t iMaxMessages; // Max messages stored on sim card
+		uint16_t iCfgMCC;
+		uint16_t iCfgMNC;
+		uint16_t iErrorState;
+		int8_t cfgUploadMode;
+		char simLastError[ERROR_MAX_LEN];
 
-typedef struct __attribute__((__packed__))  {
-	int8_t					cfgSIM_slot;
-	TEMP_ALERT_PARAM		stTempAlertParams[MAX_NUM_SENSORS];
-	BATT_POWER_ALERT_PARAM	stBattPowerAlertParam;
-	char    				cfgIMEI[IMEI_MAX_LEN + 1];
-	char    				cfgGateway[GW_MAX_LEN + 1];
-	SIM_CARD_CONFIG			SIM[NUM_SIM_CARDS];
-	struct tm				lastSystemTime;
-} CONFIG_INFOA;
+		char networkMode;   // Connecting to network
+		char networkStatus; // check NETWORK_MODE_1 array for status
+	} SIM_CARD_CONFIG;
 
-typedef struct __attribute__((__packed__))  {
-	uint8_t memoryInitialized;
-	uint32_t numberRuns;
-	uint32_t numberConfigurationRuns;
-	uint8_t calibrationFinished;
-	char firmwareVersion[17];
-	uint16_t configStructureSize; // Size to check if there are changes on this structure
+	typedef struct
+		__attribute__((__packed__)) {
+			int8_t cfgSIM_slot;
+			TEMP_ALERT_PARAM stTempAlertParams[MAX_NUM_SENSORS];
+			BATT_POWER_ALERT_PARAM stBattPowerAlertParam;
+			char cfgIMEI[IMEI_MAX_LEN + 1];
+			char cfgGateway[GW_MAX_LEN + 1];
+			SIM_CARD_CONFIG SIM[NUM_SIM_CARDS];
+			struct tm lastSystemTime;
+		} CONFIG_INFOA;
 
-	// Stats to control buffer sizes
-	uint16_t maxSamplebuffer;
-	uint16_t maxATResponse;
-	uint16_t maxRXBuffer;
-	uint16_t maxTXBuffer;
+		typedef struct
+			__attribute__((__packed__)) {
+				uint8_t memoryInitialized;
+				uint32_t numberRuns;
+				uint32_t numberConfigurationRuns;
+				uint8_t calibrationFinished;
+				char firmwareVersion[17];
+				uint16_t configStructureSize; // Size to check if there are changes on this structure
 
-	uint16_t lastCommand; // Command that was last executed to control flow.
-	char lastCommandTime[2+2+2+1+1+1]; //
-} CONFIG_SYSTEM;
+				// Stats to control buffer sizes
+				uint16_t maxSamplebuffer;
+				uint16_t maxATResponse;
+				uint16_t maxRXBuffer;
+				uint16_t maxTXBuffer;
 
-typedef struct {
-int32_t	   dwLastSeek;
-double	   calibration[MAX_NUM_SENSORS][2];
-} CONFIG_INFOB;
+				uint16_t lastCommand; // Command that was last executed to control flow.
+				char lastCommandTime[2 + 2 + 2 + 1 + 1 + 1]; //
+			} CONFIG_SYSTEM;
+
+			typedef struct {
+				int32_t dwLastSeek;
+				double calibration[MAX_NUM_SENSORS][2];
+			} CONFIG_INFOB;
 
 // Returns the current structure containing the info for the current SIM selected
-SIM_CARD_CONFIG *config_getSIM();
+			SIM_CARD_CONFIG *config_getSIM();
 
 // Returns current sim selected range [0..1]
-uint8_t config_getSelectedSIM();
+			uint8_t config_getSelectedSIM();
 
 // Store the error of the SIM in memory to be displayed
-void config_setSIMError(SIM_CARD_CONFIG *sim, uint16_t errorID, const char *error);
-uint16_t config_getSIMError(int slot);
-void config_reset_error(SIM_CARD_CONFIG *sim);
-uint16_t config_getSimLastError();
+			void config_setSIMError(SIM_CARD_CONFIG *sim, uint16_t errorID,
+					const char *error);
+			uint16_t config_getSIMError(int slot);
+			void config_reset_error(SIM_CARD_CONFIG *sim);
+			uint16_t config_getSimLastError();
 
-/*****************************************************************************************************************/
-/* DIAGNOSE AND TESTING 			   																		     */
-/* Check if there is a hang on next reset																		 */
-/*****************************************************************************************************************/
+			/*****************************************************************************************************************/
+			/* DIAGNOSE AND TESTING 			   																		     */
+			/* Check if there is a hang on next reset																		 */
+			/*****************************************************************************************************************/
 #define COMMAND_BOOT 100
 #define COMMAND_TEMPERATURE_SAMPLE 200
 #define COMMAND_GPRS 300
@@ -171,9 +190,9 @@ uint16_t config_getSimLastError();
 
 #define COMMAND_END 99
 
-extern void config_init();
-extern void config_setLastCommand(uint16_t lastCmd);
-extern void config_incLastCmd();
-extern void config_update_system_time();
+			extern void config_init();
+			extern void config_setLastCommand(uint16_t lastCmd);
+			extern void config_incLastCmd();
+			extern void config_update_system_time();
 
 #endif /* TEMPSENSOR_V1_CONFIG_H_ */

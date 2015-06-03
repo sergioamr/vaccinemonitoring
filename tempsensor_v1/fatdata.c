@@ -47,8 +47,8 @@ void fat_check_error(FRESULT fr) {
 	if (fr == FR_OK)
 		return;
 
-	lcd_print_lne(LINE1, "SD CARD FAILURE");
-	lcd_print_ext(LINE2, "ERROR 0x%x ", fr);
+	lcd_printl(LINE1, "SD CARD FAILURE");
+	lcd_printf(LINE2, "ERROR 0x%x ", fr);
 	delay(10000);
 }
 
@@ -69,7 +69,7 @@ FRESULT fat_init_drive() {
 	if (fr != FR_EXIST)
 		fat_check_error(fr);
 
-	fr = log_append("Start Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
+	fr = log_appendf("Start Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
 	return fr;
 }
 
@@ -122,7 +122,7 @@ FRESULT log_append_text(char *text) {
 	return f_close(&fobj);
 }
 
-FRESULT log_append(const char *_format, ...) {
+FRESULT log_appendf(const char *_format, ...) {
 	char szTemp[180];
 
 	va_list _ap;

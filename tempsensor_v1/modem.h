@@ -14,6 +14,24 @@
 extern char ctrlZ[2];
 extern char ESC[2];
 
+/*********************************************************************************/
+/* NETWORK STATUS 															     */
+/*********************************************************************************/
+// Mode 1 network status
+
+#define NETWORK_STATUS_NOT_REGISTERED_NOT_LOOKING 0
+#define NETWORK_STATUS_REGISTERED_HOME_NETWORK 	  1
+#define NETWORK_STATUS_NOT_REGISTERED_SEARCHING   2
+#define NETWORK_STATUS_REGISTRATION_DENIED	      3
+#define NETWORK_STATUS_UNKNOWN	      			  4
+#define NETWORK_STATUS_REGISTERED_ROAMING 		  5
+
+#define NETWORK_MODE_2_ENABLED
+#define NETWORK_MODE_1_NOT_REGISTERED_NOT_LOOKING 0
+
+/*********************************************************************************/
+/* MODEM FUNCTIONALITY														     */
+/*********************************************************************************/
 
 #ifdef POWER_SAVING_ENABLED
 int8_t modem_enter_powersave_mode();

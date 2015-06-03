@@ -193,7 +193,7 @@ void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 		iIdx = strtol(ATresponse, 0, 10);
 		if (iIdx) {
 			iIdx = 1;
-			lcd_print_lne(LINE2, "Msg Processing..");
+			lcd_printl(LINE2, "Msg Processing..");
 			if (sim->iMaxMessages != 0xFF && sim->iMaxMessages != 0x00) {
 				while (iIdx < sim->iMaxMessages) {
 					iModemSuccess = sms_recv_message(iIdx, ATresponse);
@@ -319,8 +319,8 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_clear();
-		lcd_print_ext(LINE1, "SYNC SMS %d ", g_pInfoA->cfgSIM_slot + 1);
-		lcd_print_lne(LINE2, szPhoneNumber);
+		lcd_printf(LINE1, "SYNC SMS %d ", g_pInfoA->cfgSIM_slot + 1);
+		lcd_printl(LINE2, szPhoneNumber);
 		lcd_disable_verbose();
 	}
 
@@ -341,13 +341,13 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 
 	if (res == UART_SUCCESS) {
 		lcd_clear();
-		lcd_print_lne(LINE1, "SMS Confirm    ");
-		lcd_print_ext(LINE2, "MSG %d ", msgNumber);
+		lcd_printl(LINE1, "SMS Confirm    ");
+		lcd_printf(LINE2, "MSG %d ", msgNumber);
 		delay(HUMAN_DISPLAY_INFO_DELAY);
 		_NOP();
 	} else if (res == UART_ERROR) {
-		lcd_print_ext(LINE2, "MODEM ERROR     ");
-		log_append("ERROR: SIM %d FAILED [%s]", config_getSelectedSIM(),
+		lcd_printf(LINE2, "MODEM ERROR     ");
+		log_appendf("ERROR: SIM %d FAILED [%s]", config_getSelectedSIM(),
 				config_getSIM()->simLastError);
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	} else {
@@ -370,7 +370,7 @@ int sms_recv_message(int8_t iMsgIdx, char* pData) {
 	//uart_tx("AT+CMGL=\"REC READ\"\r\n");
 	//uart_tx("AT+CMGL=\"ALL\"\r\n");
 
-	uart_tx_ext("AT+CMGR=%d\r\n", iMsgIdx);
+	uart_txf("AT+CMGR=%d\r\n", iMsgIdx);
 	ret = uart_rx(ATCMD_CMGR, pData);	//copy RX to pData
 
 	return ret;

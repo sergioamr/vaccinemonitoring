@@ -248,7 +248,7 @@ void lcd_progress_wait(uint16_t delayTime) {
 	}
 }
 
-int lcd_print_ext(int line, const char *_format, ...) {
+int lcd_printf(int line, const char *_format, ...) {
 	char szTemp[32];
     va_list _ap;
     int   rval;
@@ -260,7 +260,7 @@ int lcd_print_ext(int line, const char *_format, ...) {
     va_end(_ap);
 
     *out_end = '\0';
-    lcd_print_lne(line, szTemp);
+    lcd_printl(line, szTemp);
     return (rval);
 }
 
@@ -274,7 +274,7 @@ void lcd_print(char* pcData) {
 	i2c_write(0x3e, 0x40, len, (uint8_t *) pcData);
 }
 
-void lcd_print_lne(int8_t iLine, const char* pcData) {
+void lcd_printl(int8_t iLine, const char* pcData) {
 	int8_t len = strlen(pcData);
 
 	if (len > LCD_LINE_LEN) {
@@ -321,7 +321,7 @@ void lcd_print_progress(const char* pcData, int line) {
 		return;
 
 #ifdef _DEBUG
-	lcd_print_lne(line, pcData);
+	lcd_printl(line, pcData);
 #else
 	lcd_setaddr(0x0F);
 	i2c_write(0x3e, 0x40, 1, (uint8_t *) &display[(++pos) & 0x3]);

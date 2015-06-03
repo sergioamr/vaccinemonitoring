@@ -216,7 +216,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
-	lcd_print_lne(LINE2, "Transmitting....");
+	lcd_printl(LINE2, "Transmitting....");
 //iStatus &= ~TEST_FLAG;
 #ifdef SMS_ALERT
 	g_iStatus &= ~SMSED_HIGH_TEMP;
@@ -621,7 +621,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 		if (iPOSTstatus != 0) {
 			//redo the post
 			// Define Packet Data Protocol Context - +CGDCONT
-			 uart_tx_ext("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN);
+			 uart_txf("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN);
 			//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
 
 			uart_tx("AT#SGACT=1,1\r\n");

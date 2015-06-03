@@ -124,7 +124,7 @@ void thermal_canyon_loop(void) {
 		if ((iMinuteTick - iSMSRxPollElapsed) >= SMS_RX_POLL_INTERVAL) {
 			iSMSRxPollElapsed = iMinuteTick;
 			lcd_clear();
-			lcd_print_lne(LINE1, "Configuring...");
+			lcd_printl(LINE1, "Configuring...");
 
 			modem_checkSignal();
 			g_iSignal_gprs = dopost_gprs_connection_status(GPRS);
@@ -135,11 +135,11 @@ void thermal_canyon_loop(void) {
 				if ((gprs_network_indication == 0)
 						|| ((iSignalLevel < NETWORK_DOWN_SS)
 								|| (iSignalLevel > NETWORK_MAX_SS))) {
-					lcd_print_lne(LINE2, "Signal lost...");
+					lcd_printl(LINE2, "Signal lost...");
 					g_iStatus |= NETWORK_DOWN;
 					//iOffset = 0;  // Whyy??? whyyy?????
 					modem_init();
-					lcd_print_lne(LINE2, "Reconnecting...");
+					lcd_printl(LINE2, "Reconnecting...");
 					iIdx++;
 				} else {
 					g_iStatus &= ~NETWORK_DOWN;

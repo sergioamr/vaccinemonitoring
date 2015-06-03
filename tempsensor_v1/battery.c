@@ -27,15 +27,15 @@ uint8_t batt_check_level() {
 #endif
 
 	if (iBatteryLevel == 0)
-		lcd_print_lne(LINE2, "Battery FAIL");
+		lcd_printl(LINE2, "Battery FAIL");
 	else if (iBatteryLevel > 100)
-		lcd_print_lne(LINE2, "Battery UNKNOWN");
+		lcd_printl(LINE2, "Battery UNKNOWN");
 	else if (iBatteryLevel > 99)
-		lcd_print_lne(LINE2, "Battery FULL");
+		lcd_printl(LINE2, "Battery FULL");
 	else if (iBatteryLevel > 15)
-		lcd_print_lne(LINE2, "Battery OK");
+		lcd_printl(LINE2, "Battery OK");
 	else if (iBatteryLevel)
-		lcd_print_lne(LINE2, "Battery LOW");
+		lcd_printl(LINE2, "Battery LOW");
 
 	if (iBatteryLevel<15 || iBatteryLevel>100)
 		delay(10000); // Delay to display that there is a state to show

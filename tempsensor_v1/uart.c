@@ -307,7 +307,7 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 		attempts--;
 		if (g_iLCDVerbose == VERBOSE_BOOTING) {
 			lcd_print_progress("MODEM TIMEOUT", LINE2);
-			log_append("TIMEOUT: SIM %d cmd[%s]", config_getSelectedSIM(), cmd);
+			log_appendf("TIMEOUT: SIM %d cmd[%s]", config_getSelectedSIM(), cmd);
 		}
 	}
 
@@ -344,7 +344,7 @@ uint8_t isTransactionOK() {
 	return ErrorIdx;
 }
 
-uint8_t uart_tx_ext(const char *_format, ...) {
+uint8_t uart_txf(const char *_format, ...) {
 	char szTemp[128];
     va_list _ap;
     char *fptr = (char *)_format;
@@ -365,7 +365,7 @@ uint8_t uart_tx(const char *cmd) {
 	char* pToken1;
 	uart_resetbuffer();
 
-	int transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 5);
+	int transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 10);
 	if (RXHeadIdx > RXTailIdx)
 		return transaction_completed;
 

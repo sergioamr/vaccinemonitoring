@@ -109,13 +109,13 @@ void system_boot() {
 
 	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
 	lcd_clear();
-	lcd_print_ext(LINE1, "Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
+	lcd_printf(LINE1, "Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
 
 #ifndef _DEBUG
-	lcd_print_lne(LINE2, g_pSysCfg->firmwareVersion); // Show the firmware version
+	lcd_printl(LINE2, g_pSysCfg->firmwareVersion); // Show the firmware version
 	delay(HUMAN_DISPLAY_INFO_DELAY);
 #else
-	lcd_print_lne(LINE2, "(db)" __TIME__);
+	lcd_printl(LINE2, "(db)" __TIME__);
 #endif
 
 	fat_init_drive();
@@ -141,7 +141,7 @@ void system_boot() {
 	lcd_disable_verbose();
 
 	lcd_print("Finished Boot");
-	log_append("Finished Boot");
+	log_appendf("Finished Boot");
 }
 
 _Sigfun * signal(int i, _Sigfun *proc) {

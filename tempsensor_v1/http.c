@@ -35,12 +35,7 @@ int doget() {
 	sprintf(szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/%s/1/\"\r\n",g_pInfoA->cfgIMEI);
 	uart_tx_timeout(szTemp, 10000, 1);
 	uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 1);		//get the configuartion
-
-	memset(ATresponse, 0, sizeof(ATresponse));
 	uart_rx(ATCMD_HTTPRCV, ATresponse);
-
-	uart_resetbuffer();
-	iRxLen = RX_LEN;
 	return 0; // TODO return was missing, is it necessary ?
 }
 
@@ -81,9 +76,11 @@ int dopost_gprs_connection_status(char status) {
 
 	if (g_iStatus & TEST_FLAG)
 		return l_file_pointer_enabled_sms_status;
+
 	iHTTPRespDelayCnt = 0;
+	uart_tx("AT+CGREG?\r\n");
+
 	if (status == GSM) {
-		uart_tx("AT+CREG?\r\n");
 		for (i = 0; i < 102; i++) {
 			j = i + 1;
 			if (j > 101) {
@@ -105,12 +102,15 @@ int dopost_gprs_connection_status(char status) {
 
 	//////
 	if (status == GPRS) {
-		uart_tx("AT+CGREG?\r\n");
+		// Network Registration Report
+
 		for (i = 0; i < 102; i++) {
 			j = i + 1;
 			if (j > 101) {
 				j = j - 101;
 			}
+
+
 			if ((RXBuffer[i] == '+') && (RXBuffer[j] == 'C')
 					&& (RXBuffer[j + 1] == 'G') && (RXBuffer[j + 2] == 'R')
 					&& (RXBuffer[j + 3] == 'E') && (RXBuffer[j + 4] == 'G')
@@ -120,6 +120,7 @@ int dopost_gprs_connection_status(char status) {
 					l_file_pointer_enabled_sms_status = 1; // set for sms packet.....///
 					break;
 				} else {
+					delay(1000);
 					uart_tx("AT+CGATT=1\r\n");
 					l_file_pointer_enabled_sms_status = 0; // reset for sms packet.....///
 					break;

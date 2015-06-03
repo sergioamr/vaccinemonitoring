@@ -30,6 +30,130 @@
 char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
 
+// Parsing macros helpers
+#define PARSE_FIRSTVALUE(token, var, error) token = strtok(token, ",\n"); \
+	if(token!=NULL) *var = atoi(token); else return error;
+
+#define PARSE_NEXTVALUE(token, var, error) token = strtok(NULL, ",\n"); \
+	if(token!=NULL) *var = atoi(token); else return error;
+
+/*
+ * AT Commands Reference Guide 80000ST10025a Rev. 9 – 2010-10-04
+ *
+ * Read command reports the <mode> and <stat> parameter values in the format:
+ * +CREG: <mode>,<stat>[,<Lac>,<Ci>]
+ *
+ * <mode>
+ * 0 - disable network registration unsolicited result code (factory default)
+ * 1 - enable network registration unsolicited result code
+ * 2 - enable network registration unsolicited result code with network Cell identification data
+ *
+ * If <mode>=1, network registration result code reports:
+ * +CREG: <stat> where <stat>
+ *  0 - not registered, ME is not currently searching a new operator to register to
+ *  1 - registered, home network
+ *  2 - not registered, but ME is currently searching a new operator to register to
+ *  3 - registration denied
+ *  4 -unknown
+ *  5 - registered, roaming
+ *
+ *  If <mode>=2, network registration result code reports:
+ *  +CREG: <stat>[,<Lac>,<Ci>]
+ *  where:
+ *  <Lac> - Local Area Code for the currently registered on cell
+ *  <Ci> - Cell Id for the currently registered on cell
+ *
+ *  Note: <Lac> and <Ci> are reported only if <mode>=2 and the mobile is registered on some network cell.
+ */
+
+const char NETWORK_MODE_0[] = "Network disabled";
+const char *const NETWORK_STATUS[6] = {"not connected", "home network",  "searching net", "reg denied", "unknown", "roaming"};
+const char NETWORK_MODE_2[] = "Registered";
+const char NETWORK_UNKNOWN_STATUS[] = "Unknown";
+
+const char *modem_getNetworkStatusText(int mode, int status) {
+
+	if (mode == 0)
+		return NETWORK_MODE_0;
+
+	if (status>=0 && status<7)
+		return NETWORK_STATUS[status];
+
+	return NETWORK_UNKNOWN_STATUS;
+}
+
+const char COMMAND_RESULT_CGREG[]= "+CGREG: ";
+
+int modem_getNetworkStatus(int *mode, int *status) {
+
+	char *pToken1 = NULL;
+	int uart_state = 0;
+	SIM_CARD_CONFIG *sim=config_getSIM();
+
+	*mode = -1;
+	*status = -1;
+
+	uart_tx("AT+CGREG?\r\n");
+
+	uart_state = uart_getTransactionState();
+	if (uart_state == UART_SUCCESS) {
+		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx],
+				(const char *) COMMAND_RESULT_CGREG);
+		if (pToken1 == NULL)
+			return UART_FAILED;
+
+		pToken1 += sizeof(COMMAND_RESULT_CGREG) - 1; // Jump the header
+
+		PARSE_FIRSTVALUE(pToken1, mode, UART_FAILED);
+		PARSE_NEXTVALUE(pToken1, status, UART_FAILED);
+
+		// Store the current network status to know if we are connected or not.
+		sim->networkMode = *mode;
+		sim->networkStatus = *status;
+
+		return UART_SUCCESS;
+	}
+	return UART_FAILED;
+}
+
+int modem_connect_network(uint8_t attempts) {
+
+	int net_status = 0;
+	int net_mode = 0;
+	int tests = 0;
+	do {
+		uart_tx("AT+CGREG=2\r\n");
+		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
+
+			lcd_clear();
+			lcd_printl(LINE1, "Network Status");
+			lcd_printl(LINE2,
+					(char *) modem_getNetworkStatusText(net_mode, net_status));
+
+			// If we are looking for a network
+			if ((net_mode == 1 || net_mode == 2)
+					&& (net_status == NETWORK_STATUS_REGISTERED_HOME_NETWORK
+							|| net_status == NETWORK_STATUS_REGISTERED_ROAMING)) {
+
+				// We tested more than once, lets show a nice we are connected message
+				if (tests>0)
+					delay(HUMAN_DISPLAY_INFO_DELAY);
+				return UART_SUCCESS;
+			}
+
+			tests++;
+		}
+
+		delay(NETWORK_CONNECTION_DELAY);
+	} while (--attempts>0);
+
+	return UART_FAILED;
+};
+
+int modem_disableNetworkRegistration() {
+	return uart_tx("AT+CGREG=0\r\n");
+}
+
 uint16_t modem_parse_error(const char *error) {
 	uint16_t errorNum = NO_ERROR;
 	if (!strcmp(error, "SIM not inserted\r\n")) {
@@ -67,23 +191,18 @@ void modem_check_uart_error() {
 	if (pToken1 != NULL) { // ERROR FOUND;
 		char *error = (char *) (pToken1+strlen(AT_ERROR));
 
-		log_append("ERROR: SIM %d cmd[%s]", config_getSelectedSIM(), error);
+		log_appendf("ERROR: SIM %d cmd[%s]", config_getSelectedSIM(), error);
 		modem_parse_error(error);
 		errorToken=*(pToken1-1);
 #ifndef _DEBUG
 		lcd_clear();
 		if (errorToken=='S') {
-			lcd_print_lne(LINE1, "SERVICE ERROR");
+			lcd_printl(LINE1, "SERVICE ERROR");
 		} else
-			lcd_print_lne(LINE1, "MODEM ERROR");
+			lcd_printl(LINE1, "MODEM ERROR");
 #endif
-		if (errorToken=='E') {
-			lcd_print_lne(LINE2, error);
-			//
-		} else {
-			modem_setNumericError(atoi(error));
-			lcd_print_lne(LINE2, error);
-		}
+		lcd_printl(LINE2, error);
+		modem_setNumericError(atoi(error));
 	}
 
 	delay(5000);
@@ -97,7 +216,7 @@ int8_t modem_first_init() {
 	int iSIM_Error = 0;
 
 	lcd_clear();
-	lcd_print_lne(LINE1, "Modem POWER ON");
+	lcd_printl(LINE1, "Modem POWER ON");
 
 	//check Modem is powered on
 	for (iIdx = 0; iIdx < MODEM_CHECK_RETRY; iIdx++) {
@@ -122,10 +241,10 @@ int8_t modem_first_init() {
 			modem_swap_SIM(); // Send hearbeat from SIM
 			if (config_getSimLastError() != NO_ERROR) {
 				lcd_clear();
-				lcd_print_ext(LINE1, "ERROR INIT SIM %d ", config_getSelectedSIM()+1);
-				lcd_print_ext(LINE2, config_getSIM()->simLastError);
+				lcd_printf(LINE1, "ERROR INIT SIM %d ", config_getSelectedSIM()+1);
+				lcd_printf(LINE2, config_getSIM()->simLastError);
 
-				log_append("ERROR: SIM %d FAILED [%s]", config_getSelectedSIM(), config_getSIM()->simLastError);
+				log_appendf("ERROR: SIM %d FAILED [%s]", config_getSelectedSIM(), config_getSIM()->simLastError);
 				delay(HUMAN_DISPLAY_ERROR_DELAY);
 				iSIM_Error ++;
 			}
@@ -144,8 +263,8 @@ int8_t modem_first_init() {
 			break;
 			case 2:
 				lcd_clear();
-				lcd_print_ext(LINE1, "BOTH SIMS FAILED ");
-				log_append("ERROR: BOTH SIMS FAILED ON INIT ");
+				lcd_printf(LINE1, "BOTH SIMS FAILED ");
+				log_appendf("ERROR: BOTH SIMS FAILED ON INIT ");
 				delay(HUMAN_DISPLAY_ERROR_DELAY);
 			break;
 		}
@@ -156,7 +275,7 @@ int8_t modem_first_init() {
 			digital_amp_to_temp_string(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
 		}
 	} else {
-		lcd_print_lne(LINE2, "Failed Power On");
+		lcd_printl(LINE2, "Failed Power On");
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	}
 
@@ -167,7 +286,7 @@ void modem_swap_SIM() {
 	config_incLastCmd();
 	g_pInfoA->cfgSIM_slot = !g_pInfoA->cfgSIM_slot;
 	lcd_clear();
-	lcd_print_ext(LINE1, "Activate SIM: %d", g_pInfoA->cfgSIM_slot + 1);
+	lcd_printf(LINE1, "Activate SIM: %d", g_pInfoA->cfgSIM_slot + 1);
 	modem_init();
 	modem_getExtraInfo();
 
@@ -237,7 +356,7 @@ void modem_getIMEI() {
 			IMEI_OK = true;
 		} else {
 			lcd_clear();
-			lcd_print_lne(LINE2, "IMEI Error");
+			lcd_printl(LINE2, "IMEI Error");
 		}
 	}
 
@@ -289,9 +408,9 @@ void modem_survey_network() {
 	do {
 		if (attempts != NET_ATTEMPTS) {
 			lcd_clear();
-			lcd_print_ext(LINE1, "MCC RETRY %d   ", NET_ATTEMPTS - attempts);
+			lcd_printf(LINE1, "MCC RETRY %d   ", NET_ATTEMPTS - attempts);
 		} else {
-			lcd_print_lne(LINE1, "MCC DISCOVER");
+			lcd_printl(LINE1, "MCC DISCOVER");
 		}
 
 		uart_resetbuffer();
@@ -314,7 +433,7 @@ void modem_survey_network() {
 
 			uart_state = uart_getTransactionState();
 			if (uart_state != UART_SUCCESS) {
-				lcd_print_lne(LINE2, "NETWORK BUSY");
+				lcd_printl(LINE2, "NETWORK BUSY");
 				delay(NETWORK_WAITING_TIME);
 			} else if (uart_rx_cleanBuf(ATCMD_CSURVC, ATresponse,
 					sizeof(ATresponse)) == UART_SUCCESS) {
@@ -326,12 +445,12 @@ void modem_survey_network() {
 
 				lcd_clear();
 				if (sim->iCfgMCC > 0 && sim->iCfgMNC > 0) {
-					lcd_print_lne(LINE1, "SUCCESS");
-					lcd_print_ext(LINE2, "MCC %d MNC %d", sim->iCfgMCC,
+					lcd_printl(LINE1, "SUCCESS");
+					lcd_printf(LINE2, "MCC %d MNC %d", sim->iCfgMCC,
 							sim->iCfgMNC);
 				} else {
 					uart_state = UART_ERROR;
-					lcd_print_lne(LINE2, "FAILED");
+					lcd_printl(LINE2, "FAILED");
 					delay(1000);
 				}
 			}
@@ -392,15 +511,15 @@ void modem_pull_time() {
 			config_update_system_time();
 		} else {
 			lcd_clear();
-			lcd_print_ext(LINE1, "WRONG DATE SIM %d ", config_getSelectedSIM());
-			lcd_print_ext(LINE2, get_YMD_String(&g_tmCurrTime));
+			lcd_printf(LINE1, "WRONG DATE SIM %d ", config_getSelectedSIM());
+			lcd_printf(LINE2, get_YMD_String(&g_tmCurrTime));
 			delay(HUMAN_DISPLAY_INFO_DELAY);
 			rtc_init(&g_pInfoA->lastSystemTime);
 
 			lcd_clear();
-			lcd_print_ext(LINE1, "LAST DATE ");
+			lcd_printf(LINE1, "LAST DATE ");
 			rtc_get(&g_tmCurrTime);
-			lcd_print_ext(LINE2, get_YMD_String(&g_tmCurrTime));
+			lcd_printf(LINE2, get_YMD_String(&g_tmCurrTime));
 			delay(HUMAN_DISPLAY_INFO_DELAY);
 		}
 
@@ -454,24 +573,38 @@ void modem_init() {
 		uart_tx("AT#GPIO=3,1,1\r\n");
 	}
 #endif
+
 	uart_tx_timeout("AT#SIMDET=1\r\n", MODEM_TX_DELAY2, 10); // Disable sim detection. Is it not plugged in hardware?
 
-	uart_tx("AT+CMEE=2\r\n");
-	uart_tx("AT#CMEEMODE=1\r\n");
-	uart_tx("AT#AUTOBND=2\r\n");
+	uart_tx("ATV1\r\n");		// Response format to full headers
+	uart_tx("AT+CMEE=1\r\n");     // Set command enables/disables the report of result code:
+	uart_tx("AT#CMEEMODE=1\r\n"); // This command allows to extend the set of error codes reported by CMEE to the GPRS related error codes.
+	uart_tx("AT#AUTOBND=2\r\n");  // Set command enables/disables the automatic band selection at power-on.  if automatic band selection is enabled the band changes every about 90 seconds through available bands until a GSM cell is found.
 
-	uart_tx("AT#NITZ=1\r\n");
+	// TODO Wait for the modem to be ready to send messages and for the network registration
+#ifndef _DEBUG
+	lcd_progress_wait(10000);
+#else
+	lcd_progress_wait(1000);
+#endif
 
+	uart_tx("AT#NITZ=1\r\n");   // #NITZ - Network Timezone
 
-	uart_tx("AT+CTZU=1\r\n");
-	uart_tx("AT&K4\r\n");
-	uart_tx("AT&P0\r\n");
-	uart_tx("AT&W0\r\n");
-	uart_tx("AT+CSDH=1\r\n");
+	uart_tx("AT+CTZU=1\r\n");   //  4 - software bi-directional with filtering (XON/XOFF)
+	uart_tx("AT&K4\r\n");		// [Flow Control - &K]
+	uart_tx("AT&P0\r\n");   	// [Default Reset Full Profile Designation - &P] Execution command defines which full profile will be loaded on startup.
+	uart_tx("AT&W0\r\n");		// [Store Current Configuration - &W] 			 Execution command stores on profile <n> the complete configuration of the	device
+
+	// After autoband it could take up to 90 seconds for the bands trial and error.
+	// So we have to wait for the modem to be ready.
+
+	// Wait until connnection and registration is successful. (Just try NETWORK_CONNECTION_ATTEMPTS) network could be definitly down or not available.
+	modem_connect_network(NETWORK_CONNECTION_ATTEMPTS);
 
 	modem_getSMSCenter();
 	modem_checkSignal();
 
+	uart_tx("AT+CSDH=1\r\n");   // Show Text Mode Parameters - +CSDH  			 Set command controls whether detailed header information is shown in text mode (+CMGF=1) result codes
 	uart_tx_timeout("AT+CMGF=?\r\n", MODEM_TX_DELAY2, 5); // set sms format to text mode
 
 #if defined(CAPTURE_MCC_MNC) && defined(_DEBUG)
