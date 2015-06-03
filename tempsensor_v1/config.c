@@ -158,7 +158,7 @@ void config_setup_extra_button() {
 
 void config_init() {
 
-	if (check_address_empty(g_pSysCfg->memoryInitialized)) {
+	if (!check_address_empty(g_pSysCfg->memoryInitialized)) {
 
 		// Check if the user is pressing the service mode
 		// Service Button was pressed during bootup. Rerun calibration

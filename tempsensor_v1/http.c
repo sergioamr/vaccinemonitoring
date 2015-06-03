@@ -21,7 +21,15 @@ int8_t dohttpsetup() {
 	if (uart_getTransactionState() != UART_SUCCESS)
 		return UART_FAILED;
 
+	// Context Activation - #SGACT
+	// Execution command is used to activate or deactivate either the GSM context
+	// or the specified PDP context.
+	//  1..5 - numeric parameter which specifies a particular PDP context definition
+	//  1 - activate the context
+
 	uart_tx("AT#SGACT=1,1\r\n");
+	// CME ERROR: 555 Activation failed
+	// CME ERROR: 133 Requested service option not subscribed
 	if (uart_getTransactionState() != UART_SUCCESS)
 		return UART_FAILED;
 
@@ -47,6 +55,7 @@ int doget() {
 	if (uart_getTransactionState() != UART_SUCCESS)
 		return UART_FAILED;
 
+	// CME ERROR: 558 cannot resolve DN ?
 	uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 1);		//get the configuartion
 	uart_rx(ATCMD_HTTPRCV, ATresponse);
 	return 0; // TODO return was missing, is it necessary ?

@@ -309,6 +309,11 @@ int8_t modem_first_init() {
 			}
 		}
 
+#ifdef _DEBUG
+	dohttpsetup();
+	doget();
+#endif
+
 		// One or more of the sims had a catastrofic failure on init, set the device
 		switch (iSIM_Error) {
 		case 1:
@@ -689,11 +694,6 @@ void modem_init() {
 
 	// Check if the network/sim card works
 	modem_isSIM_Operational();
-
-#ifdef _DEBUG
-	dohttpsetup();
-	doget();
-#endif
 }
 
 #ifdef POWER_SAVING_ENABLED
