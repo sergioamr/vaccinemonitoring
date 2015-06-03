@@ -67,28 +67,71 @@ char ESC[2] = { 0x1B, 0 };
  */
 
 const char NETWORK_MODE_0[] = "Network disabled";
-const char *const NETWORK_STATUS[6] = {"not connected", "connected home",  "searching net", "reg denied", "unknown", "roaming"};
+const char * const NETWORK_STATUS[6] = { "not connected", "connected home",
+		"searching net", "reg denied", "unknown", "roaming" };
 const char NETWORK_MODE_2[] = "Registered";
 const char NETWORK_UNKNOWN_STATUS[] = "Unknown";
+
+/*
+ CME ERROR: 10	SIM not inserted
+ CME ERROR: 11	SIM PIN required
+ CME ERROR: 12	SIM PUK required
+ CME ERROR: 13	SIM failure
+ CME ERROR: 14	SIM busy
+ CME ERROR: 15	SIM wrong
+ CME ERROR: 30	No network service
+ */
+
+uint16_t CME_fatalErrors[] = { 10, 11, 12, 13, 14, 15, 30 };
+
+/*
+ CMS ERROR: 30	Unknown subscriber
+ CMS ERROR: 38	Network out of order
+ */
+uint16_t CMS_fatalErrors[] = { 30, 38 };
+
+// Check against all the errors that could kill the SIM card operation
+uint8_t modem_isSIM_Operational() {
+	int t = 0;
+
+	char token = '\0';
+	uint16_t lastError = config_getSimLastError(&token);
+	if (token == 'S')
+		for (t = 0; t < sizeof(CMS_fatalErrors) / sizeof(uint16_t); t++)
+			if (CMS_fatalErrors[t] == lastError) {
+				config_SIM_not_operational();
+				return false;
+			}
+
+	if (token == 'E')
+		for (t = 0; t < sizeof(CME_fatalErrors) / sizeof(uint16_t); t++)
+			if (CME_fatalErrors[t] == lastError) {
+				config_SIM_not_operational();
+				return false;
+			}
+
+	config_SIM_operational();
+	return true;
+}
 
 const char *modem_getNetworkStatusText(int mode, int status) {
 
 	if (mode == 0)
 		return NETWORK_MODE_0;
 
-	if (status>=0 && status<7)
+	if (status >= 0 && status < 7)
 		return NETWORK_STATUS[status];
 
 	return NETWORK_UNKNOWN_STATUS;
 }
 
-const char COMMAND_RESULT_CGREG[]= "+CGREG: ";
+const char COMMAND_RESULT_CGREG[] = "+CGREG: ";
 
 int modem_getNetworkStatus(int *mode, int *status) {
 
 	char *pToken1 = NULL;
 	int uart_state = 0;
-	SIM_CARD_CONFIG *sim=config_getSIM();
+	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	*mode = -1;
 	*status = -1;
@@ -126,7 +169,7 @@ int modem_connect_network(uint8_t attempts) {
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
 
 			lcd_clear();
-			lcd_printf(LINE1, "Network %d Status", config_getSelectedSIM()+1);
+			lcd_printf(LINE1, "SIM %d status", config_getSelectedSIM() + 1);
 			lcd_printl(LINE2,
 					(char *) modem_getNetworkStatusText(net_mode, net_status));
 
@@ -136,7 +179,7 @@ int modem_connect_network(uint8_t attempts) {
 							|| net_status == NETWORK_STATUS_REGISTERED_ROAMING)) {
 
 				// We tested more than once, lets show a nice we are connected message
-				if (tests>0)
+				if (tests > 0)
 					delay(HUMAN_DISPLAY_INFO_DELAY);
 				return UART_SUCCESS;
 			}
@@ -145,20 +188,22 @@ int modem_connect_network(uint8_t attempts) {
 		}
 
 		delay(NETWORK_CONNECTION_DELAY);
-	} while (--attempts>0);
+	} while (--attempts > 0);
 
 	return UART_FAILED;
-};
+}
+;
 
 int modem_disableNetworkRegistration() {
 	return uart_tx("AT+CGREG=0\r\n");
 }
 
+// Not used if we activate the error handling
 uint16_t modem_parse_error(const char *error) {
 	uint16_t errorNum = NO_ERROR;
 	if (!strcmp(error, "SIM not inserted\r\n")) {
 		SIM_CARD_CONFIG *sim = config_getSIM();
-		config_setSIMError(sim, ERROR_SIM_NOT_INSERTED, error);
+		config_setSIMError(sim, 'E', ERROR_SIM_NOT_INSERTED, error);
 		return ERROR_SIM_NOT_INSERTED;
 	}
 
@@ -166,18 +211,22 @@ uint16_t modem_parse_error(const char *error) {
 	return errorNum;
 }
 
-void modem_setNumericError(int16_t errorCode) {
+void modem_setNumericError(char errorToken, int16_t errorCode) {
 	char szCode[16];
-	if (config_getSimLastError()==errorCode)
+	char token;
+	if (config_getSimLastError(&token) == errorCode)
 		return;
 
-	sprintf(szCode,"ERROR %d", errorCode);
+	sprintf(szCode, "ERROR %d", errorCode);
 	SIM_CARD_CONFIG *sim = config_getSIM();
-	config_setSIMError(sim, errorCode, szCode);
+	config_setSIMError(sim, errorToken, errorCode, szCode);
+
+	// Check the error codes to figure out if the SIM is still functional
+	modem_isSIM_Operational();
 	return;
 }
 
-static const char AT_ERROR[]= " ERROR: ";
+static const char AT_ERROR[] = " ERROR: ";
 
 void modem_check_uart_error() {
 	char *pToken1;
@@ -187,22 +236,23 @@ void modem_check_uart_error() {
 	if (uart_state != UART_ERROR)
 		return;
 
-	pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], (const char *) AT_ERROR);
+	pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx],
+			(const char *) AT_ERROR);
 	if (pToken1 != NULL) { // ERROR FOUND;
-		char *error = (char *) (pToken1+strlen(AT_ERROR));
+		char *error = (char *) (pToken1 + strlen(AT_ERROR));
 
 		log_appendf("ERROR: SIM %d cmd[%s]", config_getSelectedSIM(), error);
-		modem_parse_error(error);
-		errorToken=*(pToken1-1);
+		errorToken = *(pToken1 - 1);
 #ifndef _DEBUG
 		lcd_clear();
 		if (errorToken=='S') {
 			lcd_printl(LINE1, "SERVICE ERROR");
-		} else
+		} else {
 			lcd_printl(LINE1, "MODEM ERROR");
+		}
 #endif
 		lcd_printl(LINE2, error);
-		modem_setNumericError(atoi(error));
+		modem_setNumericError(errorToken, atoi(error));
 	}
 
 	delay(5000);
@@ -239,40 +289,48 @@ int8_t modem_first_init() {
 
 		for (t = 0; t < NUM_SIM_CARDS; t++) {
 			modem_swap_SIM(); // Send hearbeat from SIM
-			if (config_getSimLastError() != NO_ERROR) {
+			/*
+			 * We have to check which parameters are fatal to disable the SIM
+			 *
+			 */
+
+			if (!modem_isSIM_Operational()) {
 				lcd_clear();
-				lcd_printf(LINE1, "ERROR INIT SIM %d ", config_getSelectedSIM()+1);
+				lcd_printf(LINE1, "ERROR INIT SIM %d ",
+						config_getSelectedSIM() + 1);
 				lcd_printf(LINE2, config_getSIM()->simLastError);
 
-				log_appendf("ERROR: SIM %d FAILED [%s]", config_getSelectedSIM(), config_getSIM()->simLastError);
+				log_appendf("ERROR: SIM %d FAILED [%s]",
+						config_getSelectedSIM(), config_getSIM()->simLastError);
 				delay(HUMAN_DISPLAY_ERROR_DELAY);
-				iSIM_Error ++;
+				iSIM_Error++;
 			}
 		}
 
 		// One or more of the sims had a catastrofic failure on init, set the device
-		switch(iSIM_Error) {
-			case 1:
-				for (t = 0; t < NUM_SIM_CARDS; t++)
-					if (config_getSIMError(t)==NO_ERROR) {
-						if (config_getSelectedSIM()!=t) {
-							g_pInfoA->cfgSIM_slot = t;
-							modem_init();
-						}
+		switch (iSIM_Error) {
+		case 1:
+			for (t = 0; t < NUM_SIM_CARDS; t++)
+				if (config_getSIMError(t) == NO_ERROR) {
+					if (config_getSelectedSIM() != t) {
+						g_pInfoA->cfgSIM_slot = t;
+						modem_init();
 					}
+				}
 			break;
-			case 2:
-				lcd_clear();
-				lcd_printf(LINE1, "BOTH SIMS FAILED ");
-				log_appendf("ERROR: BOTH SIMS FAILED ON INIT ");
-				delay(HUMAN_DISPLAY_ERROR_DELAY);
+		case 2:
+			lcd_clear();
+			lcd_printf(LINE1, "BOTH SIMS FAILED ");
+			log_appendf("ERROR: BOTH SIMS FAILED ON INIT ");
+			delay(HUMAN_DISPLAY_ERROR_DELAY);
 			break;
 		}
 
 		//heartbeat
 		for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
 			memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);
-			digital_amp_to_temp_string(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
+			digital_amp_to_temp_string(ADCvar[iIdx], &Temperature[iIdx][0],
+					iIdx);
 		}
 	} else {
 		lcd_printl(LINE2, "Failed Power On");
@@ -296,10 +354,7 @@ void modem_swap_SIM() {
 #endif
 
 	// Just send the message if we dont have errors.
-#ifdef _DEBUG
-	if (config_getSIMError(config_getSelectedSIM())==NO_ERROR)
-#endif
-	{
+	if (modem_isSIM_Operational())	{
 		sms_send_heart_beat();
 	}
 }
@@ -506,7 +561,7 @@ void modem_pull_time() {
 		uart_rx_cleanBuf(ATCMD_CCLK, ATresponse, sizeof(ATresponse));
 		modem_parse_time(ATresponse, &g_tmCurrTime);
 
-		if (g_tmCurrTime.tm_year>=2015 && g_tmCurrTime.tm_year<2115) {  // 100 years ?
+		if (g_tmCurrTime.tm_year >= 2015 && g_tmCurrTime.tm_year < 2115) { // 100 years ?
 			rtc_init(&g_tmCurrTime);
 			config_update_system_time();
 		} else {
@@ -576,10 +631,9 @@ void modem_init() {
 
 	uart_tx_timeout("AT#SIMDET=1\r\n", MODEM_TX_DELAY2, 10); // Disable sim detection. Is it not plugged in hardware?
 
-	uart_tx("ATV1\r\n");		// Response format to full headers
-	uart_tx("AT+CMEE=1\r\n");     // Set command enables/disables the report of result code:
+	uart_tx("AT+CMEE=1\r\n"); // Set command enables/disables the report of result code:
 	uart_tx("AT#CMEEMODE=1\r\n"); // This command allows to extend the set of error codes reported by CMEE to the GPRS related error codes.
-	uart_tx("AT#AUTOBND=2\r\n");  // Set command enables/disables the automatic band selection at power-on.  if automatic band selection is enabled the band changes every about 90 seconds through available bands until a GSM cell is found.
+	uart_tx("AT#AUTOBND=2\r\n"); // Set command enables/disables the automatic band selection at power-on.  if automatic band selection is enabled the band changes every about 90 seconds through available bands until a GSM cell is found.
 
 	// We have to wait for the network to be ready, it will take some time. In debug we just wait on connect.
 #ifndef _DEBUG
@@ -593,15 +647,15 @@ void modem_init() {
 
 	uart_tx("AT#NITZ=1\r\n");   // #NITZ - Network Timezone
 
-	uart_tx("AT+CTZU=1\r\n");   //  4 - software bi-directional with filtering (XON/XOFF)
+	uart_tx("AT+CTZU=1\r\n"); //  4 - software bi-directional with filtering (XON/XOFF)
 	uart_tx("AT&K4\r\n");		// [Flow Control - &K]
-	uart_tx("AT&P0\r\n");   	// [Default Reset Full Profile Designation - &P] Execution command defines which full profile will be loaded on startup.
-	uart_tx("AT&W0\r\n");		// [Store Current Configuration - &W] 			 Execution command stores on profile <n> the complete configuration of the	device
+	uart_tx("AT&P0\r\n"); // [Default Reset Full Profile Designation - &P] Execution command defines which full profile will be loaded on startup.
+	uart_tx("AT&W0\r\n");// [Store Current Configuration - &W] 			 Execution command stores on profile <n> the complete configuration of the	device
 
 	modem_getSMSCenter();
 	modem_checkSignal();
 
-	uart_tx("AT+CSDH=1\r\n");   // Show Text Mode Parameters - +CSDH  			 Set command controls whether detailed header information is shown in text mode (+CMGF=1) result codes
+	uart_tx("AT+CSDH=1\r\n"); // Show Text Mode Parameters - +CSDH  			 Set command controls whether detailed header information is shown in text mode (+CMGF=1) result codes
 	uart_tx_timeout("AT+CMGF=?\r\n", MODEM_TX_DELAY2, 5); // set sms format to text mode
 
 #if defined(CAPTURE_MCC_MNC) && defined(_DEBUG)
@@ -616,7 +670,7 @@ void modem_init() {
 	delay(MODEM_TX_DELAY1);
 #endif
 
-	if(sim->iMaxMessages == 0xFF|| sim->iMaxMessages == 0x00)
+	if (sim->iMaxMessages == 0xFF || sim->iMaxMessages == 0x00)
 		modem_set_max_messages();
 
 	modem_pull_time();
@@ -631,6 +685,8 @@ void modem_init() {
 	// Disable echo from modem
 	uart_tx("ATE0\r\n");
 
+	// Check if the network/sim card works
+	modem_isSIM_Operational();
 }
 
 #ifdef POWER_SAVING_ENABLED

@@ -48,7 +48,7 @@ extern int8_t modem_first_init();
 extern void modem_getSMSCenter();
 extern void modem_set_max_messages();
 
-extern void modem_setNumericError(int16_t errorCode);
+extern void modem_setNumericError(char errorToken, int16_t errorCode);
 extern uint16_t modem_parse_error(const char *error);
 extern void modem_check_uart_error();
 

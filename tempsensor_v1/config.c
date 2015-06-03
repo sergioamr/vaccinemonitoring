@@ -68,20 +68,28 @@ void calibrate_device() {
 }
 
 void config_reset_error(SIM_CARD_CONFIG *sim) {
-	sim->iErrorState= NO_ERROR;
+	sim->simErrorToken = '\0';
+	sim->simErrorState= NO_ERROR;
 }
 
-void config_setSIMError(SIM_CARD_CONFIG *sim, uint16_t errorID, const char *error) {
+void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID, const char *error) {
 	if (error == NULL || sim == NULL)
 		return;
+
 	memset(sim->simLastError, 0, sizeof(sim->simLastError));
 	strncpy(sim->simLastError, error, sizeof(sim->simLastError)-1);
-	sim->iErrorState = errorID;
+	sim->simErrorState = errorID;
+	sim->simErrorToken = errorToken;
+}
+
+uint8_t config_isSimOperational() {
+	uint8_t slot=g_pInfoA->cfgSIM_slot;
+	return g_pInfoA->SIM[slot].simOperational;
 }
 
 // Returns the current structure containing the info for the current SIM selected
 uint16_t config_getSIMError(int slot) {
-	return g_pInfoA->SIM[slot].iErrorState;
+	return g_pInfoA->SIM[slot].simErrorState;
 }
 
 // Returns the current structure containing the info for the current SIM selected
@@ -95,8 +103,23 @@ uint8_t config_getSelectedSIM() {
 	return g_pInfoA->cfgSIM_slot;
 }
 
-uint16_t config_getSimLastError() {
-	return g_pInfoA->SIM[g_pInfoA->cfgSIM_slot].iErrorState;
+void config_SIM_not_operational() {
+	uint8_t slot=g_pInfoA->cfgSIM_slot;
+	g_pInfoA->SIM[slot].simOperational=0;
+}
+
+void config_SIM_operational() {
+	uint8_t slot=g_pInfoA->cfgSIM_slot;
+	g_pInfoA->SIM[slot].simOperational=1;
+}
+
+uint16_t config_getSimLastError(char *charToken) {
+
+	uint8_t slot=g_pInfoA->cfgSIM_slot;
+	if (charToken!=NULL)
+		*charToken=g_pInfoA->SIM[slot].simErrorToken;
+
+	return g_pInfoA->SIM[slot].simErrorState;
 }
 
 void config_SafeMode() {
@@ -168,8 +191,8 @@ void config_init() {
 
 	strcpy(g_pInfoA->cfgGateway,SMS_NEXLEAF_GATEWAY); // Gateway to nextleaf
 
-	config_setSIMError(&g_pInfoA->SIM[0], NO_ERROR, "***FIRST SIM***");
-	config_setSIMError(&g_pInfoA->SIM[1], NO_ERROR, "**SECOND  SIM**");
+	config_setSIMError(&g_pInfoA->SIM[0], '+', NO_ERROR, "***FIRST SIM***");
+	config_setSIMError(&g_pInfoA->SIM[1], '+', NO_ERROR, "**SECOND  SIM**");
 
 	// Init System internals
 
