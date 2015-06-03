@@ -223,6 +223,8 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 
 	// Check the error codes to figure out if the SIM is still functional
 	modem_isSIM_Operational();
+
+	log_appendf("SIM %d CM%c ERROR %d", config_getSelectedSIM()+1, errorToken, errorCode);
 	return;
 }
 
