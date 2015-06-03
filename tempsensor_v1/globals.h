@@ -37,9 +37,6 @@ extern uint8_t g_iBatteryLevel;
 extern char g_iSignal_gprs;
 extern char g_iGprs_network_indication;
 
-extern void ConvertADCToTemperature(int32_t ADCval, char* TemperatureVal,
-		int8_t iSensorIdx);
-
 extern char szLog[FILE_BUFFER_LEN];
 
 //now moved to INFOD FRAM to optimize repeated temperature conversion
@@ -66,6 +63,7 @@ extern uint32_t iSampleTimeElapsed;
 extern uint32_t iSMSRxPollElapsed;
 extern uint32_t iLCDShowElapsed;
 extern uint32_t iMsgRxPollElapsed;
+extern uint32_t iBootTime;
 extern int8_t iModemSuccess;
 extern int8_t g_iLastCfgSeq;
 extern volatile uint16_t g_iStatus;

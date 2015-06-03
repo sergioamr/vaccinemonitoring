@@ -119,8 +119,9 @@ void system_boot() {
 #endif
 
 	fat_init_drive();
-
+	// Initial trigger of temperature required
 	sample_temperature();
+
 #ifndef _DEBUG
 	// to allow conversion to get over and prevent any side-effects to other interface like modem
 	// TODO is this delay to help on the following bug from texas instruments ? (http://www.ti.com/lit/er/slaz627b/slaz627b.pdf)
@@ -129,6 +130,13 @@ void system_boot() {
 #endif
 
 	P4OUT &= ~BIT0;                           // Reset high
+
+	// Test delay //TODO apply sufficient delay for completion
+	delay(5000);
+	int iIdx;
+	for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
+		digital_amp_to_temp_string(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
+	}
 
 	if (modem_first_init() != 1) {
 		_NOP(); // Modem failed to power on

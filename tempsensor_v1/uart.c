@@ -377,8 +377,8 @@ uint8_t uart_tx(const char *cmd) {
 		if (pToken1 != NULL) {
 			lcd_print_progress((char *) pToken1 + 3, LINE2);
 		} else {
-			lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2],
-			LINE2); // Display the OK message
+			//lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2],
+			//LINE2); // Display the OK message
 		}
 	} else
 		modem_check_uart_error();
@@ -462,7 +462,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			break;
 
 		case ATCMD_CCLK:
-			pToken1 = strstr((const char *) RXBuffer, "CCLK:");
+			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "CCLK:");
 			if (pToken1 != NULL) {
 				pToken2 = strstr(pToken1, "OK");
 

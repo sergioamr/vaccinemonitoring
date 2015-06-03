@@ -195,7 +195,8 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 	case ADC12IV_ADC12IFG5:   		        // Vector 22:  ADC12MEM5
 		ADCvar[3] += ADC12MEM5;                     // Read conversion result
 #if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 4
-				g_isConversionDone = 1;
+		g_isConversionDone = 1;
+		g_iSamplesRead++;
 #endif
 		break;
 	case ADC12IV_ADC12IFG6:                 // Vector 24:  ADC12MEM6

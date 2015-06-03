@@ -38,7 +38,7 @@ char ESC[2] = { 0x1B, 0 };
 	if(token!=NULL) *var = atoi(token); else return error;
 
 /*
- * AT Commands Reference Guide 80000ST10025a Rev. 9 – 2010-10-04
+ * AT Commands Reference Guide 80000ST10025a Rev. 9 ï¿½ 2010-10-04
  *
  * Read command reports the <mode> and <stat> parameter values in the format:
  * +CREG: <mode>,<stat>[,<Lac>,<Ci>]
@@ -615,7 +615,6 @@ void modem_init() {
 	// GPIO [PIN, DIR, MODE]
 	// Execution command sets the value of the general purpose output pin
 	// GPIO<pin> according to <dir> and <mode> parameter.
-
 	uart_tx("AT#SIMDET=2\r\n"); // Enable automatic pin sim detection
 
 #ifdef ENABLE_SIM_SLOT

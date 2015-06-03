@@ -42,16 +42,28 @@ void thermal_canyon_loop(void) {
 	iSMSRxPollElapsed = iMinuteTick;
 	iLCDShowElapsed = iMinuteTick;
 	iMsgRxPollElapsed = iMinuteTick;
+	iBootTime = config_get_boot_midnight_difference();
 
 	while (1) {
-
-		config_update_system_time();
 
 		if (g_iSystemSetup > 0) {
 			lcd_clear();
 			lcd_print("RUN CALIBRATION?");
 			lcd_print("PRESS AGAIN TO RUN");
 			g_iSystemSetup = 0;
+		}
+
+		if (((iMinuteTick - iLCDShowElapsed) >= LCD_REFRESH_INTERVAL)
+				|| (iLastDisplayId != g_iDisplayId)) {
+			config_update_system_time();
+			iLastDisplayId = g_iDisplayId;
+			iLCDShowElapsed = iMinuteTick;
+			lcd_show(g_iDisplayId);
+		}
+
+		if (iMinuteTick >= iBootTime) {
+			modem_pull_time();
+			iBootTime = config_get_boot_midnight_difference();
 		}
 
 		//check if conversion is complete
@@ -117,7 +129,6 @@ void thermal_canyon_loop(void) {
 					sms_send_heart_beat();
 				}
 			}
-
 		}
 
 #ifndef CALIBRATION
@@ -182,14 +193,6 @@ void thermal_canyon_loop(void) {
 			}
 		}
 #endif
-
-		if (((iMinuteTick - iLCDShowElapsed) >= LCD_REFRESH_INTERVAL)
-				|| (iLastDisplayId != g_iDisplayId)) {
-			iLastDisplayId = g_iDisplayId;
-			iLCDShowElapsed = iMinuteTick;
-			lcd_show(g_iDisplayId);
-		}
-		//iTimeCnt++;
 
 #ifndef CALIBRATION
 		//process SMS messages if there is a gap of 2 mins before cfg processing or upload takes place
