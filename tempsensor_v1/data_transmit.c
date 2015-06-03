@@ -323,16 +323,16 @@ int data_transmit(uint8_t *pSampleCnt) {
 	memset(ATresponse, 0, sizeof(ATresponse));//ensure the buffer in aggregate_var section is more than AGGREGATE_SIZE
 	fr = f_open(&filr, fn, FA_READ | FA_OPEN_ALWAYS);
 	if (fr == FR_OK) {
-		dw_file_pointer_back_log = g_pInfoB->dwLastSeek; // added for dummy storing///
+		dw_file_pointer_back_log = g_pCalibrationCfg->dwLastSeek; // added for dummy storing///
 		//seek if offset is valid and not greater than existing size else read from the beginning
-		if ((g_pInfoB->dwLastSeek != 0)
-				&& (filr.fsize >= g_pInfoB->dwLastSeek)) {
-			f_lseek(&filr, g_pInfoB->dwLastSeek);
+		if ((g_pCalibrationCfg->dwLastSeek != 0)
+				&& (filr.fsize >= g_pCalibrationCfg->dwLastSeek)) {
+			f_lseek(&filr, g_pCalibrationCfg->dwLastSeek);
 		} else {
-			g_pInfoB->dwLastSeek = 0;
+			g_pCalibrationCfg->dwLastSeek = 0;
 		}
 
-		iOffset = g_pInfoB->dwLastSeek % SECTOR_SIZE;
+		iOffset = g_pCalibrationCfg->dwLastSeek % SECTOR_SIZE;
 		//check the position is in first half of sector
 		if ((SECTOR_SIZE - iOffset) > sizeof(ATresponse)) {
 			fr = f_read(&filr, ATresponse, sizeof(ATresponse), (UINT *) &iIdx); /* Read first chunk of sector*/
@@ -362,13 +362,13 @@ int data_transmit(uint8_t *pSampleCnt) {
 						pcSrc1 = pcTmp;
 						pcSrc2 = NULL;
 						//update lseek
-						g_pInfoB->dwLastSeek += (iPOSTstatus - (int) pcSrc1);	//seek to the next time stamp
+						g_pCalibrationCfg->dwLastSeek += (iPOSTstatus - (int) pcSrc1);	//seek to the next time stamp
 					}
 					//check to read some more data
-					else if ((filr.fsize - g_pInfoB->dwLastSeek)
+					else if ((filr.fsize - g_pCalibrationCfg->dwLastSeek)
 							> (SECTOR_SIZE - iOffset)) {
 						//update the seek to next sector
-						g_pInfoB->dwLastSeek += SECTOR_SIZE - iOffset;
+						g_pCalibrationCfg->dwLastSeek += SECTOR_SIZE - iOffset;
 						//seek
 						//f_lseek(&filr, g_pInfoB->dwLastSeek);
 						//fr = f_read(&filr, ATresponse, AGGREGATE_SIZE, &iIdx);  /* Read next data of AGGREGATE_SIZE */
@@ -377,7 +377,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 						if (disk_read_ex(0, (BYTE *) ATresponse, filr.dsect + 1,
 								512) == RES_OK) {
 							//calculate bytes read
-							iSize = filr.fsize - g_pInfoB->dwLastSeek;
+							iSize = filr.fsize - g_pCalibrationCfg->dwLastSeek;
 							if (iSize >= sizeof(ATresponse)) {
 								iIdx = sizeof(ATresponse);
 							} else {
@@ -387,15 +387,15 @@ int data_transmit(uint8_t *pSampleCnt) {
 							//pcSrc1 = strstr(ATresponse,"$TS");
 							pcSrc1 = strstr(ATresponse, "$");
 							if (pcSrc1) {
-								dwFinalSeek = g_pInfoB->dwLastSeek
+								dwFinalSeek = g_pCalibrationCfg->dwLastSeek
 										+ (pcSrc1 - ATresponse);//seek to the next TS
 								iIdx = pcSrc1;		//second src end position
 							}
 							//no next time stamp found
 							else {
-								dwFinalSeek = g_pInfoB->dwLastSeek + iIdx;//update with bytes read
-								g_pInfoB->dwLastSeek = &ATresponse[iIdx];//get postion of last byte
-								iIdx = g_pInfoB->dwLastSeek;//end position for second src
+								dwFinalSeek = g_pCalibrationCfg->dwLastSeek + iIdx;//update with bytes read
+								g_pCalibrationCfg->dwLastSeek = &ATresponse[iIdx];//get postion of last byte
+								iIdx = g_pCalibrationCfg->dwLastSeek;//end position for second src
 							}
 							//first src is in FATFS buffer, second src is ATresponse
 							pcSrc1 = pcTmp;
@@ -412,7 +412,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 				} else {
 					//control should not come here ideally
 					//update the seek to next sector to skip the bad logged data
-					g_pInfoB->dwLastSeek += SECTOR_SIZE - iOffset;
+					g_pCalibrationCfg->dwLastSeek += SECTOR_SIZE - iOffset;
 				}
 			} else {
 				//file system issue TODO
@@ -447,12 +447,12 @@ int data_transmit(uint8_t *pSampleCnt) {
 					//check if data is splitted across
 					if (g_iStatus & SPLIT_TIME_STAMP) {
 						//check to read some more data
-						if ((filr.fsize - g_pInfoB->dwLastSeek)
+						if ((filr.fsize - g_pCalibrationCfg->dwLastSeek)
 								> (SECTOR_SIZE - iOffset)) {
 							//update the seek to next sector
-							g_pInfoB->dwLastSeek += SECTOR_SIZE - iOffset;
+							g_pCalibrationCfg->dwLastSeek += SECTOR_SIZE - iOffset;
 							//seek
-							f_lseek(&filr, g_pInfoB->dwLastSeek);
+							f_lseek(&filr, g_pCalibrationCfg->dwLastSeek);
 							fr = f_read(&filr, &dummy, 1, &iIdx); /* dummy read to load the next sector */
 							if ((fr == FR_OK) && (iIdx > 0)) {
 								pcData = (char *) FatFs.win; //resuse the buffer maintained by the file system
@@ -461,7 +461,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 								pcSrc1 = strstr(pcData, "$");
 								if ((pcSrc1)
 										&& (pcSrc1 < &pcData[SECTOR_SIZE])) {
-									g_pInfoB->dwLastSeek += (pcSrc1 - pcData);//seek to the next TS
+									g_pCalibrationCfg->dwLastSeek += (pcSrc1 - pcData);//seek to the next TS
 									iIdx = pcSrc1;//end position for second src
 								} else {
 									dwFinalSeek = filr.fsize;//EOF - update with file size
@@ -483,13 +483,13 @@ int data_transmit(uint8_t *pSampleCnt) {
 						pcSrc1 = pcTmp;
 						pcSrc2 = NULL;
 						//update lseek
-						g_pInfoB->dwLastSeek = g_pInfoB->dwLastSeek
+						g_pCalibrationCfg->dwLastSeek = g_pCalibrationCfg->dwLastSeek
 								+ (iPOSTstatus - (int) pcSrc1);	//seek to the next time stamp
 					}
 				} else {
 					//control should not come here ideally
 					//update the seek to skip the bad logged data read
-					g_pInfoB->dwLastSeek += iIdx;
+					g_pCalibrationCfg->dwLastSeek += iIdx;
 				}
 			} else {
 				//file system issue TODO
@@ -501,8 +501,8 @@ int data_transmit(uint8_t *pSampleCnt) {
 			memset(SampleData, 0, sizeof(SampleData));
 #if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
 			strcat(SampleData, "IMEI=");
-			if (g_pInfoA->cfgIMEI[0] != 0xFF) {
-				strcat(SampleData, g_pInfoA->cfgIMEI);
+			if (!check_address_empty(g_pDeviceCfg->cfgIMEI[0])) {
+				strcat(SampleData, g_pDeviceCfg->cfgIMEI);
 			} else {
 				strcat(SampleData, DEF_IMEI);//be careful as devices with unprogrammed IMEI will need up using same DEF_IMEI
 			}
@@ -587,7 +587,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 			}
 
 			//update seek for the next sample
-			g_pInfoB->dwLastSeek = dwFinalSeek;
+			g_pCalibrationCfg->dwLastSeek = dwFinalSeek;
 #ifndef CALIBRATION
 			if (!(g_iStatus & TEST_FLAG)) {
 				iPOSTstatus = 1;	//indicate data is available for POST & SMS
@@ -599,7 +599,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 #endif
 
 			//check if catch is needed due to backlog
-			if ((filr.fsize - g_pInfoB->dwLastSeek) > sizeof(SampleData)) {
+			if ((filr.fsize - g_pCalibrationCfg->dwLastSeek) > sizeof(SampleData)) {
 				g_iStatus |= BACKLOG_UPLOAD_ON;
 			} else {
 				g_iStatus &= ~BACKLOG_UPLOAD_ON;
@@ -650,7 +650,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 				|| (file_pointer_enabled_gprs_status)) {
 			__no_operation();
 		} else {
-			g_pInfoB->dwLastSeek = dw_file_pointer_back_log;// file pointer moved to original position need to tested.//
+			g_pCalibrationCfg->dwLastSeek = dw_file_pointer_back_log;// file pointer moved to original position need to tested.//
 		}
 
 #ifdef POWER_SAVING_ENABLED

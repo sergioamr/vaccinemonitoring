@@ -14,13 +14,17 @@
 #include "common.h"
 #include "time.h"
 
+#define NEXLEAF_SMS_GATEWAY       "00447751035864"
+#define NEXLEAF_DEFAULT_SERVER_IP "54.241.2.213"
+#define NEXLEAF_DEFAULT_APN 	  "giffgaff.com"
+
 // Poll times trying to connect to the network.
 // After autoband it could take up to 90 seconds for the bands trial and error.
 // So we have to wait for the modem to be ready.
 
 #ifdef _DEBUG
 #define NETWORK_CONNECTION_ATTEMPTS 10
-#define NETWORK_CONNECTION_DELAY 1000
+#define NETWORK_CONNECTION_DELAY 3000
 #else
 #define NETWORK_CONNECTION_ATTEMPTS 10
 #define NETWORK_CONNECTION_DELAY 5000
@@ -126,13 +130,20 @@ typedef struct __attribute__((__packed__)) {
 	char simOperational; // The sim is in a functional state to send and receive messages
 } SIM_CARD_CONFIG;
 
+// 255.255.255.255
+#define MAX_IP_SIZE 3*4+3+1
+
 typedef struct
 __attribute__((__packed__)) {
 	int8_t cfgSIM_slot;
+
 	TEMP_ALERT_PARAM stTempAlertParams[MAX_NUM_SENSORS];
 	BATT_POWER_ALERT_PARAM stBattPowerAlertParam;
+
 	char cfgIMEI[IMEI_MAX_LEN + 1];
-	char cfgGateway[GW_MAX_LEN + 1];
+	char cfgGatewayIP[MAX_IP_SIZE];
+	char cfgGatewaySMS[GW_MAX_LEN + 1];
+
 	SIM_CARD_CONFIG SIM[NUM_SIM_CARDS];
 	struct tm lastSystemTime;
 } CONFIG_INFOA;
@@ -202,5 +213,7 @@ extern void config_init();
 extern void config_setLastCommand(uint16_t lastCmd);
 extern void config_incLastCmd();
 extern void config_update_system_time();
+
+uint8_t check_address_empty(uint8_t mem);
 
 #endif /* TEMPSENSOR_V1_CONFIG_H_ */

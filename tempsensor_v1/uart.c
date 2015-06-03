@@ -46,8 +46,8 @@ volatile uint8_t iError = 0;
 volatile uint8_t iTXInProgress = 0;
 volatile uint8_t iRXCommandProcessed = 0; // A finished AT command arrived.
 
-int iTxLen = 0;
-int iRxLen = RX_LEN;
+size_t iTxLen = 0;
+size_t iRxLen = RX_LEN;
 #define INDEX_2 2
 #define INDEX_5 5
 #define INDEX_7 7
@@ -361,15 +361,17 @@ uint8_t uart_txf(const char *_format, ...) {
 }
 
 uint8_t uart_tx(const char *cmd) {
-
 	char* pToken1;
+	int uart_state;
+	int transaction_completed;
+
 	uart_resetbuffer();
 
-	int transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 10);
+	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 10);
 	if (RXHeadIdx > RXTailIdx)
 		return transaction_completed;
 
-	int uart_state = uart_getTransactionState();
+	uart_state = uart_getTransactionState();
 	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
 		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": \""); // Display the command returned
 		if (pToken1 != NULL) {

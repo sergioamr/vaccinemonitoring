@@ -75,6 +75,97 @@ CME ERROR: 260	Invalid dial string
 CME ERROR: 261	SS not executed
 CME ERROR: 262	SIM Blocked
 CME ERROR: 263	Invalid block
+
+Easy GPRS related errors
+CME ERROR: 400 generic undocumented error
+CME ERROR: 401 wrong state
+CME ERROR: 402 wrong mode
+CME ERROR: 403 context already activated
+CME ERROR: 404 stack already active
+CME ERROR: 405 activation failed
+CME ERROR: 406 context not opened
+CME ERROR: 407 cannot setup socket
+CME ERROR: 408 cannot resolve DN
+CME ERROR: 409 time-out in opening socket
+CME ERROR: 410 cannot open socket
+CME ERROR: 411 remote disconnected or time-out
+CME ERROR: 412 connection failed
+CME ERROR: 413 tx error
+CME ERROR: 414 already listening
+
+FTP related errors
+CME ERROR: 420 ok
+CME ERROR: 421 connect
+CME ERROR: 422 disconnect
+CME ERROR: 423 error
+CME ERROR: 424 wrong state
+CME ERROR: 425 can not activate
+CME ERROR: 426 can not resolve name
+CME ERROR: 427 can not allocate control socket
+CME ERROR: 428 can not connect control socket
+CME ERROR: 429 bad or no response from server
+
+Numeric Format Verbose Format
+CME ERROR: 430 not connected
+CME ERROR: 431 already connected
+CME ERROR: 432 context down
+CME ERROR: 433 no photo available
+CME ERROR: 434 can not send photo
+
+Easy GPRS related errors
+CME ERROR: 550 generic undocumented error
+CME ERROR: 551 wrong state
+CME ERROR: 552 wrong mode
+CME ERROR: 553 context already activated
+CME ERROR: 554 stack already active
+CME ERROR: 555 activation failed
+CME ERROR: 556 context not opened
+CME ERROR: 557 cannot setup socket
+CME ERROR: 558 cannot resolve DN
+CME ERROR: 559 time-out in opening socket
+CME ERROR: 560 cannot open socket
+CME ERROR: 561 remote disconnected or time-out
+CME ERROR: 562 connection failed
+CME ERROR: 563 tx error
+CME ERROR: 564 already listening
+CME ERROR: 566 can not resume socket
+CME ERROR: 567 wrong APN
+CME ERROR: 568 wrong PDP
+CME ERROR: 569 service not supported
+CME ERROR: 570 QOS not accepted
+CME ERROR: 571 NSAPI already used
+CME ERROR: 572 LLC or SNDCP failure
+CME ERROR: 573 network reject
+
+FTP related errors
+
+CME ERROR: 600 generic undocumented error
+CME ERROR: 601 wrong state
+CME ERROR: 602 can not activate
+CME ERROR: 603 can not resolve name
+CME ERROR: 604 can not allocate control socket
+CME ERROR: 605 can not connect control socket
+CME ERROR: 606 bad or no response from server
+CME ERROR: 607 not connected
+CME ERROR: 608 already connected
+CME ERROR: 609 context down
+CME ERROR: 610 no photo available
+CME ERROR: 611 can not send photo
+CME ERROR: 612 resource used by other instance
+
+Network survey errors:
+
+CME ERROR: 657 Network survey error (No Carrier)*
+CME ERROR: 658 Network survey error (Busy)*
+CME ERROR: 659 Network survey error (Wrong request)*
+CME ERROR: 660 Network survey error (Aborted)*
+CME ERROR: 731 Unspecified
+CME ERROR: 732 Activation command is busy
+CME ERROR: 733 Activation started with CMUX off
+CME ERROR: 734 Activation started on invalid CMUX
+CME ERROR: 736 Remote SIM already active
+CME ERROR: 737 Invalid parameter
+
 CME ERROR: 772	SIM powered down
 
 CMS ERROR (GSM Network Related errors)

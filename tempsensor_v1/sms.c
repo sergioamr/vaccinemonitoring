@@ -107,19 +107,19 @@ int8_t sms_process_msg(char* pSMSmsg) {
 #endif
 					for (iCnt = 0; (iCnt < MAX_NUM_SENSORS) && (pcTmp);
 							iCnt++) {
-						g_pInfoA->stTempAlertParams[iCnt].mincold = strtol(
+						g_pDeviceCfg->stTempAlertParams[iCnt].mincold = strtol(
 								pcTmp, 0, 10);
 						pcTmp = strtok(NULL, ",");
 						if (pcTmp) {
-							g_pInfoA->stTempAlertParams[iCnt].threshcold =
+							g_pDeviceCfg->stTempAlertParams[iCnt].threshcold =
 									strtod(pcTmp, NULL);
 							pcTmp = strtok(NULL, ",");
 							if (pcTmp) {
-								g_pInfoA->stTempAlertParams[iCnt].minhot =
+								g_pDeviceCfg->stTempAlertParams[iCnt].minhot =
 										strtol(pcTmp, 0, 10);
 								pcTmp = strtok(NULL, ",");
 								if (pcTmp) {
-									g_pInfoA->stTempAlertParams[iCnt].threshhot =
+									g_pDeviceCfg->stTempAlertParams[iCnt].threshhot =
 											strtod(pcTmp, NULL);
 									pcTmp = strtok(NULL, ",");
 								}
@@ -127,27 +127,27 @@ int8_t sms_process_msg(char* pSMSmsg) {
 						}
 					}
 					if (pcTmp) {
-						g_pInfoA->stBattPowerAlertParam.minutespower = strtol(
+						g_pDeviceCfg->stBattPowerAlertParam.minutespower = strtol(
 								pcTmp, 0, 10);
 						pcTmp = strtok(NULL, ",");
 						if (pcTmp) {
-							g_pInfoA->stBattPowerAlertParam.enablepoweralert =
+							g_pDeviceCfg->stBattPowerAlertParam.enablepoweralert =
 									strtol(pcTmp, 0, 10);
 							pcTmp = strtok(NULL, ",");
 							if (pcTmp) {
-								g_pInfoA->stBattPowerAlertParam.minutesbathresh =
+								g_pDeviceCfg->stBattPowerAlertParam.minutesbathresh =
 										strtol(pcTmp, 0, 10);
 								pcTmp = strtok(NULL, ",");
 								if (pcTmp) {
-									g_pInfoA->stBattPowerAlertParam.battthreshold =
+									g_pDeviceCfg->stBattPowerAlertParam.battthreshold =
 											strtol(pcTmp, 0, 10);
 								}
 							}
 						}
 
 					} else {
-						g_pInfoA->stBattPowerAlertParam.enablepoweralert = 0;
-						g_pInfoA->stBattPowerAlertParam.battthreshold = 101;
+						g_pDeviceCfg->stBattPowerAlertParam.enablepoweralert = 0;
+						g_pDeviceCfg->stBattPowerAlertParam.battthreshold = 101;
 					}
 					iCnt = 1;
 				} else {
@@ -264,14 +264,14 @@ void sms_send_heart_beat() {
 	//send heart beat
 	memset(SampleData, 0, sizeof(SampleData));
 	strcat(SampleData, SMS_HB_MSG_TYPE);
-	strcat(SampleData, g_pInfoA->cfgIMEI);
+	strcat(SampleData, g_pDeviceCfg->cfgIMEI);
 	strcat(SampleData, ",");
 	if (config_getSelectedSIM()) {
 		strcat(SampleData, "1,");
 	} else {
 		strcat(SampleData, "0,");
 	}
-	strcat(SampleData, g_pInfoA->cfgGateway);
+	strcat(SampleData, g_pDeviceCfg->cfgGatewaySMS);
 	strcat(SampleData, ",");
 	strcat(SampleData, sim->cfgSMSCenter);
 	strcat(SampleData, ",");
@@ -319,7 +319,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_clear();
-		lcd_printf(LINE1, "SYNC SMS %d ", g_pInfoA->cfgSIM_slot + 1);
+		lcd_printf(LINE1, "SYNC SMS %d ", g_pDeviceCfg->cfgSIM_slot + 1);
 		lcd_printl(LINE2, szPhoneNumber);
 		lcd_disable_verbose();
 	}
@@ -360,7 +360,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 }
 
 uint8_t sms_send_message(char* pData) {
-	return sms_send_message_number(SMS_NEXLEAF_GATEWAY, pData);
+	return sms_send_message_number(NEXLEAF_SMS_GATEWAY, pData);
 }
 
 int sms_recv_message(int8_t iMsgIdx, char* pData) {

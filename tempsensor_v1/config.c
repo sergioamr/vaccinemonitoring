@@ -38,13 +38,18 @@ CONFIG_INFOB g_InfoB;
 
 // Since we use the area outside the 16 bits we have to use the large memory model.
 // The compiler gives a warning accessing the structure directly and it can fail. Better accessing it through the pointer.
-CONFIG_INFOA* g_pInfoA = &g_InfoA;
-CONFIG_INFOB* g_pInfoB = &g_InfoB;
+CONFIG_INFOA* g_pDeviceCfg = &g_InfoA;
+CONFIG_INFOB* g_pCalibrationCfg = &g_InfoB;
 
 CONFIG_SYSTEM* g_pSysCfg = &g_SystemConfig;
 // Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
 
 /************************** END CONFIGURATION MEMORY ****************************************/
+
+// Checks if a memory address is not initialized (used for strings)
+uint8_t check_address_empty(uint8_t mem) {
+	return ((uint8_t) mem == 0xFF || (uint8_t) mem == 0);
+}
 
 void calibrate_device() {
 
@@ -83,43 +88,42 @@ void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
 }
 
 uint8_t config_isSimOperational() {
-	uint8_t slot=g_pInfoA->cfgSIM_slot;
-	return g_pInfoA->SIM[slot].simOperational;
+	uint8_t slot=g_pDeviceCfg->cfgSIM_slot;
+	return g_pDeviceCfg->SIM[slot].simOperational;
 }
 
 // Returns the current structure containing the info for the current SIM selected
 uint16_t config_getSIMError(int slot) {
-	return g_pInfoA->SIM[slot].simErrorState;
+	return g_pDeviceCfg->SIM[slot].simErrorState;
 }
 
 // Returns the current structure containing the info for the current SIM selected
 SIM_CARD_CONFIG *config_getSIM() {
-
-	uint8_t slot=g_pInfoA->cfgSIM_slot;
-	return &g_pInfoA->SIM[slot];
+	uint8_t slot=g_pDeviceCfg->cfgSIM_slot;
+	return &g_pDeviceCfg->SIM[slot];
 }
 
 uint8_t config_getSelectedSIM() {
-	return g_pInfoA->cfgSIM_slot;
+	return g_pDeviceCfg->cfgSIM_slot;
 }
 
 void config_SIM_not_operational() {
-	uint8_t slot=g_pInfoA->cfgSIM_slot;
-	g_pInfoA->SIM[slot].simOperational=0;
+	uint8_t slot=g_pDeviceCfg->cfgSIM_slot;
+	g_pDeviceCfg->SIM[slot].simOperational=0;
 }
 
 void config_SIM_operational() {
-	uint8_t slot=g_pInfoA->cfgSIM_slot;
-	g_pInfoA->SIM[slot].simOperational=1;
+	uint8_t slot=g_pDeviceCfg->cfgSIM_slot;
+	g_pDeviceCfg->SIM[slot].simOperational=1;
 }
 
 uint16_t config_getSimLastError(char *charToken) {
 
-	uint8_t slot=g_pInfoA->cfgSIM_slot;
+	uint8_t slot=g_pDeviceCfg->cfgSIM_slot;
 	if (charToken!=NULL)
-		*charToken=g_pInfoA->SIM[slot].simErrorToken;
+		*charToken=g_pDeviceCfg->SIM[slot].simErrorToken;
 
-	return g_pInfoA->SIM[slot].simErrorState;
+	return g_pDeviceCfg->SIM[slot].simErrorState;
 }
 
 void config_SafeMode() {
@@ -154,8 +158,7 @@ void config_setup_extra_button() {
 
 void config_init() {
 
-	if (g_pSysCfg->memoryInitialized != 0xFF
-			&& g_pSysCfg->memoryInitialized != 0x00) {
+	if (check_address_empty(g_pSysCfg->memoryInitialized)) {
 
 		// Check if the user is pressing the service mode
 		// Service Button was pressed during bootup. Rerun calibration
@@ -184,15 +187,19 @@ void config_init() {
 	}
 
 	// Init Config InfoA
-	memset(g_pInfoA, 0, sizeof(CONFIG_INFOA));
+	memset(g_pDeviceCfg, 0, sizeof(CONFIG_INFOA));
 
 	// Setup InfoA config data
-	g_pInfoA->cfgSIM_slot=0;
+	g_pDeviceCfg->cfgSIM_slot=0;
 
-	strcpy(g_pInfoA->cfgGateway,SMS_NEXLEAF_GATEWAY); // Gateway to nextleaf
+	strcpy(g_pDeviceCfg->cfgGatewayIP, NEXLEAF_DEFAULT_SERVER_IP); // HTTP server nextleaf
+	strcpy(g_pDeviceCfg->cfgGatewaySMS,NEXLEAF_SMS_GATEWAY); 		// Gateway to nextleaf
 
-	config_setSIMError(&g_pInfoA->SIM[0], '+', NO_ERROR, "***FIRST SIM***");
-	config_setSIMError(&g_pInfoA->SIM[1], '+', NO_ERROR, "**SECOND  SIM**");
+	config_setSIMError(&g_pDeviceCfg->SIM[0], '+', NO_ERROR, "***FIRST SIM***");
+	config_setSIMError(&g_pDeviceCfg->SIM[1], '+', NO_ERROR, "**SECOND  SIM**");
+
+	strcpy(g_pDeviceCfg->SIM[0].cfgAPN,NEXLEAF_DEFAULT_APN);
+	strcpy(g_pDeviceCfg->SIM[1].cfgAPN,NEXLEAF_DEFAULT_APN);
 
 	// Init System internals
 
@@ -229,6 +236,6 @@ void config_update_system_time()
 {
 	// Gets the current time and stores it in FRAM
 	rtc_get(&g_tmCurrTime);
-	memcpy(&g_pInfoA->lastSystemTime, &g_tmCurrTime, sizeof(g_tmCurrTime));
+	memcpy(&g_pDeviceCfg->lastSystemTime, &g_tmCurrTime, sizeof(g_tmCurrTime));
 	_NOP();
 }

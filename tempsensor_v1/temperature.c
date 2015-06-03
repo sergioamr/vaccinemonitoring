@@ -119,12 +119,12 @@ void digital_amp_to_temp_string(int32_t ADCval, char* TemperatureVal,
 
 	//use calibration formula
 #ifndef CALIBRATION
-	if ((g_pInfoB->calibration[iSensorIdx][0] > -2.0)
-			&& (g_pInfoB->calibration[iSensorIdx][0] < 2.0)
-			&& (g_pInfoB->calibration[iSensorIdx][1] > -2.0)
-			&& (g_pInfoB->calibration[iSensorIdx][1] < 2.0)) {
-		A0tempdegC = A0tempdegC * g_pInfoB->calibration[iSensorIdx][1]
-				+ g_pInfoB->calibration[iSensorIdx][0];
+	if ((g_pCalibrationCfg->calibration[iSensorIdx][0] > -2.0)
+			&& (g_pCalibrationCfg->calibration[iSensorIdx][0] < 2.0)
+			&& (g_pCalibrationCfg->calibration[iSensorIdx][1] > -2.0)
+			&& (g_pCalibrationCfg->calibration[iSensorIdx][1] < 2.0)) {
+		A0tempdegC = A0tempdegC * g_pCalibrationCfg->calibration[iSensorIdx][1]
+				+ g_pCalibrationCfg->calibration[iSensorIdx][0];
 	}
 #endif
 	//Round to one digit after decimal point

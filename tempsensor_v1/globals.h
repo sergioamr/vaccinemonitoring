@@ -15,8 +15,8 @@
 #define ATRESP_MAX_LEN		512
 #define FILE_BUFFER_LEN     64
 
-extern CONFIG_INFOA* g_pInfoA;
-extern CONFIG_INFOB* g_pInfoB;
+extern CONFIG_INFOA* g_pDeviceCfg;
+extern CONFIG_INFOB* g_pCalibrationCfg;
 extern CONFIG_SYSTEM* g_pSysCfg; // System configuration
 
 extern uint32_t g_iAlarmStatus;

@@ -8,7 +8,7 @@
 #ifndef TEMPSENSOR_V1_HTTP_H_
 #define TEMPSENSOR_V1_HTTP_H_
 
-extern void dohttpsetup();
+extern int8_t dohttpsetup();
 extern void deactivatehttp();
 extern int doget();
 extern int dopost(char* postdata);

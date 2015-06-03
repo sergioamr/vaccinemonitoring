@@ -97,8 +97,6 @@ extern "C"
 #define SMS_HB_MSG_TYPE  	 "10,"
 #define SMS_DATA_MSG_TYPE	 "11,"
 
-#define SMS_NEXLEAF_GATEWAY "00447751035864"
-
 /*
  * Constants for different uses
  */

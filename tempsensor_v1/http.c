@@ -11,16 +11,26 @@
 
 #define HTTP_RESPONSE_RETRY	10
 
-void dohttpsetup() {
+int8_t dohttpsetup() {
 
-	// TODO Set correct APN
-	//char* apn = &g_pInfoA->cfgAPN[g_pInfoA->cfgSIMSlot][0];
+	SIM_CARD_CONFIG *sim=config_getSIM();
+	if (sim->cfgAPN[0]=='\0')
+		return UART_FAILED;
 
-	uart_tx("AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
+	uart_txf("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN); //APN
+	if (uart_getTransactionState() != UART_SUCCESS)
+		return UART_FAILED;
+
 	uart_tx("AT#SGACT=1,1\r\n");
+	if (uart_getTransactionState() != UART_SUCCESS)
+		return UART_FAILED;
 
 	// LONG TIMEOUT
-	uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
+	uart_txf("AT#HTTPCFG=1,\"%s\",80\r\n", g_pDeviceCfg->cfgGatewayIP);
+	if (uart_getTransactionState() != UART_SUCCESS)
+		return UART_FAILED;
+
+	return UART_SUCCESS;
 }
 
 void deactivatehttp() {
@@ -32,8 +42,11 @@ void deactivatehttp() {
 int doget() {
 	char szTemp[128];
 
-	sprintf(szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/%s/1/\"\r\n",g_pInfoA->cfgIMEI);
+	sprintf(szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/%s/1/\"\r\n",g_pDeviceCfg->cfgIMEI);
 	uart_tx_timeout(szTemp, 10000, 1);
+	if (uart_getTransactionState() != UART_SUCCESS)
+		return UART_FAILED;
+
 	uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 1);		//get the configuartion
 	uart_rx(ATCMD_HTTPRCV, ATresponse);
 	return 0; // TODO return was missing, is it necessary ?

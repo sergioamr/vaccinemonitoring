@@ -315,7 +315,7 @@ int8_t modem_first_init() {
 			for (t = 0; t < NUM_SIM_CARDS; t++)
 				if (config_getSIMError(t) == NO_ERROR) {
 					if (config_getSelectedSIM() != t) {
-						g_pInfoA->cfgSIM_slot = t;
+						g_pDeviceCfg->cfgSIM_slot = t;
 						modem_init();
 					}
 				}
@@ -344,9 +344,9 @@ int8_t modem_first_init() {
 
 void modem_swap_SIM() {
 	config_incLastCmd();
-	g_pInfoA->cfgSIM_slot = !g_pInfoA->cfgSIM_slot;
+	g_pDeviceCfg->cfgSIM_slot = !g_pDeviceCfg->cfgSIM_slot;
 	lcd_clear();
-	lcd_printf(LINE1, "Activate SIM: %d", g_pInfoA->cfgSIM_slot + 1);
+	lcd_printf(LINE1, "Activate SIM: %d", g_pDeviceCfg->cfgSIM_slot + 1);
 	modem_init();
 	modem_getExtraInfo();
 
@@ -420,12 +420,13 @@ void modem_getIMEI() {
 	if (!IMEI_OK)
 		return;
 
-	if ((uint8_t) g_pInfoA->cfgIMEI[0] == 0xFF) // IMEI Was not setup, copy it to permament memory
-		strcpy(g_pInfoA->cfgIMEI, ATresponse);
+	if (check_address_empty(g_pDeviceCfg->cfgIMEI[0])) {
+		strcpy(g_pDeviceCfg->cfgIMEI, ATresponse);
+	}
 
 	// Lets check if we have the right IMEI from the modem, otherwise we flash it again into config.
-	if (memcmp(ATresponse, g_pInfoA->cfgIMEI, 15) != 0) {
-		strcpy(g_pInfoA->cfgIMEI, ATresponse);
+	if (memcmp(ATresponse, g_pDeviceCfg->cfgIMEI, 15) != 0) {
+		strcpy(g_pDeviceCfg->cfgIMEI, ATresponse);
 	}
 
 }
@@ -571,7 +572,7 @@ void modem_pull_time() {
 			lcd_printf(LINE1, "WRONG DATE SIM %d ", config_getSelectedSIM());
 			lcd_printf(LINE2, get_YMD_String(&g_tmCurrTime));
 			delay(HUMAN_DISPLAY_INFO_DELAY);
-			rtc_init(&g_pInfoA->lastSystemTime);
+			rtc_init(&g_pDeviceCfg->lastSystemTime);
 
 			lcd_clear();
 			lcd_printf(LINE1, "LAST DATE ");
@@ -600,7 +601,7 @@ void modem_init() {
 
 	if (config_getSelectedSIM() > 1) {
 		// Memory not initialized
-		g_pInfoA->cfgSIM_slot = 0;
+		g_pDeviceCfg->cfgSIM_slot = 0;
 	}
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
@@ -672,7 +673,7 @@ void modem_init() {
 	delay(MODEM_TX_DELAY1);
 #endif
 
-	if (sim->iMaxMessages == 0xFF || sim->iMaxMessages == 0x00)
+	if (check_address_empty(sim->iMaxMessages))
 		modem_set_max_messages();
 
 	modem_pull_time();
@@ -689,6 +690,11 @@ void modem_init() {
 
 	// Check if the network/sim card works
 	modem_isSIM_Operational();
+
+#ifdef _DEBUG
+	dohttpsetup();
+	doget();
+#endif
 }
 
 #ifdef POWER_SAVING_ENABLED

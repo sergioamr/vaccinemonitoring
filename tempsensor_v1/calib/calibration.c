@@ -32,87 +32,87 @@ int main_calibration(void) {
 
 #if CALIBRATE == 1
 	//device A, sensor A
-	g_pInfoB->calibration[0][0]= -0.0089997215012;
-	g_pInfoB->calibration[0][1]= 1.0168558678;
+	g_pCalibrationCfg->calibration[0][0]= -0.0089997215012;
+	g_pCalibrationCfg->calibration[0][1]= 1.0168558678;
 
 	//device A, sensor B
-	g_pInfoB->calibration[1][0]= -0.1246539991;
-	g_pInfoB->calibration[1][1]= 1.0160181876;
+	g_pCalibrationCfg->calibration[1][0]= -0.1246539991;
+	g_pCalibrationCfg->calibration[1][1]= 1.0160181876;
 
 	//device A, sensor C
-	g_pInfoB->calibration[2][0]= 0.0113285399;
-	g_pInfoB->calibration[2][1]= 1.0181842794;
+	g_pCalibrationCfg->calibration[2][0]= 0.0113285399;
+	g_pCalibrationCfg->calibration[2][1]= 1.0181842794;
 
 	//device A, sensor D
-	g_pInfoB->calibration[3][0]= -0.2116162843;
-	g_pInfoB->calibration[3][1]= 1.0142320871;
+	g_pCalibrationCfg->calibration[3][0]= -0.2116162843;
+	g_pCalibrationCfg->calibration[3][1]= 1.0142320871;
 
 	//device A, sensor E
-	g_pInfoB->calibration[4][0]= -0.1707975911;
-	g_pInfoB->calibration[4][1]= 1.018139702;
+	g_pCalibrationCfg->calibration[4][0]= -0.1707975911;
+	g_pCalibrationCfg->calibration[4][1]= 1.018139702;
 
 #elif CALIBRATE == 2
 	//device B, sensor A
-	g_pInfoB->calibration[0][0]= -0.11755709;
-	g_pInfoB->calibration[0][1]= 1.0126639507;
+	g_pCalibrationCfg->calibration[0][0]= -0.11755709;
+	g_pCalibrationCfg->calibration[0][1]= 1.0126639507;
 
 	//device B, sensor B
-	g_pInfoB->calibration[1][0]= -0.1325491351;
-	g_pInfoB->calibration[1][1]= 1.0130573199;
+	g_pCalibrationCfg->calibration[1][0]= -0.1325491351;
+	g_pCalibrationCfg->calibration[1][1]= 1.0130573199;
 
 	//device B, sensor C
-	g_pInfoB->calibration[2][0]= 0.0171280734;
-	g_pInfoB->calibration[2][1]= 1.0133498078;
+	g_pCalibrationCfg->calibration[2][0]= 0.0171280734;
+	g_pCalibrationCfg->calibration[2][1]= 1.0133498078;
 
 	//device B, sensor D
-	g_pInfoB->calibration[3][0]= -0.180533434;
-	g_pInfoB->calibration[3][1]= 1.0138440268;
+	g_pCalibrationCfg->calibration[3][0]= -0.180533434;
+	g_pCalibrationCfg->calibration[3][1]= 1.0138440268;
 
 	//device B, sensor E
-	g_pInfoB->calibration[4][0]= -0.0898083156;
-	g_pInfoB->calibration[4][1]= 1.017814462;
+	g_pCalibrationCfg->calibration[4][0]= -0.0898083156;
+	g_pCalibrationCfg->calibration[4][1]= 1.017814462;
 
 #elif CALIBRATE == 3
 	//device C, sensor A
-	g_pInfoB->calibration[0][0]= -0.2848321;
-	g_pInfoB->calibration[0][1]= 1.021466371;
+	g_pCalibrationCfg->calibration[0][0]= -0.2848321;
+	g_pCalibrationCfg->calibration[0][1]= 1.021466371;
 
 	//device C, sensor B
-	g_pInfoB->calibration[1][0]= -0.289122994;
-	g_pInfoB->calibration[1][1]= 1.022946138;
+	g_pCalibrationCfg->calibration[1][0]= -0.289122994;
+	g_pCalibrationCfg->calibration[1][1]= 1.022946138;
 
 	//device C, sensor C
-	g_pInfoB->calibration[2][0]= -0.208889079;
-	g_pInfoB->calibration[2][1]= 1.02581601;
+	g_pCalibrationCfg->calibration[2][0]= -0.208889079;
+	g_pCalibrationCfg->calibration[2][1]= 1.02581601;
 
 	//device C, sensor D
-	g_pInfoB->calibration[3][0]= -0.28968586;
-	g_pInfoB->calibration[3][1]= 1.023883188;
+	g_pCalibrationCfg->calibration[3][0]= -0.28968586;
+	g_pCalibrationCfg->calibration[3][1]= 1.023883188;
 
 	//device C, sensor E
-	g_pInfoB->calibration[4][0]= -0.0765155;
-	g_pInfoB->calibration[4][1]= 1.021308586;
+	g_pCalibrationCfg->calibration[4][0]= -0.0765155;
+	g_pCalibrationCfg->calibration[4][1]= 1.021308586;
 
 #elif CALIBRATE == 4
 	//device D, sensor A
-	g_pInfoB->calibration[0][0] = 0.15588;
-	g_pInfoB->calibration[0][1] = 1.013487;
+	g_pCalibrationCfg->calibration[0][0] = 0.15588;
+	g_pCalibrationCfg->calibration[0][1] = 1.013487;
 
 	//device D, sensor B
-	g_pInfoB->calibration[1][0] = -0.09636;
-	g_pInfoB->calibration[1][1] = 1.011564;
+	g_pCalibrationCfg->calibration[1][0] = -0.09636;
+	g_pCalibrationCfg->calibration[1][1] = 1.011564;
 
 	//device D, sensor C
-	g_pInfoB->calibration[2][0] = -0.07391;
-	g_pInfoB->calibration[2][1] = 1.010255;
+	g_pCalibrationCfg->calibration[2][0] = -0.07391;
+	g_pCalibrationCfg->calibration[2][1] = 1.010255;
 
 	//device D, sensor D
-	g_pInfoB->calibration[3][0] = 0.190958;
-	g_pInfoB->calibration[3][1] = 1.017441;
+	g_pCalibrationCfg->calibration[3][0] = 0.190958;
+	g_pCalibrationCfg->calibration[3][1] = 1.017441;
 
 	//device D, sensor E
-	g_pInfoB->calibration[4][0] = 0.11215;
-	g_pInfoB->calibration[4][1] = 1.010953;
+	g_pCalibrationCfg->calibration[4][0] = 0.11215;
+	g_pCalibrationCfg->calibration[4][1] = 1.010953;
 
 #endif
 	return 1;

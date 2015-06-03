@@ -265,7 +265,7 @@ int lcd_printf(int line, const char *_format, ...) {
 }
 
 void lcd_print(char* pcData) {
-	int8_t len = strlen(pcData);
+	size_t len = strlen(pcData);
 
 	if (len > LCD_LINE_LEN) {
 		len = LCD_LINE_LEN;
@@ -275,7 +275,7 @@ void lcd_print(char* pcData) {
 }
 
 void lcd_printl(int8_t iLine, const char* pcData) {
-	int8_t len = strlen(pcData);
+	size_t len = strlen(pcData);
 
 	if (len > LCD_LINE_LEN) {
 		len = LCD_LINE_LEN;
