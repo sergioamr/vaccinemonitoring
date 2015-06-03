@@ -63,6 +63,7 @@ extern uint32_t iSampleTimeElapsed;
 extern uint32_t iSMSRxPollElapsed;
 extern uint32_t iLCDShowElapsed;
 extern uint32_t iMsgRxPollElapsed;
+extern uint32_t iBootTime;
 extern int8_t iModemSuccess;
 extern int8_t g_iLastCfgSeq;
 extern volatile uint16_t g_iStatus;

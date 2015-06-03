@@ -71,6 +71,7 @@ uint32_t iSampleTimeElapsed = 0;
 uint32_t iSMSRxPollElapsed = 0;
 uint32_t iLCDShowElapsed = 0;
 uint32_t iMsgRxPollElapsed = 0;
+uint32_t iBootTime = 0;
 int8_t g_iLastCfgSeq = -1;
 char Temperature[MAX_NUM_SENSORS][TEMP_DATA_LEN + 1];
 char g_iSignal_gprs = 0;

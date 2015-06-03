@@ -202,5 +202,6 @@ extern void config_init();
 extern void config_setLastCommand(uint16_t lastCmd);
 extern void config_incLastCmd();
 extern void config_update_system_time();
+extern uint32_t config_get_boot_midnight_difference();
 
 #endif /* TEMPSENSOR_V1_CONFIG_H_ */

@@ -232,3 +232,9 @@ void config_update_system_time()
 	memcpy(&g_pInfoA->lastSystemTime, &g_tmCurrTime, sizeof(g_tmCurrTime));
 	_NOP();
 }
+
+uint32_t config_get_boot_midnight_difference()
+{
+	return (uint32_t) (1400 - (g_tmCurrTime.tm_min
+				+ (g_tmCurrTime.tm_hour * 60)));
+}
