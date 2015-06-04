@@ -67,16 +67,16 @@ void http_deactivate() {
 // http://54.241.2.213/coldtrace/uploads/multi/v3/358072043112124/1/
 // $ST2,7,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,600,1,600,15,$ST1,919243100142,both,airtelgprs.com,10,1,0,0,$EN
 
+const char HTTP_INCOMING_DATA[] = { 0x0D, 0x0A, '<', '<', '<', 0 };
+
 int process_configuration() {
-	char *pBuffer = (char *) &RXBuffer[RXHeadIdx];
 
-	// Find HTTP transaction prompt
-	char *pToken1 = strstr((const char *) pBuffer, "\r\n<<<");
-	if (pToken1 == NULL) {
-		return UART_FAILED;
-	}
+	char *token;
 
-	PARSE_FINDSTR_RET(pToken1, "$ST2", UART_FAILED);
+	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
+	_NOP();
+	PARSE_FINDSTR_RET(token, "$ST2", UART_FAILED);
+	_NOP();
 
 	return UART_SUCCESS;
 }
@@ -108,6 +108,8 @@ int http_check_error(int *retry) {
 	// Server didnt responded
 	if (http_status_code==200 && data_size==0) {
 		*retry=1;
+		lcd_printl(LINEC, "HTTP Server");
+		lcd_printl(LINEH, "Empty response");
 	}
 
 	// TODO Find non recoverable errors

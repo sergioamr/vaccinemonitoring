@@ -250,7 +250,7 @@ void modem_check_uart_error() {
 		modem_setNumericError(errorToken, atoi(error));
 	}
 
-	delay(5000);
+	lcd_progress_wait(HUMAN_DISPLAY_INFO_DELAY);
 }
 
 int8_t modem_first_init() {
