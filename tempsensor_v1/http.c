@@ -103,9 +103,10 @@ int dopost_gprs_connection_status(char status) {
 		return l_file_pointer_enabled_sms_status;
 
 	iHTTPRespDelayCnt = 0;
-	uart_tx("AT+CGREG?\r\n");
+
 
 	if (status == GSM) {
+		uart_tx("AT+CREG?\r\n");
 		for (i = 0; i < 102; i++) {
 			j = i + 1;
 			if (j > 101) {
@@ -128,7 +129,7 @@ int dopost_gprs_connection_status(char status) {
 	//////
 	if (status == GPRS) {
 		// Network Registration Report
-
+		uart_tx("AT+CGREG?\r\n");
 		for (i = 0; i < 102; i++) {
 			j = i + 1;
 			if (j > 101) {
