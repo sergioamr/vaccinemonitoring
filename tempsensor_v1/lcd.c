@@ -305,6 +305,14 @@ void lcd_disable_verbose() {
 	g_iLCDVerbose = VERBOSE_DISABLED;
 }
 
+void lcd_setVerboseMode(int value) {
+	g_iLCDVerbose = value;
+}
+
+int lcd_getVerboseMode() {
+	return g_iLCDVerbose;
+}
+
 void lcd_enable_verbose() {
 	g_iLCDVerbose = VERBOSE_BOOTING;
 }

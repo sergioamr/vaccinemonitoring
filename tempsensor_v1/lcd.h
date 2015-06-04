@@ -22,8 +22,12 @@
 
 extern int g_iLCDVerbose;
 
+// Encapsulation, this should go into a class
+extern void lcd_setVerboseMode(int v);
+extern int lcd_getVerboseMode();
 extern void lcd_disable_verbose();
 extern void lcd_enable_verbose();
+
 extern void lcd_setupIO();
 extern void lcd_reset();
 extern void lcd_blenable();

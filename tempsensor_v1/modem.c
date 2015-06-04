@@ -31,10 +31,10 @@ char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
 
 // Parsing macros helpers
-#define PARSE_FIRSTVALUE(token, var, error) token = strtok(token, ",\n"); \
+#define PARSE_FIRSTVALUE(token, var, delimiter, error) token = strtok(token, delimiter); \
 	if(token!=NULL) *var = atoi(token); else return error;
 
-#define PARSE_NEXTVALUE(token, var, error) token = strtok(NULL, ",\n"); \
+#define PARSE_NEXTVALUE(token, var, delimiter, error) token = strtok(NULL, delimiter); \
 	if(token!=NULL) *var = atoi(token); else return error;
 
 /*
@@ -131,6 +131,7 @@ int modem_getNetworkStatus(int *mode, int *status) {
 
 	char *pToken1 = NULL;
 	int uart_state = 0;
+
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	*mode = -1;
@@ -147,8 +148,8 @@ int modem_getNetworkStatus(int *mode, int *status) {
 
 		pToken1 += sizeof(COMMAND_RESULT_CGREG) - 1; // Jump the header
 
-		PARSE_FIRSTVALUE(pToken1, mode, UART_FAILED);
-		PARSE_NEXTVALUE(pToken1, status, UART_FAILED);
+		PARSE_FIRSTVALUE(pToken1, mode, ",\n", UART_FAILED);
+		PARSE_NEXTVALUE(pToken1, status, ",\n", UART_FAILED);
 
 		// Store the current network status to know if we are connected or not.
 		sim->networkMode = *mode;
@@ -164,8 +165,12 @@ int modem_connect_network(uint8_t attempts) {
 	int net_status = 0;
 	int net_mode = 0;
 	int tests = 0;
+
+	// enable network registration and location information unsolicited result code;
+	// if there is a change of the network cell. +CGREG: <stat>[,<lac>,<ci>]
+
+	uart_tx("AT+CGREG=2\r\n");
 	do {
-		uart_tx("AT+CGREG=2\r\n");
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
 
 			lcd_clear();
@@ -224,7 +229,8 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	// Check the error codes to figure out if the SIM is still functional
 	modem_isSIM_Operational();
 
-	log_appendf("SIM %d CM%c ERROR %d", config_getSelectedSIM()+1, errorToken, errorCode);
+	log_appendf("SIM %d CM%c ERROR %d", config_getSelectedSIM() + 1, errorToken,
+			errorCode);
 	return;
 }
 
@@ -310,8 +316,8 @@ int8_t modem_first_init() {
 		}
 
 #ifdef _DEBUG
-	dohttpsetup();
-	doget();
+		dohttpsetup();
+		doget();
 #endif
 
 		// One or more of the sims had a catastrofic failure on init, set the device
@@ -361,7 +367,7 @@ void modem_swap_SIM() {
 #endif
 
 	// Just send the message if we dont have errors.
-	if (modem_isSIM_Operational())	{
+	if (modem_isSIM_Operational()) {
 		sms_send_heart_beat();
 	}
 }
@@ -529,30 +535,38 @@ void modem_survey_network() {
 							  // It should be clear already but next transaction
 }
 
-void modem_parse_time(char* pDatetime, struct tm* pTime) {
-	char* pToken1 = NULL;
-	char* pToken2 = NULL;
-	char* pDelimiter = "\"/,:+-";
+const char COMMAND_RESULT_CCLK[] = "+CCLK: \"";
 
-	if ((pDatetime) && (pTime)) {
-		//string format "yy/MM/dd,hh:mm:ss�zz"
-		pToken1 = strtok(pDatetime, pDelimiter);
-		if (pToken1) {
-			pToken2 = strtok(NULL, pDelimiter);		//skip the first :
-			pToken2 = strtok(NULL, pDelimiter);
-			pTime->tm_year = atoi(pToken2) + 2000;	//to get absolute year value
-			pToken2 = strtok(NULL, pDelimiter);
-			pTime->tm_mon = atoi(pToken2);
-			pToken2 = strtok(NULL, pDelimiter);
-			pTime->tm_mday = atoi(pToken2);
-			pToken2 = strtok(NULL, pDelimiter);
-			pTime->tm_hour = atoi(pToken2);
-			pToken2 = strtok(NULL, pDelimiter);
-			pTime->tm_min = atoi(pToken2);
-			pToken2 = strtok(NULL, pDelimiter);
-			pTime->tm_sec = atoi(pToken2);
-		}
-	}
+int modem_parse_time(char* pDatetime, struct tm* pTime) {
+	struct tm tmTime;
+	char* pToken1 = NULL;
+	char* delimiter = "/,:-\"";
+
+	if (!pDatetime || !pTime)
+		return UART_FAILED;
+
+	pToken1 = strstr((const char *) pDatetime, (const char *) COMMAND_RESULT_CCLK);
+	if (pToken1==NULL)
+		return UART_FAILED;
+
+	pToken1+=sizeof(COMMAND_RESULT_CCLK)-1;
+
+	memset(&tmTime, 0, sizeof(tmTime));
+	//string format "yy/MM/dd,hh:mm:ss:zz"
+	PARSE_FIRSTVALUE(pToken1, &tmTime.tm_year, delimiter, UART_FAILED);
+	tmTime.tm_year+=2000;
+
+	PARSE_NEXTVALUE(pToken1, &tmTime.tm_mon, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(pToken1, &tmTime.tm_mday, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(pToken1, &tmTime.tm_hour, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(pToken1, &tmTime.tm_min, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(pToken1, &tmTime.tm_sec, delimiter, UART_FAILED);
+
+	if (tmTime.tm_year<2015 || tmTime.tm_year>2200)
+		return UART_FAILED;
+
+	memcpy(pTime, &tmTime, sizeof(tmTime));
+	return UART_SUCCESS;
 }
 
 void modem_set_max_messages() {
@@ -564,12 +578,13 @@ void modem_set_max_messages() {
 
 void modem_pull_time() {
 	int i;
+	int res = UART_FAILED;
 	for (i = 0; i < MAX_TIME_ATTEMPTS; i++) {
-		uart_tx("AT+CCLK?\r\n");
-		uart_rx_cleanBuf(ATCMD_CCLK, ATresponse, sizeof(ATresponse));
-		modem_parse_time(ATresponse, &g_tmCurrTime);
+		res=uart_tx("AT+CCLK?\r\n");
+		if (res==UART_SUCCESS)
+			res=modem_parse_time((char *) &RXBuffer[RXHeadIdx], &g_tmCurrTime);
 
-		if (g_tmCurrTime.tm_year >= 2015 && g_tmCurrTime.tm_year < 2115) { // 100 years ?
+		if (res==UART_SUCCESS) {
 			rtc_init(&g_tmCurrTime);
 			config_update_system_time();
 		} else {
@@ -657,7 +672,7 @@ void modem_init() {
 	uart_tx("AT+CTZU=1\r\n"); //  4 - software bi-directional with filtering (XON/XOFF)
 	uart_tx("AT&K4\r\n");		// [Flow Control - &K]
 	uart_tx("AT&P0\r\n"); // [Default Reset Full Profile Designation - &P] Execution command defines which full profile will be loaded on startup.
-	uart_tx("AT&W0\r\n");// [Store Current Configuration - &W] 			 Execution command stores on profile <n> the complete configuration of the	device
+	uart_tx("AT&W0\r\n"); // [Store Current Configuration - &W] 			 Execution command stores on profile <n> the complete configuration of the	device
 
 	modem_getSMSCenter();
 	modem_checkSignal();

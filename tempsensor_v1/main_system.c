@@ -162,6 +162,7 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 /****************************************************************************/
 
 int main(void) {
+
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 	system_boot();
 	thermal_canyon_loop();
