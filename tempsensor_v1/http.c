@@ -76,6 +76,8 @@ int process_configuration() {
 		return UART_FAILED;
 	}
 
+	PARSE_FINDSTR_RET(pToken1, "$ST2", UART_FAILED);
+
 	return UART_SUCCESS;
 }
 
@@ -85,7 +87,7 @@ const char HTTP_OK[] = { 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
 const char HTTP_RING[] = "#HTTPRING: ";
 
 // <prof_id>,<http_status_code>,<content_type>,<data_size>
-int http_check_error() {
+int http_check_error(int *retry) {
 
 	char *token = NULL;
 	int prof_id = 0;
@@ -94,7 +96,6 @@ int http_check_error() {
 
 	// Parse HTTPRING
 	PARSE_FINDSTR_RET(token, HTTP_RING, UART_FAILED);
-	token += sizeof(HTTP_RING) + 1;
 
 	PARSE_FIRSTVALUE(token, &prof_id, ",\n", UART_FAILED);
 	PARSE_NEXTVALUE(token, &http_status_code, ",\n", UART_FAILED);
@@ -102,12 +103,22 @@ int http_check_error() {
 	PARSE_NEXTVALUE(token, &data_size, ",\n", UART_FAILED);
 
 	log_appendf(" HTTP ERROR [%d] - Data size %d ", http_status_code, data_size);
+
+	// Check for recoverable errors
+	// Server didnt responded
+	if (http_status_code==200 && data_size==0) {
+		*retry=1;
+	}
+
+	// TODO Find non recoverable errors
 	return UART_SUCCESS;
 }
 
 int http_get_configuration() {
 	char szTemp[128];
 	int uart_state = UART_FAILED;
+	int retry = 1;
+	int attempts = HTTP_COMMAND_ATTEMPTS;
 
 	// #HTTPQRY – send HTTP GET, HEAD or DELETE request
 	// Execution command performs a GET, HEAD or DELETE request to HTTP server.
@@ -129,14 +140,18 @@ int http_get_configuration() {
 
 	uart_setCheckMsg(HTTP_OK, HTTP_ERROR);
 
-	if (uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 5) == UART_SUCCESS) {
-		uart_state = uart_getTransactionState();
-		if (uart_state == UART_SUCCESS)
-			process_configuration();
+	while(retry==1 && --attempts>0) {
+		if (uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 5) == UART_SUCCESS) {
+			uart_state = uart_getTransactionState();
+			if (uart_state == UART_SUCCESS) {
+				retry = 0; 	// Found a configuration, lets parse it.
+				process_configuration();
+			}
 
-		if (uart_state == UART_ERROR)
-			http_check_error();
-	}
+			if (uart_state == UART_ERROR)
+				http_check_error(&retry);  // Tries again
+		}
+	};
 
 	return uart_state; // TODO return was missing, is it necessary ?
 }

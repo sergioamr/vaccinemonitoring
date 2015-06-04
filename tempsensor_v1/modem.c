@@ -137,8 +137,6 @@ int modem_getNetworkStatus(int *mode, int *status) {
 
 		PARSE_FINDSTR_RET(pToken1, COMMAND_RESULT_CGREG, UART_FAILED);
 
-		pToken1 += sizeof(COMMAND_RESULT_CGREG) - 1; // Jump the header
-
 		PARSE_FIRSTVALUE(pToken1, mode, ",\n", UART_FAILED);
 		PARSE_NEXTVALUE(pToken1, status, ",\n", UART_FAILED);
 
@@ -529,20 +527,15 @@ void modem_survey_network() {
 
 const char COMMAND_RESULT_CCLK[] = "+CCLK: \"";
 
-int modem_parse_time(char* pDatetime, struct tm* pTime) {
+int modem_parse_time(struct tm* pTime) {
 	struct tm tmTime;
 	char* pToken1 = NULL;
 	char* delimiter = "/,:-\"";
 
-	if (!pDatetime || !pTime)
+	if (!pTime)
 		return UART_FAILED;
 
-	pToken1 = strstr((const char *) pDatetime,
-			(const char *) COMMAND_RESULT_CCLK);
-	if (pToken1 == NULL)
-		return UART_FAILED;
-
-	pToken1 += sizeof(COMMAND_RESULT_CCLK) - 1;
+	PARSE_FINDSTR_RET(pToken1, COMMAND_RESULT_CCLK, UART_FAILED);
 
 	memset(&tmTime, 0, sizeof(tmTime));
 	//string format "yy/MM/dd,hh:mm:ss:zz"
@@ -575,8 +568,7 @@ void modem_pull_time() {
 	for (i = 0; i < MAX_TIME_ATTEMPTS; i++) {
 		res = uart_tx("AT+CCLK?\r\n");
 		if (res == UART_SUCCESS)
-			res = modem_parse_time((char *) &RXBuffer[RXHeadIdx],
-					&g_tmCurrTime);
+			res = modem_parse_time(&g_tmCurrTime);
 
 		if (res == UART_SUCCESS) {
 			rtc_init(&g_tmCurrTime);
@@ -590,7 +582,6 @@ void modem_pull_time() {
 
 			lcd_printf(LINEC, "LAST DATE ");
 			lcd_printf(LINEH, get_YMD_String(&g_tmCurrTime));
-
 		}
 
 		if (g_tmCurrTime.tm_year != 0) {

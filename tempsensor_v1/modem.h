@@ -59,7 +59,7 @@ void modem_check_uart_error();
 // Parsing macros helpers
 
 #define PARSE_FINDSTR_RET(token, sz, error) token=strstr((const char *) &RXBuffer[RXHeadIdx], sz); \
-	if(token==NULL) return error;
+	if(token==NULL) return error; else token+=strlen(sz)-1;
 
 #define PARSE_FIRSTVALUE(token, var, delimiter, error) token = strtok(token, delimiter); \
 	if(token!=NULL) *var = atoi(token); else return error;
