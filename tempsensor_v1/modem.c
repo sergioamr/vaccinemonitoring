@@ -30,13 +30,6 @@
 char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
 
-// Parsing macros helpers
-#define PARSE_FIRSTVALUE(token, var, delimiter, error) token = strtok(token, delimiter); \
-	if(token!=NULL) *var = atoi(token); else return error;
-
-#define PARSE_NEXTVALUE(token, var, delimiter, error) token = strtok(NULL, delimiter); \
-	if(token!=NULL) *var = atoi(token); else return error;
-
 /*
  * AT Commands Reference Guide 80000ST10025a Rev. 9 � 2010-10-04
  *
@@ -141,10 +134,8 @@ int modem_getNetworkStatus(int *mode, int *status) {
 
 	uart_state = uart_getTransactionState();
 	if (uart_state == UART_SUCCESS) {
-		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx],
-				(const char *) COMMAND_RESULT_CGREG);
-		if (pToken1 == NULL)
-			return UART_FAILED;
+
+		PARSE_FINDSTR_RET(pToken1, COMMAND_RESULT_CGREG, UART_FAILED);
 
 		pToken1 += sizeof(COMMAND_RESULT_CGREG) - 1; // Jump the header
 

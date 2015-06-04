@@ -19,7 +19,7 @@ int8_t http_setup() {
 	if (sim->cfgAPN[0] == '\0')
 		return UART_FAILED;
 
-	lcd_printf(LINEC,"Testing HTTP %d", config_getSelectedSIM()+1);
+	lcd_printf(LINEC, "Testing HTTP %d", config_getSelectedSIM() + 1);
 
 	uart_txf("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN); //APN
 	if (uart_getTransactionState() != UART_SUCCESS)
@@ -51,11 +51,11 @@ int8_t http_setup() {
 	// LONG TIMEOUT
 	uart_txf("AT#HTTPCFG=1,\"%s\",80\r\n", g_pDeviceCfg->cfgGatewayIP);
 	if (uart_getTransactionState() != UART_SUCCESS) {
-		lcd_printl(LINE2,"FAILED");
+		lcd_printl(LINE2, "FAILED");
 		return UART_FAILED;
 	}
 
-	lcd_printl(LINE2,"SUCCESS");
+	lcd_printl(LINE2, "SUCCESS");
 	return UART_SUCCESS;
 }
 
@@ -72,19 +72,37 @@ int process_configuration() {
 
 	// Find HTTP transaction prompt
 	char *pToken1 = strstr((const char *) pBuffer, "\r\n<<<");
-	if (pToken1==NULL) {
+	if (pToken1 == NULL) {
 		return UART_FAILED;
 	}
 
 	return UART_SUCCESS;
 }
 
-const char HTTP_ERROR[]= { 0x0D, 0x0A, 'E', 'R', 'R', 'O', 'R', 0x0D, 0x0A, 0x0D, 0x0A, 0 };
-const char HTTP_OK[]= { 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
+const char HTTP_ERROR[] = { 0x0D, 0x0A, 'E', 'R', 'R', 'O', 'R', 0x0D, 0x0A,
+		0x0D, 0x0A, 0 };
+const char HTTP_OK[] = { 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
+const char HTTP_RING[] = "#HTTPRING: ";
 
-void http_check_error() {
+// <prof_id>,<http_status_code>,<content_type>,<data_size>
+int http_check_error() {
+
+	char *token = NULL;
+	int prof_id = 0;
+	int http_status_code = 0;
+	int data_size = 0;
+
 	// Parse HTTPRING
-	_NOP();
+	PARSE_FINDSTR_RET(token, HTTP_RING, UART_FAILED);
+	token += sizeof(HTTP_RING) + 1;
+
+	PARSE_FIRSTVALUE(token, &prof_id, ",\n", UART_FAILED);
+	PARSE_NEXTVALUE(token, &http_status_code, ",\n", UART_FAILED);
+	PARSE_SKIP(token, ",\n", UART_FAILED); 	// Skip content_type string.
+	PARSE_NEXTVALUE(token, &data_size, ",\n", UART_FAILED);
+
+	log_appendf(" HTTP ERROR [%d] - Data size %d ", http_status_code, data_size);
+	return UART_SUCCESS;
 }
 
 int http_get_configuration() {
@@ -98,7 +116,8 @@ int http_get_configuration() {
 	// <command>: Numeric parameter indicating the command requested to HTTP server:
 	// 0 – GET 1 – HEAD 2 – DELETE
 
-	sprintf(szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/%s/1/\"\r\n",g_pDeviceCfg->cfgIMEI);
+	sprintf(szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/%s/1/\"\r\n",
+			g_pDeviceCfg->cfgIMEI);
 	uart_tx_timeout(szTemp, 5000, 1);
 	if (uart_getTransactionState() != UART_SUCCESS)
 		return UART_FAILED;
@@ -110,7 +129,7 @@ int http_get_configuration() {
 
 	uart_setCheckMsg(HTTP_OK, HTTP_ERROR);
 
-	if (uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 5)==UART_SUCCESS) {
+	if (uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 5) == UART_SUCCESS) {
 		uart_state = uart_getTransactionState();
 		if (uart_state == UART_SUCCESS)
 			process_configuration();
@@ -118,7 +137,6 @@ int http_get_configuration() {
 		if (uart_state == UART_ERROR)
 			http_check_error();
 	}
-
 
 	return uart_state; // TODO return was missing, is it necessary ?
 }
@@ -194,12 +212,11 @@ int http_post_gprs_connection_status(char status) {
 				j = j - 101;
 			}
 
-
 			if ((RXBuffer[i] == '+') && (RXBuffer[j] == 'C')
 					&& (RXBuffer[j + 1] == 'G') && (RXBuffer[j + 2] == 'R')
 					&& (RXBuffer[j + 3] == 'E') && (RXBuffer[j + 4] == 'G')
 					&& (RXBuffer[j + 5] == ':')) {
-				if((RXBuffer[j + 7] == '0') && (RXBuffer[j + 8] == ',')
+				if ((RXBuffer[j + 7] == '0') && (RXBuffer[j + 8] == ',')
 						&& (RXBuffer[j + 9] == '1')) {
 					l_file_pointer_enabled_sms_status = 1; // set for sms packet.....///
 					break;

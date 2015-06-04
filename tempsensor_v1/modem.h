@@ -38,18 +38,36 @@ int8_t modem_enter_powersave_mode();
 int8_t modem_exit_powersave_mode();
 #endif
 
-extern void modem_checkSignal();
-extern void modem_init();
-extern void modem_getExtraInfo();
-extern void modem_survey_network();
-extern void modem_swap_SIM();
-extern void modem_pull_time();
-extern int8_t modem_first_init();
-extern void modem_getSMSCenter();
-extern void modem_set_max_messages();
+void modem_checkSignal();
+void modem_init();
+void modem_getExtraInfo();
+void modem_survey_network();
+void modem_swap_SIM();
+void modem_pull_time();
+int8_t modem_first_init();
+void modem_getSMSCenter();
+void modem_set_max_messages();
 
-extern void modem_setNumericError(char errorToken, int16_t errorCode);
-extern uint16_t modem_parse_error(const char *error);
-extern void modem_check_uart_error();
+void modem_setNumericError(char errorToken, int16_t errorCode);
+uint16_t modem_parse_error(const char *error);
+void modem_check_uart_error();
+
+/*********************************************************************************/
+/* PARSING TOOLS  																 */
+/*********************************************************************************/
+
+// Parsing macros helpers
+
+#define PARSE_FINDSTR_RET(token, sz, error) token=strstr((const char *) &RXBuffer[RXHeadIdx], sz); \
+	if(token==NULL) return error;
+
+#define PARSE_FIRSTVALUE(token, var, delimiter, error) token = strtok(token, delimiter); \
+	if(token!=NULL) *var = atoi(token); else return error;
+
+#define PARSE_NEXTVALUE(token, var, delimiter, error) token = strtok(NULL, delimiter); \
+	if(token!=NULL) *var = atoi(token); else return error;
+
+#define PARSE_SKIP(token, delimiter, error) token = strtok(NULL, delimiter); \
+	if(token==NULL) return error;
 
 #endif /* TEMPSENSOR_V1_MODEM_H_ */
