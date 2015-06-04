@@ -635,19 +635,19 @@ void modem_init() {
 	// GPIO [PIN, DIR, MODE]
 	// Execution command sets the value of the general purpose output pin
 	// GPIO<pin> according to <dir> and <mode> parameter.
-	uart_tx("AT#SIMDET=2\r\n"); // Enable automatic pin sim detection
+	uart_tx("AT#SIMDET=0\r\n"); // Enable automatic pin sim detection
 
 #ifdef ENABLE_SIM_SLOT
 	if (config_getSelectedSIM() != 1) {
 		//enable SIM A (slot 1)
-		uart_tx_timeout("AT#GPIO=2,0,1\r\n", TIMEOUT_GPO, 5); // First command always has a chance of timeout
-		uart_tx("AT#GPIO=4,1,1\r\n");
-		uart_tx("AT#GPIO=3,0,1\r\n");
+		uart_tx_timeout("AT#GPIO=2,0,1\r\n", TIMEOUT_GPO, 5); // Sim 1 PWR enable - First command always has a chance of timeout
+		uart_tx("AT#GPIO=4,1,1\r\n"); // Sim 2 PWR enable
+		uart_tx("AT#GPIO=3,0,1\r\n"); // Sim select
 	} else {
 		//enable SIM B (slot 2)
-		uart_tx_timeout("AT#GPIO=2,1,1\r\n", TIMEOUT_GPO, 5);
-		uart_tx("AT#GPIO=4,0,1\r\n");
-		uart_tx("AT#GPIO=3,1,1\r\n");
+		uart_tx_timeout("AT#GPIO=2,1,1\r\n", TIMEOUT_GPO, 5); // Sim 1 PWR enable
+		uart_tx("AT#GPIO=4,0,1\r\n"); // Sim 2 PWR enable
+		uart_tx("AT#GPIO=3,1,1\r\n"); // Sim select
 	}
 #endif
 
