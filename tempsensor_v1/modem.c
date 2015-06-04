@@ -191,7 +191,7 @@ int modem_connect_network(uint8_t attempts) {
 			tests++;
 		}
 
-		delay(NETWORK_CONNECTION_DELAY);
+		lcd_progress_wait(NETWORK_CONNECTION_DELAY);
 	} while (--attempts > 0);
 
 	return UART_FAILED;

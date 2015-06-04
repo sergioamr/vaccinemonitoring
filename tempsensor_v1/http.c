@@ -83,6 +83,7 @@ const char HTTP_ERROR[]= { 0x0D, 0x0A, 'E', 'R', 'R', 'O', 'R', 0x0D, 0x0A, 0x0D
 const char HTTP_OK[]= { 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
 
 void http_check_error() {
+	// Parse HTTPRING
 	_NOP();
 }
 

@@ -242,7 +242,7 @@ void lcd_progress_wait(uint16_t delayTime) {
 
 	for (t = 0; t < count; t++) {
 		delay(50);
-		lcd_print_boot("", LINE2);
+		lcd_print_progress();
 	}
 }
 
@@ -281,7 +281,7 @@ void lcd_printl(int8_t iLine, const char* pcData) {
 	if (len > LCD_LINE_LEN)
 		len = LCD_LINE_LEN;
 
-	if (iLine == LINE2 || iLine == LINEH)
+	if (iLine == LINE2 || iLine == LINEH || iLine == LINEE)
 		lcd_setaddr(0x40);
 	else
 		lcd_setaddr(0x0);
