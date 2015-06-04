@@ -46,12 +46,15 @@ void deactivatehttp() {
 	uart_tx("AT#SGACT=1,0\r\n");	//deactivate GPRS context
 }
 
-//WARNING: doget() should not be used in parallel to HTTP POST
+
+// http://54.241.2.213/coldtrace/uploads/multi/v3/358072043112124/1/
+// $ST2,7,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,600,1,600,15,$ST1,919243100142,both,airtelgprs.com,10,1,0,0,$EN
+
 int doget() {
 	char szTemp[128];
 
 	sprintf(szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/%s/1/\"\r\n",g_pDeviceCfg->cfgIMEI);
-	uart_tx_timeout(szTemp, 10000, 1);
+	uart_tx_timeout(szTemp, 180000, 1);
 	if (uart_getTransactionState() != UART_SUCCESS)
 		return UART_FAILED;
 
