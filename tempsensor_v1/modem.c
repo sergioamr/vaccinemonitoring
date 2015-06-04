@@ -173,9 +173,8 @@ int modem_connect_network(uint8_t attempts) {
 	do {
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
 
-			lcd_clear();
-			lcd_printf(LINE1, "SIM %d status", config_getSelectedSIM() + 1);
-			lcd_printl(LINE2,
+			lcd_printf(LINEC, "SIM %d status", config_getSelectedSIM() + 1);
+			lcd_printl(LINEH,
 					(char *) modem_getNetworkStatusText(net_mode, net_status));
 
 			// If we are looking for a network
@@ -252,14 +251,13 @@ void modem_check_uart_error() {
 		log_appendf("ERROR: SIM %d cmd[%s]", config_getSelectedSIM(), error);
 		errorToken = *(pToken1 - 1);
 #ifndef _DEBUG
-		lcd_clear();
 		if (errorToken=='S') {
-			lcd_printl(LINE1, "SERVICE ERROR");
+			lcd_printl(LINEC, "SERVICE ERROR");
 		} else {
-			lcd_printl(LINE1, "MODEM ERROR");
+			lcd_printl(LINEC, "MODEM ERROR");
 		}
 #endif
-		lcd_printl(LINE2, error);
+		lcd_printl(LINEE, error);
 		modem_setNumericError(errorToken, atoi(error));
 	}
 
@@ -273,8 +271,7 @@ int8_t modem_first_init() {
 	int iStatus = 0;
 	int iSIM_Error = 0;
 
-	lcd_clear();
-	lcd_printl(LINE1, "Modem POWER ON");
+	lcd_printl(LINEC, "Modem POWER ON");
 
 	//check Modem is powered on
 	for (iIdx = 0; iIdx < MODEM_CHECK_RETRY; iIdx++) {
@@ -295,7 +292,13 @@ int8_t modem_first_init() {
 		uart_tx_timeout("AT\r\n", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
 		lcd_enable_verbose();
 
-		for (t = 0; t < NUM_SIM_CARDS; t++) {
+		uint8_t nsims = NUM_SIM_CARDS;
+
+#ifdef _DEBUG
+		nsims = 1;
+#endif
+
+		for (t = 0; t < nsims; t++) {
 			modem_swap_SIM(); // Send hearbeat from SIM
 			/*
 			 * We have to check which parameters are fatal to disable the SIM
@@ -303,21 +306,21 @@ int8_t modem_first_init() {
 			 */
 
 			if (!modem_isSIM_Operational()) {
-				lcd_clear();
-				lcd_printf(LINE1, "ERROR INIT SIM %d ",
-						config_getSelectedSIM() + 1);
-				lcd_printf(LINE2, config_getSIM()->simLastError);
-
 				log_appendf("ERROR: SIM %d FAILED [%s]",
 						config_getSelectedSIM(), config_getSIM()->simLastError);
-				delay(HUMAN_DISPLAY_ERROR_DELAY);
+
+				lcd_printf(LINEC, "ERROR INIT SIM %d ",
+						config_getSelectedSIM() + 1);
+				lcd_printf(LINEE, config_getSIM()->simLastError);
+
 				iSIM_Error++;
 			}
 		}
 
 #ifdef _DEBUG
-		dohttpsetup();
-		doget();
+		if (http_setup() == UART_SUCCESS) {
+			http_get_configuration();
+		}
 #endif
 
 		// One or more of the sims had a catastrofic failure on init, set the device
@@ -332,8 +335,7 @@ int8_t modem_first_init() {
 				}
 			break;
 		case 2:
-			lcd_clear();
-			lcd_printf(LINE1, "BOTH SIMS FAILED ");
+			lcd_printf(LINEC, "BOTH SIMS FAILED ");
 			log_appendf("ERROR: BOTH SIMS FAILED ON INIT ");
 			delay(HUMAN_DISPLAY_ERROR_DELAY);
 			break;
@@ -346,8 +348,7 @@ int8_t modem_first_init() {
 					iIdx);
 		}
 	} else {
-		lcd_printl(LINE2, "Failed Power On");
-		delay(HUMAN_DISPLAY_ERROR_DELAY);
+		lcd_printl(LINEE, "Failed Power On");
 	}
 
 	return iStatus;
@@ -356,8 +357,8 @@ int8_t modem_first_init() {
 void modem_swap_SIM() {
 	config_incLastCmd();
 	g_pDeviceCfg->cfgSIM_slot = !g_pDeviceCfg->cfgSIM_slot;
-	lcd_clear();
-	lcd_printf(LINE1, "Activate SIM: %d", g_pDeviceCfg->cfgSIM_slot + 1);
+
+	lcd_printf(LINEC, "Activate SIM: %d", g_pDeviceCfg->cfgSIM_slot + 1);
 	modem_init();
 	modem_getExtraInfo();
 
@@ -423,8 +424,7 @@ void modem_getIMEI() {
 			//copy valid IMEI to FRAM
 			IMEI_OK = true;
 		} else {
-			lcd_clear();
-			lcd_printl(LINE2, "IMEI Error");
+			lcd_printl(LINEE, "IMEI Error");
 		}
 	}
 
@@ -460,6 +460,7 @@ void modem_getExtraInfo() {
 
 void modem_survey_network() {
 
+	char *pToken1;
 	int attempts = NET_ATTEMPTS;
 	int uart_state;
 	config_incLastCmd();
@@ -469,20 +470,15 @@ void modem_survey_network() {
 	if (sim->iCfgMCC != 0 && sim->iCfgMNC != 0)
 		return;
 
-	lcd_clear();
 	lcd_disable_verbose();
 
 	uart_setDelayIntervalDivider(64);  // 120000 / 64
 
 	do {
-		if (attempts != NET_ATTEMPTS) {
-			lcd_clear();
-			lcd_printf(LINE1, "MCC RETRY %d   ", NET_ATTEMPTS - attempts);
-		} else {
-			lcd_printl(LINE1, "MCC DISCOVER");
-		}
-
-		uart_resetbuffer();
+		if (attempts != NET_ATTEMPTS)
+			lcd_printf(LINEC, "MCC RETRY %d   ", NET_ATTEMPTS - attempts);
+		else
+			lcd_printl(LINEC, "MCC DISCOVER");
 
 		// Displays info for the only serving cell
 		uart_tx("AT#CSURVEXT=0\r\n");
@@ -504,23 +500,28 @@ void modem_survey_network() {
 			if (uart_state != UART_SUCCESS) {
 				lcd_printl(LINE2, "NETWORK BUSY");
 				delay(NETWORK_WAITING_TIME);
-			} else if (uart_rx_cleanBuf(ATCMD_CSURVC, ATresponse,
-					sizeof(ATresponse)) == UART_SUCCESS) {
-				// Get MCC then MNC (the next in the list)
-				char* surveyResult = strtok(ATresponse, ",");
-				sim->iCfgMCC = atoi(surveyResult);
-				surveyResult = strtok(NULL, ",");
-				sim->iCfgMNC = atoi(surveyResult);
+			} else {
 
-				lcd_clear();
-				if (sim->iCfgMCC > 0 && sim->iCfgMNC > 0) {
-					lcd_printl(LINE1, "SUCCESS");
-					lcd_printf(LINE2, "MCC %d MNC %d", sim->iCfgMCC,
-							sim->iCfgMNC);
-				} else {
+				pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "ERROR");
+				if (pToken1 != NULL) {
 					uart_state = UART_ERROR;
 					lcd_printl(LINE2, "FAILED");
 					delay(1000);
+				} else {
+					pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx],
+							"mcc:");
+					if (pToken1 != NULL)
+						sim->iCfgMCC = atoi(pToken1 + 5);
+
+					pToken1 = strstr((const char *) pToken1, "mnc:");
+					if (pToken1 != NULL)
+						sim->iCfgMNC = atoi(pToken1 + 5);
+
+					if (sim->iCfgMCC > 0 && sim->iCfgMNC > 0) {
+						lcd_printl(LINEC, "SUCCESS");
+						lcd_printf(LINE2, "MCC %d MNC %d", sim->iCfgMCC,
+								sim->iCfgMNC);
+					}
 				}
 			}
 		}
@@ -545,16 +546,17 @@ int modem_parse_time(char* pDatetime, struct tm* pTime) {
 	if (!pDatetime || !pTime)
 		return UART_FAILED;
 
-	pToken1 = strstr((const char *) pDatetime, (const char *) COMMAND_RESULT_CCLK);
-	if (pToken1==NULL)
+	pToken1 = strstr((const char *) pDatetime,
+			(const char *) COMMAND_RESULT_CCLK);
+	if (pToken1 == NULL)
 		return UART_FAILED;
 
-	pToken1+=sizeof(COMMAND_RESULT_CCLK)-1;
+	pToken1 += sizeof(COMMAND_RESULT_CCLK) - 1;
 
 	memset(&tmTime, 0, sizeof(tmTime));
 	//string format "yy/MM/dd,hh:mm:ss:zz"
 	PARSE_FIRSTVALUE(pToken1, &tmTime.tm_year, delimiter, UART_FAILED);
-	tmTime.tm_year+=2000;
+	tmTime.tm_year += 2000;
 
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_mon, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_mday, delimiter, UART_FAILED);
@@ -562,7 +564,7 @@ int modem_parse_time(char* pDatetime, struct tm* pTime) {
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_min, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_sec, delimiter, UART_FAILED);
 
-	if (tmTime.tm_year<2015 || tmTime.tm_year>2200)
+	if (tmTime.tm_year < 2015 || tmTime.tm_year > 2200)
 		return UART_FAILED;
 
 	memcpy(pTime, &tmTime, sizeof(tmTime));
@@ -580,25 +582,24 @@ void modem_pull_time() {
 	int i;
 	int res = UART_FAILED;
 	for (i = 0; i < MAX_TIME_ATTEMPTS; i++) {
-		res=uart_tx("AT+CCLK?\r\n");
-		if (res==UART_SUCCESS)
-			res=modem_parse_time((char *) &RXBuffer[RXHeadIdx], &g_tmCurrTime);
+		res = uart_tx("AT+CCLK?\r\n");
+		if (res == UART_SUCCESS)
+			res = modem_parse_time((char *) &RXBuffer[RXHeadIdx],
+					&g_tmCurrTime);
 
-		if (res==UART_SUCCESS) {
+		if (res == UART_SUCCESS) {
 			rtc_init(&g_tmCurrTime);
 			config_update_system_time();
 		} else {
-			lcd_clear();
-			lcd_printf(LINE1, "WRONG DATE SIM %d ", config_getSelectedSIM());
-			lcd_printf(LINE2, get_YMD_String(&g_tmCurrTime));
-			delay(HUMAN_DISPLAY_INFO_DELAY);
-			rtc_init(&g_pDeviceCfg->lastSystemTime);
+			lcd_printf(LINEC, "WRONG DATE SIM %d ", config_getSelectedSIM());
+			lcd_printf(LINEH, get_YMD_String(&g_tmCurrTime));
 
-			lcd_clear();
-			lcd_printf(LINE1, "LAST DATE ");
+			rtc_init(&g_pDeviceCfg->lastSystemTime);
 			rtc_get(&g_tmCurrTime);
-			lcd_printf(LINE2, get_YMD_String(&g_tmCurrTime));
-			delay(HUMAN_DISPLAY_INFO_DELAY);
+
+			lcd_printf(LINEC, "LAST DATE ");
+			lcd_printf(LINEH, get_YMD_String(&g_tmCurrTime));
+
 		}
 
 		if (g_tmCurrTime.tm_year != 0) {
@@ -701,8 +702,8 @@ void modem_init() {
 
 	lcd_print("Checking GPRS");
 	/// added for gprs connection..//
-	g_iSignal_gprs = dopost_gprs_connection_status(GPRS);
-	g_iGprs_network_indication = dopost_gprs_connection_status(GSM);
+	g_iSignal_gprs = http_post_gprs_connection_status(GPRS);
+	g_iGprs_network_indication = http_post_gprs_connection_status(GSM);
 
 	// Disable echo from modem
 	uart_tx("ATE0\r\n");

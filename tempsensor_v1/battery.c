@@ -19,7 +19,6 @@ int16_t g_iFullRecharge = 0;
 uint8_t batt_check_level() {
 	uint8_t iBatteryLevel = 0;
 	// Battery checks
-	lcd_clear();
 	lcd_print("Battery check");
 
 #ifndef BATTERY_DISABLED

@@ -163,9 +163,8 @@ void config_init() {
 		// Check if the user is pressing the service mode
 		// Service Button was pressed during bootup. Rerun calibration
 		if (switch_check_service_pressed()) {
-			lcd_clear();
-			lcd_printf(LINE1, "Service Mode");
-			lcd_printl(LINE2, g_pSysCfg->firmwareVersion); // Show the firmware version
+			lcd_printf(LINEC, "Service Mode");
+			lcd_printl(LINEH, g_pSysCfg->firmwareVersion); // Show the firmware version
 			delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 			g_pSysCfg->calibrationFinished=0;
 		}
@@ -221,9 +220,8 @@ void config_init() {
 	g_pSysCfg->maxRXBuffer=0;
 	g_pSysCfg->maxTXBuffer=0;
 
-	lcd_clear();
-	lcd_printf(LINE1, "CONFIG MODE");
-	lcd_printl(LINE2, g_pSysCfg->firmwareVersion); // Show the firmware version
+	lcd_printf(LINEC, "CONFIG MODE");
+	lcd_printl(LINEH, g_pSysCfg->firmwareVersion); // Show the firmware version
 #ifndef _DEBUG
 	delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 #endif

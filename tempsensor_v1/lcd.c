@@ -242,24 +242,24 @@ void lcd_progress_wait(uint16_t delayTime) {
 
 	for (t = 0; t < count; t++) {
 		delay(50);
-		lcd_print_progress("", LINE2);
+		lcd_print_boot("", LINE2);
 	}
 }
 
 int lcd_printf(int line, const char *_format, ...) {
 	char szTemp[32];
-    va_list _ap;
-    int   rval;
-    char *fptr = (char *)_format;
-    char *out_end = szTemp;
+	va_list _ap;
+	int rval;
+	char *fptr = (char *) _format;
+	char *out_end = szTemp;
 
-    va_start(_ap, _format);
-    rval = __TI_printfi(&fptr, _ap, (void *)&out_end, _outc, _outs);
-    va_end(_ap);
+	va_start(_ap, _format);
+	rval = __TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs);
+	va_end(_ap);
 
-    *out_end = '\0';
-    lcd_printl(line, szTemp);
-    return (rval);
+	*out_end = '\0';
+	lcd_printl(line, szTemp);
+	return (rval);
 }
 
 void lcd_print(char* pcData) {
@@ -275,15 +275,24 @@ void lcd_print(char* pcData) {
 void lcd_printl(int8_t iLine, const char* pcData) {
 	size_t len = strlen(pcData);
 
-	if (len > LCD_LINE_LEN) {
+	if (iLine == LINEC)
+		lcd_clear();
+
+	if (len > LCD_LINE_LEN)
 		len = LCD_LINE_LEN;
-	}
-	if (iLine == 2) {
+
+	if (iLine == LINE2 || iLine == LINEH)
 		lcd_setaddr(0x40);
-	} else {
+	else
 		lcd_setaddr(0x0);
-	}
+
 	i2c_write(0x3e, 0x40, len, (uint8_t *) pcData);
+
+	if (iLine == LINEE)
+		delay(HUMAN_DISPLAY_ERROR_DELAY);
+
+	if (iLine == LINEH)
+		delay(HUMAN_DISPLAY_INFO_DELAY);
 }
 
 void lcd_reset() {
@@ -317,19 +326,21 @@ void lcd_enable_verbose() {
 	g_iLCDVerbose = VERBOSE_BOOTING;
 }
 
-void lcd_print_progress(const char* pcData, int line) {
-#ifndef _DEBUG
+void lcd_print_progress() {
 	static char pos = 0;
 	char display[4] = { '*', '|', '/', '-' };
-#endif
+	lcd_setaddr(0x0F);
+	i2c_write(0x3e, 0x40, 1, (uint8_t *) &display[(++pos) & 0x3]);
+}
 
+void lcd_print_boot(const char* pcData, int line) {
 	if (g_iLCDVerbose == VERBOSE_DISABLED)
 		return;
 
 #ifdef _DEBUG
+	lcd_clear();
 	lcd_printl(line, pcData);
 #else
-	lcd_setaddr(0x0F);
-	i2c_write(0x3e, 0x40, 1, (uint8_t *) &display[(++pos) & 0x3]);
+	lcd_print_progress();
 #endif
 }

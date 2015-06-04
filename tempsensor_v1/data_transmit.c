@@ -617,7 +617,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 		//initialize the RX counters as RX buffer is been used in the aggregrate variables for HTTP POST formation
 		uart_resetbuffer();
 
-		iPOSTstatus = dopost(SampleData);
+		iPOSTstatus = http_post(SampleData);
 		if (iPOSTstatus != 0) {
 			//redo the post
 			// Define Packet Data Protocol Context - +CGDCONT
@@ -627,7 +627,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 			uart_tx("AT#SGACT=1,1\r\n");
 			uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
 #ifdef NO_CODE_SIZE_LIMIT
-			iPOSTstatus = dopost(SampleData);
+			iPOSTstatus = http_post(SampleData);
 			if (iPOSTstatus != 0) {
 				//iHTTPRetryFailed++;
 				//trigger sms failover
@@ -645,7 +645,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 		delay(5000);			//opt sleep to get http post response
 		data_upload_sms();
 		// added for sms retry and file pointer movement..//
-		file_pointer_enabled_sms_status = dopost_sms_status();
+		file_pointer_enabled_sms_status = http_post_sms_status();
 		if ((file_pointer_enabled_sms_status)
 				|| (file_pointer_enabled_gprs_status)) {
 			__no_operation();

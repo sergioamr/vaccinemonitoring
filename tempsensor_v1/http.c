@@ -11,11 +11,15 @@
 
 #define HTTP_RESPONSE_RETRY	10
 
-int8_t dohttpsetup() {
+int8_t http_setup() {
+	int uart_state = UART_FAILED;
+	int attempts = HTTP_COMMAND_ATTEMPTS;
+	SIM_CARD_CONFIG *sim = config_getSIM();
 
-	SIM_CARD_CONFIG *sim=config_getSIM();
-	if (sim->cfgAPN[0]=='\0')
+	if (sim->cfgAPN[0] == '\0')
 		return UART_FAILED;
+
+	lcd_printf(LINEC,"Testing HTTP %d", config_getSelectedSIM()+1);
 
 	uart_txf("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN); //APN
 	if (uart_getTransactionState() != UART_SUCCESS)
@@ -27,44 +31,98 @@ int8_t dohttpsetup() {
 	//  1..5 - numeric parameter which specifies a particular PDP context definition
 	//  1 - activate the context
 
-	uart_tx("AT#SGACT=1,1\r\n");
-	// CME ERROR: 555 Activation failed
-	// CME ERROR: 133 Requested service option not subscribed
-	if (uart_getTransactionState() != UART_SUCCESS)
+	do {
+		uart_tx("AT#SGACT=1,1\r\n");
+		// CME ERROR: 555 Activation failed
+		// CME ERROR: 133 Requested service option not subscribed
+		uart_state = uart_getTransactionState();
+		if (uart_state != UART_SUCCESS) {
+			delay(1000);
+		} else {
+			config_reset_error(sim);
+		}
+
+	} while (uart_state != UART_SUCCESS && --attempts > 0);
+
+	// We were not successful trying to activate the HTTP transaction
+	if (uart_state != UART_SUCCESS)
 		return UART_FAILED;
 
 	// LONG TIMEOUT
 	uart_txf("AT#HTTPCFG=1,\"%s\",80\r\n", g_pDeviceCfg->cfgGatewayIP);
-	if (uart_getTransactionState() != UART_SUCCESS)
+	if (uart_getTransactionState() != UART_SUCCESS) {
+		lcd_printl(LINE2,"FAILED");
 		return UART_FAILED;
+	}
 
+	lcd_printl(LINE2,"SUCCESS");
 	return UART_SUCCESS;
 }
 
-void deactivatehttp() {
+void http_deactivate() {
 	// LONG TIMEOUT
 	uart_tx("AT#SGACT=1,0\r\n");	//deactivate GPRS context
 }
 
-
 // http://54.241.2.213/coldtrace/uploads/multi/v3/358072043112124/1/
 // $ST2,7,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,600,1,600,15,$ST1,919243100142,both,airtelgprs.com,10,1,0,0,$EN
 
-int doget() {
+int process_configuration() {
+	char *pBuffer = (char *) &RXBuffer[RXHeadIdx];
+
+	// Find HTTP transaction prompt
+	char *pToken1 = strstr((const char *) pBuffer, "\r\n<<<");
+	if (pToken1==NULL) {
+		return UART_FAILED;
+	}
+
+	return UART_SUCCESS;
+}
+
+const char HTTP_ERROR[]= { 0x0D, 0x0A, 'E', 'R', 'R', 'O', 'R', 0x0D, 0x0A, 0x0D, 0x0A, 0 };
+const char HTTP_OK[]= { 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
+
+void http_check_error() {
+	_NOP();
+}
+
+int http_get_configuration() {
 	char szTemp[128];
+	int uart_state = UART_FAILED;
+
+	// #HTTPQRY – send HTTP GET, HEAD or DELETE request
+	// Execution command performs a GET, HEAD or DELETE request to HTTP server.
+	// Parameters:
+	// <prof_id> - Numeric parameter indicating the profile identifier. Range: 0-2
+	// <command>: Numeric parameter indicating the command requested to HTTP server:
+	// 0 – GET 1 – HEAD 2 – DELETE
 
 	sprintf(szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/%s/1/\"\r\n",g_pDeviceCfg->cfgIMEI);
-	uart_tx_timeout(szTemp, 180000, 1);
+	uart_tx_timeout(szTemp, 5000, 1);
 	if (uart_getTransactionState() != UART_SUCCESS)
 		return UART_FAILED;
 
 	// CME ERROR: 558 cannot resolve DN ?
-	uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 1);		//get the configuartion
-	uart_rx(ATCMD_HTTPRCV, ATresponse);
-	return 0; // TODO return was missing, is it necessary ?
+
+	// Get the configration from the server
+	// #HTTPRCV – receive HTTP server data
+
+	uart_setCheckMsg(HTTP_OK, HTTP_ERROR);
+
+	if (uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 5)==UART_SUCCESS) {
+		uart_state = uart_getTransactionState();
+		if (uart_state == UART_SUCCESS)
+			process_configuration();
+
+		if (uart_state == UART_ERROR)
+			http_check_error();
+	}
+
+
+	return uart_state; // TODO return was missing, is it necessary ?
 }
 
-int dopost_sms_status(void) {
+int http_post_sms_status(void) {
 	int l_file_pointer_enabled_sms_status = 0;
 	int isHTTPResponseAvailable = 0;
 	int i = 0, j = 0;
@@ -95,7 +153,7 @@ int dopost_sms_status(void) {
 	return l_file_pointer_enabled_sms_status;
 }
 
-int dopost_gprs_connection_status(char status) {
+int http_post_gprs_connection_status(char status) {
 	int l_file_pointer_enabled_sms_status = 0;
 	int i = 0, j = 0;
 
@@ -103,7 +161,6 @@ int dopost_gprs_connection_status(char status) {
 		return l_file_pointer_enabled_sms_status;
 
 	iHTTPRespDelayCnt = 0;
-
 
 	if (status == GSM) {
 		uart_tx("AT+CREG?\r\n");
@@ -158,7 +215,7 @@ int dopost_gprs_connection_status(char status) {
 	return l_file_pointer_enabled_sms_status;
 }
 
-int dopost(char* postdata) {
+int http_post(char* postdata) {
 	int isHTTPResponseAvailable = 0;
 	int iRetVal = -1;
 

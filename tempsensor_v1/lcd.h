@@ -11,6 +11,14 @@
 //LCD lines
 #define LINE1					1
 #define LINE2					2
+// Line 1 and clear screen
+#define LINEC					0
+
+// Line 2 wait for user to read
+#define LINEH					3
+
+// Line 2 wait for user to read ERROR
+#define LINEE					4
 
 #define VERBOSE_BOOTING 0
 #define VERBOSE_DISABLED -1
@@ -23,24 +31,26 @@
 extern int g_iLCDVerbose;
 
 // Encapsulation, this should go into a class
-extern void lcd_setVerboseMode(int v);
-extern int lcd_getVerboseMode();
-extern void lcd_disable_verbose();
-extern void lcd_enable_verbose();
+void lcd_setVerboseMode(int v);
+int lcd_getVerboseMode();
+void lcd_disable_verbose();
+void lcd_enable_verbose();
 
-extern void lcd_setupIO();
-extern void lcd_reset();
-extern void lcd_blenable();
-extern void lcd_init();
-extern void lcd_on();
-extern void lcd_off();
-extern void lcd_clear();
-extern void lcd_setaddr(int8_t addr);
-extern void lcd_show(int8_t iItemId);
-extern void lcd_print(char* pcData);
-extern int lcd_printf(int line, const char *_format, ...);
-extern void lcd_printl(int8_t iLine, const char* pcData);
-extern void lcd_print_progress(const char* pcData, int line);
-extern void lcd_bldisable();
-extern void lcd_progress_wait(uint16_t delayTime);
+void lcd_setupIO();
+void lcd_reset();
+void lcd_blenable();
+void lcd_init();
+void lcd_on();
+void lcd_off();
+void lcd_clear();
+void lcd_setaddr(int8_t addr);
+void lcd_show(int8_t iItemId);
+void lcd_print(char* pcData);
+int lcd_printf(int line, const char *_format, ...);
+void lcd_printl(int8_t iLine, const char* pcData);
+void lcd_print_boot(const char* pcData, int line);
+void lcd_bldisable();
+void lcd_progress_wait(uint16_t delayTime);
+void lcd_print_progress();
+
 #endif /* TEMPSENSOR_V1_LCD_H_ */

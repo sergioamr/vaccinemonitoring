@@ -224,9 +224,8 @@ void sendCommand(const char *cmd) {
 		g_pSysCfg->maxTXBuffer=iTxLen;
 
 	if (iTxLen>sizeof(TXBuffer)) {
-		lcd_clear();
 		lcd_print("TXBUFFER ERROR");
-		delay(10000);
+		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	}
 
 	if (cmd!=TXBuffer) {
@@ -289,10 +288,7 @@ uint8_t iModemErrors=0;
 uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
-#ifdef _DEBUG
-		lcd_clear();
-#endif
-		lcd_print_progress((char *) cmd, LINE1);
+		lcd_print_boot((char *) cmd, LINE1);
 	}
 
 	while(attempts>0) {
@@ -306,7 +302,7 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 		}
 		attempts--;
 		if (g_iLCDVerbose == VERBOSE_BOOTING) {
-			lcd_print_progress("MODEM TIMEOUT", LINE2);
+			lcd_print_boot("MODEM TIMEOUT", LINE2);
 			log_appendf("TIMEOUT: SIM %d cmd[%s]", config_getSelectedSIM(), cmd);
 		}
 	}
@@ -375,7 +371,7 @@ uint8_t uart_tx(const char *cmd) {
 	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
 		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": \""); // Display the command returned
 		if (pToken1 != NULL) {
-			lcd_print_progress((char *) pToken1 + 3, LINE2);
+			lcd_print_boot((char *) pToken1 + 3, LINE2);
 		} else {
 			//lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2],
 			//LINE2); // Display the OK message
@@ -409,27 +405,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 	//input check
 	if (pResponse) {
 		switch (atCMD) {
-		case ATCMD_GPIO:
-			return UART_SUCCESS;
-		case ATCMD_CSURVC:
-			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "ERROR");
-			if (pToken1 != NULL)
-				return UART_ERROR;
-
-			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "mcc:");
-			if (pToken1!=NULL) mcc=atoi(pToken1+5);
-				else mcc=0;
-
-			pToken1 = strstr((const char *) pToken1, "mnc:");
-			if (pToken1!=NULL) mnc=atoi(pToken1+5);
-				else mnc=0;
-
-			if (mcc!=0 && mnc!=0) {
-				sprintf(ATresponse, "%d,%d", mcc, mnc);
-				return UART_SUCCESS;
-			}
-			return UART_FAILED;
-
 		case ATCMD_CMGS:
 			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "ERROR");
 			if (pToken1!=NULL)
@@ -457,24 +432,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 					return UART_ERROR;
 
 				memcpy(pResponse, pToken2, pToken1 - pToken2);
-				return UART_SUCCESS;
-			}
-			break;
-
-		case ATCMD_CCLK:
-			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "CCLK:");
-			if (pToken1 != NULL) {
-				pToken2 = strstr(pToken1, "OK");
-
-				if (pToken2 != NULL) {
-					bytestoread = pToken2 - pToken1;
-					if (bytestoread > CCLK_RESP_LEN) {
-						bytestoread = CCLK_RESP_LEN;
-					}
-				} else {
-					bytestoread = CCLK_RESP_LEN;
-				}
-				memcpy(pResponse, pToken1, bytestoread);
 				return UART_SUCCESS;
 			}
 			break;
@@ -644,16 +601,16 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 						if (iEndIdx > iStartIdx) {
 							//no rollover
 							bytestoread = iEndIdx - iStartIdx;
-							if (bytestoread > CMGL_RSP_LEN) {
-								bytestoread = CMGL_RSP_LEN;
+							if (bytestoread > RX_LEN) {
+								bytestoread = RX_LEN;
 							}
 							memcpy(pResponse, (const char *) &RXBuffer[iStartIdx],
 									bytestoread);
 						} else {
 							//rollover
 							bytestoread = iRxLen - iStartIdx;
-							if (bytestoread > CMGL_RSP_LEN) {
-								bytestoread = CMGL_RSP_LEN;
+							if (bytestoread > RX_LEN) {
+								bytestoread = RX_LEN;
 							}
 							memcpy(pResponse, (const char *) &RXBuffer[iStartIdx],
 									bytestoread);
@@ -669,47 +626,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			}
 			break;
 
-		case ATCMD_HTTPRCV:
-			pToken1 = strstr((const char *) RXBuffer, "HTTPRING");
-			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
-				if (searchtoken("$ST", &pToken1) == 0) {
-					RXHeadIdx = pToken1 - &RXBuffer[0];
-					iStartIdx = RXHeadIdx;
-
-					//memset(Substr,0,sizeof(Substr));
-					//strcpy(Substr,"$EN");
-					if (searchtoken("$EN", &pToken2) == 0) {
-						RXHeadIdx = pToken2 - &RXBuffer[0];
-						iEndIdx = RXHeadIdx;
-
-						if (iEndIdx > iStartIdx) {
-							//no rollover
-							bytestoread = iEndIdx - iStartIdx;
-							if (bytestoread > HTTPRCV_RSP_LEN) {
-								bytestoread = HTTPRCV_RSP_LEN;
-							}
-							memcpy(pResponse, (const char *) &RXBuffer[iStartIdx],
-									bytestoread);
-						} else {
-							//rollover
-							bytestoread = iRxLen - iStartIdx;
-							if (bytestoread > HTTPRCV_RSP_LEN) {
-								bytestoread = HTTPRCV_RSP_LEN;
-							}
-							memcpy(pResponse, (const char *) &RXBuffer[iStartIdx],
-									bytestoread);
-							memcpy(&pResponse[bytestoread], (const char *) RXBuffer,
-									iEndIdx);
-						}
-						return UART_SUCCESS;
-					}
-				}
-			} else {
-				//no start tag found
-				pResponse[0] = 0;
-			}
-
-			break;
 		case ATCMD_CPIN:
 			pToken1 = strstr((const char *) RXBuffer, "OK");
 			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
@@ -733,15 +649,15 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 						if (iEndIdx > iStartIdx) {
 							//no rollover
 							bytestoread = iEndIdx - iStartIdx;
-							if (bytestoread > CMGL_RSP_LEN) {
-								bytestoread = CMGL_RSP_LEN;
+							if (bytestoread > RX_LEN) {
+								bytestoread = RX_LEN;
 							}
 							memcpy(pResponse, (const char *) &RXBuffer[iStartIdx], bytestoread);
 						} else {
 							//rollover
 							bytestoread = iRxLen - iStartIdx;
-							if (bytestoread > CMGL_RSP_LEN) {
-								bytestoread = CMGL_RSP_LEN;
+							if (bytestoread > RX_LEN) {
+								bytestoread = RX_LEN;
 							}
 							memcpy(pResponse, (const char *)  &RXBuffer[iStartIdx], bytestoread);
 							memcpy(&pResponse[bytestoread], (const char *) RXBuffer, iEndIdx);
@@ -757,6 +673,32 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 	}
 	return UART_FAILED;
 }
+
+/*
+int copyRXBuffer(char *dest)
+{
+	uint16_t iEndIdx = RXHeadIdx;
+	if (iEndIdx > iStartIdx) {
+		//no rollover
+		bytestoread = iEndIdx - iStartIdx;
+		if (bytestoread > RX_LEN) {
+			bytestoread = RX_LEN;
+		}
+		memcpy(pResponse, (const char *) &RXBuffer[iStartIdx],
+				bytestoread);
+	} else {
+		//rollover
+		bytestoread = iRxLen - iStartIdx;
+		if (bytestoread > RX_LEN) {
+			bytestoread = RX_LEN;
+		}
+		memcpy(pResponse, (const char *) &RXBuffer[iStartIdx],
+				bytestoread);
+		memcpy(&pResponse[bytestoread], (const char *) RXBuffer,
+				iEndIdx);
+	}
+}
+*/
 
 int searchtoken(char* pToken, char** ppTokenPos) {
 	int ret = -1;

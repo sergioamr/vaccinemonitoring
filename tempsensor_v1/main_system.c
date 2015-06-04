@@ -108,12 +108,10 @@ void system_boot() {
 	config_setLastCommand(COMMAND_BOOT);
 
 	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
-	lcd_clear();
-	lcd_printf(LINE1, "Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
+	lcd_printf(LINEC, "Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
 
 #ifndef _DEBUG
-	lcd_printl(LINE2, g_pSysCfg->firmwareVersion); // Show the firmware version
-	delay(HUMAN_DISPLAY_INFO_DELAY);
+	lcd_printl(LINEH, g_pSysCfg->firmwareVersion); // Show the firmware version
 #else
 	lcd_printl(LINE2, "(db)" __TIME__);
 #endif

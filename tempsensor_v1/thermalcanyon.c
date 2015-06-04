@@ -47,7 +47,6 @@ void thermal_canyon_loop(void) {
 	while (1) {
 
 		if (g_iSystemSetup > 0) {
-			lcd_clear();
 			lcd_print("RUN CALIBRATION?");
 			lcd_print("PRESS AGAIN TO RUN");
 			g_iSystemSetup = 0;
@@ -134,15 +133,14 @@ void thermal_canyon_loop(void) {
 #ifndef CALIBRATION
 		if ((iMinuteTick - iSMSRxPollElapsed) >= SMS_RX_POLL_INTERVAL) {
 			iSMSRxPollElapsed = iMinuteTick;
-			lcd_clear();
-			lcd_printl(LINE1, "Configuring...");
+			lcd_printl(LINEC, "Configuring...");
 
 			modem_checkSignal();
-			g_iSignal_gprs = dopost_gprs_connection_status(GPRS);
+			g_iSignal_gprs = http_post_gprs_connection_status(GPRS);
 
 			iIdx = 0;
 			while (iIdx < MODEM_CHECK_RETRY) {
-				gprs_network_indication = dopost_gprs_connection_status(GSM);
+				gprs_network_indication = http_post_gprs_connection_status(GSM);
 				if ((gprs_network_indication == 0)
 						|| ((iSignalLevel < NETWORK_DOWN_SS)
 								|| (iSignalLevel > NETWORK_MAX_SS))) {
@@ -163,9 +161,9 @@ void thermal_canyon_loop(void) {
 			}
 
 			//sms config reception and processing
-			dohttpsetup();
+			http_setup();
 			memset(ATresponse, 0, sizeof(ATresponse));
-			doget(ATresponse);
+			http_get_configuration(ATresponse);
 			if (ATresponse[0] == '$') {
 				if (sms_process_msg(ATresponse)) {
 					//send heartbeat on successful processing of SMS message
@@ -176,7 +174,7 @@ void thermal_canyon_loop(void) {
 				// check signal strength
 				// iOffset = -1; //reuse to indicate no cfg msg was received // Whyy??? whyyy?????
 			}
-			deactivatehttp();
+			http_deactivate();
 		}
 #endif
 
@@ -207,9 +205,8 @@ void thermal_canyon_loop(void) {
 
 		//low power behavior
 		if ((g_iBatteryLevel <= 10) && (P4IN & BIT4)) {
-			lcd_clear();
-			lcd_print("Low Battery     ");
-			delay(HUMAN_DISPLAY_INFO_DELAY);
+			lcd_printl(LINEE, "Low Battery     ");
+
 			//reset display
 			//PJOUT |= BIT6;							// LCD reset pulled high
 			//disable backlight
@@ -224,7 +221,6 @@ void thermal_canyon_loop(void) {
 					lcd_blenable();
 					//lcd reset
 					lcd_on();
-					lcd_clear();
 					lcd_print("Low Battery     ");
 					delay(HUMAN_DISPLAY_INFO_DELAY);
 					//disable backlight

@@ -12,10 +12,9 @@
 #define RX_LEN   			4096
 #define TOKEN_LEN			3
 
-#define ATCMD_CCLK			0
 #define ATCMD_HTTPSND		1
 #define ATCMD_CMGL			2
-#define ATCMD_HTTPRCV		3
+
 #define ATCMD_CSQ			4
 #define ATCMD_CGSN			5
 #define ATCMD_CPMS_CURRENT	6
@@ -25,8 +24,6 @@
 #define ATCMD_BND			10
 #define ATCMD_CMGS			11
 #define ATCMD_HTTPQRY       12
-#define ATCMD_CSURVC		13
-#define ATCMD_GPIO 			14
 #define ATCMD_CPMS_MAX		15
 
 #define UART_SUCCESS 0
@@ -37,7 +34,6 @@
 
 #define CCLK_RESP_LEN		28
 #define HTTPSND_RSP_LEN		20
-#define CMGL_RSP_LEN		140
 #define HTTPRCV_RSP_LEN		sizeof(RXBuffer)
 #define CGSN_OFFSET			4
 #define CGSN_LEN			15
@@ -69,12 +65,16 @@ extern void uart_setSMSPromptMode();
 extern void uart_resetbuffer();
 extern void uart_setupIO();
 
+int searchtoken(char* pToken, char** ppTokenPos);
+
 //*****************************************************************************
 //! \brief Returns the state of the last transaction
 //! \param pointer to transmit buffer
 //! \return UART_SUCCESS UART_ERROR or UART_TIMEOUT
 //*****************************************************************************
 extern int8_t uart_getTransactionState();
+
+void uart_setCheckMsg(const char *szOK, const char *szError);
 
 extern void uart_setNumberOfPages(int numPages);
 extern void uart_setRingBuffer();
