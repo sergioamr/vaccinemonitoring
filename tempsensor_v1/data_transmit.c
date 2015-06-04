@@ -216,7 +216,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
-	lcd_printl(LINE2, "Transmitting....");
+	lcd_printl(LINE2, "Transmitting...");
 //iStatus &= ~TEST_FLAG;
 #ifdef SMS_ALERT
 	g_iStatus &= ~SMSED_HIGH_TEMP;

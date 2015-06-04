@@ -448,7 +448,7 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			break;
 
 		case ATCMD_CPMS_CURRENT:
-			iMaxTok = 2;
+			iMaxTok--;
 		case ATCMD_CPMS_MAX:
 			pToken1 = strstr((const char *) RXBuffer, "CPMS:");
 			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
