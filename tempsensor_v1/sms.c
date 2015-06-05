@@ -11,7 +11,7 @@
 #include "stdio.h"
 #include "stringutils.h"
 #include "sms.h"
-#include "uart.h"
+#include "modem_spi.h"
 #include "timer.h"
 #include "config.h"
 #include "common.h"
@@ -187,8 +187,8 @@ void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 
 	iMsgRxPollElapsed = iMinuteTick;
 	//check if messages are available
-	uart_tx("AT+CPMS?\r\n");
-	uart_rx(ATCMD_CPMS_CURRENT, ATresponse);
+	modemspi_tx("AT+CPMS?\r\n");
+	modemspi_rx(ATCMD_CPMS_CURRENT, ATresponse);
 	if (ATresponse[0] != '0') {
 		iIdx = strtol(ATresponse, 0, 10);
 		if (iIdx) {
@@ -327,12 +327,12 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	strcat(pData, ctrlZ);
 
 	sprintf(szCmd, "AT+CMGS=\"%s\",129\r\n", szPhoneNumber);
-	uart_setSMSPromptMode();
-	if (uart_tx_waitForPrompt(szCmd, TIMEOUT_CMGS_PROMPT)) {
-		uart_tx_timeout(pData, TIMEOUT_CMGS, 1);
+	modemspi_setSMSPromptMode();
+	if (modemspi_tx_waitForPrompt(szCmd, TIMEOUT_CMGS_PROMPT)) {
+		modemspi_tx_timeout(pData, TIMEOUT_CMGS, 1);
 
 		// TODO Check if ok or RXBuffer contains Error
-		res = uart_rx(ATCMD_CMGS, ATresponse);
+		res = modemspi_rx(ATCMD_CMGS, ATresponse);
 		msgNumber = atoi(ATresponse);
 	}
 
@@ -370,20 +370,20 @@ int sms_recv_message(int8_t iMsgIdx, char* pData) {
 	//uart_tx("AT+CMGL=\"REC READ\"\r\n");
 	//uart_tx("AT+CMGL=\"ALL\"\r\n");
 
-	uart_txf("AT+CMGR=%d\r\n", iMsgIdx);
-	ret = uart_rx(ATCMD_CMGR, pData);	//copy RX to pData
+	modemspi_txf("AT+CMGR=%d\r\n", iMsgIdx);
+	ret = modemspi_rx(ATCMD_CMGR, pData);	//copy RX to pData
 
 	return ret;
 }
 
 void delallmsg() {
-	uart_tx("AT+CMGD=1,2\r\n");	//delete all the sms msgs read or sent successfully
+	modemspi_tx("AT+CMGD=1,2\r\n");	//delete all the sms msgs read or sent successfully
 }
 
 void delmsg(int8_t iMsgIdx, char* pData) {
 	char szCmd[64];
 	sprintf(szCmd, "AT+CMGD=%d,0\r\n", iMsgIdx);
-	uart_tx(szCmd);
+	modemspi_tx(szCmd);
 	delay(2000);	//opt
 }
 

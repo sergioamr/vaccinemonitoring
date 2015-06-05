@@ -8,7 +8,7 @@
 #include "msp430.h"
 #include "config.h"
 #include "common.h"
-#include "uart.h"
+#include "modem_spi.h"
 #include "stdlib.h"
 #include "string.h"
 #include "lcd.h"
@@ -64,7 +64,7 @@ size_t iRxLen = RX_LEN;
 //local functions
 extern void delay(int time);
 
-void uart_resetbuffer() {
+void modemspi_resetbuffer() {
 	RXHeadIdx = RXTailIdx = 0; //ZZZZ reset Rx index to faciliate processing in uart_rx
 #ifdef _DEBUG
 	memset((char *) RXBuffer, 0, sizeof(RXBuffer));
@@ -82,7 +82,7 @@ char g_szError[32];
 uint8_t ErrorIdx=0;
 int8_t ErrorLength=0;
 
-void uart_setCheckMsg(const char *szOK, const char *szError) {
+void modemspi_setCheckMsg(const char *szOK, const char *szError) {
 	TransmissionEnd=0;
 	g_iUartState=UART_INPROCESS;
 
@@ -130,11 +130,11 @@ inline void uart_checkERROR() {
 volatile int uart_numDataPages = -1; // Number of pages of data to retrieve. -1 is circular buffer
 
 // Cancels data transaction after a number of pages has been obtained
-void uart_setNumberOfPages(int numPages) {
+void modemspi_setNumberOfPages(int numPages) {
 	uart_numDataPages=numPages;
 }
 
-void uart_setRingBuffer() {
+void modemspi_setRingBuffer() {
 	uart_numDataPages=-1;
 }
 
@@ -156,7 +156,7 @@ inline void uart_checkOK() {
 	}
 }
 
-void uart_setupIO() {
+void modemspi_setupIO() {
 	// P2.0 UCA0SIMO
 	// P2.1 UCA0RXD/ UCA0SOMI
 
@@ -186,7 +186,7 @@ void uart_init() {
 	UCA0IE |= UCRXIE;                // Enable USCI_A0 RX interrupt
 }
 
-int8_t uart_getTransactionState() {
+int8_t modemspi_getTransactionState() {
 	return g_iUartState;
 }
 
@@ -239,11 +239,11 @@ void sendCommand(const char *cmd) {
 
 #define DEFAULT_INTERVAL_DELAY 2
 uint8_t delayDivider = DEFAULT_INTERVAL_DELAY;
-void uart_setDefaultIntervalDivider() {
+void modemspi_setDefaultIntervalDivider() {
 	delayDivider = DEFAULT_INTERVAL_DELAY;
 }
 
-void uart_setDelayIntervalDivider(uint8_t divider) {
+void modemspi_setDelayIntervalDivider(uint8_t divider) {
 	delayDivider = divider;
 }
 
@@ -282,7 +282,7 @@ int waitForReady(uint32_t timeoutTimeMs) {
 uint8_t iModemErrors=0;
 
 // Try a command until success with timeout and number of attempts to be made at running it
-uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
+uint8_t modemspi_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_print_boot((char *) cmd, LINE1);
@@ -294,7 +294,7 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 
 			// Transaction could be sucessful but the modem could have return an error.
 			modem_check_uart_error();
-			uart_setRingBuffer();
+			modemspi_setRingBuffer();
 			return UART_SUCCESS;
 		}
 		attempts--;
@@ -308,22 +308,22 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 	modem_check_uart_error();
 
 	iModemErrors++;
-	uart_setRingBuffer(); // Restore the ring buffer if it was changed.
+	modemspi_setRingBuffer(); // Restore the ring buffer if it was changed.
 	return UART_FAILED;
 }
 
-void uart_tx_nowait(const char *cmd) {
+void modemspi_tx_nowait(const char *cmd) {
 	sendCommand(cmd);
 }
 
-uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime) {
+uint8_t modemspi_tx_waitForPrompt(const char *cmd, uint32_t promptTime) {
 	sendCommand(cmd);
 	if (!waitForReady(promptTime)) {
-		uart_setOKMode();
+		modemspi_setOKMode();
 		return 1; // We found a prompt
 	}
 
-	uart_setOKMode();
+	modemspi_setOKMode();
 	return 0;
 }
 
@@ -337,7 +337,7 @@ uint8_t isTransactionOK() {
 	return ErrorIdx;
 }
 
-uint8_t uart_txf(const char *_format, ...) {
+uint8_t modemspi_txf(const char *_format, ...) {
 	char szTemp[128];
     va_list _ap;
     char *fptr = (char *)_format;
@@ -350,21 +350,21 @@ uint8_t uart_txf(const char *_format, ...) {
     va_end(_ap);
 
     *out_end = '\0';
-    return uart_tx( szTemp);
+    return modemspi_tx( szTemp);
 }
 
-uint8_t uart_tx(const char *cmd) {
+uint8_t modemspi_tx(const char *cmd) {
 	char* pToken1;
 	int uart_state;
 	int transaction_completed;
 
-	uart_resetbuffer();
+	modemspi_resetbuffer();
 
-	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 10);
+	transaction_completed = modemspi_tx_timeout(cmd, g_iModemMaxWait, 10);
 	if (RXHeadIdx > RXTailIdx)
 		return transaction_completed;
 
-	uart_state = uart_getTransactionState();
+	uart_state = modemspi_getTransactionState();
 	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
 		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": \""); // Display the command returned
 		if (pToken1 != NULL) {
@@ -379,12 +379,12 @@ uint8_t uart_tx(const char *cmd) {
 	return uart_state;
 }
 
-int uart_rx(int atCMD, char* pResponse) {
-	return uart_rx_cleanBuf(atCMD, pResponse, 0);
+int modemspi_rx(int atCMD, char* pResponse) {
+	return modemspi_rx_cleanBuf(atCMD, pResponse, 0);
 }
 
 // Clears the response buffer if len > 0
-int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
+int modemspi_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 	char* pToken1 = NULL;
 	char* pToken2 = NULL;
 	int bytestoread = 0;
@@ -734,16 +734,16 @@ int searchtoken(char* pToken, char** ppTokenPos) {
 	return ret;
 }
 
-void uart_setHTTPPromptMode() {
-	uart_setCheckMsg(AT_MSG_LONG_PROMPT, AT_ERROR);
+void modemspi_setHTTPPromptMode() {
+	modemspi_setCheckMsg(AT_MSG_LONG_PROMPT, AT_ERROR);
 }
 
-void uart_setSMSPromptMode() {
-	uart_setCheckMsg(AT_MSG_PROMPT, AT_CMS_ERROR);
+void modemspi_setSMSPromptMode() {
+	modemspi_setCheckMsg(AT_MSG_PROMPT, AT_CMS_ERROR);
 }
 
-void uart_setOKMode() {
-	uart_setCheckMsg(AT_MSG_OK, AT_ERROR);
+void modemspi_setOKMode() {
+	modemspi_setCheckMsg(AT_MSG_OK, AT_ERROR);
 }
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
@@ -808,7 +808,7 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 	}
 }
 
-void uart_setupIO_clock() {
+void modemspi_setupIO_clock() {
 	// Configure USCI_A0 for UART mode
 	UCA0CTLW0 = UCSWRST;                      // Put eUSCI in reset
 	UCA0CTLW0 |= UCSSEL__SMCLK;               // CLK = SMCLK

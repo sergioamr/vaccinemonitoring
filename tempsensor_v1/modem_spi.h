@@ -42,7 +42,6 @@
 #define XON					0x11
 
 #include <msp430.h>
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -53,17 +52,17 @@ extern volatile int RXHeadIdx;
 extern size_t iRxLen;
 extern volatile char RXBuffer[RX_LEN+1];
 
-extern void uart_setOKMode();
+void modemspi_setOKMode();
 
-extern void uart_setupIO_clock(); // Initializes the speed and the bauds of the UCA0
-extern void uart_setHTTPPromptMode();
-extern void uart_setSMSPromptMode();
+void modemspi_setupIO_clock(); // Initializes the speed and the bauds of the UCA0
+void modemspi_setHTTPPromptMode();
+void modemspi_setSMSPromptMode();
 
 //*****************************************************************************
 // Set tail and head to 0 for easy parsing.
 //*****************************************************************************
-extern void uart_resetbuffer();
-extern void uart_setupIO();
+void modemspi_resetbuffer();
+void modemspi_setupIO();
 
 int searchtoken(char* pToken, char** ppTokenPos);
 
@@ -72,15 +71,15 @@ int searchtoken(char* pToken, char** ppTokenPos);
 //! \param pointer to transmit buffer
 //! \return UART_SUCCESS UART_ERROR or UART_TIMEOUT
 //*****************************************************************************
-extern int8_t uart_getTransactionState();
+int8_t modemspi_getTransactionState();
 
-void uart_setCheckMsg(const char *szOK, const char *szError);
+void modemspi_setCheckMsg(const char *szOK, const char *szError);
 
-extern void uart_setNumberOfPages(int numPages);
-extern void uart_setRingBuffer();
+void modemspi_setNumberOfPages(int numPages);
+void modemspi_setRingBuffer();
 
-extern void uart_setDefaultIntervalDivider();
-extern void uart_setDelayIntervalDivider(uint8_t divider);
+void modemspi_setDefaultIntervalDivider();
+void modemspi_setDelayIntervalDivider(uint8_t divider);
 
 
 //*****************************************************************************
@@ -88,11 +87,11 @@ extern void uart_setDelayIntervalDivider(uint8_t divider);
 //! \param pointer to transmit buffer
 //! \return 0 on success, -1 on failure
 //*****************************************************************************
-extern uint8_t uart_tx(const char* pTxData);
-extern uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts);
-extern void uart_tx_nowait(const char *cmd);
-extern uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime);
-extern uint8_t uart_txf(const char *_format, ...);
+uint8_t modemspi_tx(const char* pTxData);
+uint8_t modemspi_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts);
+void modemspi_tx_nowait(const char *cmd);
+uint8_t modemspi_tx_waitForPrompt(const char *cmd, uint32_t promptTime);
+uint8_t modemspi_txf(const char *_format, ...);
 
 //*****************************************************************************
 //
@@ -104,8 +103,8 @@ extern uint8_t uart_txf(const char *_format, ...);
 //! \return 0 on success, -1 on failure
 //
 //*****************************************************************************
-extern int uart_rx(int atCMD, char* pResponse);
-extern int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen);
+int modemspi_rx(int atCMD, char* pResponse);
+int modemspi_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen);
 
 #ifdef __cplusplus
 }

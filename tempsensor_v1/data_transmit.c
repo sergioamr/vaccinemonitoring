@@ -250,10 +250,10 @@ int data_transmit(uint8_t *pSampleCnt) {
 #endif
 
 	if (!(g_iStatus & TEST_FLAG)) {
-		uart_tx("AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
+		modemspi_tx("AT+CGDCONT=1,\"IP\",\"giffgaff.com\",\"0.0.0.0\",0,0\r\n"); //APN
 		//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
-		uart_tx("AT#SGACT=1,1\r\n");
-		uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
+		modemspi_tx("AT#SGACT=1,1\r\n");
+		modemspi_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
 	}
 
 #ifdef NOTFROMFILE
@@ -615,17 +615,17 @@ int data_transmit(uint8_t *pSampleCnt) {
 		config_setLastCommand(COMMAND_POST);
 		iPOSTstatus = 0;
 		//initialize the RX counters as RX buffer is been used in the aggregrate variables for HTTP POST formation
-		uart_resetbuffer();
+		modemspi_resetbuffer();
 
 		iPOSTstatus = http_post(SampleData);
 		if (iPOSTstatus != 0) {
 			//redo the post
 			// Define Packet Data Protocol Context - +CGDCONT
-			 uart_txf("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN);
+			 modemspi_txf("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN);
 			//uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n"); //APN
 
-			uart_tx("AT#SGACT=1,1\r\n");
-			uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
+			modemspi_tx("AT#SGACT=1,1\r\n");
+			modemspi_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
 #ifdef NO_CODE_SIZE_LIMIT
 			iPOSTstatus = http_post(SampleData);
 			if (iPOSTstatus != 0) {
@@ -639,7 +639,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 #endif
 		}
 		//iTimeCnt = 0;
-		uart_tx("AT#SGACT=1,0\r\n");			//deactivate GPRS context
+		modemspi_tx("AT#SGACT=1,0\r\n");			//deactivate GPRS context
 
 		//if upload sms
 		delay(5000);			//opt sleep to get http post response
