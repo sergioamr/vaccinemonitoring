@@ -6,14 +6,24 @@ char g_szFatFileName[64];
 FATFS FatFs; /* Work area (file system object) for logical drive */
 #pragma SET_DATA_SECTION()
 
+char g_bFatInitialized = false;
+
+const char * const FR_ERRORS[20] = { "OK", "DISK_ERR", "INT_ERR", "NOT_READY",
+		"NO_FILE", "NO_PATH", "INVALID_NAME", "DENIED", "EXIST",
+		"INVALID_OBJECT", "WRITE_PROTECTED", "INVALID_DRIVE", "NOT_ENABLED",
+		"NO_FILESYSTEM", "MKFS_ABORTED", "TIMEOUT", "LOCKED", "NOT_ENOUGH_CORE",
+		"TOO_MANY_OPEN_FILES", "INVALID_PARAMETER" };
+
 DWORD get_fattime(void) {
 	DWORD tmr;
 
 	rtc_getlocal(&g_tmCurrTime);
 	/* Pack date and time into a DWORD variable */
 	tmr = (((DWORD) g_tmCurrTime.tm_year - 1980) << 25)
-			| ((DWORD) g_tmCurrTime.tm_mon << 21) | ((DWORD) g_tmCurrTime.tm_mday << 16)
-			| (WORD) (g_tmCurrTime.tm_hour << 11) | (WORD) (g_tmCurrTime.tm_min << 5)
+			| ((DWORD) g_tmCurrTime.tm_mon << 21)
+			| ((DWORD) g_tmCurrTime.tm_mday << 16)
+			| (WORD) (g_tmCurrTime.tm_hour << 11)
+			| (WORD) (g_tmCurrTime.tm_min << 5)
 			| (WORD) (g_tmCurrTime.tm_sec >> 1);
 	return tmr;
 }
@@ -47,9 +57,11 @@ void fat_check_error(FRESULT fr) {
 	if (fr == FR_OK)
 		return;
 
-	lcd_printl(LINE1, "SD CARD FAILURE");
-	lcd_printf(LINE2, "ERROR 0x%x ", fr);
-	delay(10000);
+	if (fr == FR_DISK_ERR || fr == FR_NOT_READY)
+		g_bFatInitialized = false;
+
+	lcd_printl(LINEC, "SD CARD FAILURE");
+	lcd_printf(LINEE, "%s", FR_ERRORS[fr]);
 }
 
 FRESULT fat_init_drive() {
@@ -69,6 +81,9 @@ FRESULT fat_init_drive() {
 	if (fr != FR_EXIST)
 		fat_check_error(fr);
 
+	// Fat is ready
+	g_bFatInitialized = true;
+
 	fr = log_appendf("Start Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
 	return fr;
 }
@@ -79,6 +94,9 @@ FRESULT log_append_text(char *text) {
 	int t = 0;
 	int len = 0;
 	int bw = 0;
+
+	if (!g_bFatInitialized)
+		return FR_NOT_READY;
 
 	if (text == NULL)
 		return FR_OK;
@@ -110,9 +128,9 @@ FRESULT log_append_text(char *text) {
 	}
 	strcat(szLog, "] ");
 
-	len=strlen(szLog);
+	len = strlen(szLog);
 	fr = f_write(&fobj, szLog, len, (UINT *) &bw);
-	if (fr!=FR_OK || bw!=len) {
+	if (fr != FR_OK || bw != len) {
 		lcd_print("Failed writing SD");
 		f_close(&fobj);
 		return fr;
@@ -150,6 +168,9 @@ FRESULT log_appendf(const char *_format, ...) {
 FRESULT log_sample_to_disk(int* tbw) {
 	FIL fobj;
 	char szLog[64];
+
+	if (!g_bFatInitialized)
+		return FR_NOT_READY;
 
 	int bw = 0;	//bytes written
 	char* fn = get_current_fileName(&g_tmCurrTime);

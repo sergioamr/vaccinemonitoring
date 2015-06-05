@@ -153,7 +153,8 @@ void config_setLastCommand(uint16_t lastCmd)  {
 	}
 
 #ifdef _DEBUG
-	log_appendf("Command [%d] ", lastCmd);
+	if (lastCmd!=COMMAND_LCDINIT)
+		log_appendf("Command [%d] ", lastCmd);
 #endif
 }
 

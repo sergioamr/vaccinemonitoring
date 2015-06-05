@@ -37,7 +37,6 @@
 
 // Setup Pinout for I2C, and SPI transactions.
 // http://www.ti.com/lit/ug/slau535a/slau535a.pdf
-
 void system_setupIO_clock() {
 	// Startup clock system with max DCO setting ~8MHz
 	CSCTL0_H = CSKEY >> 8;                    // Unlock clock registers
@@ -109,7 +108,7 @@ void system_boot() {
 	setup_IO();
 
 	lcd_reset();
-	lcd_blenable();  // For some reason, lcd has to be enabled before battery init. Probably something with the i2c, still checking what is the problem here.
+	lcd_blenable(); // For some reason, lcd has to be enabled before battery init. Probably something with the i2c, still checking what is the problem here.
 
 #ifndef BATTERY_DISABLED
 	batt_init();
@@ -117,7 +116,7 @@ void system_boot() {
 	modem_turn_on();
 
 	lcd_init();
-	config_init();// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
+	config_init(); // Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
 	config_setLastCommand(COMMAND_BOOT);
 
 	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
