@@ -431,19 +431,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			}
 			break;
 
-		case ATCMD_CSQ:
-			pToken1 = strstr((const char *) RXBuffer, "CSQ:");
-			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
-				pToken2 = strtok(&pToken1[5], ",");
-				if (pToken2 != NULL) {
-					strncpy(pResponse, pToken2, strlen(pToken2));
-				} else {
-					pResponse[0] = 0;
-				}
-				return UART_SUCCESS;
-			}
-			break;
-
 		case ATCMD_CPMS_CURRENT:
 			iMaxTok--;
 		case ATCMD_CPMS_MAX:

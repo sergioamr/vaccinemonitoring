@@ -12,7 +12,9 @@
 #define HTTP_RESPONSE_RETRY	10
 
 void backend_get_configuration() {
+
 	config_setLastCommand(COMMAND_HTTP_DATA_TRANSFER);
+	lcd_print("NEXLEAF PING");
 	if (modem_check_network() != UART_SUCCESS) {
 		return;
 	}

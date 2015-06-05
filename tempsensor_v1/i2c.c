@@ -16,7 +16,7 @@
 #include "timer.h"
 
 #define I2C_DELAY 100
-#define I2C_DELAY_WRITE 50
+#define I2C_DELAY_WRITE 100
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 volatile int8_t 	I2CRX[I2C_RX_LEN];

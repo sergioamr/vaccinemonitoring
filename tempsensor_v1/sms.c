@@ -80,10 +80,10 @@ void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 						default:
 							break;
 						}
-						if (sms_process_msg(ATresponse)) {
+						//if (sms_process_msg(ATresponse)) {
 							//send heartbeat on successful processing of SMS message
-							sms_send_heart_beat();
-						}
+						//	sms_send_heart_beat();
+						//}
 					}
 					iIdx++;
 				}

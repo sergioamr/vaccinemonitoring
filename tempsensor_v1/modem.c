@@ -61,7 +61,7 @@ char ESC[2] = { 0x1B, 0 };
 
 const char NETWORK_MODE_0[] = "Network disabled";
 const char * const NETWORK_STATUS[6] = { "initializing", "connected",
-		"searching net", "reg denied", "unknown", "roaming" };
+		"searching net", "reg denied", "unknown state", "roaming net" };
 const char NETWORK_MODE_2[] = "Registered";
 const char NETWORK_UNKNOWN_STATUS[] = "Unknown";
 
@@ -264,14 +264,17 @@ int8_t modem_check_network() {
 	int res = UART_FAILED;
 	int iSignal = 0;
 
-	// Check signal quality, and check
+	// Check signal quality,
+	// if it is too low we check if we
+	// are actually connected to the network and fine
 
 	iSignal = modem_getSignal();
-	if (!modem_isSignalInRange(iSignal))
-		res = UART_FAILED;
-	else
+	if (modem_isSignalInRange(iSignal))
 		res = modem_connect_network(1);
+	else
+		res = UART_FAILED;
 
+	// Something was wrong on the connection, swap SIM card.
 	if (res == UART_FAILED)
 		res = modem_swap_SIM();
 
@@ -285,7 +288,8 @@ int8_t modem_first_init() {
 	int iStatus = 0;
 	int iSIM_Error = 0;
 
-	lcd_printl(LINEC, "Modem POWER ON");
+	lcd_printl(LINEC, "MODEM ");
+	lcd_printl(LINE2, "Power on");
 	delay(2500);
 
 	//check Modem is powered on
@@ -333,7 +337,7 @@ int8_t modem_first_init() {
 		}
 
 #ifdef _DEBUG
-		http_backend_get_configuration();
+		backend_get_configuration();
 #endif
 
 		// One or more of the sims had a catastrofic failure on init, set the device
@@ -399,20 +403,23 @@ int modem_isSignalInRange(int iSignalLevel) {
 	return 1;
 }
 
+const char COMMAND_RESULT_CSQ[] = "CSQ: ";
+
 int modem_getSignal() {
+	char *token;
 	int iSignalLevel = 0;
 
 	config_incLastCmd();
 
 	if (uart_tx_timeout("AT+CSQ\r\n", TIMEOUT_CSQ, 1) != UART_SUCCESS)
-		return;
+		return 0;
 
-	uart_rx_cleanBuf(ATCMD_CSQ, ATresponse, sizeof(ATresponse));
-	if (ATresponse[0] != 0) {
-		iSignalLevel = strtol(ATresponse, 0, 10);
-		g_iSignalLevel = iSignalLevel;
-		modem_isSignalInRange(iSignalLevel);
-	}
+	PARSE_FINDSTR_RET(token, COMMAND_RESULT_CSQ, UART_FAILED);
+	PARSE_FIRSTVALUE(token, &iSignalLevel, ",\n", UART_FAILED);
+
+	//pToken2 = strtok(&pToken1[5], ",");
+	g_iSignalLevel = iSignalLevel;
+	modem_isSignalInRange(iSignalLevel);
 
 	return iSignalLevel;
 }
