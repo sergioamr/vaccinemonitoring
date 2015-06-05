@@ -72,16 +72,14 @@ void http_deactivate() {
 const char HTTP_INCOMING_DATA[] = { 0x0D, 0x0A, '<', '<', '<', 0 };
 
 int process_configuration() {
-
 	char *token;
 	char* delimiter = ",";
+	SIM_CARD_CONFIG *sim = config_getSIM();
 
+	//change for actual data
 	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
-	_NOP();
 	PARSE_FINDSTR_RET(token, "$ST2", UART_FAILED);
-	_NOP();
-	// ACTIVE SIM
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->cfgSIM_slot, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &g_pDeviceCfg->cfgSyncId, delimiter, UART_FAILED);
 	int i = 0;
 	while (i < MAX_NUM_SENSORS) {
 		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].maxTimeCold, delimiter, UART_FAILED);
@@ -97,14 +95,14 @@ int process_configuration() {
 	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.battThreshold, delimiter, UART_FAILED);
 
 	PARSE_SKIP(token, ",", UART_FAILED); // $ST1
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->cfgGatewaySMS[0], delimiter, UART_FAILED); // GATEWAY NUM
-	PARSE_SKIP(token, ",", UART_FAILED); // NETWORK TYPE E.G. GPRS
-	PARSE_NEXTVALUE(token, config_getSIM()->cfgAPN, delimiter, UART_FAILED); //APN
+	PARSE_NEXTSTRING(token, &g_pDeviceCfg->cfgGatewaySMS[0], delimiter, UART_FAILED); // GATEWAY NUM
+	PARSE_NEXTVALUE(token, &sim->cfgUploadMode, delimiter, UART_FAILED); // NETWORK TYPE E.G. GPRS
+	PARSE_NEXTSTRING(token, &sim->cfgAPN[0], delimiter, UART_FAILED); //APN
 
 	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stIntervalParam.uploadInterval, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stIntervalParam.loggingInterval, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, ",", delimiter, UART_FAILED); // Not sure what these values are
-	PARSE_NEXTVALUE(token, ",", delimiter, UART_FAILED); ////
+	PARSE_NEXTVALUE(token, ",", delimiter, UART_FAILED); // Reset alert
+	PARSE_NEXTVALUE(token, &g_pDeviceCfg->cfgSIM_slot, delimiter, UART_FAILED); ////
 
 	PARSE_SKIP(token, delimiter, UART_FAILED); // $EN
 

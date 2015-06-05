@@ -159,6 +159,7 @@ typedef struct {
 typedef struct
 __attribute__((__packed__)) {
 	int8_t cfgSIM_slot;
+	int8_t cfgSyncId;
 
 	TEMP_ALERT_PARAM stTempAlertParams[MAX_NUM_SENSORS];
 	BATT_POWER_ALERT_PARAM stBattPowerAlertParam;
