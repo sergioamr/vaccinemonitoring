@@ -24,7 +24,7 @@
 
 #ifdef _DEBUG
 #define HTTP_COMMAND_ATTEMPTS 10
-#define NETWORK_CONNECTION_ATTEMPTS 120
+#define NETWORK_CONNECTION_ATTEMPTS 10
 #define NETWORK_CONNECTION_DELAY 1000
 #else
 #define HTTP_COMMAND_ATTEMPTS 40
@@ -68,7 +68,7 @@ EXTERN int8_t g_iSystemSetup;
 
 //Sampling configuration
 #define SAMPLE_PERIOD			1		//in minutes
-#define UPLOAD_PERIOD			10		//in minutes
+#define UPLOAD_PERIOD			2		//in minutes
 #define SMS_RX_POLL_INTERVAL	5		//poll interval in minutes for sms msg TODO change back
 #define LCD_REFRESH_INTERVAL	1
 #define MSG_REFRESH_INTERVAL	1
@@ -135,12 +135,35 @@ typedef struct __attribute__((__packed__)) {
 // 255.255.255.255
 #define MAX_IP_SIZE 3*4+3+1
 
+typedef struct {
+	int minCold;
+	int minHot;
+	float threshCold;
+	float threshHot;
+	uint32_t maxTimeCold;
+	uint32_t maxTimeHot;
+} TEMP_ALERT_PARAM;
+
+typedef struct {
+	int minutesPower;
+	int enablePowerAlert;
+	int minutesBattThresh;
+	int battThreshold;
+} BATT_POWER_ALERT_PARAM;
+
+typedef struct {
+	int uploadInterval;
+	int loggingInterval;
+} INTERVAL_PARAM;
+
 typedef struct
 __attribute__((__packed__)) {
 	int8_t cfgSIM_slot;
+	int8_t cfgSyncId;
 
 	TEMP_ALERT_PARAM stTempAlertParams[MAX_NUM_SENSORS];
 	BATT_POWER_ALERT_PARAM stBattPowerAlertParam;
+	INTERVAL_PARAM stIntervalParam;
 
 	char cfgIMEI[IMEI_MAX_LEN + 1];
 	char cfgGatewayIP[MAX_IP_SIZE];
@@ -221,6 +244,7 @@ extern void config_init();
 extern void config_setLastCommand(uint16_t lastCmd);
 extern void config_incLastCmd();
 extern void config_update_system_time();
+extern void config_update_intervals();
 extern uint32_t config_get_boot_midnight_difference();
 
 uint8_t check_address_empty(uint8_t mem);

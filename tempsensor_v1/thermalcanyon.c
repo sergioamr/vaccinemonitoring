@@ -41,6 +41,7 @@ void thermal_canyon_loop(void) {
 	iLCDShowElapsed = iMinuteTick;
 	iMsgRxPollElapsed = iMinuteTick;
 	iBootTime = config_get_boot_midnight_difference();
+	config_update_intervals();
 
 	while (1) {
 
