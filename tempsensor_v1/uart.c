@@ -62,7 +62,6 @@ size_t iRxLen = RX_LEN;
 #define IMEI_MAX_LEN		 15
 
 //local functions
-static int searchtoken(char* pToken, char** ppTokenPos);
 extern void delay(int time);
 
 void uart_resetbuffer() {
@@ -165,8 +164,6 @@ void uart_setupIO() {
 	P2SEL0 &= ~(BIT0 | BIT1);
 	P4DIR |= BIT0 | BIT5 | BIT6 | BIT7; // Set P4.0 (Modem reset), LEDs to output direction
 
-	// Turn off modem
-	P4OUT |= BIT0;
 }
 
 void uart_init() {

@@ -25,6 +25,8 @@ int8_t http_setup() {
 	if (uart_getTransactionState() != UART_SUCCESS)
 		return UART_FAILED;
 
+	lcd_progress_wait(2000);
+
 	// Context Activation - #SGACT
 	// Execution command is used to activate or deactivate either the GSM context
 	// or the specified PDP context.
@@ -102,7 +104,7 @@ int http_check_error(int *retry) {
 	PARSE_SKIP(token, ",\n", UART_FAILED); 	// Skip content_type string.
 	PARSE_NEXTVALUE(token, &data_size, ",\n", UART_FAILED);
 
-	log_appendf(" HTTP ERROR [%d] - Data size %d ", http_status_code, data_size);
+	log_appendf(" HTTP ERROR %i [%d] - Data size %d ", prof_id, http_status_code, data_size);
 
 	// Check for recoverable errors
 	// Server didnt responded

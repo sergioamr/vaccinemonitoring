@@ -43,7 +43,7 @@ void monitoralarm() {
 #ifndef ALERT_UPLOAD_DISABLED
 					if(!(g_iStatus & BACKLOG_UPLOAD_ON))
 					{
-						g_iStatus |= ALERT_UPLOAD_ON;	//indicate to upload sampled data if backlog is not progress
+						g_iStatus |= ALERT_UPLOAD_ON;//indicate to upload sampled data if backlog is not progress
 					}
 #endif
 					//set buzzer if not set
@@ -93,7 +93,7 @@ void monitoralarm() {
 #ifndef ALERT_UPLOAD_DISABLED
 					if(!(g_iStatus & BACKLOG_UPLOAD_ON))
 					{
-						g_iStatus |= ALERT_UPLOAD_ON;	//indicate to upload sampled data if backlog is not progress
+						g_iStatus |= ALERT_UPLOAD_ON;//indicate to upload sampled data if backlog is not progress
 					}
 #endif
 					//set buzzer if not set
@@ -236,7 +236,8 @@ void validatealarmthreshold() {
 			LOW_TEMP_THRESHOLD;
 		}
 
-		if ((g_pDeviceCfg->stTempAlertParams[iCnt].mincold < MIN_CNF_TEMP_THRESHOLD)
+		if ((g_pDeviceCfg->stTempAlertParams[iCnt].mincold
+				< MIN_CNF_TEMP_THRESHOLD)
 				|| (g_pDeviceCfg->stTempAlertParams[iCnt].mincold
 						> MAX_CNF_TEMP_THRESHOLD)) {
 			g_pDeviceCfg->stTempAlertParams[iCnt].mincold =
@@ -249,7 +250,8 @@ void validatealarmthreshold() {
 			g_pDeviceCfg->stTempAlertParams[iCnt].threshhot =
 			HIGH_TEMP_THRESHOLD;
 		}
-		if ((g_pDeviceCfg->stTempAlertParams[iCnt].minhot < MIN_CNF_TEMP_THRESHOLD)
+		if ((g_pDeviceCfg->stTempAlertParams[iCnt].minhot
+				< MIN_CNF_TEMP_THRESHOLD)
 				|| (g_pDeviceCfg->stTempAlertParams[iCnt].minhot
 						> MAX_CNF_TEMP_THRESHOLD)) {
 			g_pDeviceCfg->stTempAlertParams[iCnt].minhot =

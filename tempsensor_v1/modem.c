@@ -60,7 +60,7 @@ char ESC[2] = { 0x1B, 0 };
  */
 
 const char NETWORK_MODE_0[] = "Network disabled";
-const char * const NETWORK_STATUS[6] = { "not connected", "connected home",
+const char * const NETWORK_STATUS[6] = { "not connected", "connected",
 		"searching net", "reg denied", "unknown", "roaming" };
 const char NETWORK_MODE_2[] = "Registered";
 const char NETWORK_UNKNOWN_STATUS[] = "Unknown";
@@ -124,13 +124,19 @@ int modem_getNetworkStatus(int *mode, int *status) {
 
 	char *pToken1 = NULL;
 	int uart_state = 0;
+	int verbose;
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	*mode = -1;
 	*status = -1;
 
+	verbose=lcd_getVerboseMode();
+	lcd_disable_verbose();
+
 	uart_tx("AT+CGREG?\r\n");
+
+	lcd_setVerboseMode(verbose);
 
 	uart_state = uart_getTransactionState();
 	if (uart_state == UART_SUCCESS) {
@@ -261,6 +267,7 @@ int8_t modem_first_init() {
 	int iSIM_Error = 0;
 
 	lcd_printl(LINEC, "Modem POWER ON");
+	delay(2500);
 
 	//check Modem is powered on
 	for (iIdx = 0; iIdx < MODEM_CHECK_RETRY; iIdx++) {
@@ -330,12 +337,6 @@ int8_t modem_first_init() {
 			break;
 		}
 
-		//heartbeat
-		for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
-			memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);
-			digital_amp_to_temp_string(ADCvar[iIdx], &Temperature[iIdx][0],
-					iIdx);
-		}
 	} else {
 		lcd_printl(LINEE, "Failed Power On");
 	}
@@ -679,6 +680,7 @@ void modem_init() {
 		modem_set_max_messages();
 
 	modem_pull_time();
+
 	// Have to call twice to guarantee a genuine result
 	modem_checkSignal();
 

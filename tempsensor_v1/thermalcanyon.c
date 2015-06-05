@@ -48,7 +48,7 @@ void thermal_canyon_loop(void) {
 
 		if (g_iSystemSetup > 0) {
 			lcd_print("RUN CALIBRATION?");
-			lcd_print("PRESS AGAIN TO RUN");
+			lcd_printl(LINE2, "PRESS AGAIN TO RUN");
 			g_iSystemSetup = 0;
 		}
 
@@ -67,12 +67,9 @@ void thermal_canyon_loop(void) {
 
 		//check if conversion is complete
 		if ((g_isConversionDone) || (g_iStatus & TEST_FLAG)) {
+
 			//convert the current sensor ADC value to temperature
-			for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
-				memset(&Temperature[iIdx], 0, TEMP_DATA_LEN + 1);
-				digital_amp_to_temp_string(ADCvar[iIdx], &Temperature[iIdx][0],
-						iIdx);
-			}
+			temperature_process_ADC_values();
 
 #ifndef  NOTFROMFILE
 			//log to file
@@ -113,7 +110,7 @@ void thermal_canyon_loop(void) {
 		if ((iMinuteTick - iSampleTimeElapsed) >= g_iSamplePeriod) {
 			iSampleTimeElapsed = iMinuteTick;
 			P4IE &= ~BIT1;				// disable interrupt for button input
-			sample_temperature();
+			temperature_sample();
 			delay(2000);	//to allow the ADC conversion to complete
 
 			if (g_iStatus & NETWORK_DOWN) {

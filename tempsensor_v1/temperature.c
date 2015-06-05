@@ -11,10 +11,11 @@
 #include "globals.h"
 #include "temperature.h"
 #include "math.h"
+#include "stdio.h"
+#include "string.h"
 
 volatile char g_isConversionDone = 0;
 volatile int g_iSamplesRead = 0;
-
 
 void ADC_setupIO() {
 
@@ -62,7 +63,7 @@ void ADC_setupIO() {
 
 }
 
-void sample_temperature() {
+void temperature_sample() {
 	int iIdx = 0;
 	int iLastSamplesRead = 0;
 	g_iSamplesRead = 0;
@@ -86,6 +87,8 @@ void sample_temperature() {
 			ADCvar[iIdx] /= g_iSamplesRead;
 		}
 	}
+
+	temperature_process_ADC_values();
 }
 
 float resistance_to_temperature(float R) {
@@ -102,6 +105,13 @@ float resistance_to_temperature(float R) {
 	return tempdegC;
 }
 
+void temperature_process_ADC_values() {
+	int iIdx;
+	//convert the current sensor ADC value to temperature
+	for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++)
+		digital_amp_to_temp_string(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
+}
+
 void digital_amp_to_temp_string(int32_t ADCval, char* TemperatureVal,
 		int8_t iSensorIdx) {
 	float A0V2V, A0R2;
@@ -109,6 +119,8 @@ void digital_amp_to_temp_string(int32_t ADCval, char* TemperatureVal,
 	int32_t A0tempdegCint = 0;
 	int8_t i = 0;
 	int8_t iTempIdx = 0;
+
+	memset(TemperatureVal, 0, TEMP_DATA_LEN + 1);
 
 	A0V2V = 0.00061 * ADCval;		//Converting to voltage. 2.5/4096 = 0.00061
 
@@ -118,7 +130,6 @@ void digital_amp_to_temp_string(int32_t ADCval, char* TemperatureVal,
 	A0tempdegC = resistance_to_temperature(A0R2);
 
 	//use calibration formula
-#ifndef CALIBRATION
 	if ((g_pCalibrationCfg->calibration[iSensorIdx][0] > -2.0)
 			&& (g_pCalibrationCfg->calibration[iSensorIdx][0] < 2.0)
 			&& (g_pCalibrationCfg->calibration[iSensorIdx][1] > -2.0)
@@ -126,7 +137,7 @@ void digital_amp_to_temp_string(int32_t ADCval, char* TemperatureVal,
 		A0tempdegC = A0tempdegC * g_pCalibrationCfg->calibration[iSensorIdx][1]
 				+ g_pCalibrationCfg->calibration[iSensorIdx][0];
 	}
-#endif
+
 	//Round to one digit after decimal point
 	A0tempdegCint = (int32_t) (A0tempdegC * 10);
 

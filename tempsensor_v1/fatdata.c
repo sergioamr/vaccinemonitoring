@@ -74,10 +74,11 @@ FRESULT fat_init_drive() {
 }
 
 FRESULT log_append_text(char *text) {
-
+	char szLog[32];
 	FIL fobj;
 	int t = 0;
 	int len = 0;
+	int bw = 0;
 
 	if (text == NULL)
 		return FR_OK;
@@ -109,14 +110,23 @@ FRESULT log_append_text(char *text) {
 	}
 	strcat(szLog, "] ");
 
+	len=strlen(szLog);
+	fr = f_write(&fobj, szLog, len, (UINT *) &bw);
+	if (fr!=FR_OK || bw!=len) {
+		lcd_print("Failed writing SD");
+		f_close(&fobj);
+		return fr;
+	}
+
 	len = strlen(text);
 	for (t = 0; t < len; t++) {
 		if (text[t] == '\n' || text[t] == '\r')
 			text[t] = ' ';
 	}
-	strcat(szLog, text);
-	strcat(szLog, "\r\n");
 
+	fr = f_write(&fobj, text, len, (UINT *) &bw);
+	strcpy(szLog, "\r\n");
+	fr = f_write(&fobj, text, strlen(szLog), (UINT *) &bw);
 
 	f_sync(&fobj);
 	return f_close(&fobj);
@@ -139,6 +149,7 @@ FRESULT log_appendf(const char *_format, ...) {
 
 FRESULT log_sample_to_disk(int* tbw) {
 	FIL fobj;
+	char szLog[64];
 
 	int bw = 0;	//bytes written
 	char* fn = get_current_fileName(&g_tmCurrTime);

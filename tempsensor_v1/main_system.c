@@ -92,8 +92,20 @@ static void setup_IO() {
 /*  SYSTEM START AND CONFIGURATION                                          */
 /****************************************************************************/
 
+void modem_turn_on() {
+	// Turn modem ON
+	P4OUT &= ~BIT0;
+}
+
+void modem_turn_off() {
+	// Turn modem ON
+	P4OUT |= BIT0;
+}
+
 void system_boot() {
 
+	// Turn off modem
+	modem_turn_off();
 	setup_IO();
 
 	lcd_reset();
@@ -102,6 +114,7 @@ void system_boot() {
 #ifndef BATTERY_DISABLED
 	batt_init();
 #endif
+	modem_turn_on();
 
 	lcd_init();
 	config_init();// Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
@@ -117,8 +130,9 @@ void system_boot() {
 #endif
 
 	fat_init_drive();
+
 	// Initial trigger of temperature required
-	sample_temperature();
+	temperature_sample();
 
 #ifndef _DEBUG
 	// to allow conversion to get over and prevent any side-effects to other interface like modem
@@ -126,15 +140,6 @@ void system_boot() {
 
 	lcd_progress_wait(2000);
 #endif
-
-	P4OUT &= ~BIT0;                           // Reset high
-
-	// Test delay //TODO apply sufficient delay for completion
-	delay(5000);
-	int iIdx;
-	for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
-		digital_amp_to_temp_string(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
-	}
 
 	if (modem_first_init() != 1) {
 		_NOP(); // Modem failed to power on
