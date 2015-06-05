@@ -127,49 +127,7 @@ void http_deactivate() {
 	uart_tx("AT#SGACT=1,0\r\n");	//deactivate GPRS context
 }
 
-// http://54.241.2.213/coldtrace/uploads/multi/v3/358072043112124/1/
-// $ST2,7,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,600,1,600,15,$ST1,919243100142,both,airtelgprs.com,10,1,0,0,$EN
-
 const char HTTP_INCOMING_DATA[] = { 0x0D, 0x0A, '<', '<', '<', 0 };
-
-int process_configuration() {
-	char *token;
-	char* delimiter = ",";
-	SIM_CARD_CONFIG *sim = config_getSIM();
-
-	//change for actual data
-	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
-	PARSE_FINDSTR_RET(token, "$ST2", UART_FAILED);
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->cfgSyncId, delimiter, UART_FAILED);
-	int i = 0;
-	while (i < MAX_NUM_SENSORS) {
-		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].maxTimeCold, delimiter, UART_FAILED);
-		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].threshCold, delimiter, UART_FAILED);
-		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].maxTimeHot, delimiter, UART_FAILED);
-		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].threshHot, delimiter, UART_FAILED);
-	}
-
-	// HOWEVER MANY FOR THE BATTERY INFO
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.minutesPower, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.enablePowerAlert, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.minutesBattThresh, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.battThreshold, delimiter, UART_FAILED);
-
-	PARSE_SKIP(token, ",", UART_FAILED); // $ST1
-	PARSE_NEXTSTRING(token, g_pDeviceCfg->cfgGatewaySMS, strlen(token), delimiter, UART_FAILED); // GATEWAY NUM
-	PARSE_NEXTVALUE(token, &sim->cfgUploadMode, delimiter, UART_FAILED); // NETWORK TYPE E.G. GPRS
-	PARSE_NEXTSTRING(token, sim->cfgAPN, strlen(token), delimiter, UART_FAILED); //APN
-
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stIntervalParam.uploadInterval, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stIntervalParam.loggingInterval, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, ",", delimiter, UART_FAILED); // Reset alert
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->cfgSIM_slot, delimiter, UART_FAILED); ////
-
-	PARSE_SKIP(token, delimiter, UART_FAILED); // $EN
-
-	return UART_SUCCESS;
-}
-
 const char HTTP_ERROR[] = { 0x0D, 0x0A, 'E', 'R', 'R', 'O', 'R', 0x0D, 0x0A,
 		0x0D, 0x0A, 0 };
 const char HTTP_OK[] = { 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };

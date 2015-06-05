@@ -72,6 +72,9 @@ void modem_check_uart_error();
 #define PARSE_NEXTSTRING(token, var, length, delimiter, error) token = strtok(NULL, delimiter); \
 	if(token!=NULL) strncpy(var, token, length); else return error;
 
+#define PARSE_VALUECOMPARE(token, var, match, error) token = strtok(NULL, delimiter); \
+	if(token!=NULL) { if(var==atoi(token)) return match; } else return error;
+
 #define PARSE_SKIP(token, delimiter, error) token = strtok(NULL, delimiter); \
 	if(token==NULL) return error;
 
