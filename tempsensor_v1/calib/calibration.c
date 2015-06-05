@@ -10,7 +10,7 @@
 #include "i2c.h"
 #include "timer.h"
 #include "stdlib.h"
-#include "modem_spi.h"
+#include "modem_uart.h"
 #include "config.h"
 #include "framctl.h"
 #include "battery.h"

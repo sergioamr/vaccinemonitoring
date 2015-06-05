@@ -14,7 +14,7 @@
 #include "config.h"
 #include "modem.h"
 #include "common.h"
-#include "modem_spi.h"
+#include "modem_uart.h"
 #include "MMC.h"
 #include "pmm.h"
 #include "lcd.h"
@@ -134,11 +134,11 @@ int modem_getNetworkStatus(int *mode, int *status) {
 	verbose=lcd_getVerboseMode();
 	lcd_disable_verbose();
 
-	modemspi_tx("AT+CGREG?\r\n");
+	uart_tx("AT+CGREG?\r\n");
 
 	lcd_setVerboseMode(verbose);
 
-	uart_state = modemspi_getTransactionState();
+	uart_state = uart_getTransactionState();
 	if (uart_state == UART_SUCCESS) {
 
 		PARSE_FINDSTR_RET(pToken1, COMMAND_RESULT_CGREG, UART_FAILED);
@@ -164,7 +164,7 @@ int modem_connect_network(uint8_t attempts) {
 	// enable network registration and location information unsolicited result code;
 	// if there is a change of the network cell. +CGREG: <stat>[,<lac>,<ci>]
 
-	modemspi_tx("AT+CGREG=2\r\n");
+	uart_tx("AT+CGREG=2\r\n");
 	do {
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
 
@@ -194,7 +194,7 @@ int modem_connect_network(uint8_t attempts) {
 ;
 
 int modem_disableNetworkRegistration() {
-	return modemspi_tx("AT+CGREG=0\r\n");
+	return uart_tx("AT+CGREG=0\r\n");
 }
 
 // Not used if we activate the error handling
@@ -234,7 +234,7 @@ void modem_check_uart_error() {
 	char *pToken1;
 	char errorToken;
 
-	int uart_state = modemspi_getTransactionState();
+	int uart_state = uart_getTransactionState();
 	if (uart_state != UART_ERROR)
 		return;
 
@@ -281,11 +281,11 @@ int8_t modem_first_init() {
 	}
 
 	if (iStatus & MODEM_POWERED_ON) {
-		modemspi_setOKMode();
+		uart_setOKMode();
 
 		lcd_disable_verbose();
-		modemspi_tx_nowait(ESC); // Cancel any previous command in case we were reseted
-		modemspi_tx_timeout("AT\r\n", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
+		uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted
+		uart_tx_timeout("AT\r\n", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
 		lcd_enable_verbose();
 
 		uint8_t nsims = NUM_SIM_CARDS;
@@ -367,10 +367,10 @@ void modem_checkSignal() {
 
 	config_incLastCmd();
 
-	if (modemspi_tx_timeout("AT+CSQ\r\n", TIMEOUT_CSQ, 1) != UART_SUCCESS)
+	if (uart_tx_timeout("AT+CSQ\r\n", TIMEOUT_CSQ, 1) != UART_SUCCESS)
 		return;
 
-	modemspi_rx_cleanBuf(ATCMD_CSQ, ATresponse, sizeof(ATresponse));
+	uart_rx_cleanBuf(ATCMD_CSQ, ATresponse, sizeof(ATresponse));
 	if (ATresponse[0] != 0) {
 		iSignalLevel = strtol(ATresponse, 0, 10);
 		if ((iSignalLevel < NETWORK_DOWN_SS)
@@ -392,9 +392,9 @@ void modem_getSMSCenter() {
 	// Get service center address; format "+CSCA: address,address_type"
 
 	// added for SMS Message center number to be sent in the heart beat
-	modemspi_tx("AT+CSCA?\r\n");
+	uart_tx("AT+CSCA?\r\n");
 
-	if (modemspi_rx_cleanBuf(ATCMD_CSCA, ATresponse,
+	if (uart_rx_cleanBuf(ATCMD_CSCA, ATresponse,
 			sizeof(ATresponse))==UART_SUCCESS) {
 
 		memcpy(sim->cfgSMSCenter, ATresponse, strlen(ATresponse));
@@ -406,8 +406,8 @@ void modem_getIMEI() {
 	char IMEI_OK = false;
 	config_incLastCmd();
 
-	modemspi_tx("AT+CGSN\r\n");
-	if (modemspi_rx_cleanBuf(ATCMD_CGSN, ATresponse,
+	uart_tx("AT+CGSN\r\n");
+	if (uart_rx_cleanBuf(ATCMD_CGSN, ATresponse,
 			sizeof(ATresponse))==UART_SUCCESS) {
 
 		if (memcmp(ATresponse, "INVALID", strlen("INVALID"))) {
@@ -462,7 +462,7 @@ void modem_survey_network() {
 
 	lcd_disable_verbose();
 
-	modemspi_setDelayIntervalDivider(64);  // 120000 / 64
+	uart_setDelayIntervalDivider(64);  // 120000 / 64
 
 	do {
 		if (attempts != NET_ATTEMPTS)
@@ -471,14 +471,14 @@ void modem_survey_network() {
 			lcd_printl(LINEC, "MCC DISCOVER");
 
 		// Displays info for the only serving cell
-		modemspi_tx("AT#CSURVEXT=0\r\n");
-		uart_state = modemspi_getTransactionState();
+		uart_tx("AT#CSURVEXT=0\r\n");
+		uart_state = uart_getTransactionState();
 
 		if (uart_state == UART_SUCCESS) {
 
 			// We just want only one full buffer. The data is on the first few characters of the stream
-			modemspi_setNumberOfPages(1);
-			modemspi_tx_timeout("AT#CSURV\r\n", TIMEOUT_CSURV, 10); // #CSURV - Network Survey
+			uart_setNumberOfPages(1);
+			uart_tx_timeout("AT#CSURV\r\n", TIMEOUT_CSURV, 10); // #CSURV - Network Survey
 			// Maximum timeout is 2 minutes
 
 			//Execution command allows to perform a quick survey through channels
@@ -486,7 +486,7 @@ void modem_survey_network() {
 			//channel <s> to channel <e>. If parameters are omitted, a full band scan is
 			//performed.
 
-			uart_state = modemspi_getTransactionState();
+			uart_state = uart_getTransactionState();
 			if (uart_state != UART_SUCCESS) {
 				lcd_printl(LINE2, "NETWORK BUSY");
 				delay(NETWORK_WAITING_TIME);
@@ -519,7 +519,7 @@ void modem_survey_network() {
 		attempts--;
 	} while (uart_state != UART_SUCCESS && attempts > 0);
 
-	modemspi_setDefaultIntervalDivider();
+	uart_setDefaultIntervalDivider();
 
 	lcd_enable_verbose();
 	lcd_progress_wait(10000); // Wait 10 seconds to make sure the modem finished transfering.
@@ -558,8 +558,8 @@ int modem_parse_time(struct tm* pTime) {
 
 void modem_set_max_messages() {
 	//check if messages are available
-	modemspi_tx("AT+CPMS?\r\n");
-	modemspi_rx_cleanBuf(ATCMD_CPMS_MAX, ATresponse, sizeof(ATresponse));
+	uart_tx("AT+CPMS?\r\n");
+	uart_rx_cleanBuf(ATCMD_CPMS_MAX, ATresponse, sizeof(ATresponse));
 	config_getSIM()->iMaxMessages = atoi(ATresponse);
 }
 
@@ -567,7 +567,7 @@ void modem_pull_time() {
 	int i;
 	int res = UART_FAILED;
 	for (i = 0; i < MAX_TIME_ATTEMPTS; i++) {
-		res = modemspi_tx("AT+CCLK?\r\n");
+		res = uart_tx("AT+CCLK?\r\n");
 		if (res == UART_SUCCESS)
 			res = modem_parse_time(&g_tmCurrTime);
 
@@ -596,7 +596,7 @@ void modem_pull_time() {
 // Read command returns the selected PLMN selector <list> from the SIM/USIM
 void modem_getPreferredOperatorList() {
 	// List of networks for roaming
-	modemspi_tx("AT+CPOL?\r\n");
+	uart_tx("AT+CPOL?\r\n");
 }
 
 void modem_init() {
@@ -613,33 +613,33 @@ void modem_init() {
 	// Reset error state so we try to initialize the modem.
 	config_reset_error(sim);
 
-	modemspi_tx("AT\r\n"); // Display OK
-	modemspi_tx("ATE0\r\n");
+	uart_tx("AT\r\n"); // Display OK
+	uart_tx("ATE0\r\n");
 
 	// GPIO [PIN, DIR, MODE]
 	// Execution command sets the value of the general purpose output pin
 	// GPIO<pin> according to <dir> and <mode> parameter.
-	modemspi_tx("AT#SIMDET=0\r\n"); // Enable automatic pin sim detection
+	uart_tx("AT#SIMDET=0\r\n"); // Enable automatic pin sim detection
 
 #ifdef ENABLE_SIM_SLOT
 	if (config_getSelectedSIM() != 1) {
 		//enable SIM A (slot 1)
-		modemspi_tx_timeout("AT#GPIO=2,0,1\r\n", TIMEOUT_GPO, 5); // Sim 1 PWR enable - First command always has a chance of timeout
-		modemspi_tx("AT#GPIO=4,1,1\r\n"); // Sim 2 PWR enable
-		modemspi_tx("AT#GPIO=3,0,1\r\n"); // Sim select
+		uart_tx_timeout("AT#GPIO=2,0,1\r\n", TIMEOUT_GPO, 5); // Sim 1 PWR enable - First command always has a chance of timeout
+		uart_tx("AT#GPIO=4,1,1\r\n"); // Sim 2 PWR enable
+		uart_tx("AT#GPIO=3,0,1\r\n"); // Sim select
 	} else {
 		//enable SIM B (slot 2)
-		modemspi_tx_timeout("AT#GPIO=2,1,1\r\n", TIMEOUT_GPO, 5); // Sim 1 PWR enable
-		modemspi_tx("AT#GPIO=4,0,1\r\n"); // Sim 2 PWR enable
-		modemspi_tx("AT#GPIO=3,1,1\r\n"); // Sim select
+		uart_tx_timeout("AT#GPIO=2,1,1\r\n", TIMEOUT_GPO, 5); // Sim 1 PWR enable
+		uart_tx("AT#GPIO=4,0,1\r\n"); // Sim 2 PWR enable
+		uart_tx("AT#GPIO=3,1,1\r\n"); // Sim select
 	}
 #endif
 
-	modemspi_tx_timeout("AT#SIMDET=1\r\n", MODEM_TX_DELAY2, 10); // Disable sim detection. Is it not plugged in hardware?
+	uart_tx_timeout("AT#SIMDET=1\r\n", MODEM_TX_DELAY2, 10); // Disable sim detection. Is it not plugged in hardware?
 
-	modemspi_tx("AT+CMEE=1\r\n"); // Set command enables/disables the report of result code:
-	modemspi_tx("AT#CMEEMODE=1\r\n"); // This command allows to extend the set of error codes reported by CMEE to the GPRS related error codes.
-	modemspi_tx("AT#AUTOBND=2\r\n"); // Set command enables/disables the automatic band selection at power-on.  if automatic band selection is enabled the band changes every about 90 seconds through available bands until a GSM cell is found.
+	uart_tx("AT+CMEE=1\r\n"); // Set command enables/disables the report of result code:
+	uart_tx("AT#CMEEMODE=1\r\n"); // This command allows to extend the set of error codes reported by CMEE to the GPRS related error codes.
+	uart_tx("AT#AUTOBND=2\r\n"); // Set command enables/disables the automatic band selection at power-on.  if automatic band selection is enabled the band changes every about 90 seconds through available bands until a GSM cell is found.
 
 	// We have to wait for the network to be ready, it will take some time. In debug we just wait on connect.
 #ifndef _DEBUG
@@ -651,28 +651,28 @@ void modem_init() {
 	// Wait until connnection and registration is successful. (Just try NETWORK_CONNECTION_ATTEMPTS) network could be definitly down or not available.
 	modem_connect_network(NETWORK_CONNECTION_ATTEMPTS);
 
-	modemspi_tx("AT#NITZ=1\r\n");   // #NITZ - Network Timezone
+	uart_tx("AT#NITZ=1\r\n");   // #NITZ - Network Timezone
 
-	modemspi_tx("AT+CTZU=1\r\n"); //  4 - software bi-directional with filtering (XON/XOFF)
-	modemspi_tx("AT&K4\r\n");		// [Flow Control - &K]
-	modemspi_tx("AT&P0\r\n"); // [Default Reset Full Profile Designation - &P] Execution command defines which full profile will be loaded on startup.
-	modemspi_tx("AT&W0\r\n"); // [Store Current Configuration - &W] 			 Execution command stores on profile <n> the complete configuration of the	device
+	uart_tx("AT+CTZU=1\r\n"); //  4 - software bi-directional with filtering (XON/XOFF)
+	uart_tx("AT&K4\r\n");		// [Flow Control - &K]
+	uart_tx("AT&P0\r\n"); // [Default Reset Full Profile Designation - &P] Execution command defines which full profile will be loaded on startup.
+	uart_tx("AT&W0\r\n"); // [Store Current Configuration - &W] 			 Execution command stores on profile <n> the complete configuration of the	device
 
 	modem_getSMSCenter();
 	modem_checkSignal();
 
-	modemspi_tx("AT+CSDH=1\r\n"); // Show Text Mode Parameters - +CSDH  			 Set command controls whether detailed header information is shown in text mode (+CMGF=1) result codes
-	modemspi_tx_timeout("AT+CMGF=?\r\n", MODEM_TX_DELAY2, 5); // set sms format to text mode
+	uart_tx("AT+CSDH=1\r\n"); // Show Text Mode Parameters - +CSDH  			 Set command controls whether detailed header information is shown in text mode (+CMGF=1) result codes
+	uart_tx_timeout("AT+CMGF=?\r\n", MODEM_TX_DELAY2, 5); // set sms format to text mode
 
 #if defined(CAPTURE_MCC_MNC) && defined(_DEBUG)
 	modem_survey_network();
 #endif
 
 #ifdef POWER_SAVING_ENABLED
-	modemspi_tx("AT+CFUN=5\r\n"); //full modem functionality with power saving enabled (triggered via DTR)
+	uart_tx("AT+CFUN=5\r\n"); //full modem functionality with power saving enabled (triggered via DTR)
 	delay(MODEM_TX_DELAY1);
 
-	modemspi_tx("AT+CFUN?\r\n");//full modem functionality with power saving enabled (triggered via DTR)
+	uart_tx("AT+CFUN?\r\n");//full modem functionality with power saving enabled (triggered via DTR)
 	delay(MODEM_TX_DELAY1);
 #endif
 
@@ -690,7 +690,7 @@ void modem_init() {
 	g_iGprs_network_indication = http_post_gprs_connection_status(GSM);
 
 	// Disable echo from modem
-	modemspi_tx("ATE0\r\n");
+	uart_tx("ATE0\r\n");
 
 	// Check if the network/sim card works
 	modem_isSIM_Operational();

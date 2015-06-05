@@ -64,7 +64,7 @@ static void setup_IO() {
 
 	// Configure GPIO
 	system_setupIO_SPI_I2C();
-	modemspi_setupIO();
+	uart_setupIO();
 	switchers_setupIO();
 
 	P3DIR |= BIT4;      						// Set P3.4 buzzer output
@@ -76,7 +76,7 @@ static void setup_IO() {
 	PM5CTL0 &= ~LOCKLPM5;
 
 	system_setupIO_clock();
-	modemspi_setupIO_clock();
+	uart_setupIO_clock();
 	ADC_setupIO();
 
 #ifndef I2C_DISABLED

@@ -21,8 +21,8 @@ int8_t http_setup() {
 
 	lcd_printf(LINEC, "Testing HTTP %d", config_getSelectedSIM() + 1);
 
-	modemspi_txf("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN); //APN
-	if (modemspi_getTransactionState() != UART_SUCCESS)
+	uart_txf("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN); //APN
+	if (uart_getTransactionState() != UART_SUCCESS)
 		return UART_FAILED;
 
 	lcd_progress_wait(2000);
@@ -34,10 +34,10 @@ int8_t http_setup() {
 	//  1 - activate the context
 
 	do {
-		modemspi_tx("AT#SGACT=1,1\r\n");
+		uart_tx("AT#SGACT=1,1\r\n");
 		// CME ERROR: 555 Activation failed
 		// CME ERROR: 133 Requested service option not subscribed
-		uart_state = modemspi_getTransactionState();
+		uart_state = uart_getTransactionState();
 		if (uart_state != UART_SUCCESS) {
 			delay(1000);
 		} else {
@@ -51,8 +51,8 @@ int8_t http_setup() {
 		return UART_FAILED;
 
 	// LONG TIMEOUT
-	modemspi_txf("AT#HTTPCFG=1,\"%s\",80\r\n", g_pDeviceCfg->cfgGatewayIP);
-	if (modemspi_getTransactionState() != UART_SUCCESS) {
+	uart_txf("AT#HTTPCFG=1,\"%s\",80\r\n", g_pDeviceCfg->cfgGatewayIP);
+	if (uart_getTransactionState() != UART_SUCCESS) {
 		lcd_printl(LINE2, "FAILED");
 		return UART_FAILED;
 	}
@@ -63,7 +63,7 @@ int8_t http_setup() {
 
 void http_deactivate() {
 	// LONG TIMEOUT
-	modemspi_tx("AT#SGACT=1,0\r\n");	//deactivate GPRS context
+	uart_tx("AT#SGACT=1,0\r\n");	//deactivate GPRS context
 }
 
 // http://54.241.2.213/coldtrace/uploads/multi/v3/358072043112124/1/
@@ -133,8 +133,8 @@ int http_get_configuration() {
 
 	sprintf(szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/%s/1/\"\r\n",
 			g_pDeviceCfg->cfgIMEI);
-	modemspi_tx_timeout(szTemp, 5000, 1);
-	if (modemspi_getTransactionState() != UART_SUCCESS)
+	uart_tx_timeout(szTemp, 5000, 1);
+	if (uart_getTransactionState() != UART_SUCCESS)
 		return UART_FAILED;
 
 	// CME ERROR: 558 cannot resolve DN ?
@@ -142,11 +142,11 @@ int http_get_configuration() {
 	// Get the configration from the server
 	// #HTTPRCV – receive HTTP server data
 
-	modemspi_setCheckMsg(HTTP_OK, HTTP_ERROR);
+	uart_setCheckMsg(HTTP_OK, HTTP_ERROR);
 
 	while(retry==1 && --attempts>0) {
-		if (modemspi_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 5) == UART_SUCCESS) {
-			uart_state = modemspi_getTransactionState();
+		if (uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 5) == UART_SUCCESS) {
+			uart_state = uart_getTransactionState();
 			if (uart_state == UART_SUCCESS) {
 				retry = 0; 	// Found a configuration, lets parse it.
 				process_configuration();
@@ -201,7 +201,7 @@ int http_post_gprs_connection_status(char status) {
 	iHTTPRespDelayCnt = 0;
 
 	if (status == GSM) {
-		modemspi_tx("AT+CREG?\r\n");
+		uart_tx("AT+CREG?\r\n");
 		for (i = 0; i < 102; i++) {
 			j = i + 1;
 			if (j > 101) {
@@ -224,7 +224,7 @@ int http_post_gprs_connection_status(char status) {
 	//////
 	if (status == GPRS) {
 		// Network Registration Report
-		modemspi_tx("AT+CGREG?\r\n");
+		uart_tx("AT+CGREG?\r\n");
 		for (i = 0; i < 102; i++) {
 			j = i + 1;
 			if (j > 101) {
@@ -241,7 +241,7 @@ int http_post_gprs_connection_status(char status) {
 					break;
 				} else {
 					delay(1000);
-					modemspi_tx("AT+CGATT=1\r\n");
+					uart_tx("AT+CGATT=1\r\n");
 					l_file_pointer_enabled_sms_status = 0; // reset for sms packet.....///
 					break;
 				}
@@ -275,12 +275,12 @@ int http_post(char* postdata) {
 
 	// Wait for prompt
 
-	modemspi_setHTTPPromptMode();
-	if (modemspi_tx_waitForPrompt(ATresponse, TIMEOUT_HTTPSND_PROMPT)) {
-		modemspi_tx_timeout(postdata, TIMEOUT_HTTPSND, 1);
+	uart_setHTTPPromptMode();
+	if (uart_tx_waitForPrompt(ATresponse, TIMEOUT_HTTPSND_PROMPT)) {
+		uart_tx_timeout(postdata, TIMEOUT_HTTPSND, 1);
 
 		// TODO Check if ok or RXBuffer contains Error
-		modemspi_rx(ATCMD_HTTPSND, ATresponse);
+		uart_rx(ATCMD_HTTPSND, ATresponse);
 		if (ATresponse[0] == '>') {
 			isHTTPResponseAvailable = 1;
 		} else {
@@ -292,16 +292,16 @@ int http_post(char* postdata) {
 
 	if (isHTTPResponseAvailable) {
 		file_pointer_enabled_gprs_status = 1; // added for gprs status for file pointer movement///
-		modemspi_tx(postdata);
+		uart_tx(postdata);
 #if 0
 		//testing split http post
 		memset(filler,0,sizeof(filler));
 		memcpy(filler, postdata, 200);
-		modemspi_tx(filler);
+		uart_tx(filler);
 		delay(10000);
 		memset(filler,0,sizeof(filler));
 		memcpy(filler, &postdata[200], iLen - 200);
-		modemspi_tx(filler);
+		uart_tx(filler);
 #endif
 		//delay(10000);
 		iRetVal = 0;
@@ -311,16 +311,16 @@ int http_post(char* postdata) {
 		iPostFail++;
 	}
 #else
-	modemspi_tx("AT#HTTPCFG=1,\"67.205.14.22\",80,0,,,0,120,1\r\n");
+	uart_tx("AT#HTTPCFG=1,\"67.205.14.22\",80,0,,,0,120,1\r\n");
 	delay(5000);
-	modemspi_tx("AT#HTTPSND=1,0,\"/post.php?dir=galcore&dump\",26,1\r\n");
+	uart_tx("AT#HTTPSND=1,0,\"/post.php?dir=galcore&dump\",26,1\r\n");
 	isHTTPResponseAvailable = 0;
 	iIdx = 0;
 	while ((!isHTTPResponseAvailable) && iIdx <= HTTP_RESPONSE_RETRY)
 	{
 		delay(1000);
 		iIdx++;
-		modemspi_rx(ATCMD_HTTPSND,ATresponse);
+		uart_rx(ATCMD_HTTPSND,ATresponse);
 		if(ATresponse[0] == '>')
 		{
 			isHTTPResponseAvailable = 1;
@@ -330,7 +330,7 @@ int http_post(char* postdata) {
 	if(isHTTPResponseAvailable)
 	{
 		iRetVal = 1;
-		modemspi_tx("imessy=martina&mary=johyyy");
+		uart_tx("imessy=martina&mary=johyyy");
 		delay(10000);
 	}
 #endif

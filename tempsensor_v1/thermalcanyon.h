@@ -19,7 +19,7 @@
 #include "time.h"
 #include "i2c.h"
 #include "timer.h"
-#include "modem_spi.h"
+#include "modem_uart.h"
 #include "battery.h"
 #include "rtc.h"
 #include "ff.h"

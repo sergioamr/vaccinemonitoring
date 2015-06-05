@@ -172,7 +172,7 @@ SECTIONS
     {
     	globals.obj (.aggregate_vars)
     	i2c.obj (.aggregate_vars)
-    	modem_spi.obj (.aggregate_vars)
+    	modem_uart.obj (.aggregate_vars)
     	globals.obj (.xbigdata_vars)
     	fatdata.obj (.aggregate_vars)
     } >> FRAM
