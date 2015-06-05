@@ -95,9 +95,9 @@ int process_configuration() {
 	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.battThreshold, delimiter, UART_FAILED);
 
 	PARSE_SKIP(token, ",", UART_FAILED); // $ST1
-	PARSE_NEXTSTRING(token, &g_pDeviceCfg->cfgGatewaySMS[0], delimiter, UART_FAILED); // GATEWAY NUM
+	PARSE_NEXTSTRING(token, g_pDeviceCfg->cfgGatewaySMS, strlen(token), delimiter, UART_FAILED); // GATEWAY NUM
 	PARSE_NEXTVALUE(token, &sim->cfgUploadMode, delimiter, UART_FAILED); // NETWORK TYPE E.G. GPRS
-	PARSE_NEXTSTRING(token, &sim->cfgAPN[0], delimiter, UART_FAILED); //APN
+	PARSE_NEXTSTRING(token, sim->cfgAPN, strlen(token), delimiter, UART_FAILED); //APN
 
 	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stIntervalParam.uploadInterval, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stIntervalParam.loggingInterval, delimiter, UART_FAILED);
