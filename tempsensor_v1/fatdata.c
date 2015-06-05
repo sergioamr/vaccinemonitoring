@@ -126,7 +126,7 @@ FRESULT log_append_text(char *text) {
 
 	fr = f_write(&fobj, text, len, (UINT *) &bw);
 	strcpy(szLog, "\r\n");
-	fr = f_write(&fobj, text, strlen(szLog), (UINT *) &bw);
+	fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 
 	f_sync(&fobj);
 	return f_close(&fobj);
