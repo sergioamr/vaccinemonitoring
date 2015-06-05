@@ -259,8 +259,7 @@ uint32_t config_get_boot_midnight_difference()
 
 void apply_configuration_change(int change)
 {
-	switch (change) {
-	case 0:
+	/*
 		if (strtol(pcTmp, 0, 10)) {
 			g_iStatus |= RESET_ALERT;
 			//set buzzer OFF
@@ -275,11 +274,7 @@ void apply_configuration_change(int change)
 		} else {
 			g_iStatus &= ~RESET_ALERT;
 		}
-	case 1:
-		modem_swap_SIM();
-	case 2:
-	case 3:
-	}
+	*/
 }
 
 // http://54.241.2.213/coldtrace/uploads/multi/v3/358072043112124/1/
@@ -294,7 +289,7 @@ int process_configuration()
 	//change for actual data
 	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
 	PARSE_FINDSTR_RET(token, "$ST2", UART_FAILED);
-	PARSE_VALUECOMPARE(token, g_pDeviceCfg->cfgSyncId, UART_SUCCESS, UART_FAILED);
+	PARSE_VALUECOMPARE(token, &g_pDeviceCfg->cfgSyncId, UART_SUCCESS, UART_FAILED);
 	int i = 0;
 	while (i < MAX_NUM_SENSORS) {
 		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].maxTimeCold, delimiter, UART_FAILED);
@@ -323,7 +318,7 @@ int process_configuration()
 	PARSE_SKIP(token, delimiter, UART_FAILED); // $EN
 
 	config_update_intervals();
-	apply_configuration_change();
+	//apply_configuration_change();
 
 	return UART_SUCCESS;
 }
