@@ -54,6 +54,8 @@ void thermal_canyon_loop(void) {
 
 		if (((iMinuteTick - iLCDShowElapsed) >= LCD_REFRESH_INTERVAL)
 				|| (iLastDisplayId != g_iDisplayId)) {
+
+			config_setLastCommand(COMMAND_MAIN_LCD_DISPLAY);
 			config_update_system_time();
 			iLastDisplayId = g_iDisplayId;
 			iLCDShowElapsed = iMinuteTick;
@@ -62,11 +64,13 @@ void thermal_canyon_loop(void) {
 
 		if (iMinuteTick >= iBootTime) {
 			modem_pull_time();
+			config_setLastCommand(COMMAND_BOOT_MIDNIGHT);
 			iBootTime = config_get_boot_midnight_difference();
 		}
 
 		//check if conversion is complete
 		if ((g_isConversionDone) || (g_iStatus & TEST_FLAG)) {
+			config_setLastCommand(COMMAND_MONITOR_ALARM);
 
 			//convert the current sensor ADC value to temperature
 			temperature_process_ADC_values();
@@ -108,6 +112,8 @@ void thermal_canyon_loop(void) {
 		}
 
 		if ((iMinuteTick - iSampleTimeElapsed) >= g_iSamplePeriod) {
+			config_setLastCommand(COMMAND_NETWORK_SIGNAL_MONITOR);
+
 			iSampleTimeElapsed = iMinuteTick;
 			P4IE &= ~BIT1;				// disable interrupt for button input
 			temperature_sample();
@@ -129,6 +135,8 @@ void thermal_canyon_loop(void) {
 
 #ifndef CALIBRATION
 		if ((iMinuteTick - iSMSRxPollElapsed) >= SMS_RX_POLL_INTERVAL) {
+			config_setLastCommand(COMMAND_HTTP_DATA_TRANSFER);
+
 			iSMSRxPollElapsed = iMinuteTick;
 			lcd_printl(LINEC, "Configuring...");
 
@@ -197,11 +205,14 @@ void thermal_canyon_loop(void) {
 				&& ((iMinuteTick - iUploadTimeElapsed) < (g_iUploadPeriod - 2))
 				&& ((iMinuteTick - iMsgRxPollElapsed) >= MSG_REFRESH_INTERVAL)) {
 
+			config_setLastCommand(COMMAND_SMS_PROCESS);
+
 			sms_process_messages(iMinuteTick, g_iDisplayId);
 		}
 
 		//low power behavior
 		if ((g_iBatteryLevel <= 10) && (P4IN & BIT4)) {
+
 			lcd_printl(LINEE, "Low Battery     ");
 
 			//reset display

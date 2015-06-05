@@ -151,6 +151,10 @@ void config_setLastCommand(uint16_t lastCmd)  {
 		strcat(g_pSysCfg->lastCommandTime,":");
 		strcat(g_pSysCfg->lastCommandTime,itoa_pad(g_tmCurrTime.tm_sec));
 	}
+
+#ifdef _DEBUG
+	log_appendf("Command [%d] ", lastCmd);
+#endif
 }
 
 void config_setup_extra_button() {

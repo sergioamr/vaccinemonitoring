@@ -10,6 +10,7 @@
 #include "rtc.h"
 #include "stringutils.h"
 #include "temperature.h"
+#include "fatdata.h"
 
 void lcd_setupIO() {
 	PJDIR |= BIT6 | BIT7;      			// set LCD reset and Backlight enable
@@ -288,8 +289,12 @@ void lcd_printl(int8_t iLine, const char* pcData) {
 
 	i2c_write(0x3e, 0x40, len, (uint8_t *) pcData);
 
-	if (iLine == LINEE)
+	if (iLine == LINEE) {
+#ifdef _DEBUG
+		log_appendf("ERROR [%s] ", pcData);
+#endif
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
+	}
 
 	if (iLine == LINEH)
 		delay(HUMAN_DISPLAY_INFO_DELAY);
