@@ -8,6 +8,8 @@
 #ifndef TEMPSENSOR_V1_HTTP_H_
 #define TEMPSENSOR_V1_HTTP_H_
 
+void backend_get_configuration();
+
 int8_t http_setup();
 void http_deactivate();
 int http_get_configuration();

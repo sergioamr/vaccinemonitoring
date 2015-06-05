@@ -33,9 +33,7 @@
 
 void thermal_canyon_loop(void) {
 
-	uint32_t iIdx = 0;
 	uint8_t iSampleCnt = 0;
-	char gprs_network_indication = 0;
 
 	iUploadTimeElapsed = iMinuteTick;		//initialize POST minute counter
 	iSampleTimeElapsed = iMinuteTick;
@@ -124,9 +122,9 @@ void thermal_canyon_loop(void) {
 				//check for signal strength
 
 				modem_pull_time();
-				modem_checkSignal();
-				if ((iSignalLevel > NETWORK_DOWN_SS)
-						&& (iSignalLevel < NETWORK_MAX_SS)) {
+				modem_getSignal();
+				if ((g_iSignalLevel > NETWORK_DOWN_SS)
+						&& (g_iSignalLevel < NETWORK_MAX_SS)) {
 					//send heartbeat
 					sms_send_heart_beat();
 				}
@@ -135,51 +133,7 @@ void thermal_canyon_loop(void) {
 
 #ifndef CALIBRATION
 		if ((iMinuteTick - iSMSRxPollElapsed) >= SMS_RX_POLL_INTERVAL) {
-			config_setLastCommand(COMMAND_HTTP_DATA_TRANSFER);
 
-			iSMSRxPollElapsed = iMinuteTick;
-			lcd_printl(LINEC, "Configuring...");
-
-			modem_checkSignal();
-			g_iSignal_gprs = http_post_gprs_connection_status(GPRS);
-
-			iIdx = 0;
-			while (iIdx < MODEM_CHECK_RETRY) {
-				gprs_network_indication = http_post_gprs_connection_status(GSM);
-				if ((gprs_network_indication == 0)
-						|| ((iSignalLevel < NETWORK_DOWN_SS)
-								|| (iSignalLevel > NETWORK_MAX_SS))) {
-					lcd_printl(LINE2, "Signal lost...");
-					g_iStatus |= NETWORK_DOWN;
-					//iOffset = 0;  // Whyy??? whyyy?????
-					modem_init();
-					lcd_printl(LINE2, "Reconnecting...");
-					iIdx++;
-				} else {
-					g_iStatus &= ~NETWORK_DOWN;
-					break;
-				}
-			}
-
-			if (iIdx == MODEM_CHECK_RETRY) {
-				modem_swap_SIM();
-			}
-
-			//sms config reception and processing
-			http_setup();
-			memset(ATresponse, 0, sizeof(ATresponse));
-			http_get_configuration(ATresponse);
-			if (ATresponse[0] == '$') {
-				if (sms_process_msg(ATresponse)) {
-					//send heartbeat on successful processing of SMS message
-					sms_send_heart_beat();
-				}
-			} else {
-				// no cfg message recevied
-				// check signal strength
-				// iOffset = -1; //reuse to indicate no cfg msg was received // Whyy??? whyyy?????
-			}
-			http_deactivate();
 		}
 #endif
 

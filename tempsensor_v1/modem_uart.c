@@ -755,11 +755,11 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 #error Compiler not supported!
 #endif
 {
-	switch (__even_in_range(UCA0IV, USCI_SPI_UCTXIFG)) {
+	switch (__even_in_range(UCA0IV, USCI_UART_UCTXIFG)) {
 	case USCI_NONE:
 		break;
 
-	case USCI_SPI_UCRXIFG:
+	case USCI_UART_UCRXIFG:
 		if (RXTailIdx >= sizeof(RXBuffer)) {
 			RXTailIdx = 0;
 			if (uart_numDataPages>0) {
@@ -793,7 +793,7 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 
 		break;
 
-	case USCI_SPI_UCTXIFG:
+	case USCI_UART_UCTXIFG:
 		UCA0TXBUF = TXBuffer[TXIdx];               // Transmit characters
 		if (TXIdx >= iTxLen) {
 			TXIdx = 0;

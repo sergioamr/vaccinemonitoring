@@ -38,13 +38,15 @@ int8_t modem_enter_powersave_mode();
 int8_t modem_exit_powersave_mode();
 #endif
 
-void modem_checkSignal();
+int modem_getSignal();
 void modem_init();
 void modem_getExtraInfo();
 void modem_survey_network();
-void modem_swap_SIM();
+int modem_swap_SIM();
+int modem_isSignalInRange(int iSignalLevel);
 void modem_pull_time();
 int8_t modem_first_init();
+int8_t modem_check_network();
 void modem_getSMSCenter();
 void modem_set_max_messages();
 

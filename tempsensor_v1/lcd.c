@@ -107,14 +107,14 @@ void lcd_show(int8_t iItemId) {
 		strcat(lcdBuffer, "C ");
 		strcat(lcdBuffer, itoa_pad(g_iBatteryLevel));
 		strcat(lcdBuffer, "% ");
-		if ((iSignalLevel >= NETWORK_DOWN_SS)
-				&& (iSignalLevel <= NETWORK_MAX_SS)) {
+		if ((g_iSignalLevel >= NETWORK_DOWN_SS)
+				&& (g_iSignalLevel <= NETWORK_MAX_SS)) {
 			if (g_iSignal_gprs == 1) {
 				strcat(lcdBuffer, "G");
 			} else {
 				strcat(lcdBuffer, "S");
 			}
-			local_signal = iSignalLevel;
+			local_signal = g_iSignalLevel;
 			local_signal = (((local_signal - NETWORK_ZERO)
 					/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
 			strcat(lcdBuffer, itoa_pad(local_signal));
@@ -168,9 +168,9 @@ void lcd_show(int8_t iItemId) {
 		if (config_getSelectedSIM() != 0) {
 			strcat(lcdBuffer, "  --  ");
 		} else {
-			if ((iSignalLevel > NETWORK_DOWN_SS)
-					&& (iSignalLevel < NETWORK_MAX_SS)) {
-				local_signal = iSignalLevel;
+			if ((g_iSignalLevel > NETWORK_DOWN_SS)
+					&& (g_iSignalLevel < NETWORK_MAX_SS)) {
+				local_signal = g_iSignalLevel;
 				local_signal = (((local_signal - NETWORK_ZERO)
 						/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
 				strcat(lcdBuffer, itoa_pad(local_signal));
@@ -191,9 +191,9 @@ void lcd_show(int8_t iItemId) {
 		if (config_getSelectedSIM() != 1) {
 			strcat(lcdBuffer, "  --  ");
 		} else {
-			if ((iSignalLevel > NETWORK_DOWN_SS)
-					&& (iSignalLevel < NETWORK_MAX_SS)) {
-				local_signal = iSignalLevel;
+			if ((g_iSignalLevel > NETWORK_DOWN_SS)
+					&& (g_iSignalLevel < NETWORK_MAX_SS)) {
+				local_signal = g_iSignalLevel;
 				local_signal = (((local_signal - NETWORK_ZERO)
 						/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
 				strcat(lcdBuffer, itoa_pad(local_signal));

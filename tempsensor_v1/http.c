@@ -11,6 +11,65 @@
 
 #define HTTP_RESPONSE_RETRY	10
 
+void backend_get_configuration() {
+	config_setLastCommand(COMMAND_HTTP_DATA_TRANSFER);
+	if (modem_check_network() != UART_SUCCESS) {
+		return;
+	}
+
+	if (http_setup() == UART_SUCCESS) {
+		http_get_configuration();
+		http_deactivate();
+	}
+}
+
+/*
+void http_data_transfer() {
+	iSMSRxPollElapsed = iMinuteTick;
+	lcd_printl(LINEC, "Configuring...");
+
+	modem_checkSignal();
+	g_iSignal_gprs = http_post_gprs_connection_status(GPRS);
+
+	iIdx = 0;
+	while (iIdx < MODEM_CHECK_RETRY) {
+		gprs_network_indication = http_post_gprs_connection_status(GSM);
+		if ((gprs_network_indication == 0)
+				|| ((iSignalLevel < NETWORK_DOWN_SS)
+						|| (iSignalLevel > NETWORK_MAX_SS))) {
+			lcd_printl(LINE2, "Signal lost...");
+			g_iStatus |= NETWORK_DOWN;
+			//iOffset = 0;  // Whyy??? whyyy?????
+			modem_init();
+			lcd_printl(LINE2, "Reconnecting...");
+			iIdx++;
+		} else {
+			g_iStatus &= ~NETWORK_DOWN;
+			break;
+		}
+	}
+
+	if (iIdx == MODEM_CHECK_RETRY) {
+		modem_swap_SIM();
+	}
+
+	//sms config reception and processing
+	http_setup();
+	http_get_configuration(ATresponse);
+	if (ATresponse[0] == '$') {
+		if (sms_process_msg(ATresponse)) {
+			//send heartbeat on successful processing of SMS message
+			sms_send_heart_beat();
+		}
+	} else {
+		// no cfg message recevied
+		// check signal strength
+		// iOffset = -1; //reuse to indicate no cfg msg was received // Whyy??? whyyy?????
+	}
+	http_deactivate();
+}
+*/
+
 int8_t http_setup() {
 	int uart_state = UART_FAILED;
 	int attempts = HTTP_COMMAND_ATTEMPTS;
@@ -25,7 +84,7 @@ int8_t http_setup() {
 	if (uart_getTransactionState() != UART_SUCCESS)
 		return UART_FAILED;
 
-	lcd_progress_wait(2000);
+	lcd_progress_wait(5000);
 
 	// Context Activation - #SGACT
 	// Execution command is used to activate or deactivate either the GSM context
@@ -104,12 +163,13 @@ int http_check_error(int *retry) {
 	PARSE_SKIP(token, ",\n", UART_FAILED); 	// Skip content_type string.
 	PARSE_NEXTVALUE(token, &data_size, ",\n", UART_FAILED);
 
-	log_appendf("HTTP ERROR %i [%d] - Data size %d ", prof_id, http_status_code, data_size);
+	log_appendf("HTTP ERROR %i [%d] - Data size %d ", prof_id, http_status_code,
+			data_size);
 
 	// Check for recoverable errors
 	// Server didnt responded
-	if (http_status_code==200 && data_size==0) {
-		*retry=1;
+	if (http_status_code == 200 && data_size == 0) {
+		*retry = 1;
 		lcd_printl(LINEC, "HTTP Server");
 		lcd_printl(LINEH, "Empty response");
 	}
@@ -144,7 +204,7 @@ int http_get_configuration() {
 
 	uart_setCheckMsg(HTTP_OK, HTTP_ERROR);
 
-	while(retry==1 && --attempts>0) {
+	while (retry == 1 && --attempts > 0) {
 		if (uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 5) == UART_SUCCESS) {
 			uart_state = uart_getTransactionState();
 			if (uart_state == UART_SUCCESS) {

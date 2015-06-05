@@ -60,7 +60,7 @@ char ESC[2] = { 0x1B, 0 };
  */
 
 const char NETWORK_MODE_0[] = "Network disabled";
-const char * const NETWORK_STATUS[6] = { "not connected", "connected",
+const char * const NETWORK_STATUS[6] = { "initializing", "connected",
 		"searching net", "reg denied", "unknown", "roaming" };
 const char NETWORK_MODE_2[] = "Registered";
 const char NETWORK_UNKNOWN_STATUS[] = "Unknown";
@@ -131,7 +131,7 @@ int modem_getNetworkStatus(int *mode, int *status) {
 	*mode = -1;
 	*status = -1;
 
-	verbose=lcd_getVerboseMode();
+	verbose = lcd_getVerboseMode();
 	lcd_disable_verbose();
 
 	uart_tx("AT+CGREG?\r\n");
@@ -259,6 +259,25 @@ void modem_check_uart_error() {
 	lcd_progress_wait(HUMAN_DISPLAY_INFO_DELAY);
 }
 
+// Makes sure that there is a network working
+int8_t modem_check_network() {
+	int res = UART_FAILED;
+	int iSignal = 0;
+
+	// Check signal quality, and check
+
+	iSignal = modem_getSignal();
+	if (!modem_isSignalInRange(iSignal))
+		res = UART_FAILED;
+	else
+		res = modem_connect_network(1);
+
+	if (res == UART_FAILED)
+		res = modem_swap_SIM();
+
+	return res;
+}
+
 int8_t modem_first_init() {
 
 	int t = 0;
@@ -314,9 +333,7 @@ int8_t modem_first_init() {
 		}
 
 #ifdef _DEBUG
-		if (http_setup() == UART_SUCCESS) {
-			http_get_configuration();
-		}
+		http_backend_get_configuration();
 #endif
 
 		// One or more of the sims had a catastrofic failure on init, set the device
@@ -344,7 +361,9 @@ int8_t modem_first_init() {
 	return iStatus;
 }
 
-void modem_swap_SIM() {
+int modem_swap_SIM() {
+	int res = UART_FAILED;
+
 	config_incLastCmd();
 	g_pDeviceCfg->cfgSIM_slot = !g_pDeviceCfg->cfgSIM_slot;
 
@@ -360,10 +379,28 @@ void modem_swap_SIM() {
 	// Just send the message if we dont have errors.
 	if (modem_isSIM_Operational()) {
 		sms_send_heart_beat();
+		res=UART_SUCCESS;
+	} else {
+		res=UART_FAILED;
 	}
+
+	return res;
 }
 
-void modem_checkSignal() {
+int modem_isSignalInRange(int iSignalLevel) {
+
+	if ((iSignalLevel < NETWORK_DOWN_SS)
+			|| (iSignalLevel > NETWORK_MAX_SS)) {
+		g_iStatus |= NETWORK_DOWN;
+		return 0;
+	}
+
+	g_iStatus &= ~NETWORK_DOWN;
+	return 1;
+}
+
+int modem_getSignal() {
+	int iSignalLevel = 0;
 
 	config_incLastCmd();
 
@@ -373,13 +410,11 @@ void modem_checkSignal() {
 	uart_rx_cleanBuf(ATCMD_CSQ, ATresponse, sizeof(ATresponse));
 	if (ATresponse[0] != 0) {
 		iSignalLevel = strtol(ATresponse, 0, 10);
-		if ((iSignalLevel < NETWORK_DOWN_SS)
-				|| (iSignalLevel > NETWORK_MAX_SS)) {
-			g_iStatus |= NETWORK_DOWN;
-		} else {
-			g_iStatus &= ~NETWORK_DOWN;
-		}
+		g_iSignalLevel = iSignalLevel;
+		modem_isSignalInRange(iSignalLevel);
 	}
+
+	return iSignalLevel;
 }
 
 void modem_getSMSCenter() {
@@ -659,7 +694,7 @@ void modem_init() {
 	uart_tx("AT&W0\r\n"); // [Store Current Configuration - &W] 			 Execution command stores on profile <n> the complete configuration of the	device
 
 	modem_getSMSCenter();
-	modem_checkSignal();
+	modem_getSignal();
 
 	uart_tx("AT+CSDH=1\r\n"); // Show Text Mode Parameters - +CSDH  			 Set command controls whether detailed header information is shown in text mode (+CMGF=1) result codes
 	uart_tx_timeout("AT+CMGF=?\r\n", MODEM_TX_DELAY2, 5); // set sms format to text mode
@@ -682,7 +717,7 @@ void modem_init() {
 	modem_pull_time();
 
 	// Have to call twice to guarantee a genuine result
-	modem_checkSignal();
+	modem_getSignal();
 
 	lcd_print("Checking GPRS");
 	/// added for gprs connection..//
