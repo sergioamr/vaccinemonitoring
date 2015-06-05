@@ -84,11 +84,13 @@ FRESULT fat_init_drive() {
 	// Fat is ready
 	g_bFatInitialized = true;
 
+	fr = log_append_("");
+	fr = log_append_("********************************************************");
 	fr = log_appendf("Start Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
 	return fr;
 }
 
-FRESULT log_append_text(char *text) {
+FRESULT log_append_(char *text) {
 	char szLog[32];
 	FIL fobj;
 	int t = 0;
@@ -123,7 +125,7 @@ FRESULT log_append_text(char *text) {
 		strcat(szLog, itoa_pad(g_tmCurrTime.tm_min));
 		strcat(szLog, itoa_pad(g_tmCurrTime.tm_sec));
 	} else {
-		for (t = 0; t < 13; t++)
+		for (t = 0; t < 15; t++)
 			strcat(szLog, "*");
 	}
 	strcat(szLog, "] ");
@@ -137,12 +139,14 @@ FRESULT log_append_text(char *text) {
 	}
 
 	len = strlen(text);
-	for (t = 0; t < len; t++) {
-		if (text[t] == '\n' || text[t] == '\r')
-			text[t] = ' ';
-	}
+	if (len>0) {
+		for (t = 0; t < len; t++) {
+			if (text[t] == '\n' || text[t] == '\r')
+				text[t] = ' ';
+		}
 
-	fr = f_write(&fobj, text, len, (UINT *) &bw);
+		fr = f_write(&fobj, text, len, (UINT *) &bw);
+	}
 	strcpy(szLog, "\r\n");
 	fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 
@@ -162,7 +166,7 @@ FRESULT log_appendf(const char *_format, ...) {
 	va_end(_ap);
 
 	*out_end = '\0';
-	return log_append_text(szTemp);
+	return log_append_(szTemp);
 }
 
 FRESULT log_sample_to_disk(int* tbw) {
