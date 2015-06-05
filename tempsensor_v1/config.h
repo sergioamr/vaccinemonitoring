@@ -24,7 +24,7 @@
 
 #ifdef _DEBUG
 #define HTTP_COMMAND_ATTEMPTS 10
-#define NETWORK_CONNECTION_ATTEMPTS 120
+#define NETWORK_CONNECTION_ATTEMPTS 10
 #define NETWORK_CONNECTION_DELAY 1000
 #else
 #define HTTP_COMMAND_ATTEMPTS 40
@@ -68,7 +68,7 @@ EXTERN int8_t g_iSystemSetup;
 
 //Sampling configuration
 #define SAMPLE_PERIOD			1		//in minutes
-#define UPLOAD_PERIOD			10		//in minutes
+#define UPLOAD_PERIOD			2		//in minutes
 #define SMS_RX_POLL_INTERVAL	5		//poll interval in minutes for sms msg TODO change back
 #define LCD_REFRESH_INTERVAL	1
 #define MSG_REFRESH_INTERVAL	1
