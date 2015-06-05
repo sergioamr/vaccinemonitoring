@@ -130,20 +130,6 @@ extern "C"
 #define HIGH_RANGE_MIN 		21
 #define HIGH_RANGE_MAX 		31
 
-typedef struct {
-	int mincold;
-	double threshcold;
-	int minhot;
-	double threshhot;
-} TEMP_ALERT_PARAM;
-
-typedef struct {
-	int minutespower;
-	int enablepoweralert;
-	int minutesbathresh;
-	int battthreshold;
-} BATT_POWER_ALERT_PARAM;
-
 #define NAME_LEN			2
 
 #ifdef __cplusplus

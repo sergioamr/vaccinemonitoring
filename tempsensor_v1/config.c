@@ -16,12 +16,11 @@
 #include "hardware_buttons.h"
 #include "time.h"
 
-int g_iSamplePeriod = SAMPLE_PERIOD;
-int g_iUploadPeriod = UPLOAD_PERIOD;
-
 // Setup mode in which we are at the moment
 // Triggered by the Switch 3 button
 int8_t g_iSystemSetup = -1;
+int g_iSamplePeriod = SAMPLE_PERIOD;
+int g_iUploadPeriod = UPLOAD_PERIOD;
 
 #define RUN_CALIBRATION
 
@@ -197,13 +196,16 @@ void config_init() {
 	g_pDeviceCfg->cfgSIM_slot=0;
 
 	strcpy(g_pDeviceCfg->cfgGatewayIP, NEXLEAF_DEFAULT_SERVER_IP); // HTTP server nextleaf
-	strcpy(g_pDeviceCfg->cfgGatewaySMS,NEXLEAF_SMS_GATEWAY); 		// Gateway to nextleaf
+	strcpy(g_pDeviceCfg->cfgGatewaySMS, NEXLEAF_SMS_GATEWAY); 		// Gateway to nextleaf
 
 	config_setSIMError(&g_pDeviceCfg->SIM[0], '+', NO_ERROR, "***FIRST SIM***");
 	config_setSIMError(&g_pDeviceCfg->SIM[1], '+', NO_ERROR, "**SECOND  SIM**");
 
-	strcpy(g_pDeviceCfg->SIM[0].cfgAPN,NEXLEAF_DEFAULT_APN);
-	strcpy(g_pDeviceCfg->SIM[1].cfgAPN,NEXLEAF_DEFAULT_APN);
+	strcpy(g_pDeviceCfg->SIM[0].cfgAPN, NEXLEAF_DEFAULT_APN);
+	strcpy(g_pDeviceCfg->SIM[1].cfgAPN, NEXLEAF_DEFAULT_APN);
+
+	g_pDeviceCfg->stIntervalParam.loggingInterval = SAMPLE_PERIOD;
+	g_pDeviceCfg->stIntervalParam.uploadInterval = UPLOAD_PERIOD;
 
 	// Init System internals
 
@@ -233,6 +235,12 @@ void config_init() {
 
 	// First initalization, calibration code.
 	calibrate_device();
+}
+
+void config_update_intervals()
+{
+	g_iUploadPeriod = g_pDeviceCfg->stIntervalParam.uploadInterval;
+	g_iSamplePeriod = g_pDeviceCfg->stIntervalParam.loggingInterval;
 }
 
 void config_update_system_time()

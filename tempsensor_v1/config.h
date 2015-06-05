@@ -135,12 +135,34 @@ typedef struct __attribute__((__packed__)) {
 // 255.255.255.255
 #define MAX_IP_SIZE 3*4+3+1
 
+typedef struct {
+	int minCold;
+	int minHot;
+	float threshCold;
+	float threshHot;
+	uint32_t maxTimeCold;
+	uint32_t maxTimeHot;
+} TEMP_ALERT_PARAM;
+
+typedef struct {
+	int minutesPower;
+	int enablePowerAlert;
+	int minutesBattThresh;
+	int battThreshold;
+} BATT_POWER_ALERT_PARAM;
+
+typedef struct {
+	int uploadInterval;
+	int loggingInterval;
+} INTERVAL_PARAM;
+
 typedef struct
 __attribute__((__packed__)) {
 	int8_t cfgSIM_slot;
 
 	TEMP_ALERT_PARAM stTempAlertParams[MAX_NUM_SENSORS];
 	BATT_POWER_ALERT_PARAM stBattPowerAlertParam;
+	INTERVAL_PARAM stIntervalParam;
 
 	char cfgIMEI[IMEI_MAX_LEN + 1];
 	char cfgGatewayIP[MAX_IP_SIZE];
@@ -221,6 +243,7 @@ extern void config_init();
 extern void config_setLastCommand(uint16_t lastCmd);
 extern void config_incLastCmd();
 extern void config_update_system_time();
+extern void config_update_intervals();
 extern uint32_t config_get_boot_midnight_difference();
 
 uint8_t check_address_empty(uint8_t mem);

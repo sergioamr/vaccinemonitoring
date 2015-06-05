@@ -74,11 +74,39 @@ const char HTTP_INCOMING_DATA[] = { 0x0D, 0x0A, '<', '<', '<', 0 };
 int process_configuration() {
 
 	char *token;
+	char* delimiter = ",";
 
 	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
 	_NOP();
 	PARSE_FINDSTR_RET(token, "$ST2", UART_FAILED);
 	_NOP();
+	// ACTIVE SIM
+	PARSE_NEXTVALUE(token, &g_pDeviceCfg->cfgSIM_slot, delimiter, UART_FAILED);
+	int i = 0;
+	while (i < MAX_NUM_SENSORS) {
+		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].maxTimeCold, delimiter, UART_FAILED);
+		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].threshCold, delimiter, UART_FAILED);
+		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].maxTimeHot, delimiter, UART_FAILED);
+		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].threshHot, delimiter, UART_FAILED);
+	}
+
+	// HOWEVER MANY FOR THE BATTERY INFO
+	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.minutesPower, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.enablePowerAlert, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.minutesBattThresh, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.battThreshold, delimiter, UART_FAILED);
+
+	PARSE_SKIP(token, ",", UART_FAILED); // $ST1
+	PARSE_NEXTVALUE(token, &g_pDeviceCfg->cfgGatewaySMS[0], delimiter, UART_FAILED); // GATEWAY NUM
+	PARSE_SKIP(token, ",", UART_FAILED); // NETWORK TYPE E.G. GPRS
+	PARSE_NEXTVALUE(token, config_getSIM()->cfgAPN, delimiter, UART_FAILED); //APN
+
+	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stIntervalParam.uploadInterval, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stIntervalParam.loggingInterval, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, ",", delimiter, UART_FAILED); // Not sure what these values are
+	PARSE_NEXTVALUE(token, ",", delimiter, UART_FAILED); ////
+
+	PARSE_SKIP(token, delimiter, UART_FAILED); // $EN
 
 	return UART_SUCCESS;
 }
@@ -124,12 +152,12 @@ int http_get_configuration() {
 	int retry = 1;
 	int attempts = HTTP_COMMAND_ATTEMPTS;
 
-	// #HTTPQRY – send HTTP GET, HEAD or DELETE request
+	// #HTTPQRY ï¿½ send HTTP GET, HEAD or DELETE request
 	// Execution command performs a GET, HEAD or DELETE request to HTTP server.
 	// Parameters:
 	// <prof_id> - Numeric parameter indicating the profile identifier. Range: 0-2
 	// <command>: Numeric parameter indicating the command requested to HTTP server:
-	// 0 – GET 1 – HEAD 2 – DELETE
+	// 0 ï¿½ GET 1 ï¿½ HEAD 2 ï¿½ DELETE
 
 	sprintf(szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/%s/1/\"\r\n",
 			g_pDeviceCfg->cfgIMEI);
@@ -140,7 +168,7 @@ int http_get_configuration() {
 	// CME ERROR: 558 cannot resolve DN ?
 
 	// Get the configration from the server
-	// #HTTPRCV – receive HTTP server data
+	// #HTTPRCV ï¿½ receive HTTP server data
 
 	uart_setCheckMsg(HTTP_OK, HTTP_ERROR);
 

@@ -107,19 +107,19 @@ int8_t sms_process_msg(char* pSMSmsg) {
 #endif
 					for (iCnt = 0; (iCnt < MAX_NUM_SENSORS) && (pcTmp);
 							iCnt++) {
-						g_pDeviceCfg->stTempAlertParams[iCnt].mincold = strtol(
+						g_pDeviceCfg->stTempAlertParams[iCnt].minCold = strtol(
 								pcTmp, 0, 10);
 						pcTmp = strtok(NULL, ",");
 						if (pcTmp) {
-							g_pDeviceCfg->stTempAlertParams[iCnt].threshcold =
+							g_pDeviceCfg->stTempAlertParams[iCnt].threshCold =
 									strtod(pcTmp, NULL);
 							pcTmp = strtok(NULL, ",");
 							if (pcTmp) {
-								g_pDeviceCfg->stTempAlertParams[iCnt].minhot =
+								g_pDeviceCfg->stTempAlertParams[iCnt].minHot =
 										strtol(pcTmp, 0, 10);
 								pcTmp = strtok(NULL, ",");
 								if (pcTmp) {
-									g_pDeviceCfg->stTempAlertParams[iCnt].threshhot =
+									g_pDeviceCfg->stTempAlertParams[iCnt].threshHot =
 											strtod(pcTmp, NULL);
 									pcTmp = strtok(NULL, ",");
 								}
@@ -127,27 +127,27 @@ int8_t sms_process_msg(char* pSMSmsg) {
 						}
 					}
 					if (pcTmp) {
-						g_pDeviceCfg->stBattPowerAlertParam.minutespower = strtol(
+						g_pDeviceCfg->stBattPowerAlertParam.minutesPower = strtol(
 								pcTmp, 0, 10);
 						pcTmp = strtok(NULL, ",");
 						if (pcTmp) {
-							g_pDeviceCfg->stBattPowerAlertParam.enablepoweralert =
+							g_pDeviceCfg->stBattPowerAlertParam.enablePowerAlert =
 									strtol(pcTmp, 0, 10);
 							pcTmp = strtok(NULL, ",");
 							if (pcTmp) {
-								g_pDeviceCfg->stBattPowerAlertParam.minutesbathresh =
+								g_pDeviceCfg->stBattPowerAlertParam.minutesBattThresh =
 										strtol(pcTmp, 0, 10);
 								pcTmp = strtok(NULL, ",");
 								if (pcTmp) {
-									g_pDeviceCfg->stBattPowerAlertParam.battthreshold =
+									g_pDeviceCfg->stBattPowerAlertParam.battThreshold =
 											strtol(pcTmp, 0, 10);
 								}
 							}
 						}
 
 					} else {
-						g_pDeviceCfg->stBattPowerAlertParam.enablepoweralert = 0;
-						g_pDeviceCfg->stBattPowerAlertParam.battthreshold = 101;
+						g_pDeviceCfg->stBattPowerAlertParam.enablePowerAlert = 0;
+						g_pDeviceCfg->stBattPowerAlertParam.battThreshold = 101;
 					}
 					iCnt = 1;
 				} else {
