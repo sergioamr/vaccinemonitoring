@@ -39,20 +39,23 @@ void thermal_handle_system_button() {
 	case 1:
 		lcd_print("PRESS AGAIN");
 		lcd_printl(LINE2, "TO SWAP SIM");
+		g_iSystemSetup++;
 		break;
 	case 2:
 		modem_swap_SIM();
+		g_iSystemSetup++;
 		break;
 	case 3:
 		lcd_print("PRESS AGAIN");
 		lcd_printl(LINE2, "TO RE-CALIBRATE");
+		g_iSystemSetup++;
 		break;
 	case 4:
 		g_iSystemSetup = -1;
 		config_reconfigure();
 		return;
 	}
-	g_iSystemSetup++;
+
 }
 
 void thermal_canyon_loop(void) {
