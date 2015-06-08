@@ -161,6 +161,11 @@ int8_t sms_process_messages(uint32_t iMinuteTick) {
 		sim->iMaxMessages = totalr;
 	}
 
+	if (usedr==0) {
+		lcd_printf(LINEC, "No new messages", usedr);
+		return UART_SUCCESS;
+	}
+
 	lcd_printf(LINEC, "%d Config sms", usedr);
 	lcd_printl(LINE2, "Msg Processing..");
 

@@ -18,7 +18,7 @@
 /* BEGIN FACTORY CONFIGURATION 																							  */
 /**************************************************************************************************************************/
 
-#define NEXLEAF_SMS_GATEWAY       "00447751035864"
+#define NEXLEAF_SMS_GATEWAY       "00447482787262"
 #define NEXLEAF_DEFAULT_SERVER_IP "54.241.2.213"
 #define NEXLEAF_DEFAULT_APN 	  "giffgaff.com"
 
