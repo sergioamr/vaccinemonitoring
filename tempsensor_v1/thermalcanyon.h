@@ -44,7 +44,7 @@ extern volatile uint32_t iMinuteTick;
 extern char* g_TmpSMScmdBuffer;
 
 void uploadsms();
-int8_t sms_process_msg(char* pSMSmsg);
+
 void sampletemp();
 void monitoralarm();
 

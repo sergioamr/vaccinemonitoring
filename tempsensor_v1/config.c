@@ -1,4 +1,3 @@
-
 /*
  * config.c
  *
@@ -37,7 +36,7 @@ CONFIG_INFOB g_InfoB;
 
 // Since we use the area outside the 16 bits we have to use the large memory model.
 // The compiler gives a warning accessing the structure directly and it can fail. Better accessing it through the pointer.
-CONFIG_INFOA* g_pDeviceCfg = &g_InfoA;
+CONFIG_INFOA* g_pDevCfg = &g_InfoA;
 CONFIG_INFOB* g_pCalibrationCfg = &g_InfoB;
 
 CONFIG_SYSTEM* g_pSysCfg = &g_SystemConfig;
@@ -73,56 +72,57 @@ void calibrate_device() {
 
 void config_reset_error(SIM_CARD_CONFIG *sim) {
 	sim->simErrorToken = '\0';
-	sim->simErrorState= NO_ERROR;
+	sim->simErrorState = NO_ERROR;
 }
 
-void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID, const char *error) {
+void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
+		const char *error) {
 	if (error == NULL || sim == NULL)
 		return;
 
 	memset(sim->simLastError, 0, sizeof(sim->simLastError));
-	strncpy(sim->simLastError, error, sizeof(sim->simLastError)-1);
+	strncpy(sim->simLastError, error, sizeof(sim->simLastError) - 1);
 	sim->simErrorState = errorID;
 	sim->simErrorToken = errorToken;
 }
 
 uint8_t config_isSimOperational() {
-	uint8_t slot=g_pDeviceCfg->cfgSIM_slot;
-	return g_pDeviceCfg->SIM[slot].simOperational;
+	uint8_t slot = g_pDevCfg->cfgSIM_slot;
+	return g_pDevCfg->SIM[slot].simOperational;
 }
 
 // Returns the current structure containing the info for the current SIM selected
 uint16_t config_getSIMError(int slot) {
-	return g_pDeviceCfg->SIM[slot].simErrorState;
+	return g_pDevCfg->SIM[slot].simErrorState;
 }
 
 // Returns the current structure containing the info for the current SIM selected
 SIM_CARD_CONFIG *config_getSIM() {
-	uint8_t slot=g_pDeviceCfg->cfgSIM_slot;
-	return &g_pDeviceCfg->SIM[slot];
+	uint8_t slot = g_pDevCfg->cfgSIM_slot;
+	return &g_pDevCfg->SIM[slot];
 }
 
 uint8_t config_getSelectedSIM() {
-	return g_pDeviceCfg->cfgSIM_slot;
+	return g_pDevCfg->cfgSIM_slot;
 }
 
 void config_SIM_not_operational() {
-	uint8_t slot=g_pDeviceCfg->cfgSIM_slot;
-	g_pDeviceCfg->SIM[slot].simOperational=0;
+	uint8_t slot = g_pDevCfg->cfgSIM_slot;
+	g_pDevCfg->SIM[slot].simOperational = 0;
 }
 
 void config_SIM_operational() {
-	uint8_t slot=g_pDeviceCfg->cfgSIM_slot;
-	g_pDeviceCfg->SIM[slot].simOperational=1;
+	uint8_t slot = g_pDevCfg->cfgSIM_slot;
+	g_pDevCfg->SIM[slot].simOperational = 1;
 }
 
 uint16_t config_getSimLastError(char *charToken) {
 
-	uint8_t slot=g_pDeviceCfg->cfgSIM_slot;
-	if (charToken!=NULL)
-		*charToken=g_pDeviceCfg->SIM[slot].simErrorToken;
+	uint8_t slot = g_pDevCfg->cfgSIM_slot;
+	if (charToken != NULL)
+		*charToken = g_pDevCfg->SIM[slot].simErrorToken;
 
-	return g_pDeviceCfg->SIM[slot].simErrorState;
+	return g_pDevCfg->SIM[slot].simErrorState;
 }
 
 void config_SafeMode() {
@@ -134,7 +134,7 @@ void config_incLastCmd() {
 }
 
 // Stores what was the last command run and what time
-void config_setLastCommand(uint16_t lastCmd)  {
+void config_setLastCommand(uint16_t lastCmd) {
 
 	static int lastMin = 0;
 	static int lastSec = 0;
@@ -143,16 +143,16 @@ void config_setLastCommand(uint16_t lastCmd)  {
 
 	rtc_get(&g_tmCurrTime);
 
-	if (lastMin!=g_tmCurrTime.tm_min && lastSec!=g_tmCurrTime.tm_sec) {
-		strcpy(g_pSysCfg->lastCommandTime,itoa_pad(g_tmCurrTime.tm_hour));
-		strcat(g_pSysCfg->lastCommandTime,":");
-		strcpy(g_pSysCfg->lastCommandTime,itoa_pad(g_tmCurrTime.tm_min));
-		strcat(g_pSysCfg->lastCommandTime,":");
-		strcat(g_pSysCfg->lastCommandTime,itoa_pad(g_tmCurrTime.tm_sec));
+	if (lastMin != g_tmCurrTime.tm_min && lastSec != g_tmCurrTime.tm_sec) {
+		strcpy(g_pSysCfg->lastCommandTime, itoa_pad(g_tmCurrTime.tm_hour));
+		strcat(g_pSysCfg->lastCommandTime, ":");
+		strcpy(g_pSysCfg->lastCommandTime, itoa_pad(g_tmCurrTime.tm_min));
+		strcat(g_pSysCfg->lastCommandTime, ":");
+		strcat(g_pSysCfg->lastCommandTime, itoa_pad(g_tmCurrTime.tm_sec));
 	}
 
 #ifdef _DEBUG
-	if (lastCmd!=COMMAND_LCDINIT)
+	if (lastCmd != COMMAND_LCDINIT)
 		log_appendf("Command [%d] ", lastCmd);
 #endif
 }
@@ -170,7 +170,7 @@ void config_init() {
 			lcd_printf(LINEC, "Service Mode");
 			lcd_printl(LINEH, g_pSysCfg->firmwareVersion); // Show the firmware version
 			delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
-			g_pSysCfg->calibrationFinished=0;
+			g_pSysCfg->calibrationFinished = 0;
 		}
 
 		// Data structure changed, something failed.
@@ -190,22 +190,22 @@ void config_init() {
 	}
 
 	// Init Config InfoA
-	memset(g_pDeviceCfg, 0, sizeof(CONFIG_INFOA));
+	memset(g_pDevCfg, 0, sizeof(CONFIG_INFOA));
 
 	// Setup InfoA config data
-	g_pDeviceCfg->cfgSIM_slot=0;
+	g_pDevCfg->cfgSIM_slot = 0;
 
-	strcpy(g_pDeviceCfg->cfgGatewayIP, NEXLEAF_DEFAULT_SERVER_IP); // HTTP server nextleaf
-	strcpy(g_pDeviceCfg->cfgGatewaySMS, NEXLEAF_SMS_GATEWAY); 		// Gateway to nextleaf
+	strcpy(g_pDevCfg->cfgGatewayIP, NEXLEAF_DEFAULT_SERVER_IP); // HTTP server nextleaf
+	strcpy(g_pDevCfg->cfgGatewaySMS, NEXLEAF_SMS_GATEWAY); // Gateway to nextleaf
 
-	config_setSIMError(&g_pDeviceCfg->SIM[0], '+', NO_ERROR, "***FIRST SIM***");
-	config_setSIMError(&g_pDeviceCfg->SIM[1], '+', NO_ERROR, "**SECOND  SIM**");
+	config_setSIMError(&g_pDevCfg->SIM[0], '+', NO_ERROR, "***FIRST SIM***");
+	config_setSIMError(&g_pDevCfg->SIM[1], '+', NO_ERROR, "**SECOND  SIM**");
 
-	strcpy(g_pDeviceCfg->SIM[0].cfgAPN, NEXLEAF_DEFAULT_APN);
-	strcpy(g_pDeviceCfg->SIM[1].cfgAPN, NEXLEAF_DEFAULT_APN);
+	strcpy(g_pDevCfg->SIM[0].cfgAPN, NEXLEAF_DEFAULT_APN);
+	strcpy(g_pDevCfg->SIM[1].cfgAPN, NEXLEAF_DEFAULT_APN);
 
-	g_pDeviceCfg->stIntervalParam.loggingInterval = SAMPLE_PERIOD;
-	g_pDeviceCfg->stIntervalParam.uploadInterval = UPLOAD_PERIOD;
+	g_pDevCfg->stIntervalParam.loggingInterval = SAMPLE_PERIOD;
+	g_pDevCfg->stIntervalParam.uploadInterval = UPLOAD_PERIOD;
 
 	// Init System internals
 
@@ -220,86 +220,91 @@ void config_init() {
 	g_pSysCfg->memoryInitialized = 1;
 
 	// Set the date and time of compilation as firmware version
-	strcpy(g_pSysCfg->firmwareVersion, "v(" __DATE__  ")");
+	strcpy(g_pSysCfg->firmwareVersion, "v(" __DATE__ ")");
 
-	g_pSysCfg->maxSamplebuffer=0;
-	g_pSysCfg->maxATResponse=0;
-	g_pSysCfg->maxRXBuffer=0;
-	g_pSysCfg->maxTXBuffer=0;
+	g_pSysCfg->maxSamplebuffer = 0;
+	g_pSysCfg->maxATResponse = 0;
+	g_pSysCfg->maxRXBuffer = 0;
+	g_pSysCfg->maxTXBuffer = 0;
 
 	lcd_printf(LINEC, "CONFIG MODE");
 	lcd_printl(LINEH, g_pSysCfg->firmwareVersion); // Show the firmware version
 #ifndef _DEBUG
-	delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
+			delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 #endif
 
 	// First initalization, calibration code.
 	calibrate_device();
 }
 
-void config_update_intervals()
-{
-	g_iUploadPeriod = g_pDeviceCfg->stIntervalParam.uploadInterval;
-	g_iSamplePeriod = g_pDeviceCfg->stIntervalParam.loggingInterval;
+void config_update_intervals() {
+	g_iUploadPeriod = g_pDevCfg->stIntervalParam.uploadInterval;
+	g_iSamplePeriod = g_pDevCfg->stIntervalParam.loggingInterval;
 }
 
-void config_update_system_time()
-{
+void config_update_system_time() {
 	// Gets the current time and stores it in FRAM
 	rtc_get(&g_tmCurrTime);
-	memcpy(&g_pDeviceCfg->lastSystemTime, &g_tmCurrTime, sizeof(g_tmCurrTime));
+	memcpy(&g_pDevCfg->lastSystemTime, &g_tmCurrTime, sizeof(g_tmCurrTime));
 	_NOP();
 }
 
-uint32_t config_get_boot_midnight_difference()
-{
-	return (uint32_t) (1400 - (g_tmCurrTime.tm_min
-				+ (g_tmCurrTime.tm_hour * 60)));
+uint32_t config_get_boot_midnight_difference() {
+	return (uint32_t) (1400
+			- (g_tmCurrTime.tm_min + (g_tmCurrTime.tm_hour * 60)));
 }
 
 // http://54.241.2.213/coldtrace/uploads/multi/v3/358072043112124/1/
 // $ST2,7,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,600,1,600,15,$ST1,919243100142,both,airtelgprs.com,10,1,0,0,$EN
 
-int config_process_configuration()
-{
+int config_parse_configuration(char *msg) {
 	char *token;
 	char *delimiter = ",";
 	int tempValue = 0;
 	int iCnt = 0;
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
-	log_append_("configuration processing");
-	// FINDSTR uses RXBuffer - There is no need to initialize the data to parse.
-	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
-	PARSE_FINDSTR_RET(token, "$ST2,", UART_FAILED);
+	PARSE_FINDSTR_BUFFER_RET(token, msg, "$ST2,", UART_FAILED);
 
 	// Return success if no configuration has changed
-	PARSE_FIRSTVALUECOMPARE(token, g_pDeviceCfg->cfgSyncId, UART_SUCCESS, UART_FAILED);
+	PARSE_FIRSTVALUECOMPARE(token, g_pDevCfg->cfgSyncId, UART_SUCCESS,
+			UART_FAILED);
 	int i = 0;
 
 	// Temperature configuration for each sensor
 	while (i < MAX_NUM_SENSORS) {
-		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].maxTimeCold, delimiter, UART_FAILED);
-		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].threshCold, delimiter, UART_FAILED);
-		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].maxTimeHot, delimiter, UART_FAILED);
-		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].threshHot, delimiter, UART_FAILED);
+		PARSE_NEXTVALUE(token, &g_pDevCfg->stTempAlertParams[i].maxTimeCold,
+				delimiter, UART_FAILED);
+		PARSE_NEXTVALUE(token, &g_pDevCfg->stTempAlertParams[i].threshCold,
+				delimiter, UART_FAILED);
+		PARSE_NEXTVALUE(token, &g_pDevCfg->stTempAlertParams[i].maxTimeHot,
+				delimiter, UART_FAILED);
+		PARSE_NEXTVALUE(token, &g_pDevCfg->stTempAlertParams[i].threshHot,
+				delimiter, UART_FAILED);
 		i++;
 	}
 
 	// Battery config info.
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.minutesPower, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.enablePowerAlert, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.minutesBattThresh, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.battThreshold, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &g_pDevCfg->stBattPowerAlertParam.minutesPower,
+			delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &g_pDevCfg->stBattPowerAlertParam.enablePowerAlert,
+			delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &g_pDevCfg->stBattPowerAlertParam.minutesBattThresh,
+			delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &g_pDevCfg->stBattPowerAlertParam.battThreshold,
+			delimiter, UART_FAILED);
 
-	//
 	PARSE_SKIP(token, delimiter, UART_FAILED); // $ST1
-	PARSE_NEXTSTRING(token, &g_pDeviceCfg->cfgGatewaySMS[0], strlen(token), delimiter, UART_FAILED); // GATEWAY NUM
+	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewaySMS[0], strlen(token),
+			delimiter, UART_FAILED); // GATEWAY NUM
 	PARSE_NEXTVALUE(token, &sim->cfgUploadMode, delimiter, UART_FAILED); // NETWORK TYPE E.G. GPRS
-	PARSE_NEXTSTRING(token, &sim->cfgAPN[0], strlen(token), delimiter, UART_FAILED); //APN
+	PARSE_NEXTSTRING(token, &sim->cfgAPN[0], strlen(token), delimiter,
+			UART_FAILED); //APN
 
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stIntervalParam.uploadInterval, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stIntervalParam.loggingInterval, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &g_pDevCfg->stIntervalParam.uploadInterval,
+			delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &g_pDevCfg->stIntervalParam.loggingInterval,
+			delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); // Reset alert
 	if (tempValue > 0) {
 		g_iStatus |= RESET_ALERT;
@@ -317,7 +322,7 @@ int config_process_configuration()
 	}
 
 	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); ////
-	if(g_pDeviceCfg->cfgSIM_slot != tempValue) {
+	if (g_pDevCfg->cfgSIM_slot != tempValue) {
 		modem_swap_SIM();
 	}
 
@@ -327,4 +332,13 @@ int config_process_configuration()
 
 	log_append_("configuration success");
 	return UART_SUCCESS;
+}
+
+int config_process_configuration() {
+	char *token;
+
+	log_append_("configuration processing");
+	// FINDSTR uses RXBuffer - There is no need to initialize the data to parse.
+	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
+	return config_parse_configuration((char *) &RXBuffer[RXHeadIdx]);
 }

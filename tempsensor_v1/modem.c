@@ -358,7 +358,7 @@ int8_t modem_first_init() {
 			for (t = 0; t < NUM_SIM_CARDS; t++)
 				if (config_getSIMError(t) == NO_ERROR) {
 					if (config_getSelectedSIM() != t) {
-						g_pDeviceCfg->cfgSIM_slot = t;
+						g_pDevCfg->cfgSIM_slot = t;
 						modem_init();
 					}
 				}
@@ -381,15 +381,15 @@ int modem_swap_SIM() {
 	int res = UART_FAILED;
 
 	config_incLastCmd();
-	g_pDeviceCfg->cfgSIM_slot = !g_pDeviceCfg->cfgSIM_slot;
+	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
 
-	if(g_pDeviceCfg->cfgSIM_slot == 0) {
+	if(g_pDevCfg->cfgSIM_slot == 0) {
 		g_iStatus &= ~ENABLE_SECOND_SLOT;
 	} else {
 		g_iStatus |= ENABLE_SECOND_SLOT;
 	}
 
-	lcd_printf(LINEC, "Activate SIM: %d", g_pDeviceCfg->cfgSIM_slot + 1);
+	lcd_printf(LINEC, "Activate SIM: %d", g_pDevCfg->cfgSIM_slot + 1);
 	modem_init();
 	modem_getExtraInfo();
 
@@ -480,13 +480,13 @@ void modem_getIMEI() {
 	if (!IMEI_OK)
 		return;
 
-	if (check_address_empty(g_pDeviceCfg->cfgIMEI[0])) {
-		strcpy(g_pDeviceCfg->cfgIMEI, ATresponse);
+	if (check_address_empty(g_pDevCfg->cfgIMEI[0])) {
+		strcpy(g_pDevCfg->cfgIMEI, ATresponse);
 	}
 
 	// Lets check if we have the right IMEI from the modem, otherwise we flash it again into config.
-	if (memcmp(ATresponse, g_pDeviceCfg->cfgIMEI, 15) != 0) {
-		strcpy(g_pDeviceCfg->cfgIMEI, ATresponse);
+	if (memcmp(ATresponse, g_pDevCfg->cfgIMEI, 15) != 0) {
+		strcpy(g_pDevCfg->cfgIMEI, ATresponse);
 	}
 
 }
@@ -637,7 +637,7 @@ void modem_pull_time() {
 			lcd_printf(LINEC, "WRONG DATE SIM %d ", config_getSelectedSIM());
 			lcd_printf(LINEH, get_YMD_String(&g_tmCurrTime));
 
-			rtc_init(&g_pDeviceCfg->lastSystemTime);
+			rtc_init(&g_pDevCfg->lastSystemTime);
 			rtc_get(&g_tmCurrTime);
 
 			lcd_printf(LINEC, "LAST DATE ");
@@ -664,7 +664,7 @@ void modem_init() {
 
 	if (config_getSelectedSIM() > 1) {
 		// Memory not initialized
-		g_pDeviceCfg->cfgSIM_slot = 0;
+		g_pDevCfg->cfgSIM_slot = 0;
 	}
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
@@ -700,6 +700,11 @@ void modem_init() {
 	uart_tx("AT#CMEEMODE=1\r\n"); // This command allows to extend the set of error codes reported by CMEE to the GPRS related error codes.
 	uart_tx("AT#AUTOBND=2\r\n"); // Set command enables/disables the automatic band selection at power-on.  if automatic band selection is enabled the band changes every about 90 seconds through available bands until a GSM cell is found.
 
+	//uart_tx("AT+CPMS=\"ME\",\"ME\",\"ME\"");
+
+	// Check if there are pending messages in the SMS queue
+	delay(4000);
+
 	// We have to wait for the network to be ready, it will take some time. In debug we just wait on connect.
 #ifndef _DEBUG
 	lcd_progress_wait(1000);
@@ -709,6 +714,8 @@ void modem_init() {
 
 	// Wait until connnection and registration is successful. (Just try NETWORK_CONNECTION_ATTEMPTS) network could be definitly down or not available.
 	modem_connect_network(NETWORK_CONNECTION_ATTEMPTS);
+
+	sms_process_messages(0);
 
 	uart_tx("AT#NITZ=1\r\n");   // #NITZ - Network Timezone
 

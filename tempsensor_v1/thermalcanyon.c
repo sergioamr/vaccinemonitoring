@@ -46,8 +46,8 @@ void thermal_canyon_loop(void) {
 	while (1) {
 
 		if (g_iSystemSetup > 0) {
-			lcd_print("RUN CALIBRATION?");
-			lcd_printl(LINE2, "PRESS AGAIN TO RUN");
+			lcd_print("PRESS AGAIN");
+			lcd_printl(LINE2, "TO RE-CALIBRATE");
 			g_iSystemSetup = 0;
 		}
 
@@ -146,9 +146,8 @@ void thermal_canyon_loop(void) {
 				&& ((iMinuteTick - iUploadTimeElapsed) < (g_iUploadPeriod - 2))
 				&& ((iMinuteTick - iMsgRxPollElapsed) >= MSG_REFRESH_INTERVAL)) {
 
-			config_setLastCommand(COMMAND_SMS_PROCESS);
-
-			sms_process_messages(iMinuteTick, g_iDisplayId);
+			sms_process_messages(iMinuteTick);
+			lcd_show(g_iDisplayId);
 		}
 
 		//low power behavior

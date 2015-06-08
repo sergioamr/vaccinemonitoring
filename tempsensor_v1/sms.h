@@ -8,13 +8,14 @@
 #ifndef TEMPSENSOR_V1_SMS_H_
 #define TEMPSENSOR_V1_SMS_H_
 
+int8_t sms_process_msg(char* pSMSmsg);
 //*****************************************************************************
 //! \brief send sms msg
 //! \param pointer to sms text contents
 //! \return UART_SUCCESS or UART_ERROR
 //*****************************************************************************
-extern uint8_t sms_send_message(char* pData);
-extern uint8_t sms_send_message_number(char *szPhoneNumber, char* pData);
+uint8_t sms_send_message(char* pData);
+uint8_t sms_send_message_number(char *szPhoneNumber, char* pData);
 
 //*****************************************************************************
 //! \brief receive sms msg
@@ -22,19 +23,19 @@ extern uint8_t sms_send_message_number(char *szPhoneNumber, char* pData);
 //! 	   is available for reading
 //! \return 0 on success, -1 on failure
 //*****************************************************************************
-extern int sms_recv_message(int8_t iMsgIdx,char* pData);
+int sms_recv_message(int8_t iMsgIdx,char* pData);
 
 //*****************************************************************************
 //! \brief delete the sms msg(s) read and sent successfully
 //! \param none
 //! \return none
 //*****************************************************************************
-extern void delreadmsg();
+void delreadmsg();
 
-extern void delallmsg();
-extern void delmsg(int8_t iMsgIdx, char* pData);
+void delallmsg();
+void delmsg(int8_t iMsgIdx, char* pData);
 
-extern void sms_send_heart_beat();
-extern void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId);
+void sms_send_heart_beat();
+int8_t sms_process_messages(uint32_t iMinuteTick);
 
 #endif /* TEMPSENSOR_V1_SMS_H_ */

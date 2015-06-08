@@ -60,6 +60,9 @@ void modem_check_uart_error();
 
 // Parsing macros helpers
 
+#define PARSE_FINDSTR_BUFFER_RET(token, buffer, sz, error) token=strstr((const char *) buffer, sz); \
+	if(token==NULL) return error; else token+=strlen(sz)-1;
+
 #define PARSE_FINDSTR_RET(token, sz, error) token=strstr((const char *) &RXBuffer[RXHeadIdx], sz); \
 	if(token==NULL) return error; else token+=strlen(sz)-1;
 
@@ -69,6 +72,9 @@ void modem_check_uart_error();
 #define PARSE_NEXTVALUE(token, var, delimiter, error) token = strtok(NULL, delimiter); \
 	if(token!=NULL) *var = atoi(token); else return error;
 
+#define PARSE_FIRSTSTRING(token, var, length, delimiter, error) token = strtok(token, delimiter); \
+	if(token!=NULL) strncpy(var, token, length); else return error;
+
 #define PARSE_NEXTSTRING(token, var, length, delimiter, error) token = strtok(NULL, delimiter); \
 	if(token!=NULL) strncpy(var, token, length); else return error;
 
@@ -77,6 +83,9 @@ void modem_check_uart_error();
 
 #define PARSE_NEXTVALUECOMPARE(token, var, match, error) token = strtok(NULL, delimiter); \
 	if(token!=NULL) { if(var!=atoi(token)) var=atoi(token); } else return error;
+
+#define PARSE_FIRSTSKIP(token, delimiter, error) token = strtok(token, delimiter); \
+	if(token==NULL) return error;
 
 #define PARSE_SKIP(token, delimiter, error) token = strtok(NULL, delimiter); \
 	if(token==NULL) return error;

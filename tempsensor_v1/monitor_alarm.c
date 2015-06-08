@@ -25,7 +25,7 @@ void monitoralarm() {
 		iTemp = strtod(&Temperature[iCnt][0], NULL);
 		//iTemp = strtod("24.5",NULL);
 		//check for low temp threshold
-		if (iTemp < g_pDeviceCfg->stTempAlertParams[iCnt].threshCold) {
+		if (iTemp < g_pDevCfg->stTempAlertParams[iCnt].threshCold) {
 			//check if alarm is set for low temp
 			if (TEMP_ALARM_GET(iCnt) != LOW_TEMP_ALARM_ON) {
 				//set it off incase it was earlier confirmed
@@ -38,7 +38,7 @@ void monitoralarm() {
 				//low temp alarm is already set, increment the counter
 				g_iAlarmCnfCnt[iCnt]++;
 				if ((g_iAlarmCnfCnt[iCnt] * g_iSamplePeriod)
-						>= g_pDeviceCfg->stTempAlertParams[iCnt].minCold) {
+						>= g_pDevCfg->stTempAlertParams[iCnt].minCold) {
 					TEMP_ALARM_SET(iCnt, TEMP_ALERT_CNF);
 #ifndef ALERT_UPLOAD_DISABLED
 					if(!(g_iStatus & BACKLOG_UPLOAD_ON))
@@ -59,7 +59,7 @@ void monitoralarm() {
 						strcat(SampleData, "Alert Sensor ");
 						strcat(SampleData, SensorName[iCnt]);
 						strcat(SampleData,": Temp too LOW for ");
-						strcat(SampleData,itoa_pad(g_pDeviceCfg->stTempAlertParams[iCnt].mincold));
+						strcat(SampleData,itoa_pad(g_pDevCfg->stTempAlertParams[iCnt].mincold));
 						strcat(SampleData," minutes. Current Temp is ");
 						strcat(SampleData,Temperature[iCnt]);
 						//strcat(SampleData,"�C. Take ACTION immediately.");	//superscript causes ERROR on sending SMS
@@ -75,7 +75,7 @@ void monitoralarm() {
 
 				}
 			}
-		} else if (iTemp > g_pDeviceCfg->stTempAlertParams[iCnt].threshHot) {
+		} else if (iTemp > g_pDevCfg->stTempAlertParams[iCnt].threshHot) {
 			//check if alarm is set for high temp
 			if (TEMP_ALARM_GET(iCnt) != HIGH_TEMP_ALARM_ON) {
 				//set it off incase it was earlier confirmed
@@ -88,7 +88,7 @@ void monitoralarm() {
 				//high temp alarm is already set, increment the counter
 				g_iAlarmCnfCnt[iCnt]++;
 				if ((g_iAlarmCnfCnt[iCnt] * g_iSamplePeriod)
-						>= g_pDeviceCfg->stTempAlertParams[iCnt].minHot) {
+						>= g_pDevCfg->stTempAlertParams[iCnt].minHot) {
 					TEMP_ALARM_SET(iCnt, TEMP_ALERT_CNF);
 #ifndef ALERT_UPLOAD_DISABLED
 					if(!(g_iStatus & BACKLOG_UPLOAD_ON))
@@ -109,7 +109,7 @@ void monitoralarm() {
 						strcat(SampleData, "Alert Sensor ");
 						strcat(SampleData, SensorName[iCnt]);
 						strcat(SampleData,": Temp too HIGH for ");
-						strcat(SampleData,itoa_pad(g_pDeviceCfg->stTempAlertParams[iCnt].minHot));
+						strcat(SampleData,itoa_pad(g_pDevCfg->stTempAlertParams[iCnt].minHot));
 						strcat(SampleData," minutes. Current Temp is ");
 						strcat(SampleData,Temperature[iCnt]);
 						//strcat(SampleData,"�C. Take ACTION immediately."); //superscript causes ERROR on sending SMS
@@ -138,7 +138,7 @@ void monitoralarm() {
 
 	//check for battery alert
 	iCnt = MAX_NUM_SENSORS;
-	if (g_iBatteryLevel < g_pDeviceCfg->stBattPowerAlertParam.battThreshold) {
+	if (g_iBatteryLevel < g_pDevCfg->stBattPowerAlertParam.battThreshold) {
 		//check if battery alarm is set
 		if (TEMP_ALARM_GET(iCnt) != BATT_ALARM_ON) {
 			TEMP_ALARM_CLR(iCnt);//reset the alarm in case it was earlier confirmed
@@ -150,7 +150,7 @@ void monitoralarm() {
 			//power alarm is already set, increment the counter
 			g_iAlarmCnfCnt[iCnt]++;
 			if ((g_iAlarmCnfCnt[iCnt] * g_iSamplePeriod)
-					>= g_pDeviceCfg->stBattPowerAlertParam.minutesBattThresh) {
+					>= g_pDevCfg->stBattPowerAlertParam.minutesBattThresh) {
 				TEMP_ALARM_SET(iCnt, TEMP_ALERT_CNF);
 				//set buzzer if not set
 				if (!(g_iStatus & BUZZER_ON)) {
@@ -178,7 +178,7 @@ void monitoralarm() {
 	}
 
 	//check for power alert enable
-	if (g_pDeviceCfg->stBattPowerAlertParam.enablePowerAlert) {
+	if (g_pDevCfg->stBattPowerAlertParam.enablePowerAlert) {
 		iCnt = MAX_NUM_SENSORS + 1;
 		if (P4IN & BIT4) {
 			//check if power alarm is set
@@ -192,7 +192,7 @@ void monitoralarm() {
 				//power alarm is already set, increment the counter
 				g_iAlarmCnfCnt[iCnt]++;
 				if ((g_iAlarmCnfCnt[iCnt] * g_iSamplePeriod)
-						>= g_pDeviceCfg->stBattPowerAlertParam.minutesPower) {
+						>= g_pDevCfg->stBattPowerAlertParam.minutesPower) {
 					TEMP_ALARM_SET(iCnt, TEMP_ALERT_CNF);
 					//set buzzer if not set
 					if (!(g_iStatus & BUZZER_ON)) {
@@ -230,29 +230,29 @@ void validatealarmthreshold() {
 
 	for (iCnt = 0; iCnt < MAX_NUM_SENSORS; iCnt++) {
 		//validate low temp threshold
-		if ((g_pDeviceCfg->stTempAlertParams[iCnt].threshCold < MIN_TEMP)
-				|| (g_pDeviceCfg->stTempAlertParams[iCnt].threshCold > MAX_TEMP)) {
-			g_pDeviceCfg->stTempAlertParams[iCnt].threshCold =
+		if ((g_pDevCfg->stTempAlertParams[iCnt].threshCold < MIN_TEMP)
+				|| (g_pDevCfg->stTempAlertParams[iCnt].threshCold > MAX_TEMP)) {
+			g_pDevCfg->stTempAlertParams[iCnt].threshCold =
 			LOW_TEMP_THRESHOLD;
 		}
 
-		if ((g_pDeviceCfg->stTempAlertParams[iCnt].minCold < MIN_CNF_TEMP_THRESHOLD)
-				|| (g_pDeviceCfg->stTempAlertParams[iCnt].minCold
+		if ((g_pDevCfg->stTempAlertParams[iCnt].minCold < MIN_CNF_TEMP_THRESHOLD)
+				|| (g_pDevCfg->stTempAlertParams[iCnt].minCold
 						> MAX_CNF_TEMP_THRESHOLD)) {
-			g_pDeviceCfg->stTempAlertParams[iCnt].minCold =
+			g_pDevCfg->stTempAlertParams[iCnt].minCold =
 			ALARM_LOW_TEMP_PERIOD;
 		}
 
 		//validate high temp threshold
-		if ((g_pDeviceCfg->stTempAlertParams[iCnt].threshHot < MIN_TEMP)
-				|| (g_pDeviceCfg->stTempAlertParams[iCnt].threshHot > MAX_TEMP)) {
-			g_pDeviceCfg->stTempAlertParams[iCnt].threshHot =
+		if ((g_pDevCfg->stTempAlertParams[iCnt].threshHot < MIN_TEMP)
+				|| (g_pDevCfg->stTempAlertParams[iCnt].threshHot > MAX_TEMP)) {
+			g_pDevCfg->stTempAlertParams[iCnt].threshHot =
 			HIGH_TEMP_THRESHOLD;
 		}
-		if ((g_pDeviceCfg->stTempAlertParams[iCnt].minHot < MIN_CNF_TEMP_THRESHOLD)
-				|| (g_pDeviceCfg->stTempAlertParams[iCnt].minHot
+		if ((g_pDevCfg->stTempAlertParams[iCnt].minHot < MIN_CNF_TEMP_THRESHOLD)
+				|| (g_pDevCfg->stTempAlertParams[iCnt].minHot
 						> MAX_CNF_TEMP_THRESHOLD)) {
-			g_pDeviceCfg->stTempAlertParams[iCnt].minHot =
+			g_pDevCfg->stTempAlertParams[iCnt].minHot =
 			ALARM_HIGH_TEMP_PERIOD;
 		}
 

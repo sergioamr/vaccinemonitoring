@@ -24,78 +24,158 @@
 #include "pmm.h"
 #include "fatdata.h"
 
-// TODO to be tested
-void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
-	char SampleData[128];
+// Send back data after an SMS request
+void sms_send_data_request(char *number) {
+	uint32_t iOffset;
+	char data[128];
 
-	uint32_t iIdx, iOffset;
+	//get temperature values
+	memset(data, 0, MSG_RESPONSE_LEN);
+	for (iOffset = 0; iOffset < MAX_NUM_SENSORS; iOffset++) {
+		strcat(data, SensorName[iOffset]);
+		strcat(data, "=");
+		strcat(data, Temperature[iOffset]);
+		strcat(data, "C, ");
+	}
+
+	// added for show msg//
+	strcat(data, "Battery:");
+	strcat(data, itoa_pad(g_iBatteryLevel));
+	strcat(data, "%, ");
+	if (P4IN & BIT4)	//power not plugged
+	{
+		strcat(data, "POWER OUT");
+	} else if (((P4IN & BIT6)) && (g_iBatteryLevel == 100)) {
+		strcat(data, "FULL CHARGE");
+	} else {
+		strcat(data, "CHARGING");
+	}
+	iOffset = strlen(data);
+
+	sms_send_message_number(number, data);
+}
+
+// Gets the message
+const char COMMAND_RESULT_CMGR[] = "+CMGR: ";
+
+// +CMGR: <stat>,<length><CR><LF><pdu>
+// <stat> - status of the message
+// 0 - new message
+// 1 - read message
+// 2 - stored message not yet sent
+// 3 - stored message already sent
+
+extern const char AT_MSG_OK[];
+
+int8_t sms_process_memory_message(int8_t index) {
+	int t=0, len=0;
+	char *token;
+	char msg[160];
+	char state[16];
+	char ok[8];
+	char phoneNumber[32];
+
+	uart_txf("AT+CMGR=%d\r\n", index);
+
+	int8_t uart_state = uart_getTransactionState();
+	if (uart_state != UART_SUCCESS)
+		return uart_state;
+
+	PARSE_FINDSTR_RET(token, COMMAND_RESULT_CMGR, UART_FAILED);
+	PARSE_FIRSTSTRING(token, state, sizeof(state), ",\n", UART_FAILED);
+	PARSE_NEXTSTRING(token, phoneNumber, sizeof(phoneNumber), ",\n", UART_FAILED);
+
+	len = strlen(phoneNumber);
+	for (t=0; t<len; t++)
+		if (phoneNumber[t]=='\"')
+			phoneNumber[t]=0;
+
+	PARSE_SKIP(token, "\n", UART_FAILED);
+
+	PARSE_NEXTSTRING(token, msg, sizeof(msg), "\n", UART_FAILED);
+
+	// Jump first \n to get the OK
+	PARSE_SKIP(token, "\n", UART_FAILED);
+	ok[0]=0;
+	PARSE_NEXTSTRING(token, ok, sizeof(ok), "\n", UART_FAILED);
+	if (ok[0]!='O' || ok[1]!='K' )
+		return UART_FAILED;
+
+	switch (msg[0]) {
+	case '1':
+		sms_send_data_request(&phoneNumber[1]); // Send the phone without the \"
+		break;
+	case '2':
+		for (t = 0; t < 10; t++) {
+			lcd_print("REBOOT DEVICE");
+			lcd_printf(LINE2, "*** %d ***", (10 - t));
+			lcd_progress_wait(1000);
+		}
+		//reset the board by issuing a SW BOR
+		PMM_trigBOR();
+		while (1);	//code should not come here
+	default:
+		config_process_configuration(token);
+		break;
+	}
+
+	return UART_SUCCESS;
+}
+
+// Gets how many messages and the max number of messages on the card / memory
+// +CPMS: <memr>,<usedr>,<totalr>,<memw>,<usedw>,<totalw>,
+// <mems>,<useds>,<totals>
+
+const char COMMAND_RESULT_CPMS[] = "+CPMS: ";
+
+int8_t sms_process_messages(uint32_t iMinuteTick) {
+	char *token;
+	char SM_ME[5]; // Internal memory or sim card used
+	uint32_t iIdx;
 	SIM_CARD_CONFIG *sim = config_getSIM();
+	uint8_t usedr = 0; // Reading memory
+	uint8_t totalr = 0;
+
+	config_setLastCommand(COMMAND_SMS_PROCESS);
+
+	memset(SM_ME, 0, sizeof(SM_ME));
+
+	lcd_printf(LINEC, "Fetching SMS");
+	lcd_printf(LINE2, "SIM %d ", config_getSelectedSIM());
 
 	iMsgRxPollElapsed = iMinuteTick;
 	//check if messages are available
 	uart_tx("AT+CPMS?\r\n");
-	uart_rx(ATCMD_CPMS_CURRENT, ATresponse);
-	if (ATresponse[0] != '0') {
-		iIdx = strtol(ATresponse, 0, 10);
-		if (iIdx) {
-			iIdx = 1;
-			lcd_printl(LINE2, "Msg Processing..");
-			if (sim->iMaxMessages != 0xFF && sim->iMaxMessages != 0x00) {
-				while (iIdx < sim->iMaxMessages) {
-					iModemSuccess = sms_recv_message(iIdx, ATresponse);
-					if (ATresponse[0] != 0 && iModemSuccess == ((int8_t) 0)) {
-						switch (ATresponse[0]) {
-						case '1':
-							//get temperature values
-							memset(SampleData, 0, MSG_RESPONSE_LEN);
-							for (iOffset = 0; iOffset < MAX_NUM_SENSORS;
-									iOffset++) {
-								strcat(SampleData, SensorName[iOffset]);
-								strcat(SampleData, "=");
-								strcat(SampleData, Temperature[iOffset]);
-								strcat(SampleData, "C, ");
-							}
 
-							// added for show msg//
-							strcat(SampleData, "Battery:");
-							strcat(SampleData, itoa_pad(g_iBatteryLevel));
-							strcat(SampleData, "%, ");
-							if (P4IN & BIT4)	//power not plugged
-							{
-								strcat(SampleData, "POWER OUT");
-							} else if (((P4IN & BIT6))
-									&& (g_iBatteryLevel == 100)) {
-								strcat(SampleData, "FULL CHARGE");
-							} else {
-								strcat(SampleData, "CHARGING");
-							}
-							iOffset = strlen(SampleData);
+	// Failed to get parameters
+	int8_t uart_state = uart_getTransactionState();
+	if (uart_state != UART_SUCCESS)
+		return uart_state;
 
-							sms_send_message_number(&ATresponse[6], SampleData);
-							break;
+	PARSE_FINDSTR_RET(token, COMMAND_RESULT_CPMS, UART_FAILED);
+	PARSE_FIRSTSTRING(token, SM_ME, sizeof(SM_ME) - 1, ", \n", UART_FAILED);
+	PARSE_NEXTVALUE(token, &usedr, ", \n", UART_FAILED);
+	PARSE_NEXTVALUE(token, &totalr, ", \n", UART_FAILED);
 
-						case '2':
-							//reset the board by issuing a SW BOR
-							PMM_trigBOR();
-							while (1);	//code should not come here
-						default:
-							break;
-						}
-						//if (sms_process_msg(ATresponse)) {
-							//send heartbeat on successful processing of SMS message
-						//	sms_send_heart_beat();
-						//}
-					}
-					iIdx++;
-				}
-			} else {
-				modem_set_max_messages();
-			}
-			iModemSuccess = 0;
-			delallmsg();
-			lcd_show(iDisplayId);
-		}
+	if (check_address_empty(sim->iMaxMessages) || sim->iMaxMessages != totalr) {
+		sim->iMaxMessages = totalr;
 	}
+
+	lcd_printf(LINEC, "%d Config sms", usedr);
+	lcd_printl(LINE2, "Msg Processing..");
+
+	uart_tx("AT+CSDH=0\r\n"); // Disable extended output
+
+	iIdx = 1;
+	while (usedr > 0) {
+		sms_process_memory_message(iIdx);
+		usedr--;
+	}
+
+	delallmsg();
+	uart_tx("AT+CSDH=1\r\n"); // Restore extended output
+
+	return UART_SUCCESS;
 }
 
 void sms_send_heart_beat() {
@@ -109,14 +189,14 @@ void sms_send_heart_beat() {
 	//send heart beat
 	memset(SampleData, 0, sizeof(SampleData));
 	strcat(SampleData, SMS_HB_MSG_TYPE);
-	strcat(SampleData, g_pDeviceCfg->cfgIMEI);
+	strcat(SampleData, g_pDevCfg->cfgIMEI);
 	strcat(SampleData, ",");
 	if (config_getSelectedSIM()) {
 		strcat(SampleData, "1,");
 	} else {
 		strcat(SampleData, "0,");
 	}
-	strcat(SampleData, g_pDeviceCfg->cfgGatewaySMS);
+	strcat(SampleData, g_pDevCfg->cfgGatewaySMS);
 	strcat(SampleData, ",");
 	strcat(SampleData, sim->cfgSMSCenter);
 	strcat(SampleData, ",");
@@ -158,20 +238,28 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	uint16_t msgNumber = 0; // Validation number from the network returned by the CMGS command
 	int res = UART_ERROR;
 	int verbose = g_iLCDVerbose;
+	int phonecode = 129;
 
 	if (g_iStatus & TEST_FLAG)
 		return UART_SUCCESS;
 
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_clear();
-		lcd_printf(LINE1, "SYNC SMS %d ", g_pDeviceCfg->cfgSIM_slot + 1);
+		lcd_printf(LINE1, "SYNC SMS %d ", g_pDevCfg->cfgSIM_slot + 1);
 		lcd_printl(LINE2, szPhoneNumber);
 		lcd_disable_verbose();
 	}
 
 	strcat(pData, ctrlZ);
 
-	sprintf(szCmd, "AT+CMGS=\"%s\",129\r\n", szPhoneNumber);
+	// 129 - number in national format
+	// 145 - number in international format (contains the "+")
+
+	if (szPhoneNumber[0]=='+')
+		phonecode = 145;
+
+	sprintf(szCmd, "AT+CMGS=\"%s\",%d\r\n", szPhoneNumber, phonecode);
+
 	uart_setSMSPromptMode();
 	if (uart_tx_waitForPrompt(szCmd, TIMEOUT_CMGS_PROMPT)) {
 		uart_tx_timeout(pData, TIMEOUT_CMGS, 1);

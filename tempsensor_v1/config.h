@@ -14,10 +14,19 @@
 #include "common.h"
 #include "time.h"
 
-#define NETWORK_ATTEMPTS_BEFORE_SWAP_SIM 3
+/**************************************************************************************************************************/
+/* BEGIN FACTORY CONFIGURATION 																							  */
+/**************************************************************************************************************************/
+
 #define NEXLEAF_SMS_GATEWAY       "00447751035864"
 #define NEXLEAF_DEFAULT_SERVER_IP "54.241.2.213"
 #define NEXLEAF_DEFAULT_APN 	  "giffgaff.com"
+
+#define NETWORK_ATTEMPTS_BEFORE_SWAP_SIM 3
+
+/**************************************************************************************************************************/
+/* END FACTORY CONFIGURATION 																							  */
+/**************************************************************************************************************************/
 
 // Poll times trying to connect to the network.
 // After autoband it could take up to 90 seconds for the bands trial and error.
@@ -212,6 +221,7 @@ extern void config_reset_error(SIM_CARD_CONFIG *sim);
 extern uint16_t config_getSimLastError(char *charToken);
 
 int config_process_configuration();
+int config_parse_configuration(char *msg);
 
 // Flags the sim as not working
 void config_SIM_not_operational();

@@ -113,7 +113,7 @@ int8_t http_setup() {
 		return UART_FAILED;
 
 	// LONG TIMEOUT
-	uart_txf("AT#HTTPCFG=1,\"%s\",80\r\n", g_pDeviceCfg->cfgGatewayIP);
+	uart_txf("AT#HTTPCFG=1,\"%s\",80\r\n", g_pDevCfg->cfgGatewayIP);
 	if (uart_getTransactionState() != UART_SUCCESS) {
 		lcd_printl(LINE2, "FAILED");
 		return UART_FAILED;
@@ -179,7 +179,7 @@ int http_get_configuration() {
 	// 0 � GET 1 � HEAD 2 � DELETE
 
 	sprintf(szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/%s/1/\"\r\n",
-			g_pDeviceCfg->cfgIMEI);
+			g_pDevCfg->cfgIMEI);
 	uart_tx_timeout(szTemp, 5000, 1);
 	if (uart_getTransactionState() != UART_SUCCESS)
 		return UART_FAILED;

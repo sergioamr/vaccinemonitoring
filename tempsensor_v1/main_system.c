@@ -155,6 +155,7 @@ void system_boot() {
 	log_appendf("Running tests");
 
 	log_sample_web_format(&bytes_written);
+	sms_process_messages(0);
 }
 
 _Sigfun * signal(int i, _Sigfun *proc) {
