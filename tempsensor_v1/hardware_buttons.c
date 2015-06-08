@@ -6,6 +6,7 @@
  */
 #include "thermalcanyon.h"
 
+void thermal_handle_system_button();
 // Interrupt services
 
 uint8_t switch_check_service_pressed() {
@@ -60,6 +61,7 @@ void __attribute__ ((interrupt(PORT3_VECTOR))) Port_3 (void)
 		break;
 	case P3IV_P3IFG5:
 		g_iSystemSetup ++;
+		thermal_handle_system_button();
 		break;
 	default:
 		break;
