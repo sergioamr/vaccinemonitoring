@@ -278,11 +278,17 @@ int8_t modem_check_network() {
 
 	// Something was wrong on the connection, swap SIM card.
 	if (res == UART_FAILED) {
-		if (network_failures == NETWORK_ATTEMPTS_BEFORE_SWAP_SIM) {
+		if (network_failures == NETWORK_ATTEMPTS_BEFORE_SWAP_SIM - 1) {
+			log_appendf("[%d] TRY SWAPPING SIM", config_getSelectedSIM());
 			res = modem_swap_SIM();
 			network_failures = 0;
-		} else
+		} else {
 			network_failures++;
+			log_appendf("[%d] NETWORK DOWN %d", config_getSelectedSIM(),
+					network_failures);
+		}
+	} else {
+		network_failures = 0;
 	}
 
 	return res;
