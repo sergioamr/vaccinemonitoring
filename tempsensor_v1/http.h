@@ -21,4 +21,6 @@ int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 int http_post_gprs_connection_status(char status);
 int http_post_sms_status(void);
 
+extern const char HTTP_INCOMING_DATA[];
+
 #endif /* TEMPSENSOR_V1_HTTP_H_ */
