@@ -8,8 +8,6 @@
 #ifndef MAIN_SYSTEM_H_
 #define MAIN_SYSTEM_H_
 
-
-
-
+int system_isRunning();
 
 #endif /* MAIN_SYSTEM_H_ */

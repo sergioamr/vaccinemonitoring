@@ -30,8 +30,12 @@
 #include "data_transmit.h"
 #include "hardware_buttons.h"
 #include "fatdata.h"
+#include "main_system.h"
 
 void thermal_handle_system_button() {
+	if (!system_isRunning())
+		return;
+
 	if (g_iSystemSetup < 0)
 		return;
 

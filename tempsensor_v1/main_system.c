@@ -31,6 +31,11 @@
 #include "hardware_buttons.h"
 #include "fatdata.h"
 
+int g_iRunning = 0;
+
+char system_isRunning() {
+	return g_iRunning;
+}
 /****************************************************************************/
 /*  IO SETUP                                                                */
 /****************************************************************************/
@@ -171,5 +176,6 @@ int main(void) {
 
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 	system_boot();
+	g_iRunning = 1;
 	thermal_canyon_loop();
 }
