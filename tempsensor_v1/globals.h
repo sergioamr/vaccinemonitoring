@@ -33,7 +33,7 @@ extern char SampleData[SAMPLE_LEN];
 extern struct tm g_tmCurrTime;
 
 extern int8_t g_iSignalLevel;
-extern uint8_t g_iBatteryLevel;
+
 extern char g_iSignal_gprs;
 extern char g_iGprs_network_indication;
 

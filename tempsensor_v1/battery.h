@@ -36,30 +36,24 @@ extern "C"
 #define BATT_TAPER_VOLT_2			0x5E
 #define BATT_FULLCHRGCAP			0x0E
 
+extern uint8_t g_iBatteryLevel;
 
 //*****************************************************************************
-//
 //! \brief Initialize Battery fuel guage.
-//!
 //! \param speed
-//!
 //! \return None
-//
 //*****************************************************************************
-extern void batt_init();
+void batt_init();
 
 //*****************************************************************************
-//
 //! \brief Get the battery remaining capacity
-//!
-//!
 //! \return battery remaining capacity in percentage
-//
 //*****************************************************************************
-extern uint8_t batt_getlevel();
+uint8_t batt_getlevel();
 
 // Checks level, displays a message with the result
-extern uint8_t batt_check_level();
+uint8_t batt_check_level();
+int8_t batt_isPlugged();
 
 #ifdef __cplusplus
 }

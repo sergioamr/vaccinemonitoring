@@ -8,6 +8,7 @@
 //uart_tx("AT+CGDCONT=1,\"IP\",\"www\",\"0.0.0.0\",0,0\r\n");
 #include "thermalcanyon.h"
 #include "stringutils.h"
+#include "config.h"
 
 #define HTTP_RESPONSE_RETRY	10
 

@@ -7,52 +7,86 @@
 
 #include "thermalcanyon.h"
 #include "config.h"
+#include "fatdata.h"
+#include "battery.h"
+#include "stdlib.h"
 
 #define TS_SIZE				21
 #define TS_FIELD_OFFSET		1	//1 - $, 3 - $TS
 
+
+// 11,20150303:082208,interval,sensorid,DATADATADATAT,sensorid,DATADATADATA,sensorid,dATADATADA,sensorID,DATADATADATADATAT, sensorID,DATADATADATADATAT,batt level,battplugged.
+
+char *getSensorTemp(int sensorID) {
+	static char sensorData[64];
+
+	return sensorData;
+}
+
+void data_send_temperatures_sms() {
+	char data[180];
+	int t=0;
+
+	rtc_getlocal(&g_tmCurrTime);
+
+	strcpy(data, SMS_DATA_MSG_TYPE);
+	strcat(data, get_simplified_date_string(&g_tmCurrTime));
+	for (t=0; t<MAX_NUM_SENSORS; t++) {
+		strcat(data, getSensorTemp(t));
+	}
+
+	strcat(data, ",");
+	strcat(data, itoa_nopadding(g_iBatteryLevel));
+	strcat(data, ",");
+	strcat(data, itoa_nopadding(batt_isPlugged()));
+	sms_send_message(data);
+}
+
 void data_upload_sms() {
+
+/*
+ * int iPOSTstatus = 0;
 	char* pcData = NULL;
 	char* pcTmp = NULL;
 	char* pcSrc1 = NULL;
 	char* pcSrc2 = NULL;
 	int iIdx = 0;
-	int iPOSTstatus = 0;
 	char sensorId[2] = { 0, 0 };
+	char dataSample[180];
 
 	iPOSTstatus = strlen(SampleData);
 
 	memset(sensorId, 0, sizeof(sensorId));
-	memset(ATresponse, 0, sizeof(ATresponse));
-	strcat(ATresponse, SMS_DATA_MSG_TYPE);
+	memset(dataSample, 0, sizeof(dataSample));
+	strcat(dataSample, SMS_DATA_MSG_TYPE);
 
 	pcSrc1 = strstr(SampleData, "sdt=");	//start of TS
 	pcSrc2 = strstr(pcSrc1, "&");	//end of TS
 	pcTmp = strtok(&pcSrc1[4], "/:");
 
 	if ((pcTmp) && (pcTmp < pcSrc2)) {
-		strcat(ATresponse, pcTmp);	//get year
+		strcat(dataSample, pcTmp);	//get year
 		pcTmp = strtok(NULL, "/:");
 		if ((pcTmp) && (pcTmp < pcSrc2)) {
-			strcat(ATresponse, pcTmp);	//get month
+			strcat(dataSample, pcTmp);	//get month
 			pcTmp = strtok(NULL, "/:");
 			if ((pcTmp) && (pcTmp < pcSrc2)) {
-				strcat(ATresponse, pcTmp);	//get day
-				strcat(ATresponse, ":");
+				strcat(dataSample, pcTmp);	//get day
+				strcat(dataSample, ":");
 			}
 		}
 
 		//fetch time
 		pcTmp = strtok(NULL, "/:");
 		if ((pcTmp) && (pcTmp < pcSrc2)) {
-			strcat(ATresponse, pcTmp);	//get hour
+			strcat(dataSample, pcTmp);	//get hour
 			pcTmp = strtok(NULL, "/:");
 			if ((pcTmp) && (pcTmp < pcSrc2)) {
-				strcat(ATresponse, pcTmp);	//get minute
+				strcat(dataSample, pcTmp);	//get minute
 				pcTmp = strtok(NULL, "&");
 				if ((pcTmp) && (pcTmp < pcSrc2)) {
-					strcat(ATresponse, pcTmp);	//get sec
-					strcat(ATresponse, ",");
+					strcat(dataSample, pcTmp);	//get sec
+					strcat(dataSample, ",");
 				}
 			}
 		}
@@ -62,8 +96,8 @@ void data_upload_sms() {
 	pcSrc2 = strstr(pcSrc1, "&");	//end of interval
 	pcTmp = strtok(&pcSrc1[2], "&");
 	if ((pcTmp) && (pcTmp < pcSrc2)) {
-		strcat(ATresponse, pcTmp);
-		strcat(ATresponse, ",");
+		strcat(dataSample, pcTmp);
+		strcat(dataSample, ",");
 	}
 
 	pcSrc1 = strstr(pcSrc2 + 1, "t=");	//start of temperature
@@ -81,20 +115,20 @@ void data_upload_sms() {
 		pcTmp = strtok(&pcSrc1[2], "|&");
 		for (iIdx = 0; (iIdx < MAX_NUM_SENSORS) && (pcTmp); iIdx++) {
 			sensorId[0] = iIdx + 0x30;
-			strcat(ATresponse, sensorId);	//add sensor id
-			strcat(ATresponse, ",");
+			strcat(dataSample, sensorId);	//add sensor id
+			strcat(dataSample, ",");
 
 			//encode the temp value
-			memset(&ATresponse[SMS_ENCODED_LEN], 0, ENCODED_TEMP_LEN);
+			memset(&dataSample[0], 0, ENCODED_TEMP_LEN);
 			//check temp is --.- in case of sensor plugged out
 			if (pcTmp[1] != '-') {
-				pcSrc2 = &ATresponse[SMS_ENCODED_LEN]; //reuse
+				pcSrc2 = &dataSample[0]; //reuse
 				encode(strtod(pcTmp, NULL), pcSrc2);
-				strcat(ATresponse, pcSrc2);	//add encoded temp value
+				strcat(dataSample, pcSrc2);	//add encoded temp value
 			} else {
-				strcat(ATresponse, "/W");	//add encoded temp value
+				strcat(dataSample, "/W");	//add encoded temp value
 			}
-			strcat(ATresponse, ",");
+			strcat(dataSample, ",");
 
 			pcTmp = strtok(NULL, "|&");
 
@@ -108,31 +142,31 @@ void data_upload_sms() {
 
 		while ((pcTmp) && (pcTmp < pcSrc2)) {
 			sensorId[0] = iIdx + 0x30;
-			strcat(ATresponse, sensorId);	//add sensor id
-			strcat(ATresponse, ",");
+			strcat(dataSample, sensorId);	//add sensor id
+			strcat(dataSample, ",");
 
 			//encode the temp value
-			memset(&ATresponse[SMS_ENCODED_LEN], 0, ENCODED_TEMP_LEN);
+			memset(&dataSample[SMS_ENCODED_LEN], 0, ENCODED_TEMP_LEN);
 			//check temp is --.- in case of sensor plugged out
 			if (pcTmp[1] != '-') {
-				pcSrc1 = &ATresponse[SMS_ENCODED_LEN]; //reuse
+				pcSrc1 = &dataSample[SMS_ENCODED_LEN]; //reuse
 				encode(strtod(pcTmp, NULL), pcSrc1);
-				strcat(ATresponse, pcSrc1);	//add encoded temp value
+				strcat(dataSample, pcSrc1);	//add encoded temp value
 			} else {
-				strcat(ATresponse, "/W");	//add encoded temp value
+				strcat(dataSample, "/W");	//add encoded temp value
 			}
 
 			pcTmp = strtok(NULL, ",|&");
 			while ((pcTmp) && (pcTmp < pcSrc2)) {
 				//encode the temp value
-				memset(&ATresponse[SMS_ENCODED_LEN], 0, ENCODED_TEMP_LEN);
+				memset(&dataSample[SMS_ENCODED_LEN], 0, ENCODED_TEMP_LEN);
 				//check temp is --.- in case of sensor plugged out
 				if (pcTmp[1] != '-') {
-					pcSrc1 = &ATresponse[SMS_ENCODED_LEN]; //reuse
+					pcSrc1 = &dataSample[SMS_ENCODED_LEN]; //reuse
 					encode(strtod(pcTmp, NULL), pcSrc1);
-					strcat(ATresponse, pcSrc1);	//add encoded temp value
+					strcat(dataSample, pcSrc1);	//add encoded temp value
 				} else {
-					strcat(ATresponse, "/W");	//add encoded temp value
+					strcat(dataSample, "/W");	//add encoded temp value
 				}
 				pcTmp = strtok(NULL, ",|&");
 
@@ -140,7 +174,7 @@ void data_upload_sms() {
 
 			//check if we can start with next temp series
 			if ((pcTmp) && (pcTmp < pcData)) {
-				strcat(ATresponse, ",");
+				strcat(dataSample, ",");
 				iIdx++;	//start with next sensor
 				pcSrc2 = strstr(&pcTmp[strlen(pcTmp) + 1], "|"); //adjust the last postion to next sensor end
 				if (!pcSrc2) {
@@ -158,48 +192,50 @@ void data_upload_sms() {
 		pcSrc2 = strstr(pcSrc1, "&");	//end of battery
 		pcTmp = strtok(pcSrc1, "&");	//get all series values except the first
 		if ((pcTmp) && (pcTmp < pcSrc2)) {
-			strcat(ATresponse, ",");
+			strcat(dataSample, ",");
 			pcSrc1 = strrchr(pcTmp, ','); //postion to the last battery level  (e.g pcTmp 100 or 100,100,..
 			if (pcSrc1) {
-				strcat(ATresponse, pcSrc1 + 1); //past the last comma
+				strcat(dataSample, pcSrc1 + 1); //past the last comma
 			} else {
-				strcat(ATresponse, pcTmp); //no comma
+				strcat(dataSample, pcTmp); //no comma
 			}
-			strcat(ATresponse, ",");
+			strcat(dataSample, ",");
 
 			pcSrc1 = strrchr(pcSrc2 + 1, ','); //postion to the last power plugged state
 			if ((pcSrc1) && (pcSrc1 < &SampleData[iPOSTstatus])) {
-				strcat(ATresponse, pcSrc1 + 1);
+				strcat(dataSample, pcSrc1 + 1);
 			} else {
 				//power plugged does not have series values
 				pcTmp = pcSrc2 + 1;
-				strcat(ATresponse, &pcTmp[2]); //pcTmp contains p=yyy
+				strcat(dataSample, &pcTmp[2]); //pcTmp contains p=yyy
 			}
 
 		}
 
 	} else {
 		//battery does not have series values
-		//strcat(ATresponse,",");
-		strcat(ATresponse, &pcTmp[2]); //pcTmp contains b=yyy
+		//strcat(dataSample,",");
+		strcat(dataSample, &pcTmp[2]); //pcTmp contains b=yyy
 
-		strcat(ATresponse, ",");
+		strcat(dataSample, ",");
 		pcSrc2 = pcTmp + strlen(pcTmp);  //end of battery
 		pcSrc1 = strrchr(pcSrc2 + 1, ','); //postion to the last power plugged state
 		if ((pcSrc1) && (pcSrc1 < &SampleData[iPOSTstatus])) {
-			strcat(ATresponse, pcSrc1 + 1);	//last power plugged values is followed by null
+			strcat(dataSample, pcSrc1 + 1);	//last power plugged values is followed by null
 		} else {
 			//power plugged does not have series values
 			pcTmp = pcSrc2 + 1;
-			strcat(ATresponse, &pcTmp[2]); //pcTmp contains p=yyy
+			strcat(dataSample, &pcTmp[2]); //pcTmp contains p=yyy
 		}
 
 	}
-	sms_send_message(ATresponse);
+	sms_send_message(dataSample);
+*/
 }
 
 int data_transmit(uint8_t *pSampleCnt) {
 	int iPOSTstatus = 0;
+/*
 
 	char *dummy = NULL;
 	char* pcTmp = NULL;
@@ -317,9 +353,9 @@ int data_transmit(uint8_t *pSampleCnt) {
 	iPOSTstatus = 0;
 	fr = FR_DENIED;
 	iOffset = 0;
-	char* fn = get_current_fileName(&g_tmCurrTime);
+	char* fn = get_current_fileName(&g_tmCurrTime, FOLDER_TEXT, EXTENSION_TEXT);
 
-//fr = f_read(&filr, acLogData, 1, &iIdx);  /* Read a chunk of source file */
+//fr = f_read(&filr, acLogData, 1, &iIdx);   Read a chunk of source file
 	memset(ATresponse, 0, sizeof(ATresponse));//ensure the buffer in aggregate_var section is more than AGGREGATE_SIZE
 	fr = f_open(&filr, fn, FA_READ | FA_OPEN_ALWAYS);
 	if (fr == FR_OK) {
@@ -335,7 +371,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 		iOffset = g_pCalibrationCfg->dwLastSeek % SECTOR_SIZE;
 		//check the position is in first half of sector
 		if ((SECTOR_SIZE - iOffset) > sizeof(ATresponse)) {
-			fr = f_read(&filr, ATresponse, sizeof(ATresponse), (UINT *) &iIdx); /* Read first chunk of sector*/
+			fr = f_read(&filr, ATresponse, sizeof(ATresponse), (UINT *) &iIdx);  Read first chunk of sector
 			if ((fr == FR_OK) && (iIdx > 0)) {
 				g_iStatus &= ~SPLIT_TIME_STAMP;//clear the last status of splitted data
 				pcData = (char *) FatFs.win;//reuse the buffer maintained by the file system
@@ -371,7 +407,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 						g_pCalibrationCfg->dwLastSeek += SECTOR_SIZE - iOffset;
 						//seek
 						//f_lseek(&filr, g_pInfoB->dwLastSeek);
-						//fr = f_read(&filr, ATresponse, AGGREGATE_SIZE, &iIdx);  /* Read next data of AGGREGATE_SIZE */
+						//fr = f_read(&filr, ATresponse, AGGREGATE_SIZE, &iIdx);   Read next data of AGGREGATE_SIZE
 						//if((fr == FR_OK) && (iIdx > 0))
 						//if(disk_read_ex(0,ATresponse,filr.dsect+1,AGGREGATE_SIZE) == RES_OK)
 						if (disk_read_ex(0, (BYTE *) ATresponse, filr.dsect + 1,
@@ -419,7 +455,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 			}
 		} else {
 			//the position is second half of sector
-			fr = f_read(&filr, ATresponse, SECTOR_SIZE - iOffset, &iIdx); /* Read data till the end of sector */
+			fr = f_read(&filr, ATresponse, SECTOR_SIZE - iOffset, &iIdx);  Read data till the end of sector
 			if ((fr == FR_OK) && (iIdx > 0)) {
 				g_iStatus &= ~SPLIT_TIME_STAMP;//clear the last status of splitted data
 				//get position of first time stamp
@@ -453,7 +489,7 @@ int data_transmit(uint8_t *pSampleCnt) {
 							g_pCalibrationCfg->dwLastSeek += SECTOR_SIZE - iOffset;
 							//seek
 							f_lseek(&filr, g_pCalibrationCfg->dwLastSeek);
-							fr = f_read(&filr, &dummy, 1, &iIdx); /* dummy read to load the next sector */
+							fr = f_read(&filr, &dummy, 1, &iIdx);  dummy read to load the next sector
 							if ((fr == FR_OK) && (iIdx > 0)) {
 								pcData = (char *) FatFs.win; //resuse the buffer maintained by the file system
 								//update final lseek for next sample
@@ -659,5 +695,6 @@ int data_transmit(uint8_t *pSampleCnt) {
 		config_setLastCommand(COMMAND_POST + COMMAND_END);
 	}
 
+*/
 	return iPOSTstatus;
 }

@@ -14,7 +14,16 @@
 #define  TRANS_DELAY 		10
 
 #ifndef BATTERY_DISABLED
+
+uint8_t g_iBatteryLevel = 100;
 int16_t g_iFullRecharge = 0;
+
+int8_t batt_isPlugged() {
+	if (g_iBatteryLevel==0 || g_iBatteryLevel>100)
+		return 0;
+
+	return 1;
+}
 
 uint8_t batt_check_level() {
 	uint8_t iBatteryLevel = 0;
