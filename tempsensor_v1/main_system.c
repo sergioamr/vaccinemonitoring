@@ -102,6 +102,7 @@ void modem_turn_off() {
 }
 
 void system_boot() {
+	UINT bytes_written = 0;
 
 	// Turn off modem
 	modem_turn_off();
@@ -151,7 +152,9 @@ void system_boot() {
 	lcd_disable_verbose();
 
 	lcd_print("Finished Boot");
-	log_appendf("Finished Boot");
+	log_appendf("Running tests");
+
+	log_sample_web_format(&bytes_written);
 }
 
 _Sigfun * signal(int i, _Sigfun *proc) {

@@ -28,7 +28,7 @@ DWORD get_fattime(void) {
 	return tmr;
 }
 
-char szYMDString[4 + 2 + 2 + 1];
+char szYMDString[16];
 
 char* get_YMD_String(struct tm* timeData) {
 
@@ -42,6 +42,37 @@ char* get_YMD_String(struct tm* timeData) {
 	strcat(szYMDString, itoa_pad(timeData->tm_mday));
 	return szYMDString;
 }
+
+char szDateString[32]; // "YYYY-MM-DD HH:MM:S IST"
+
+char* get_date_string(struct tm* timeData) {
+
+	szYMDString[0] = 0;
+	if (timeData->tm_year < 1900 || timeData->tm_year > 3000) // Working for 1000 years?
+		strcpy(szYMDString, "0000");
+	else
+		strcpy(szYMDString, itoa_nopadding(timeData->tm_year));
+
+	strcat(szYMDString, "-");
+	strcat(szYMDString, itoa_pad(timeData->tm_mon + 1));
+	strcat(szYMDString, "-");
+	strcat(szYMDString, itoa_pad(timeData->tm_mday));
+	strcat(szYMDString, " ");
+	strcat(szYMDString, itoa_pad(timeData->tm_hour));
+	strcat(szYMDString, ":");
+	strcat(szYMDString, itoa_pad(timeData->tm_min));
+	strcat(szYMDString, ":");
+	strcat(szYMDString, itoa_pad(timeData->tm_sec));
+
+	//[TODO] Check timezone
+
+	if (timeData->tm_isdst) {
+		strcat(szYMDString, "DST");
+		strcat(szYMDString, " ");
+	}
+	return szYMDString;
+}
+
 
 char* get_current_fileName(struct tm* timeData) {
 	if (timeData->tm_mday == 0 && timeData->tm_mon && timeData->tm_year == 0) {
@@ -167,6 +198,87 @@ FRESULT log_appendf(const char *_format, ...) {
 
 	*out_end = '\0';
 	return log_append_(szTemp);
+}
+
+const char HEADER_CSV[] = "\"Date of Reading\",\"Battery %\",\"Power Status\",\"Sensor A (Deg. C)\",\"Sensor B (Deg. C)\",\"Sensor C (Deg. C)\",\"Sensor D (Deg. C)\",\"Sensor E (Deg. C)\"\r\n";
+
+FRESULT log_write_header(FIL *fobj, UINT *pBw) {
+	fr = f_write (fobj, HEADER_CSV, sizeof (HEADER_CSV), pBw);
+	return fr;
+}
+
+const char *const POWER_STATE[] = { "Power Outage", "Power Available" };
+
+// 0 Power outage
+//  Power available
+char getPowerState() {
+	return !(P4IN & BIT4);
+}
+
+const char *getPowerStateString() {
+	char pos = getPowerState();
+	return POWER_STATE[pos];
+}
+
+FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
+	char szLog[64];
+	UINT bw = 0;
+	char *date;
+
+	date=get_date_string(&g_tmCurrTime);
+	fr = f_write (fobj, date, strlen(date), &bw);
+	if (fr!=FR_OK)
+		return fr;
+
+	*pBw+=bw;
+
+	g_iBatteryLevel = batt_getlevel();
+
+	sprintf(szLog, ",\"%d%%\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\r\n", g_iBatteryLevel, getPowerStateString(), Temperature[0], Temperature[1], Temperature[2], Temperature[3], Temperature[4]);
+	fr = f_write (fobj, szLog, strlen(szLog), &bw);
+	return fr;
+}
+
+FRESULT log_sample_web_format(UINT *tbw)  {
+	FIL fobj;
+	UINT bw = 0;	//bytes written
+	if (!g_bFatInitialized)
+		return FR_NOT_READY;
+
+	lcd_print("Saving sample");
+
+	rtc_get(&g_tmCurrTime);
+	char* fn = get_current_fileName(&g_tmCurrTime);
+
+	fr = f_open(&fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
+	if (fr == FR_OK) {
+		if (fobj.fsize) {
+			//append to the file
+			f_lseek(&fobj, fobj.fsize);
+		} else {
+			fr=log_write_header(&fobj, &bw);
+			if (fr!=FR_OK) {
+				fat_check_error(fr);
+				f_close(&fobj);
+				return fr;
+			}
+		}
+	} else {
+		fat_check_error(fr);
+		return fr;
+	}
+
+	fr=log_write_temperature(&fobj, &bw);
+	*tbw=bw;
+
+	f_sync(fobj);
+
+	if (fr== FR_OK) {
+		lcd_printf(LINE2, "OK %d bytes", *tbw);
+	} else {
+		fat_check_error(fr);
+	}
+	return f_close(fobj);
 }
 
 FRESULT log_sample_to_disk(int* tbw) {

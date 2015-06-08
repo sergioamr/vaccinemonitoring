@@ -26,6 +26,8 @@
 
 // TODO to be tested
 void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
+	char SampleData[128];
+
 	uint32_t iIdx, iOffset;
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
