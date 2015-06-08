@@ -106,9 +106,11 @@ int8_t sms_process_memory_message(int8_t index) {
 		sms_send_data_request(&phoneNumber[1]); // Send the phone without the \"
 		break;
 	case '2':
+		sms_send_message_number(&phoneNumber[1], "Rebooting...");
+		delallmsg();
 		for (t = 0; t < 10; t++) {
-			lcd_print("REBOOT DEVICE");
-			lcd_printf(LINE2, "*** %d ***", (10 - t));
+			lcd_printf(LINEC, "REBOOT DEVICE");
+			lcd_printf(LINE2, "   *** %d ***  ", (10 - t));
 			lcd_progress_wait(1000);
 		}
 		//reset the board by issuing a SW BOR
@@ -171,10 +173,11 @@ int8_t sms_process_messages(uint32_t iMinuteTick) {
 
 	uart_tx("AT+CSDH=0\r\n"); // Disable extended output
 
-	iIdx = 1;
-	while (usedr > 0) {
-		sms_process_memory_message(iIdx);
-		usedr--;
+	for (iIdx = 1; iIdx<=totalr; iIdx++) {
+		if (sms_process_memory_message(iIdx)==UART_SUCCESS)
+			usedr--;
+		else
+			_NOP();
 	}
 
 	delallmsg();

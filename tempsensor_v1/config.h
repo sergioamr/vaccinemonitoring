@@ -253,13 +253,13 @@ void config_SIM_operational();
 
 #define COMMAND_END 99
 
-extern void config_init();
-extern void config_setLastCommand(uint16_t lastCmd);
-extern void config_incLastCmd();
-extern void config_update_system_time();
-extern void config_update_intervals();
-extern uint32_t config_get_boot_midnight_difference();
-
+void config_init();
+void config_reconfigure();
+void config_setLastCommand(uint16_t lastCmd);
+void config_incLastCmd();
+void config_update_system_time();
+void config_update_intervals();
+uint32_t config_get_boot_midnight_difference();
 uint8_t check_address_empty(uint8_t mem);
 
 #endif /* TEMPSENSOR_V1_CONFIG_H_ */

@@ -157,7 +157,10 @@ void config_setLastCommand(uint16_t lastCmd) {
 #endif
 }
 
-void config_setup_extra_button() {
+void config_reconfigure() {
+	g_pSysCfg->memoryInitialized = 0xFF;
+	PMM_trigBOR();
+	while(1);
 }
 
 void config_init() {

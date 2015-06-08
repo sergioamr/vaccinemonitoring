@@ -31,6 +31,30 @@
 #include "hardware_buttons.h"
 #include "fatdata.h"
 
+void thermal_handle_system_button() {
+	if (g_iSystemSetup < 0)
+		return;
+
+	switch (g_iSystemSetup) {
+	case 1:
+		lcd_print("PRESS AGAIN");
+		lcd_printl(LINE2, "TO SWAP SIM");
+		break;
+	case 2:
+		modem_swap_SIM();
+		break;
+	case 3:
+		lcd_print("PRESS AGAIN");
+		lcd_printl(LINE2, "TO RE-CALIBRATE");
+		break;
+	case 4:
+		g_iSystemSetup = -1;
+		config_reconfigure();
+		return;
+	}
+	g_iSystemSetup++;
+}
+
 void thermal_canyon_loop(void) {
 
 	uint8_t iSampleCnt = 0;
@@ -45,11 +69,7 @@ void thermal_canyon_loop(void) {
 
 	while (1) {
 
-		if (g_iSystemSetup > 0) {
-			lcd_print("PRESS AGAIN");
-			lcd_printl(LINE2, "TO RE-CALIBRATE");
-			g_iSystemSetup = 0;
-		}
+		thermal_handle_system_button();
 
 		if (((iMinuteTick - iLCDShowElapsed) >= LCD_REFRESH_INTERVAL)
 				|| (iLastDisplayId != g_iDisplayId)) {
