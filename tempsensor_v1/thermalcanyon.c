@@ -112,24 +112,10 @@ void thermal_canyon_loop(void) {
 
 		if ((iMinuteTick - iSampleTimeElapsed) >= g_iSamplePeriod) {
 			config_setLastCommand(COMMAND_NETWORK_SIGNAL_MONITOR);
-
 			iSampleTimeElapsed = iMinuteTick;
 			P4IE &= ~BIT1;				// disable interrupt for button input
 			temperature_sample();
-			delay(2000);	//to allow the ADC conversion to complete
-
-			if (g_iStatus & NETWORK_DOWN) {
-				delay(2000);//additional delay to enable ADC conversion to complete
-				//check for signal strength
-
-				modem_pull_time();
-				modem_getSignal();
-				if ((g_iSignalLevel > NETWORK_DOWN_SS)
-						&& (g_iSignalLevel < NETWORK_MAX_SS)) {
-					//send heartbeat
-					sms_send_heart_beat();
-				}
-			}
+			modem_check_network(); // Checks network and if it is down it does the swapping
 		}
 
 #ifndef CALIBRATION

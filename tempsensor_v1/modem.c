@@ -259,6 +259,8 @@ void modem_check_uart_error() {
 	lcd_progress_wait(HUMAN_DISPLAY_INFO_DELAY);
 }
 
+static uint8_t network_failures = 0;
+
 // Makes sure that there is a network working
 int8_t modem_check_network() {
 	int res = UART_FAILED;
@@ -275,8 +277,13 @@ int8_t modem_check_network() {
 		res = UART_FAILED;
 
 	// Something was wrong on the connection, swap SIM card.
-	if (res == UART_FAILED)
-		res = modem_swap_SIM();
+	if (res == UART_FAILED) {
+		if (network_failures == NETWORK_ATTEMPTS_BEFORE_SWAP_SIM) {
+			res = modem_swap_SIM();
+			network_failures = 0;
+		} else
+			network_failures++;
+	}
 
 	return res;
 }
@@ -382,9 +389,9 @@ int modem_swap_SIM() {
 	// Just send the message if we dont have errors.
 	if (modem_isSIM_Operational()) {
 		sms_send_heart_beat();
-		res=UART_SUCCESS;
+		res = UART_SUCCESS;
 	} else {
-		res=UART_FAILED;
+		res = UART_FAILED;
 	}
 
 	return res;
@@ -392,8 +399,7 @@ int modem_swap_SIM() {
 
 int modem_isSignalInRange(int iSignalLevel) {
 
-	if ((iSignalLevel < NETWORK_DOWN_SS)
-			|| (iSignalLevel > NETWORK_MAX_SS)) {
+	if ((iSignalLevel < NETWORK_DOWN_SS) || (iSignalLevel > NETWORK_MAX_SS)) {
 		g_iStatus |= NETWORK_DOWN;
 		return 0;
 	}

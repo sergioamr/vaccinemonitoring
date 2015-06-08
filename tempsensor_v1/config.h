@@ -14,6 +14,7 @@
 #include "common.h"
 #include "time.h"
 
+#define NETWORK_ATTEMPTS_BEFORE_SWAP_SIM 3
 #define NEXLEAF_SMS_GATEWAY       "00447751035864"
 #define NEXLEAF_DEFAULT_SERVER_IP "54.241.2.213"
 #define NEXLEAF_DEFAULT_APN 	  "giffgaff.com"
