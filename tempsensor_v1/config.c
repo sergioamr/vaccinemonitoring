@@ -257,42 +257,27 @@ uint32_t config_get_boot_midnight_difference()
 				+ (g_tmCurrTime.tm_hour * 60)));
 }
 
-void apply_configuration_change(int change)
-{
-	/*
-		if (strtol(pcTmp, 0, 10)) {
-			g_iStatus |= RESET_ALERT;
-			//set buzzer OFF
-			g_iStatus &= ~BUZZER_ON;
-			//reset alarm state and counters
-			for (iCnt = 0; iCnt < MAX_NUM_SENSORS; iCnt++) {
-				//reset the alarm
-				TEMP_ALARM_CLR(iCnt);
-				//initialize confirmation counter
-				g_iAlarmCnfCnt[iCnt] = 0;
-			}
-		} else {
-			g_iStatus &= ~RESET_ALERT;
-		}
-	*/
-}
-
 // http://54.241.2.213/coldtrace/uploads/multi/v3/358072043112124/1/
 // $ST2,7,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,600,1,600,15,$ST1,919243100142,both,airtelgprs.com,10,1,0,0,$EN
 
-int process_configuration()
+int config_process_configuration()
 {
 	char *token;
-	char* delimiter = ",";
+	char *delimiter = ",";
+	int tempValue = 0;
+	int iCnt = 0;
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	log_append_("configuration processing");
-
-	//change for actual data
+	// FINDSTR uses RXBuffer - There is no need to initialize the data to parse.
 	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
-	PARSE_FINDSTR_RET(token, "$ST2", UART_FAILED);
-	PARSE_VALUECOMPARE(token, &g_pDeviceCfg->cfgSyncId, UART_SUCCESS, UART_FAILED);
+	PARSE_FINDSTR_RET(token, "$ST2,", UART_FAILED);
+
+	// Return success if no configuration has changed
+	PARSE_FIRSTVALUECOMPARE(token, g_pDeviceCfg->cfgSyncId, UART_SUCCESS, UART_FAILED);
 	int i = 0;
+
+	// Temperature configuration for each sensor
 	while (i < MAX_NUM_SENSORS) {
 		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].maxTimeCold, delimiter, UART_FAILED);
 		PARSE_NEXTVALUE(token, &g_pDeviceCfg->stTempAlertParams[i].threshCold, delimiter, UART_FAILED);
@@ -301,26 +286,44 @@ int process_configuration()
 		i++;
 	}
 
-	// HOWEVER MANY FOR THE BATTERY INFO
+	// Battery config info.
 	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.minutesPower, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.enablePowerAlert, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.minutesBattThresh, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stBattPowerAlertParam.battThreshold, delimiter, UART_FAILED);
 
-	PARSE_SKIP(token, ",", UART_FAILED); // $ST1
-	PARSE_NEXTSTRING(token, g_pDeviceCfg->cfgGatewaySMS, strlen(token), delimiter, UART_FAILED); // GATEWAY NUM
+	//
+	PARSE_SKIP(token, delimiter, UART_FAILED); // $ST1
+	PARSE_NEXTSTRING(token, &g_pDeviceCfg->cfgGatewaySMS[0], strlen(token), delimiter, UART_FAILED); // GATEWAY NUM
 	PARSE_NEXTVALUE(token, &sim->cfgUploadMode, delimiter, UART_FAILED); // NETWORK TYPE E.G. GPRS
-	PARSE_NEXTSTRING(token, sim->cfgAPN, strlen(token), delimiter, UART_FAILED); //APN
+	PARSE_NEXTSTRING(token, &sim->cfgAPN[0], strlen(token), delimiter, UART_FAILED); //APN
 
 	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stIntervalParam.uploadInterval, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &g_pDeviceCfg->stIntervalParam.loggingInterval, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, ",", delimiter, UART_FAILED); // Reset alert
-	PARSE_NEXTVALUE(token, &g_pDeviceCfg->cfgSIM_slot, delimiter, UART_FAILED); ////
+	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); // Reset alert
+	if (tempValue > 0) {
+		g_iStatus |= RESET_ALERT;
+		//set buzzer OFF
+		g_iStatus &= ~BUZZER_ON;
+		//reset alarm state and counters
+		for (iCnt = 0; iCnt < MAX_NUM_SENSORS; iCnt++) {
+			//reset the alarm
+			TEMP_ALARM_CLR(iCnt);
+			//initialize confirmation counter
+			g_iAlarmCnfCnt[iCnt] = 0;
+		}
+	} else {
+		g_iStatus &= ~RESET_ALERT;
+	}
+
+	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); ////
+	if(g_pDeviceCfg->cfgSIM_slot != tempValue) {
+		modem_swap_SIM();
+	}
 
 	PARSE_SKIP(token, delimiter, UART_FAILED); // $EN
 
 	config_update_intervals();
-	//apply_configuration_change();
 
 	log_append_("configuration success");
 	return UART_SUCCESS;

@@ -383,6 +383,12 @@ int modem_swap_SIM() {
 	config_incLastCmd();
 	g_pDeviceCfg->cfgSIM_slot = !g_pDeviceCfg->cfgSIM_slot;
 
+	if(g_pDeviceCfg->cfgSIM_slot == 0) {
+		g_iStatus &= ~ENABLE_SECOND_SLOT;
+	} else {
+		g_iStatus |= ENABLE_SECOND_SLOT;
+	}
+
 	lcd_printf(LINEC, "Activate SIM: %d", g_pDeviceCfg->cfgSIM_slot + 1);
 	modem_init();
 	modem_getExtraInfo();
