@@ -196,7 +196,7 @@ int http_get_configuration() {
 			uart_state = uart_getTransactionState();
 			if (uart_state == UART_SUCCESS) {
 				retry = 0; 	// Found a configuration, lets parse it.
-				process_configuration();
+				config_process_configuration();
 			}
 
 			if (uart_state == UART_ERROR)

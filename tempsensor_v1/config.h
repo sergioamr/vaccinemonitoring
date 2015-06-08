@@ -211,6 +211,8 @@ extern uint16_t config_getSIMError(int slot);
 extern void config_reset_error(SIM_CARD_CONFIG *sim);
 extern uint16_t config_getSimLastError(char *charToken);
 
+int config_process_configuration();
+
 // Flags the sim as not working
 void config_SIM_not_operational();
 

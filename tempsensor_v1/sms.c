@@ -77,8 +77,7 @@ void sms_process_messages(uint32_t iMinuteTick, uint8_t iDisplayId) {
 						case '2':
 							//reset the board by issuing a SW BOR
 							PMM_trigBOR();
-							while (1)
-								;	//code should not come here
+							while (1);	//code should not come here
 						default:
 							break;
 						}
