@@ -286,6 +286,8 @@ int process_configuration()
 	char* delimiter = ",";
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
+	log_append_("configuration processing");
+
 	//change for actual data
 	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
 	PARSE_FINDSTR_RET(token, "$ST2", UART_FAILED);
@@ -320,5 +322,6 @@ int process_configuration()
 	config_update_intervals();
 	//apply_configuration_change();
 
+	log_append_("configuration success");
 	return UART_SUCCESS;
 }
