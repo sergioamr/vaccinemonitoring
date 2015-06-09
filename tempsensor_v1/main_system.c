@@ -176,6 +176,7 @@ int main(void) {
 
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 	system_boot();
-	g_iRunning = 1;
+	g_iRunning = 1;		// System finished booting and we are going to run
+	g_iSystemSetup = 0;	// Reset system setup button state
 	thermal_canyon_loop();
 }
