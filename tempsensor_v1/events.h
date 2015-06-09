@@ -46,7 +46,7 @@ void events_run(time_t);
 void events_init();
 void events_sync(time_t currentTime);
 
-void event_reset_timeout_lcdoff();
+void event_LCD_turn_on();
 EVENT *events_find(EVENT_IDS id);
 
 #endif /* EVENTS_H_ */

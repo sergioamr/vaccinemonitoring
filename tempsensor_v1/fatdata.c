@@ -1,5 +1,6 @@
 #include "thermalcanyon.h"
 #include "stringutils.h"
+#include "events.h"
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 char g_szFatFileName[64];
@@ -109,6 +110,7 @@ void fat_check_error(FRESULT fr) {
 	if (fr == FR_DISK_ERR || fr == FR_NOT_READY)
 		g_bFatInitialized = false;
 
+	event_LCD_turn_on();
 	lcd_printl(LINEC, "SD CARD FAILURE");
 	lcd_printf(LINEE, "%s", FR_ERRORS[fr]);
 }

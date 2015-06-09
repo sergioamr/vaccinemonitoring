@@ -84,6 +84,8 @@ void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
 	strncpy(sim->simLastError, error, sizeof(sim->simLastError) - 1);
 	sim->simErrorState = errorID;
 	sim->simErrorToken = errorToken;
+
+	event_LCD_turn_on();
 }
 
 uint8_t config_isSimOperational() {

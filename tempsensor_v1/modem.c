@@ -225,6 +225,7 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 
 	log_appendf("SIM %d CM%c ERROR %d", config_getSelectedSIM() + 1, errorToken,
 			errorCode);
+
 	return;
 }
 

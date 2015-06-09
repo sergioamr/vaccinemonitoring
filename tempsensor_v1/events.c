@@ -173,7 +173,8 @@ EVENT *events_find(EVENT_IDS id) {
 	return NULL;
 }
 
-void event_reset_timeout_lcdoff() {
+// turns on the screen, resets the timeout to turn it off
+void event_LCD_turn_on() {
 	EVENT *event = events_find(EVT_LCD_OFF);
 	if (event == NULL)
 		return;
