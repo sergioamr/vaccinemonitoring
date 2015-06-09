@@ -162,6 +162,9 @@ void system_boot() {
 
 	log_sample_web_format(&bytes_written);
 	sms_process_messages(0);
+
+	g_iRunning = 1;		// System finished booting and we are going to run
+	g_iSystemSetup = 0;	// Reset system setup button state
 }
 
 _Sigfun * signal(int i, _Sigfun *proc) {
@@ -178,8 +181,6 @@ int main(void) {
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 	events_init();
 	system_boot();
-	g_iRunning = 1;		// System finished booting and we are going to run
-	g_iSystemSetup = 0;	// Reset system setup button state
 
 	thermal_canyon_loop();
 }

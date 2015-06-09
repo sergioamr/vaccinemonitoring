@@ -12,11 +12,11 @@ void encode(double input_val, char output_chars[]) {
 
   char ENCODED_STR_MAX[] = "V/";
   char ENCODED_STR_MIN[] = "/X";
-  char ENCODED_STR_NAN[] = "/W";
+  //char ENCODED_STR_NAN[] = "/W";
   
-  int LOWER6_BITMASK = 0x3f;
-  int HIGHER2_BITMASK = 0xc0;
-  int SIGNBITMASK = 0x800;
+  //int LOWER6_BITMASK = 0x3f;
+  //int HIGHER2_BITMASK = 0xc0;
+  //int SIGNBITMASK = 0x800;
   int SIGN_BIT = 0x20;
   int WHOLE_PART_LOW2_MASK = 0x3;
   int WHOLE_PART_HIGH5_MASK = 0x7c;

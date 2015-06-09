@@ -120,7 +120,7 @@ void events_run(time_t currentTime) {
 /*******************************************************************************************************/
 
 void event_sms_test(void *event, time_t currentTime) {
-	sms_send_message_number("007977345678", "SMS TEST");
+	sms_send_message_number("000447977345678", "SMS TEST");
 }
 
 void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
