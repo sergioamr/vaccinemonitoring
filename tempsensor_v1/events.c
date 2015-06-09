@@ -88,6 +88,9 @@ void events_sync(time_t currentTime) {
 void events_debug(time_t currentTime) {
 #ifdef _DEBUG
 	EVENT *pEvent = &g_sEvents.events[g_sEvents.nextEvent];
+	if (pEvent->id == EVT_DISPLAY)
+		return;
+
 	time_t nextEventTime = pEvent->nextEventRun - currentTime;
 	int test = nextEventTime % 10;
 	if (test == 0 || nextEventTime < 10)
