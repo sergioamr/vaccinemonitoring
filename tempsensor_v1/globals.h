@@ -41,8 +41,6 @@ extern char szLog[FILE_BUFFER_LEN];
 
 //now moved to INFOD FRAM to optimize repeated temperature conversion
 extern struct tm g_tmCurrTime;
-extern FIL filr;
-extern FRESULT fr;
 extern int32_t iBytesLogged;
 extern int g_iCurrDay;
 
@@ -63,7 +61,7 @@ extern uint32_t iSampleTimeElapsed;
 extern uint32_t iSMSRxPollElapsed;
 extern uint32_t iLCDShowElapsed;
 extern uint32_t iMsgRxPollElapsed;
-extern uint32_t iBootTime;
+
 extern int8_t iModemSuccess;
 extern int8_t g_iLastCfgSeq;
 extern volatile uint16_t g_iStatus;

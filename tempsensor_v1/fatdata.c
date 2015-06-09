@@ -150,6 +150,7 @@ FRESULT log_append_(char *text) {
 	int t = 0;
 	int len = 0;
 	int bw = 0;
+	FRESULT fr;
 
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
@@ -227,8 +228,7 @@ const char HEADER_CSV[] =
 		"\"Date of Reading\",\"Battery %\",\"Power Status\",\"Sensor A (Deg. C)\",\"Sensor B (Deg. C)\",\"Sensor C (Deg. C)\",\"Sensor D (Deg. C)\",\"Sensor E (Deg. C)\"\r\n";
 
 FRESULT log_write_header(FIL *fobj, UINT *pBw) {
-	fr = f_write(fobj, HEADER_CSV, sizeof(HEADER_CSV) - 1, pBw);
-	return fr;
+	return f_write(fobj, HEADER_CSV, sizeof(HEADER_CSV) - 1, pBw);
 }
 
 const char * const POWER_STATE[] = { "Power Outage", "Power Available" };
@@ -248,6 +248,7 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 	char szLog[64];
 	UINT bw = 0;
 	char *date;
+	FRESULT fr;
 
 	date = get_date_string(&g_tmCurrTime);
 	fr = f_write(fobj, date, strlen(date), &bw);
@@ -268,6 +269,8 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 FRESULT log_sample_web_format(UINT *tbw) {
 	FIL fobj;
 	UINT bw = 0;	//bytes written
+	FRESULT fr;
+
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
 
@@ -310,6 +313,7 @@ FRESULT log_sample_web_format(UINT *tbw) {
 FRESULT log_sample_to_disk(int* tbw) {
 	FIL fobj;
 	char szLog[64];
+	FRESULT fr = FR_OK;
 
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;

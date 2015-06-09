@@ -28,6 +28,12 @@
 /* END FACTORY CONFIGURATION 																							  */
 /**************************************************************************************************************************/
 
+#ifdef _DEBUG
+#define MAIN_SLEEP_TIME 1000
+#else
+#define MAIN_SLEEP_TIME 60000
+#endif
+
 // Poll times trying to connect to the network.
 // After autoband it could take up to 90 seconds for the bands trial and error.
 // So we have to wait for the modem to be ready.
@@ -255,6 +261,7 @@ void config_SIM_operational();
 
 void config_init();
 void config_reconfigure();
+void config_save_command(char *string);
 void config_setLastCommand(uint16_t lastCmd);
 void config_incLastCmd();
 void config_update_system_time();

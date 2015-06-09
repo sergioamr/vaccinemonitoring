@@ -135,11 +135,21 @@ void config_incLastCmd() {
 
 // Stores what was the last command run and what time
 void config_setLastCommand(uint16_t lastCmd) {
+	char cmd[32];
+	g_pSysCfg->lastCommand = lastCmd;
+
+	if (lastCmd == COMMAND_LCDINIT)
+		return;
+
+	sprintf(cmd, "Command [%d] ", lastCmd);
+	config_save_command(cmd);
+}
+
+// Stores what was the last command run and what time
+void config_save_command(char *str) {
 
 	static int lastMin = 0;
 	static int lastSec = 0;
-
-	g_pSysCfg->lastCommand = lastCmd;
 
 	rtc_get(&g_tmCurrTime);
 
@@ -151,10 +161,7 @@ void config_setLastCommand(uint16_t lastCmd) {
 		strcat(g_pSysCfg->lastCommandTime, itoa_pad(g_tmCurrTime.tm_sec));
 	}
 
-#ifdef _DEBUG
-	if (lastCmd != COMMAND_LCDINIT)
-		log_appendf("Command [%d] ", lastCmd);
-#endif
+	log_appendf(str);
 }
 
 void config_reconfigure() {
@@ -250,11 +257,6 @@ void config_update_system_time() {
 	rtc_get(&g_tmCurrTime);
 	memcpy(&g_pDevCfg->lastSystemTime, &g_tmCurrTime, sizeof(g_tmCurrTime));
 	_NOP();
-}
-
-uint32_t config_get_boot_midnight_difference() {
-	return (uint32_t) (1400
-			- (g_tmCurrTime.tm_min + (g_tmCurrTime.tm_hour * 60)));
 }
 
 // http://54.241.2.213/coldtrace/uploads/multi/v3/358072043112124/1/

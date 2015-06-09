@@ -38,9 +38,7 @@ uint8_t SensorDisplayName[MAX_NUM_SENSORS] = { 0xA, 0xB, 0xC, 0xD, 0xE };
 //put all variables that are written less frequently
 volatile int32_t ADCvar[MAX_NUM_SENSORS];
 struct tm g_tmCurrTime;
-FIL filr;
-
-FRESULT fr;
+time_t g_timeNextPull;  // Pulltime from modem every 12 hours
 int32_t iBytesLogged = 0;
 int g_iCurrDay = 0;
 #pragma SET_DATA_SECTION()
@@ -66,7 +64,7 @@ uint32_t iSampleTimeElapsed = 0;
 uint32_t iSMSRxPollElapsed = 0;
 uint32_t iLCDShowElapsed = 0;
 uint32_t iMsgRxPollElapsed = 0;
-uint32_t iBootTime = 0;
+
 int8_t g_iLastCfgSeq = -1;
 char Temperature[MAX_NUM_SENSORS][TEMP_DATA_LEN + 1];
 char g_iSignal_gprs = 0;

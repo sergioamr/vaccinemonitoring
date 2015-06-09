@@ -30,6 +30,7 @@
 #include "data_transmit.h"
 #include "hardware_buttons.h"
 #include "fatdata.h"
+#include "events.h"
 
 int g_iRunning = 0;
 
@@ -175,8 +176,10 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 int main(void) {
 
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
+	events_init();
 	system_boot();
 	g_iRunning = 1;		// System finished booting and we are going to run
 	g_iSystemSetup = 0;	// Reset system setup button state
+
 	thermal_canyon_loop();
 }

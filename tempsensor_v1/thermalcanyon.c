@@ -59,35 +59,31 @@ void thermal_handle_system_button() {
 
 }
 
-void thermal_canyon_loop(void) {
+time_t thermal_update_time() {
+	rtc_get(&g_tmCurrTime);
+	return mktime(&g_tmCurrTime);
+}
 
+void thermal_canyon_loop(void) {
+	FRESULT fr;
 	uint8_t iSampleCnt = 0;
+	time_t currentTime = 0;
 
 	iUploadTimeElapsed = iMinuteTick;		//initialize POST minute counter
 	iSampleTimeElapsed = iMinuteTick;
 	iSMSRxPollElapsed = iMinuteTick;
 	iLCDShowElapsed = iMinuteTick;
 	iMsgRxPollElapsed = iMinuteTick;
-	iBootTime = config_get_boot_midnight_difference();
+
 	config_update_intervals();
 
+	events_sync(thermal_update_time());
+
 	while (1) {
+		currentTime = thermal_update_time();
 
-		if (((iMinuteTick - iLCDShowElapsed) >= LCD_REFRESH_INTERVAL)
-				|| (iLastDisplayId != g_iDisplayId)) {
-
-			config_setLastCommand(COMMAND_MAIN_LCD_DISPLAY);
-			config_update_system_time();
-			iLastDisplayId = g_iDisplayId;
-			iLCDShowElapsed = iMinuteTick;
-			lcd_show(g_iDisplayId);
-		}
-
-		if (iMinuteTick >= iBootTime) {
-			modem_pull_time();
-			config_setLastCommand(COMMAND_BOOT_MIDNIGHT);
-			iBootTime = config_get_boot_midnight_difference();
-		}
+		// Checks all the events that we have and runs the right one.
+		events_run(currentTime);
 
 		//check if conversion is complete
 		if ((g_isConversionDone) || (g_iStatus & TEST_FLAG)) {
@@ -172,10 +168,12 @@ void thermal_canyon_loop(void) {
 			lcd_show(g_iDisplayId);
 		}
 
+		/*
 		//low power behavior
 		if ((g_iBatteryLevel <= 10) && (P4IN & BIT4)) {
 
 			lcd_printl(LINEE, "Low Battery     ");
+			delay(HUMAN_DISPLAY_INFO_DELAY);
 
 			//reset display
 			//PJOUT |= BIT6;							// LCD reset pulled high
@@ -185,6 +183,7 @@ void thermal_canyon_loop(void) {
 
 			//loop for charger pluging
 			while (g_iBatteryLevel <= 10) {
+				event_update_display();
 				if (iLastDisplayId != g_iDisplayId) {
 					iLastDisplayId = g_iDisplayId;
 					//enable backlight
@@ -211,9 +210,11 @@ void thermal_canyon_loop(void) {
 					break;
 				}
 			}
-
 		}
+		*/
 #endif
+
+		delay(MAIN_SLEEP_TIME);
 		__no_operation();                       // SET BREAKPOINT HERE
 	}
 }

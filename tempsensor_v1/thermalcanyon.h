@@ -36,6 +36,8 @@
 #include "stdio.h"
 #include "stringutils.h"
 #include "temperature.h"
+#include "events.h"
+#include "time.h"
 
 //------------- FUNCTIONS MOVED FROM MAIN - WAITING CLEANUP -------------------
 
@@ -48,8 +50,8 @@ void uploadsms();
 void sampletemp();
 void monitoralarm();
 
-extern void thermal_canyon_loop();
-
-extern void encode(double input_val, char output_chars[]); // Encode function from encode.c
+void thermal_canyon_loop();
+time_t thermal_update_time();
+void encode(double input_val, char output_chars[]); // Encode function from encode.c
 
 #endif /* TEMPSENSOR_V1_THERMALCANYON_H_ */
