@@ -6,6 +6,8 @@
 
 #include "thermalcanyon.h"
 #include "main_system.h"
+#include "hardware_buttons.h"
+#include "sms.h"
 
 #define SECONDS_(s) (s)
 #define MINUTES_(m) (m*60L)
@@ -41,7 +43,7 @@ void events_find_next_event(time_t currentTime) {
 	g_sEvents.nextEvent = nextEvent;
 }
 
-void events_register(int id, char *name, time_t startTime, time_t interval,
+void events_register(EVENT_IDS id, char *name, time_t startTime, time_t interval,
 		void (*functionCall)(void *, time_t)) {
 	EVENT *pEvent;
 	uint8_t nextEvent;
@@ -90,7 +92,8 @@ void events_debug(time_t currentTime) {
 #ifdef _DEBUG
 	EVENT *pEvent = &g_sEvents.events[g_sEvents.nextEvent];
 	time_t nextEventTime = pEvent->nextEventRun - currentTime;
-	if ((nextEventTime/10)%10)==0)
+	int test = nextEventTime%10;
+	if (test==0 || nextEventTime<10)
 		lcd_printf(LINE2, "[%s] %d  ", pEvent->name, nextEventTime);
 #endif
 }
@@ -109,6 +112,9 @@ void events_run(time_t currentTime) {
 	if (currentTime < pEvent->nextEventRun)
 		return;
 
+	// Disable hardware interruptions before running the actions
+	hardware_disable_buttons();
+
 	config_save_command(pEvent->name);
 	// Move the interval to the next time
 	event_next(pEvent, currentTime);
@@ -117,6 +123,7 @@ void events_run(time_t currentTime) {
 
 	// Invalidate display
 	lcd_show();
+	hardware_enable_buttons();
 }
 
 /*******************************************************************************************************/
@@ -124,7 +131,7 @@ void events_run(time_t currentTime) {
 /*******************************************************************************************************/
 
 void event_sms_test(void *event, time_t currentTime) {
-	sms_send_message_number("07977345678", "SMS TEST");
+	sms_send_data_request(LOCAL_TESTING_NUMBER);
 }
 
 void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
@@ -147,6 +154,11 @@ void event_pull_time(void *event, time_t currentTime) {
 
 void event_update_display(void *event, time_t currentTime) {
 	config_update_system_time();
+}
+
+// modem_check_network(); // Checks network and if it is down it does the swapping
+void event_sample_temperature(void *event, time_t currentTime) {
+	temperature_sample();
 }
 
 void events_init() {

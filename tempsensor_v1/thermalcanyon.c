@@ -171,14 +171,6 @@ void thermal_canyon_loop(void) {
 			P4IE |= BIT1;					// enable interrupt for button input
 		}
 
-		if ((iMinuteTick - iSampleTimeElapsed) >= g_iSamplePeriod) {
-			config_setLastCommand(COMMAND_NETWORK_SIGNAL_MONITOR);
-			iSampleTimeElapsed = iMinuteTick;
-			P4IE &= ~BIT1;				// disable interrupt for button input
-			temperature_sample();
-			modem_check_network(); // Checks network and if it is down it does the swapping
-		}
-
 #ifndef BUZZER_DISABLED
 		if(g_iStatus & BUZZER_ON)
 		{

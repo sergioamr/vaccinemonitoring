@@ -8,6 +8,7 @@
 #ifndef TEMPSENSOR_V1_SMS_H_
 #define TEMPSENSOR_V1_SMS_H_
 
+void sms_send_data_request(char *number);
 int8_t sms_process_msg(char* pSMSmsg);
 //*****************************************************************************
 //! \brief send sms msg

@@ -20,6 +20,15 @@ void switchers_setupIO() {
 	P3IE |= BIT5;							// enable interrupt for extra button setup
 }
 
+void hardware_disable_buttons() {
+	P4IE &= ~BIT1;				// disable interrupt of button input
+	P3IE &= ~BIT5;				// enable interrupt for extra button setup
+}
+
+void hardware_enable_buttons() {
+	switchers_setupIO();
+}
+
 // Port 2 interrupt service routine
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
 #pragma vector=PORT2_VECTOR

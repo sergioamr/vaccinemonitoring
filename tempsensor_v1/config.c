@@ -167,7 +167,7 @@ void config_save_command(char *str) {
 void config_reconfigure() {
 	g_pSysCfg->memoryInitialized = 0xFF;
 	PMM_trigBOR();
-	while(1);
+	while (1);
 }
 
 void config_init() {
