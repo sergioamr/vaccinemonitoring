@@ -13,7 +13,7 @@
 typedef struct
 __attribute__((__packed__)) {
 	char name[16];
-	void (*callback)(time_t);
+	void (*callback)(void *, time_t);
 	time_t nextEventRun;
 	time_t lastEventRun;
 	time_t interval;    // Interval between events in minutes

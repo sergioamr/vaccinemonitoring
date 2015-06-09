@@ -32,8 +32,7 @@ void events_find_next_event(time_t currentTime) {
 	// Search for the event that is closer in time
 	for (t = 0; t < g_sEvents.registeredEvents; t++) {
 		pEvent = &g_sEvents.events[t];
-		if (pEvent->nextEventRun > currentTime
-				&& pEvent->nextEventRun < nextEventTime) {
+		if (pEvent->nextEventRun < nextEventTime) {
 			nextEventTime = pEvent->nextEventRun;
 			nextEvent = t;
 		}
@@ -43,7 +42,7 @@ void events_find_next_event(time_t currentTime) {
 }
 
 void events_register(char *name, time_t startTime, time_t interval,
-		void (*functionCall)(time_t)) {
+		void (*functionCall)(void *, time_t)) {
 	EVENT *pEvent;
 	uint8_t nextEvent;
 
@@ -67,7 +66,12 @@ void event_init(EVENT *pEvent, time_t currentTime) {
 	if (pEvent->nextEventRun != 0)
 		return;
 
-	pEvent->nextEventRun = currentTime+pEvent->interval+pEvent->startTime;
+	pEvent->nextEventRun = currentTime + pEvent->interval + pEvent->startTime;
+}
+
+void event_next(EVENT *pEvent, time_t currentTime) {
+	pEvent->lastEventRun = pEvent->nextEventRun;
+	pEvent->nextEventRun += pEvent->interval;
 }
 
 void events_sync(time_t currentTime) {
@@ -83,8 +87,8 @@ void events_sync(time_t currentTime) {
 
 void events_debug(time_t currentTime) {
 	EVENT *pEvent = &g_sEvents.events[g_sEvents.nextEvent];
-	time_t nextEventTime = pEvent->nextEventRun-currentTime;
-	lcd_printf(LINE2, "[%s] %d  ",pEvent->name, nextEventTime);
+	time_t nextEventTime = pEvent->nextEventRun - currentTime;
+	lcd_printf(LINE2, "[%s] %d  ", pEvent->name, nextEventTime);
 }
 
 void events_run(time_t currentTime) {
@@ -103,9 +107,9 @@ void events_run(time_t currentTime) {
 
 	config_save_command(pEvent->name);
 	// Move the interval to the next time
-	event_init(pEvent, currentTime);
+	event_next(pEvent, currentTime);
 	events_find_next_event(currentTime);
-	pEvent->callback(currentTime);
+	pEvent->callback(pEvent, currentTime);
 
 	// Invalidate display
 	lcd_show();
@@ -115,29 +119,42 @@ void events_run(time_t currentTime) {
 /* Event functions */
 /*******************************************************************************************************/
 
-void event_SIM_check_incoming_msgs(time_t currentTime) {
-	sms_process_messages();
+void event_sms_test(void *event, time_t currentTime) {
+	sms_send_message_number("007977345678", "SMS TEST");
 }
 
-void event_pull_time(time_t currentTime) {
+void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
+	EVENT *pEvent = (EVENT *) event;
+	sms_process_messages();
+	if (g_pDevCfg->cfgServerConfigReceived == 1) {
+		pEvent->interval=MINUTES_(MSG_REFRESH_INTERVAL);
+	}
+}
+
+void event_pull_time(void *event, time_t currentTime) {
 	modem_pull_time();
 	// We update all the timers according to the new time
 	events_sync(thermal_update_time());
 }
 
-void event_update_display(time_t currentTime) {
+void event_update_display(void *event, time_t currentTime) {
 	config_update_system_time();
 }
 
 void events_init() {
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
 #ifdef _DEBUG
-	events_register("PULLTIME",    0, MINUTES_(120), &event_pull_time);
-	events_register("DISPLAY", 0, SECONDS_(15), &event_update_display);
-	events_register("SMSCHECK", 0, SECONDS_(10), &event_SIM_check_incoming_msgs);
+	events_register("SMS_TEST", 0,  MINUTES_(1), &event_sms_test);
+	events_register("PULLTIME", 0,  HOURS_(1), &event_pull_time);
+	events_register("DISPLAY", 0, SECONDS_(60), &event_update_display);
+
+	// Check every 30 seconds until we get the configuration message;
+	events_register("SMSCHECK", 0, SECONDS_(30),
+			&event_SIM_check_incoming_msgs);
+
 #else
-	events_register("PULLTIME",    0, HOURS_(12), &event_pull_time);
+	events_register("PULLTIME", 0, HOURS_(12), &event_pull_time);
 	events_register("DISPLAY", 0, MINUTES_(LCD_REFRESH_INTERVAL), &event_update_display);
-	events_register("SMSCHECK", 0, MINUTES_(MSG_REFRESH_INTERVAL), &event_SIM_check_incoming_msgs);
+	events_register("SMSCHECK", 0, SECONDS_(30), &event_SIM_check_incoming_msgs);
 #endif
 }

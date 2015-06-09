@@ -336,6 +336,8 @@ int config_parse_configuration(char *msg) {
 	config_update_intervals();
 
 	log_append_("configuration success");
+
+	g_pDevCfg->cfgServerConfigReceived = 1;
 	return UART_SUCCESS;
 }
 

@@ -177,6 +177,8 @@ __attribute__((__packed__)) {
 	int8_t cfgSIM_slot;
 	int8_t cfgSyncId;
 
+	int8_t cfgServerConfigReceived; // The server sent us a configuration package
+
 	TEMP_ALERT_PARAM stTempAlertParams[MAX_NUM_SENSORS];
 	BATT_POWER_ALERT_PARAM stBattPowerAlertParam;
 	INTERVAL_PARAM stIntervalParam;
