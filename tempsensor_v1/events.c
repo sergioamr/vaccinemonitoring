@@ -43,8 +43,8 @@ void events_find_next_event(time_t currentTime) {
 	g_sEvents.nextEvent = nextEvent;
 }
 
-void events_register(EVENT_IDS id, char *name, time_t startTime, time_t interval,
-		void (*functionCall)(void *, time_t)) {
+void events_register(EVENT_IDS id, char *name, time_t startTime,
+		time_t interval, void (*functionCall)(void *, time_t)) {
 	EVENT *pEvent;
 	uint8_t nextEvent;
 
@@ -92,8 +92,8 @@ void events_debug(time_t currentTime) {
 #ifdef _DEBUG
 	EVENT *pEvent = &g_sEvents.events[g_sEvents.nextEvent];
 	time_t nextEventTime = pEvent->nextEventRun - currentTime;
-	int test = nextEventTime%10;
-	if (test==0 || nextEventTime<10)
+	int test = nextEventTime % 10;
+	if (test == 0 || nextEventTime < 10)
 		lcd_printf(LINE2, "[%s] %d  ", pEvent->name, nextEventTime);
 #endif
 }
@@ -141,7 +141,7 @@ void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
 	EVENT *pEvent = (EVENT *) event;
 	sms_process_messages();
 	if (g_pDevCfg->cfgServerConfigReceived == 1) {
-		pEvent->interval=MINUTES_(MSG_REFRESH_INTERVAL);
+		pEvent->interval = MINUTES_(MSG_REFRESH_INTERVAL);
 		pEvent->nextEventRun = pEvent->nextEventRun + pEvent->interval;
 	}
 }
@@ -163,18 +163,33 @@ void event_sample_temperature(void *event, time_t currentTime) {
 
 void events_init() {
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
-#ifdef _DEBUG
-	events_register(EVT_SMS_TEST, "SMS_TEST", 0,  MINUTES_(1), &event_sms_test);
-	events_register(EVT_PULLTIME, "PULLTIME", 0,  HOURS_(1), &event_pull_time);
-	events_register(EVT_DISPLAY, "DISPLAY", 0, SECONDS_(60), &event_update_display);
 
-	// Check every 30 seconds until we get the configuration message;
+#ifdef _DEBUG
+
+	events_register(EVT_SMS_TEST, "SMS_TEST", 0, MINUTES_(30), &event_sms_test);
+	events_register(EVT_PULLTIME, "PULLTIME", 0, HOURS_(1), &event_pull_time);
+	events_register(EVT_DISPLAY, "DISPLAY", 0, SECONDS_(60),
+			&event_update_display);
+
 	events_register(EVT_SMSCHECK, "SMSCHECK", 0, SECONDS_(30),
 			&event_SIM_check_incoming_msgs);
 
+	events_register(EVT_SAMPLE_TEMP, "SAMPLE TMP", 0, MINUTES_(SAMPLE_PERIOD),
+			&event_sample_temperature);
+
+	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, MINUTES_(SAMPLE_PERIOD),
+			&event_sample_temperature);
+
 #else
+
 	events_register(EVT_PULLTIME, "PULLTIME", 0, HOURS_(12), &event_pull_time);
 	events_register(EVT_DISPLAY, "DISPLAY", 0, MINUTES_(LCD_REFRESH_INTERVAL), &event_update_display);
+
+	// Check every 30 seconds until we get the configuration message from server;
 	events_register(EVT_SMSCHECK, "SMSCHECK", 0, SECONDS_(30), &event_SIM_check_incoming_msgs);
+	events_register(EVT_SAMPLE_TEMP, "SAMPLE TMP", 0, MINUTES_(SAMPLE_PERIOD), &event_sample_temperature);
+	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, MINUTES_(SAMPLE_PERIOD),
+			&event_sample_temperature);
+
 #endif
 }

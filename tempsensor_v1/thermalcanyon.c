@@ -129,7 +129,7 @@ void thermal_canyon_loop(void) {
 		events_run(currentTime);
 
 		//check if conversion is complete
-		if ((g_isConversionDone) || (g_iStatus & TEST_FLAG)) {
+		if (g_isConversionDone) {
 			config_setLastCommand(COMMAND_MONITOR_ALARM);
 
 			//convert the current sensor ADC value to temperature
@@ -148,15 +148,6 @@ void thermal_canyon_loop(void) {
 #endif
 			//monitor for temperature alarms
 			monitoralarm();
-
-#ifdef SMS
-			memset(MSGData,0,sizeof(MSGData));
-			strcat(MSGData,SensorName[g_iDisplayId]);
-			strcat(MSGData," ");
-			strcat(MSGData,Temperature);
-			sendmsg(MSGData);
-#endif
-
 			g_isConversionDone = 0;
 
 			if ((((iMinuteTick - iUploadTimeElapsed) >= g_iUploadPeriod)
@@ -166,9 +157,7 @@ void thermal_canyon_loop(void) {
 					&& !(g_iStatus & NETWORK_DOWN)) {
 
 				data_transmit(&iSampleCnt);
-				lcd_show();	//remove the custom print (e.g transmitting)
 			}
-			P4IE |= BIT1;					// enable interrupt for button input
 		}
 
 #ifndef BUZZER_DISABLED
