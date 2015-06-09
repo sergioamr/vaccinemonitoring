@@ -280,7 +280,7 @@ int lcd_printf(int line, const char *_format, ...) {
 	va_list _ap;
 	int rval;
 	if (g_bLCD_state == 0)
-		return;
+		return 0;
 
 	char *fptr = (char *) _format;
 	char *out_end = szTemp;
