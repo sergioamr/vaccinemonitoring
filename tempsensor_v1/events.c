@@ -66,9 +66,6 @@ void events_register(EVENT_IDS id, char *name, time_t startTime,
 }
 
 void event_init(EVENT *pEvent, time_t currentTime) {
-	if (pEvent->nextEventRun != 0)
-		return;
-
 	pEvent->nextEventRun = currentTime + pEvent->interval + pEvent->startTime;
 }
 
@@ -177,8 +174,8 @@ EVENT *events_find(EVENT_IDS id) {
 }
 
 void event_reset_timeout_lcdoff() {
-	EVENT *event=events_find(EVT_LCD_OFF);
-	if (event==NULL)
+	EVENT *event = events_find(EVT_LCD_OFF);
+	if (event == NULL)
 		return;
 
 	lcd_turn_on();
@@ -189,6 +186,9 @@ void events_init() {
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
 
 #ifdef _DEBUG
+
+	events_register(EVT_LCD_OFF, "LCD OFF", 1, SECONDS_(15),
+			&event_display_off);
 
 	events_register(EVT_SMS_TEST, "SMS_TEST", 0, MINUTES_(30), &event_sms_test);
 	events_register(EVT_PULLTIME, "PULLTIME", 0, HOURS_(1), &event_pull_time);
@@ -204,11 +204,9 @@ void events_init() {
 	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, MINUTES_(SAMPLE_PERIOD),
 			&event_sample_temperature);
 
-	events_register(EVT_LCD_OFF, "LCD OFF", 1, SECONDS_(15),
-			&event_display_off);
-
-
 #else
+	events_register(EVT_LCD_OFF, "LCD OFF", 1, MINUTES_(5),
+			&event_display_off);
 
 	events_register(EVT_PULLTIME, "PULLTIME", 0, HOURS_(12), &event_pull_time);
 	events_register(EVT_DISPLAY, "DISPLAY", 0, MINUTES_(LCD_REFRESH_INTERVAL), &event_update_display);
@@ -219,7 +217,5 @@ void events_init() {
 	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, MINUTES_(SAMPLE_PERIOD),
 			&event_sample_temperature);
 
-	events_register(EVT_LCD_OFF, "LCD OFF", 1, MINUTES_(5),
-			&event_display_off);
 #endif
 }
