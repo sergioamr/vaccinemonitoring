@@ -59,6 +59,7 @@ void events_register(char *name, time_t startTime, time_t interval,
 	pEvent->lastEventRun = 0;
 	pEvent->nextEventRun = 0;
 	pEvent->startTime = startTime;
+	pEvent->callback = functionCall;
 	g_sEvents.registeredEvents++;
 }
 
