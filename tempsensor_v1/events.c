@@ -14,24 +14,6 @@
 EVENT_MANAGER g_sEvents;
 
 /*******************************************************************************************************/
-/* Event functions */
-/*******************************************************************************************************/
-
-void event_pull_time(time_t currentTime) {
-	config_setLastCommand(COMMAND_BOOT_MIDNIGHT);
-	modem_pull_time();
-
-	// We update all the timers according to the new time
-	events_sync(thermal_update_time());
-}
-
-void event_change_display(time_t currentTime) {
-	config_setLastCommand(COMMAND_MAIN_LCD_DISPLAY);
-	config_update_system_time();
-	lcd_show(g_iDisplayId);
-}
-
-/*******************************************************************************************************/
 /* Event based system */
 /*******************************************************************************************************/
 
@@ -98,6 +80,12 @@ void events_sync(time_t currentTime) {
 	events_find_next_event(0);
 }
 
+void events_debug(time_t currentTime) {
+	EVENT *pEvent = &g_sEvents.events[g_sEvents.registeredEvents];
+	int nextEventTime = pEvent->nextEventRun-currentTime;
+	lcd_printf(LINE2, "%s %d",pEvent->name, nextEventTime);
+}
+
 void events_run(time_t currentTime) {
 	EVENT *pEvent;
 	uint8_t nextEvent = g_sEvents.nextEvent;
@@ -115,10 +103,32 @@ void events_run(time_t currentTime) {
 	config_save_command(pEvent->name);
 	events_find_next_event(currentTime);
 	pEvent->callback(currentTime);
+
+	// Invalidate display
+	lcd_show();
+}
+
+/*******************************************************************************************************/
+/* Event functions */
+/*******************************************************************************************************/
+
+void event_SIM_check_incoming_msgs(time_t currentTime) {
+	sms_process_messages();
+}
+
+void event_pull_time(time_t currentTime) {
+	modem_pull_time();
+	// We update all the timers according to the new time
+	events_sync(thermal_update_time());
+}
+
+void event_update_display(time_t currentTime) {
+	config_update_system_time();
 }
 
 void events_init() {
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
-	events_register("PULL TIME",    0, HOURS_(12), &event_pull_time);
-	events_register("DISPLAY", 0, MINUTES_(LCD_REFRESH_INTERVAL), &event_change_display);
+	events_register("PULLTIME",    0, HOURS_(12), &event_pull_time);
+	events_register("DISPLAY", 0, MINUTES_(LCD_REFRESH_INTERVAL), &event_update_display);
+	events_register("SMSCHECK", 0, MINUTES_(MSG_REFRESH_INTERVAL), &event_update_display);
 }

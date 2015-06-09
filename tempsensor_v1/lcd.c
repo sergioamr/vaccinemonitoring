@@ -73,11 +73,20 @@ void lcd_setaddr(int8_t addr) {
 	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
 }
 
-void lcd_show(int8_t iItemId) {
+void lcd_show() {
 	int iIdx = 0;
 	int iCnt = 0;
 	//float signal_strength = 0;
 	float local_signal = 0;
+
+	int8_t iItemId = g_iDisplayId;
+
+	static time_t lastRefresh = 0;
+
+	if (lastRefresh==thermal_update_time())
+		return;
+
+	lastRefresh = thermal_update_time();
 
 	//check if there is a change in display id
 	//if(iLastDisplayId != iItemId) lcd_clear();

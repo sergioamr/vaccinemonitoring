@@ -36,6 +36,6 @@ void delallmsg();
 void delmsg(int8_t iMsgIdx, char* pData);
 
 void sms_send_heart_beat();
-int8_t sms_process_messages(uint32_t iMinuteTick);
+int8_t sms_process_messages();
 
 #endif /* TEMPSENSOR_V1_SMS_H_ */

@@ -50,7 +50,7 @@ void lcd_on();
 void lcd_off();
 void lcd_clear();
 void lcd_setaddr(int8_t addr);
-void lcd_show(int8_t iItemId);
+void lcd_show();
 void lcd_print(char* pcData);
 int lcd_printf(int line, const char *_format, ...);
 void lcd_printl(int8_t iLine, const char* pcData);

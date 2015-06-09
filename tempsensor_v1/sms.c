@@ -130,7 +130,7 @@ int8_t sms_process_memory_message(int8_t index) {
 
 const char COMMAND_RESULT_CPMS[] = "+CPMS: ";
 
-int8_t sms_process_messages(uint32_t iMinuteTick) {
+int8_t sms_process_messages() {
 	char *token;
 	char SM_ME[5]; // Internal memory or sim card used
 	uint32_t iIdx;
@@ -145,7 +145,6 @@ int8_t sms_process_messages(uint32_t iMinuteTick) {
 	lcd_printf(LINEC, "Fetching SMS");
 	lcd_printf(LINE2, "SIM %d ", config_getSelectedSIM());
 
-	iMsgRxPollElapsed = iMinuteTick;
 	//check if messages are available
 	uart_tx("AT+CPMS?\r\n");
 

@@ -78,9 +78,13 @@ void thermal_canyon_loop(void) {
 	config_update_intervals();
 
 	events_sync(thermal_update_time());
+	lcd_show(g_iDisplayId);
 
 	while (1) {
 		currentTime = thermal_update_time();
+#ifdef _DEBUG
+		events_debug(currentTime);
+#endif
 
 		// Checks all the events that we have and runs the right one.
 		events_run(currentTime);
@@ -157,6 +161,7 @@ void thermal_canyon_loop(void) {
 #endif
 
 #ifndef CALIBRATION
+		/*
 		//process SMS messages if there is a gap of 2 mins before cfg processing or upload takes place
 		if ((iMinuteTick) && !(g_iStatus & BACKLOG_UPLOAD_ON)
 				&& ((iMinuteTick - iSMSRxPollElapsed)
@@ -167,6 +172,7 @@ void thermal_canyon_loop(void) {
 			sms_process_messages(iMinuteTick);
 			lcd_show(g_iDisplayId);
 		}
+		*/
 
 		/*
 		//low power behavior

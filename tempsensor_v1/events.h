@@ -28,6 +28,7 @@ __attribute__((__packed__)) {
 	uint8_t nextEvent;
 } EVENT_MANAGER;
 
+void events_debug(time_t currentTime);
 void events_find_next_event();
 void events_run(time_t);
 void events_init();
