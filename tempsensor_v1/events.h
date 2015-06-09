@@ -10,8 +10,18 @@
 
 #define MAX_EVENTS 10
 
+typedef enum {
+	EVT_DISPLAY = 0,
+	EVT_PULLTIME,
+	EVT_SMSCHECK,
+	EVT_SAMPLE_TAKE,
+	EVT_SMS_TEST,
+	EVT_LAST
+} EVENT_IDS;
+
 typedef struct
 __attribute__((__packed__)) {
+	EVENT_IDS id;
 	char name[16];
 	void (*callback)(void *, time_t);
 	time_t nextEventRun;

@@ -344,7 +344,7 @@ void lcd_enable_verbose() {
 void lcd_print_progress() {
 	static char pos = 0;
 	char display[4] = { '*', '|', '/', '-' };
-	lcd_setaddr(0x0F);
+	lcd_setaddr(0x4F);
 	i2c_write(0x3e, 0x40, 1, (uint8_t *) &display[(++pos) & 0x3]);
 }
 

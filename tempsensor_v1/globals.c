@@ -57,7 +57,7 @@ int8_t iModemSuccess = -1;
 //uint8_t iHTTPRetryFailed=0;
 //uint8_t iHTTPRetrySucceeded=0;
 uint8_t iHTTPRespDelayCnt = 0;
-uint8_t iLastDisplayId = 0xFF;
+
 //moved stack variables to prevent stack overflow
 uint32_t iUploadTimeElapsed = 0;
 uint32_t iSampleTimeElapsed = 0;

@@ -62,6 +62,7 @@ void __attribute__ ((interrupt(PORT3_VECTOR))) Port_3 (void)
 	case P3IV_P3IFG5:
 		g_iSystemSetup ++;
 		thermal_handle_system_button();
+		__bic_SR_register_on_exit(LPM0_bits); // Resume execution if we are sleeping
 		break;
 	default:
 		break;
@@ -86,6 +87,7 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
 	case P4IV_P4IFG1:
 		g_iDisplayId++;
 		g_iDisplayId %= MAX_DISPLAY_ID;
+		__bic_SR_register_on_exit(LPM0_bits); // Resume execution if we are sleeping
 		break;
 	default:
 		break;

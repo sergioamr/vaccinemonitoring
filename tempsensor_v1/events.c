@@ -41,7 +41,7 @@ void events_find_next_event(time_t currentTime) {
 	g_sEvents.nextEvent = nextEvent;
 }
 
-void events_register(char *name, time_t startTime, time_t interval,
+void events_register(int id, char *name, time_t startTime, time_t interval,
 		void (*functionCall)(void *, time_t)) {
 	EVENT *pEvent;
 	uint8_t nextEvent;
@@ -53,6 +53,7 @@ void events_register(char *name, time_t startTime, time_t interval,
 	nextEvent = g_sEvents.registeredEvents;
 
 	pEvent = &g_sEvents.events[nextEvent];
+	pEvent->id = id;
 	strncpy(pEvent->name, name, sizeof(pEvent->name));
 	pEvent->interval = interval;
 	pEvent->lastEventRun = 0;
@@ -86,9 +87,12 @@ void events_sync(time_t currentTime) {
 }
 
 void events_debug(time_t currentTime) {
+#ifdef _DEBUG
 	EVENT *pEvent = &g_sEvents.events[g_sEvents.nextEvent];
 	time_t nextEventTime = pEvent->nextEventRun - currentTime;
-	lcd_printf(LINE2, "[%s] %d  ", pEvent->name, nextEventTime);
+	if ((nextEventTime/10)%10)==0)
+		lcd_printf(LINE2, "[%s] %d  ", pEvent->name, nextEventTime);
+#endif
 }
 
 void events_run(time_t currentTime) {
@@ -108,8 +112,8 @@ void events_run(time_t currentTime) {
 	config_save_command(pEvent->name);
 	// Move the interval to the next time
 	event_next(pEvent, currentTime);
-	events_find_next_event(currentTime);
 	pEvent->callback(pEvent, currentTime);
+	events_find_next_event(currentTime);
 
 	// Invalidate display
 	lcd_show();
@@ -120,14 +124,18 @@ void events_run(time_t currentTime) {
 /*******************************************************************************************************/
 
 void event_sms_test(void *event, time_t currentTime) {
-	sms_send_message_number("000447977345678", "SMS TEST");
+	sms_send_message_number("07977345678", "SMS TEST");
 }
 
 void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
+
+	//TODO process SMS messages if there is a gap of 2 mins before cfg processing or upload takes place
+
 	EVENT *pEvent = (EVENT *) event;
 	sms_process_messages();
 	if (g_pDevCfg->cfgServerConfigReceived == 1) {
 		pEvent->interval=MINUTES_(MSG_REFRESH_INTERVAL);
+		pEvent->nextEventRun = pEvent->nextEventRun + pEvent->interval;
 	}
 }
 
@@ -144,17 +152,17 @@ void event_update_display(void *event, time_t currentTime) {
 void events_init() {
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
 #ifdef _DEBUG
-	events_register("SMS_TEST", 0,  MINUTES_(1), &event_sms_test);
-	events_register("PULLTIME", 0,  HOURS_(1), &event_pull_time);
-	events_register("DISPLAY", 0, SECONDS_(60), &event_update_display);
+	events_register(EVT_SMS_TEST, "SMS_TEST", 0,  MINUTES_(1), &event_sms_test);
+	events_register(EVT_PULLTIME, "PULLTIME", 0,  HOURS_(1), &event_pull_time);
+	events_register(EVT_DISPLAY, "DISPLAY", 0, SECONDS_(60), &event_update_display);
 
 	// Check every 30 seconds until we get the configuration message;
-	events_register("SMSCHECK", 0, SECONDS_(30),
+	events_register(EVT_SMSCHECK, "SMSCHECK", 0, SECONDS_(30),
 			&event_SIM_check_incoming_msgs);
 
 #else
-	events_register("PULLTIME", 0, HOURS_(12), &event_pull_time);
-	events_register("DISPLAY", 0, MINUTES_(LCD_REFRESH_INTERVAL), &event_update_display);
-	events_register("SMSCHECK", 0, SECONDS_(30), &event_SIM_check_incoming_msgs);
+	events_register(EVT_PULLTIME, "PULLTIME", 0, HOURS_(12), &event_pull_time);
+	events_register(EVT_DISPLAY, "DISPLAY", 0, MINUTES_(LCD_REFRESH_INTERVAL), &event_update_display);
+	events_register(EVT_SMSCHECK, "SMSCHECK", 0, SECONDS_(30), &event_SIM_check_incoming_msgs);
 #endif
 }

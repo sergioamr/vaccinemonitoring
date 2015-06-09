@@ -64,10 +64,49 @@ time_t thermal_update_time() {
 	return mktime(&g_tmCurrTime);
 }
 
+void thermal_low_battery_message() {
+	//enable backlight
+	lcd_blenable();
+	//lcd reset
+	lcd_on();
+	lcd_print("Low Battery     ");
+	delay(HUMAN_DISPLAY_INFO_DELAY);
+	//disable backlight
+	lcd_bldisable();
+	lcd_off();
+	delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
+}
+
+void thermal_low_battery() {
+
+	// If we have more than 10% of battery,
+	// or we are connected to power, stay here until power is resumed.
+
+	if ((g_iBatteryLevel > 10) || (P4IN & BIT4)) {
+		return;
+	}
+
+	//Wait until battery is
+	while (g_iBatteryLevel <= 10) {
+
+		thermal_low_battery_message();
+		//power plugged in
+		if (!(P4IN & BIT4)) {
+			lcd_blenable();
+			lcd_on();
+			lcd_print("Recovery...");
+			modem_init();
+			lcd_show();
+			return;
+		}
+	}
+}
+
 void thermal_canyon_loop(void) {
 	FRESULT fr;
 	uint8_t iSampleCnt = 0;
 	time_t currentTime = 0;
+	uint8_t iDisplayId = 0;
 
 	iUploadTimeElapsed = iMinuteTick;		//initialize POST minute counter
 	iSampleTimeElapsed = iMinuteTick;
@@ -78,7 +117,7 @@ void thermal_canyon_loop(void) {
 	config_update_intervals();
 
 	events_sync(thermal_update_time());
-	lcd_show(g_iDisplayId);
+	lcd_show();
 
 	while (1) {
 		currentTime = thermal_update_time();
@@ -127,7 +166,7 @@ void thermal_canyon_loop(void) {
 					&& !(g_iStatus & NETWORK_DOWN)) {
 
 				data_transmit(&iSampleCnt);
-				lcd_show(g_iDisplayId);	//remove the custom print (e.g transmitting)
+				lcd_show();	//remove the custom print (e.g transmitting)
 			}
 			P4IE |= BIT1;					// enable interrupt for button input
 		}
@@ -139,12 +178,6 @@ void thermal_canyon_loop(void) {
 			temperature_sample();
 			modem_check_network(); // Checks network and if it is down it does the swapping
 		}
-
-#ifndef CALIBRATION
-		if ((iMinuteTick - iSMSRxPollElapsed) >= SMS_RX_POLL_INTERVAL) {
-
-		}
-#endif
 
 #ifndef BUZZER_DISABLED
 		if(g_iStatus & BUZZER_ON)
@@ -160,67 +193,19 @@ void thermal_canyon_loop(void) {
 		}
 #endif
 
-#ifndef CALIBRATION
-		/*
-		//process SMS messages if there is a gap of 2 mins before cfg processing or upload takes place
-		if ((iMinuteTick) && !(g_iStatus & BACKLOG_UPLOAD_ON)
-				&& ((iMinuteTick - iSMSRxPollElapsed)
-						< (SMS_RX_POLL_INTERVAL - 2))
-				&& ((iMinuteTick - iUploadTimeElapsed) < (g_iUploadPeriod - 2))
-				&& ((iMinuteTick - iMsgRxPollElapsed) >= MSG_REFRESH_INTERVAL)) {
-
-			sms_process_messages(iMinuteTick);
-			lcd_show(g_iDisplayId);
-		}
-		*/
-
-		/*
 		//low power behavior
-		if ((g_iBatteryLevel <= 10) && (P4IN & BIT4)) {
-
-			lcd_printl(LINEE, "Low Battery     ");
-			delay(HUMAN_DISPLAY_INFO_DELAY);
-
-			//reset display
-			//PJOUT |= BIT6;							// LCD reset pulled high
-			//disable backlight
-			lcd_bldisable();
-			lcd_off();
-
-			//loop for charger pluging
-			while (g_iBatteryLevel <= 10) {
-				event_update_display();
-				if (iLastDisplayId != g_iDisplayId) {
-					iLastDisplayId = g_iDisplayId;
-					//enable backlight
-					lcd_blenable();
-					//lcd reset
-					lcd_on();
-					lcd_print("Low Battery     ");
-					delay(HUMAN_DISPLAY_INFO_DELAY);
-					//disable backlight
-					lcd_bldisable();
-					lcd_off();
-					//reset lcd
-					//PJOUT |= BIT6;							// LCD reset pulled high
-				}
-
-				//power plugged in
-				if (!(P4IN & BIT4)) {
-					lcd_blenable();
-					lcd_on();
-					lcd_print("Starting...");
-					modem_init();
-					iLastDisplayId = g_iDisplayId = 0;
-					lcd_show(g_iDisplayId);
-					break;
-				}
-			}
-		}
-		*/
-#endif
+		thermal_low_battery();
 
 		delay(MAIN_SLEEP_TIME);
+
+		// Wait here behind the interruption to check for a change on display.
+		// If a hardware button is pressed it will resume CPU
+
+		if (iDisplayId != g_iDisplayId) {
+			iDisplayId = g_iDisplayId;
+			lcd_show();
+		}
+
 		__no_operation();                       // SET BREAKPOINT HERE
 	}
 }
