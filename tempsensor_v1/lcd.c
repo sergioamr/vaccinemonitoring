@@ -11,6 +11,7 @@
 #include "stringutils.h"
 #include "temperature.h"
 #include "fatdata.h"
+#include "thermalcanyon.h"
 
 void lcd_setupIO() {
 	PJDIR |= BIT6 | BIT7;      			// set LCD reset and Backlight enable
