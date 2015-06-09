@@ -187,7 +187,7 @@ void events_init() {
 
 #ifdef _DEBUG
 
-	events_register(EVT_LCD_OFF, "LCD OFF", 1, SECONDS_(15),
+	events_register(EVT_LCD_OFF, "LCD OFF", 1, MINUTES_(10),
 			&event_display_off);
 
 	events_register(EVT_SMS_TEST, "SMS_TEST", 0, MINUTES_(30), &event_sms_test);
