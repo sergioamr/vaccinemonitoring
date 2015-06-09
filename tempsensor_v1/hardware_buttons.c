@@ -49,6 +49,7 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 	case P2IV_P2IFG2:
 		//P3OUT &= ~BIT4;                           // buzzer off
 		g_iStatus &= ~BUZZER_ON;
+		event_reset_timeout_lcdoff();
 		break;
 	default:
 		break;
@@ -71,6 +72,7 @@ void __attribute__ ((interrupt(PORT3_VECTOR))) Port_3 (void)
 	case P3IV_P3IFG5:
 		g_iSystemSetup ++;
 		thermal_handle_system_button();
+		event_reset_timeout_lcdoff();
 		__bic_SR_register_on_exit(LPM0_bits); // Resume execution if we are sleeping
 		break;
 	default:
@@ -96,6 +98,7 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
 	case P4IV_P4IFG1:
 		g_iDisplayId++;
 		g_iDisplayId %= MAX_DISPLAY_ID;
+		event_reset_timeout_lcdoff();
 		__bic_SR_register_on_exit(LPM0_bits); // Resume execution if we are sleeping
 		break;
 	default:

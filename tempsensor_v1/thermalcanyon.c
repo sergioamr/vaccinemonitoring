@@ -65,15 +65,10 @@ time_t thermal_update_time() {
 }
 
 void thermal_low_battery_message() {
-	//enable backlight
-	lcd_blenable();
-	//lcd reset
-	lcd_on();
+	lcd_turn_on();
 	lcd_print("Low Battery     ");
 	delay(HUMAN_DISPLAY_INFO_DELAY);
-	//disable backlight
-	lcd_bldisable();
-	lcd_off();
+	lcd_turn_off();
 	delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 }
 
@@ -92,8 +87,7 @@ void thermal_low_battery() {
 		thermal_low_battery_message();
 		//power plugged in
 		if (!(P4IN & BIT4)) {
-			lcd_blenable();
-			lcd_on();
+			lcd_turn_on();
 			lcd_print("Recovery...");
 			modem_init();
 			lcd_show();

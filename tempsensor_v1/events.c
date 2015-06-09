@@ -121,8 +121,6 @@ void events_run(time_t currentTime) {
 	pEvent->callback(pEvent, currentTime);
 	events_find_next_event(currentTime);
 
-	// Invalidate display
-	lcd_show();
 	hardware_enable_buttons();
 }
 
@@ -137,7 +135,6 @@ void event_sms_test(void *event, time_t currentTime) {
 void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
 
 	//TODO process SMS messages if there is a gap of 2 mins before cfg processing or upload takes place
-
 	EVENT *pEvent = (EVENT *) event;
 	sms_process_messages();
 	if (g_pDevCfg->cfgServerConfigReceived == 1) {
@@ -154,11 +151,38 @@ void event_pull_time(void *event, time_t currentTime) {
 
 void event_update_display(void *event, time_t currentTime) {
 	config_update_system_time();
+	// Invalidate display
+	lcd_show();
+}
+
+void event_display_off(void *event, time_t currentTime) {
+	lcd_turn_off();
 }
 
 // modem_check_network(); // Checks network and if it is down it does the swapping
 void event_sample_temperature(void *event, time_t currentTime) {
 	temperature_sample();
+}
+
+EVENT *events_find(EVENT_IDS id) {
+	int t;
+
+	for (t = 0; t < g_sEvents.registeredEvents; t++) {
+		EVENT *pEvent = &g_sEvents.events[t];
+		if (pEvent->id == id)
+			return pEvent;
+	}
+
+	return NULL;
+}
+
+void event_reset_timeout_lcdoff() {
+	EVENT *event=events_find(EVT_LCD_OFF);
+	if (event==NULL)
+		return;
+
+	lcd_turn_on();
+	event_init(event, thermal_update_time());
 }
 
 void events_init() {
@@ -180,6 +204,10 @@ void events_init() {
 	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, MINUTES_(SAMPLE_PERIOD),
 			&event_sample_temperature);
 
+	events_register(EVT_LCD_OFF, "LCD OFF", 1, SECONDS_(15),
+			&event_display_off);
+
+
 #else
 
 	events_register(EVT_PULLTIME, "PULLTIME", 0, HOURS_(12), &event_pull_time);
@@ -191,5 +219,7 @@ void events_init() {
 	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, MINUTES_(SAMPLE_PERIOD),
 			&event_sample_temperature);
 
+	events_register(EVT_LCD_OFF, "LCD OFF", 1, MINUTES_(5),
+			&event_display_off);
 #endif
 }

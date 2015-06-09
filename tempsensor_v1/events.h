@@ -8,8 +8,6 @@
 #ifndef EVENTS_H_
 #define EVENTS_H_
 
-#define MAX_EVENTS 10
-
 typedef enum {
 	EVT_DISPLAY = 0,
 	EVT_PULLTIME,
@@ -17,8 +15,11 @@ typedef enum {
 	EVT_SAMPLE_TEMP,
 	EVT_SMS_TEST,
 	EVT_CHECK_NETWORK,
+	EVT_LCD_OFF,
 	EVT_LAST
 } EVENT_IDS;
+
+#define MAX_EVENTS EVT_LAST
 
 typedef struct
 __attribute__((__packed__)) {
@@ -44,5 +45,8 @@ void events_find_next_event();
 void events_run(time_t);
 void events_init();
 void events_sync(time_t currentTime);
+
+void event_reset_timeout_lcdoff();
+EVENT *events_find(EVENT_IDS id);
 
 #endif /* EVENTS_H_ */

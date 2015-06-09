@@ -13,6 +13,8 @@
 #include "fatdata.h"
 #include "thermalcanyon.h"
 
+static char g_bLCD_state = 0;
+
 void lcd_setupIO() {
 	PJDIR |= BIT6 | BIT7;      			// set LCD reset and Backlight enable
 	PJOUT |= BIT6;							// LCD reset pulled high
@@ -62,16 +64,28 @@ void lcd_clear() {
 void lcd_on() {
 	lcdBuffer[0] = 0x0C;
 	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
+	g_bLCD_state = 1;
 }
 
 void lcd_off() {
 	lcdBuffer[0] = 0x08;
 	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
+	g_bLCD_state = 0;
 }
 
 void lcd_setaddr(int8_t addr) {
 	lcdBuffer[0] = addr | 0x80;
 	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
+}
+
+void lcd_turn_on() {
+	lcd_blenable(); //enable backlight
+	lcd_on(); 		//lcd reset
+}
+
+void lcd_turn_off() {
+	lcd_bldisable();
+	lcd_off();
 }
 
 void lcd_show() {
@@ -80,11 +94,15 @@ void lcd_show() {
 	//float signal_strength = 0;
 	float local_signal = 0;
 
+	// LCD is off
+	if (g_bLCD_state == 0)
+		return;
+
 	int8_t iItemId = g_iDisplayId;
 
 	static time_t lastRefresh = 0;
 
-	if (lastRefresh==thermal_update_time())
+	if (lastRefresh == thermal_update_time())
 		return;
 
 	lastRefresh = thermal_update_time();
@@ -261,6 +279,9 @@ int lcd_printf(int line, const char *_format, ...) {
 	char szTemp[32];
 	va_list _ap;
 	int rval;
+	if (g_bLCD_state == 0)
+		return;
+
 	char *fptr = (char *) _format;
 	char *out_end = szTemp;
 
@@ -276,6 +297,9 @@ int lcd_printf(int line, const char *_format, ...) {
 void lcd_print(char* pcData) {
 	size_t len = strlen(pcData);
 
+	if (g_bLCD_state == 0)
+		return;
+
 	if (len > LCD_LINE_LEN) {
 		len = LCD_LINE_LEN;
 	}
@@ -285,6 +309,9 @@ void lcd_print(char* pcData) {
 
 void lcd_printl(int8_t iLine, const char* pcData) {
 	size_t len = strlen(pcData);
+
+	if (g_bLCD_state == 0)
+		return;
 
 	if (iLine == LINEC)
 		lcd_clear();
@@ -342,6 +369,10 @@ void lcd_enable_verbose() {
 }
 
 void lcd_print_progress() {
+
+	if (g_bLCD_state == 0)
+		return;
+
 	static char pos = 0;
 	char display[4] = { '*', '|', '/', '-' };
 	lcd_setaddr(0x4F);
@@ -350,6 +381,9 @@ void lcd_print_progress() {
 
 void lcd_print_boot(const char* pcData, int line) {
 	if (g_iLCDVerbose == VERBOSE_DISABLED)
+		return;
+
+	if (g_bLCD_state == 0)
 		return;
 
 #ifdef _DEBUG
