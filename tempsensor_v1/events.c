@@ -18,18 +18,37 @@ EVENT_MANAGER g_sEvents;
 /*******************************************************************************************************/
 /* Event based system */
 /*******************************************************************************************************/
+
+extern char* get_date_string(struct tm* timeData);
+
+time_t events_getTick() {
+	return iMinuteTick;
+}
+
 void events_send_data(char *phone) {
 	char msg[160];
 	EVENT *pEvent;
 	int t;
+	size_t length;
 
-	size_t currentTime = thermal_update_time();
-	for (t=0; t<g_sEvents.registeredEvents; t++) {
+	if (g_sEvents.registeredEvents == 0)
+		return;
+
+	size_t currentTime = events_getTick();
+	sprintf(msg, "[%s] Events start", get_date_string(&g_tmCurrTime));
+	sms_send_message_number(phone, msg);
+
+	for (t = 0; t < g_sEvents.registeredEvents; t++) {
 		pEvent = &g_sEvents.events[t];
-		sprintf(msg, "%s : interval %d next %d", pEvent->name, (int) (pEvent->nextEventRun - currentTime), (int) *pEvent->pInterval);
+		length = (pEvent->nextEventRun - currentTime);
+		sprintf(msg, "%s : interval %d next %d", pEvent->name,
+				(uint16_t) length, (uint16_t) *pEvent->pInterval);
+		sms_send_message_number(phone, msg);
 		sms_send_data_request(phone);
 	}
 
+	sprintf(msg, "[%s] Events end", get_date_string(&g_tmCurrTime));
+	sms_send_message_number(phone, msg);
 }
 
 // Populates the next event index depending on event times
@@ -99,9 +118,11 @@ void event_next(EVENT *pEvent, time_t currentTime) {
 	pEvent->nextEventRun = currentTime + *pEvent->pInterval;
 }
 
-void events_sync(time_t currentTime) {
+void events_sync() {
 	EVENT *pEvent;
 	int t;
+
+	time_t currentTime=events_getTick();
 
 	for (t = 0; t < g_sEvents.registeredEvents; t++) {
 		pEvent = &g_sEvents.events[t];
@@ -110,20 +131,24 @@ void events_sync(time_t currentTime) {
 	events_find_next_event(0);
 }
 
-void events_debug(time_t currentTime) {
+void events_debug() {
 #ifdef _DEBUG
+	time_t currentTime=events_getTick();
+
 	EVENT *pEvent = &g_sEvents.events[g_sEvents.nextEvent];
 	if (pEvent->id == EVT_DISPLAY)
 		return;
 
 	time_t nextEventTime = pEvent->nextEventRun - currentTime;
 	int test = nextEventTime % 10;
-	if (test == 0 || nextEventTime < 10)
+	if (test == 0 || nextEventTime < 10 || 1)
 		lcd_printf(LINE2, "[%s] %d  ", pEvent->name, nextEventTime);
 #endif
 }
 
-void event_run_now(EVENT *pEvent, time_t currentTime) {
+void event_run_now(EVENT *pEvent) {
+
+	time_t currentTime=events_getTick();
 
 	// Disable hardware interruptions before running the actions
 	hardware_disable_buttons();
@@ -145,7 +170,7 @@ void event_run_now_by_id(EVENT_IDS id) {
 	if (pEvent == NULL)
 		return;
 
-	event_run_now(pEvent, thermal_update_time());
+	event_run_now(pEvent);
 }
 
 void event_force_event_by_id(EVENT_IDS id, time_t offset) {
@@ -155,21 +180,24 @@ void event_force_event_by_id(EVENT_IDS id, time_t offset) {
 	if (pEvent == NULL)
 		return;
 
-	currentTime = thermal_update_time();
+	currentTime=events_getTick();
 	pEvent->nextEventRun = currentTime + offset;
 	events_find_next_event(currentTime);
 }
 
-void events_run(time_t currentTime) {
+void events_run() {
+	time_t currentTime;
 	EVENT *pEvent;
 	uint8_t nextEvent = g_sEvents.nextEvent;
 
 	if (nextEvent > MAX_EVENTS)
 		return;
 
+	currentTime=events_getTick();
+
 	pEvent = &g_sEvents.events[nextEvent];
-	while (currentTime >= pEvent->nextEventRun && pEvent!=NULL) {
-		event_run_now(pEvent, currentTime);
+	while (currentTime >= pEvent->nextEventRun && pEvent != NULL) {
+		event_run_now(pEvent);
 		pEvent = &g_sEvents.events[nextEvent];
 	}
 }
@@ -198,7 +226,7 @@ void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
 void event_pull_time(void *event, time_t currentTime) {
 	modem_pull_time();
 	// We update all the timers according to the new time
-	events_sync(thermal_update_time());
+	events_sync();
 }
 
 void event_update_display(void *event, time_t currentTime) {
@@ -240,7 +268,7 @@ void event_LCD_turn_on() {
 		return;
 
 	lcd_turn_on();
-	event_init(event, thermal_update_time());
+	event_init(event, events_getTick());
 }
 
 void events_init() {
@@ -248,20 +276,20 @@ void events_init() {
 
 #ifdef _DEBUG
 	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(30),
-			NULL);
+	NULL);
 #endif
 	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12),
-			NULL);
+	NULL);
 
 	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1,
 			&event_sample_temperature, MINUTES_(SAMPLE_PERIOD), NULL);
 
 	// Check every 30 seconds until we get the configuration message from server;
 	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs,
-			SECONDS_(30), NULL);
+			SECONDS_(15), NULL);
 
 	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off, MINUTES_(10),
-			NULL);
+	NULL);
 
 	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
 			MINUTES_(LCD_REFRESH_INTERVAL), NULL);
@@ -273,4 +301,6 @@ void events_init() {
 	events_register(EVT_UPLOAD_SAMPLES, "UPLOAD", 0, &event_upload_samples,
 			MINUTES_(UPLOAD_PERIOD),
 			&g_pDevCfg->stIntervalParam.uploadInterval);
+
+	events_sync(thermal_update_time());
 }

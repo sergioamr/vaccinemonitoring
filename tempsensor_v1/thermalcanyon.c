@@ -60,7 +60,7 @@ void thermal_handle_system_button() {
 }
 
 time_t thermal_update_time() {
-	rtc_get(&g_tmCurrTime);
+	rtc_getlocal(&g_tmCurrTime);
 	return mktime(&g_tmCurrTime);
 }
 

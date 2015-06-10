@@ -14,6 +14,7 @@
 #include "stringutils.h"
 #include "hardware_buttons.h"
 #include "time.h"
+#include "events.h"
 
 // Setup mode in which we are at the moment
 // Triggered by the Switch 3 button
@@ -153,7 +154,7 @@ void config_save_command(char *str) {
 	static int lastMin = 0;
 	static int lastSec = 0;
 
-	rtc_get(&g_tmCurrTime);
+	rtc_getlocal(&g_tmCurrTime);
 
 	if (lastMin != g_tmCurrTime.tm_min && lastSec != g_tmCurrTime.tm_sec) {
 		strcpy(g_pSysCfg->lastCommandTime, itoa_pad(g_tmCurrTime.tm_hour));
@@ -173,6 +174,8 @@ void config_reconfigure() {
 }
 
 void config_init() {
+
+	memset(&g_sEvents, 0, sizeof(g_sEvents));
 
 	if (!check_address_empty(g_pSysCfg->memoryInitialized)) {
 
@@ -255,10 +258,11 @@ void config_update_intervals() {
 }
 
 void config_update_system_time() {
+
 	// Gets the current time and stores it in FRAM
-	rtc_get(&g_tmCurrTime);
+	rtc_getlocal(&g_tmCurrTime);
 	memcpy(&g_pDevCfg->lastSystemTime, &g_tmCurrTime, sizeof(g_tmCurrTime));
-	_NOP();
+	events_sync(mktime(&g_tmCurrTime));
 }
 
 // http://54.241.2.213/coldtrace/uploads/multi/v3/358072043112124/1/

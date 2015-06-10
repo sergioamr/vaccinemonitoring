@@ -639,7 +639,7 @@ void modem_pull_time() {
 			lcd_printf(LINEH, get_YMD_String(&g_tmCurrTime));
 
 			rtc_init(&g_pDevCfg->lastSystemTime);
-			rtc_get(&g_tmCurrTime);
+			rtc_getlocal(&g_tmCurrTime);
 
 			lcd_printf(LINEC, "LAST DATE ");
 			lcd_printf(LINEH, get_YMD_String(&g_tmCurrTime));

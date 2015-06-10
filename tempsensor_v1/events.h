@@ -40,14 +40,17 @@ __attribute__((__packed__)) {
 	EVENT events[MAX_EVENTS];
 	uint8_t registeredEvents;
 	uint8_t nextEvent;
+	uint8_t init;
 } EVENT_MANAGER;
 
+extern EVENT_MANAGER g_sEvents;
+
 void events_send_data(char *phone);
-void events_debug(time_t currentTime);
+void events_debug();
 void events_find_next_event();
-void events_run(time_t);
+void events_run();
 void events_init();
-void events_sync(time_t currentTime);
+void events_sync();
 void event_force_event_by_id(EVENT_IDS id, time_t offset);
 void event_run_now_by_id(EVENT_IDS id);
 

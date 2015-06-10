@@ -72,9 +72,8 @@ char* get_date_string(struct tm* timeData) {
 
 	//[TODO] Check timezone
 
-	if (timeData->tm_isdst) {
-		strcat(g_szDateString, "DST");
-		strcat(g_szDateString, " ");
+	if (timeData->tm_isdst == 1) {
+		strcat(g_szDateString, " DST");
 	}
 	return g_szDateString;
 }
@@ -200,7 +199,7 @@ FRESULT log_append_(char *text) {
 		return fr;
 	}
 
-	rtc_get(&g_tmCurrTime);
+	rtc_getlocal(&g_tmCurrTime);
 
 	strcpy(szLog, "[");
 	if (g_tmCurrTime.tm_year > 2000) {
@@ -306,7 +305,7 @@ FRESULT log_sample_web_format(UINT *tbw) {
 
 	lcd_print("Saving sample");
 
-	rtc_get(&g_tmCurrTime);
+	rtc_getlocal(&g_tmCurrTime);
 	char* fn = get_current_fileName(&g_tmCurrTime, FOLDER_DATA, EXTENSION_DATA);
 
 	fr = f_open(&fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
