@@ -23,6 +23,7 @@
 #include "battery.h"
 #include "pmm.h"
 #include "fatdata.h"
+#include "events.h"
 
 // Send back data after an SMS request
 void sms_send_data_request(char *number) {
@@ -74,6 +75,7 @@ int8_t sms_process_memory_message(int8_t index) {
 	char state[16];
 	char ok[8];
 	char phoneNumber[32];
+	char *phone;
 
 	uart_txf("AT+CMGR=%d\r\n", index);
 
@@ -101,12 +103,13 @@ int8_t sms_process_memory_message(int8_t index) {
 	if (ok[0]!='O' || ok[1]!='K' )
 		return UART_FAILED;
 
+	phone = &phoneNumber[1];
 	switch (msg[0]) {
 	case '1':
-		sms_send_data_request(&phoneNumber[1]); // Send the phone without the \"
+		sms_send_data_request(phone); // Send the phone without the \"
 		break;
 	case '2':
-		sms_send_message_number(&phoneNumber[1], "Rebooting...");
+		sms_send_message_number(phone, "Rebooting...");
 		delallmsg();
 		for (t = 0; t < 10; t++) {
 			lcd_printf(LINEC, "REBOOT DEVICE");
@@ -116,6 +119,9 @@ int8_t sms_process_memory_message(int8_t index) {
 		//reset the board by issuing a SW BOR
 		PMM_trigBOR();
 		while (1);	//code should not come here
+	case 'e':
+		events_send_data(phone);
+		break;
 	default:
 		config_process_configuration(token);
 		break;

@@ -18,6 +18,19 @@ EVENT_MANAGER g_sEvents;
 /*******************************************************************************************************/
 /* Event based system */
 /*******************************************************************************************************/
+void events_send_data(char *phone) {
+	char msg[160];
+	EVENT *pEvent;
+	int t;
+
+	size_t currentTime = thermal_update_time();
+	for (t=0; t<g_sEvents.registeredEvents; t++) {
+		pEvent = &g_sEvents.events[t];
+		sprintf(msg, "%s : interval %d next %d", pEvent->name, (int) (pEvent->nextEventRun - currentTime), (int) *pEvent->pInterval);
+		sms_send_data_request(phone);
+	}
+
+}
 
 // Populates the next event index depending on event times
 void events_find_next_event(time_t currentTime) {
