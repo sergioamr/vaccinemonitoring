@@ -485,38 +485,14 @@ FRESULT log_sample_to_disk(int* tbw) {
 #else
 		g_iBatteryLevel = 0;
 #endif
+
 		//log sample period, battery level, power plugged, temperature values
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
-		//bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,E=%s,", iBatteryLevel,
-		//			  !(P4IN & BIT4),Temperature[0],Temperature[1],Temperature[2],Temperature[3],Temperature[4]);
 		memset(szLog, 0, sizeof(szLog));
-		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,E%s,F%s\n",
+#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
+		memset(szLog, 0, sizeof(szLog));
+		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,D%s,E%s\n",
 				itoa_pad(g_iBatteryLevel), !(P4IN & BIT4), Temperature[0],
 				Temperature[1], Temperature[2], Temperature[3], Temperature[4]);
-		/*
-		 strcat(szLog, "F");
-		 strcat(szLog, itoa_pad(iBatteryLevel));
-		 strcat(szLog, ",");
-		 strcat(szLog, "P");
-		 if (P4IN & BIT4) {
-		 strcat(szLog, "0,");
-		 } else {
-		 strcat(szLog, "1,");
-		 }
-		 strcat(szLog, "A");
-		 strcat(szLog, Temperature[0]);
-		 strcat(szLog, ",B");
-		 strcat(szLog, Temperature[1]);
-		 strcat(szLog, ",C");
-		 strcat(szLog, Temperature[2]);
-		 strcat(szLog, ",D");
-		 strcat(szLog, Temperature[3]);
-		 strcat(szLog, ",E");
-		 strcat(szLog, Temperature[4]);
-		 strcat(szLog, ",");
-		 strcat(szLog, "\n");
-		 */
-
 		fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 #else
 		bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,", g_iBatteryLevel,
