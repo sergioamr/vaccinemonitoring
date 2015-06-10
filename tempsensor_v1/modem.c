@@ -302,7 +302,7 @@ int8_t modem_first_init() {
 	int iStatus = 0;
 	int iSIM_Error = 0;
 
-	lcd_printl(LINEC, "Modem Power ON");
+	lcd_printl(LINEC, "Modem power on");
 	delay(2500);
 
 	//check Modem is powered on
