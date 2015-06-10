@@ -14,7 +14,7 @@
 
 #define ATCMD_HTTPSND		1
 #define ATCMD_CMGL			2
-
+#define ATCMD_CNUM 			3
 #define ATCMD_CSQ			4
 #define ATCMD_CGSN			5
 #define ATCMD_CPMS_CURRENT	6

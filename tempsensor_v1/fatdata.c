@@ -253,7 +253,8 @@ FRESULT log_appendf(const char *_format, ...) {
 }
 
 const char HEADER_CSV[] =
-		"\"Date of Reading\",\"Battery %\",\"Power Status\",\"Sensor A (Deg. C)\",\"Sensor B (Deg. C)\",\"Sensor C (Deg. C)\",\"Sensor D (Deg. C)\",\"Sensor E (Deg. C)\"\r\n";
+		"\"Date of Reading\",\"Battery %\",\"Power Status\",\"Sensor A (Deg. C)\",\"Sensor B (Deg. C)\","
+		"\"Sensor C (Deg. C)\",\"Sensor D (Deg. C)\",\"Sensor E (Deg. C)\"\r\n";
 
 FRESULT log_write_header(FIL *fobj, UINT *pBw) {
 	return f_write(fobj, HEADER_CSV, sizeof(HEADER_CSV) - 1, pBw);

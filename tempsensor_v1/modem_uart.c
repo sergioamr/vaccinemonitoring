@@ -412,6 +412,23 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			}
 			return UART_FAILED;
 
+		case ATCMD_CNUM:
+			pToken1 = strstr((const char *) RXBuffer, "CNUM:");
+			if (pToken1 != NULL) {
+				pToken2 = strstr(&pToken1[5], "\""); // Find begin of number on format "Address"
+				if (pToken2 == NULL)
+					return UART_ERROR;
+
+				pToken2++;
+				pToken1 = strstr(pToken2, "\""); // Find end of number
+				if (pToken1 == NULL)
+					return UART_ERROR;
+
+				memcpy(pResponse, pToken2, pToken1 - pToken2);
+				return UART_SUCCESS;
+			}
+			break;
+
 		// Getting the SIM Message Center to send it to the backend in order to get the APN
 		case ATCMD_CSCA:
 			pToken1 = strstr((const char *) RXBuffer, "CSCA:");

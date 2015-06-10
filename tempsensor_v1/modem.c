@@ -465,6 +465,20 @@ void modem_getSMSCenter() {
 	}
 }
 
+void modem_getOwnNumber() {
+
+	SIM_CARD_CONFIG *sim = config_getSIM();
+	config_incLastCmd();
+
+	uart_tx("AT+CNUM\r\n");
+
+	if (uart_rx_cleanBuf(ATCMD_CNUM, ATresponse,
+			sizeof(ATresponse))==UART_SUCCESS) {
+
+		memcpy(sim->cfgPhoneNum, ATresponse, strlen(ATresponse));
+	}
+}
+
 void modem_getIMEI() {
 	// added for IMEI number//
 	char IMEI_OK = false;
@@ -498,6 +512,7 @@ void modem_getIMEI() {
 
 void modem_getExtraInfo() {
 	modem_getIMEI();
+	modem_getOwnNumber();
 	delay(100);
 }
 

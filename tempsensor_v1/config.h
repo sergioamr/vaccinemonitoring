@@ -135,6 +135,7 @@ EXTERN int8_t g_iAlarmBatteryPeriod;
 
 typedef struct __attribute__((__packed__)) {
 	char cfgSMSCenter[GW_MAX_LEN + 1]; // Service Message Center number
+	char cfgPhoneNum[GW_MAX_LEN + 1];
 	char cfgAPN[APN_MAX_LEN + 1];
 	uint8_t iMaxMessages; // Max messages stored on sim card
 	uint16_t iCfgMCC;
