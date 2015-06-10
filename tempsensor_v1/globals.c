@@ -41,6 +41,8 @@ uint8_t SensorDisplayName[MAX_NUM_SENSORS] = { 0xA, 0xB, 0xC, 0xD, 0xE };
 volatile int32_t ADCvar[MAX_NUM_SENSORS];
 struct tm g_tmCurrTime;
 time_t g_timeNextPull;  // Pulltime from modem every 12 hours
+FIL filr;
+FRESULT fr;
 int32_t iBytesLogged = 0;
 int g_iCurrDay = 0;
 #pragma SET_DATA_SECTION()

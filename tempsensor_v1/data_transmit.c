@@ -230,13 +230,12 @@ void data_upload_sms() {
 
 	}
 	sms_send_message(dataSample);
-*/
+	*/
 }
 
 int data_transmit(uint8_t *pSampleCnt) {
+	/*
 	int iPOSTstatus = 0;
-/*
-
 	char *dummy = NULL;
 	char* pcTmp = NULL;
 	char* pcData = NULL;
@@ -695,6 +694,6 @@ int data_transmit(uint8_t *pSampleCnt) {
 		config_setLastCommand(COMMAND_POST + COMMAND_END);
 	}
 
-*/
 	return iPOSTstatus;
+	*/
 }

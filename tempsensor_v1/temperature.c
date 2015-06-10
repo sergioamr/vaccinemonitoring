@@ -54,11 +54,10 @@ void ADC_setupIO() {
 #endif
 
 	//ADC interrupt logic
-	//TODO comment ADC for debugging other interfaces
 #if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
 	ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5 | ADC12IE6; // Enable ADC conv complete interrupt
 #else
-			ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5; // Enable ADC conv complete interrupt
+	ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5; // Enable ADC conv complete interrupt
 #endif
 
 }

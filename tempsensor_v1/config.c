@@ -219,6 +219,7 @@ void config_init() {
 	strcpy(g_pDevCfg->SIM[0].cfgAPN, NEXLEAF_DEFAULT_APN);
 	strcpy(g_pDevCfg->SIM[1].cfgAPN, NEXLEAF_DEFAULT_APN);
 
+	// TODO: default values for own number & sms center?
 	g_pDevCfg->stIntervalParam.loggingInterval = SAMPLE_PERIOD;
 	g_pDevCfg->stIntervalParam.uploadInterval = UPLOAD_PERIOD;
 
@@ -305,6 +306,7 @@ int config_parse_configuration(char *msg) {
 	PARSE_NEXTVALUE(token, &g_pDevCfg->stBattPowerAlertParam.battThreshold,
 			delimiter, UART_FAILED);
 
+	// SIM info
 	PARSE_SKIP(token, delimiter, UART_FAILED); // $ST1
 	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewaySMS[0], strlen(token),
 			delimiter, UART_FAILED); // GATEWAY NUM
