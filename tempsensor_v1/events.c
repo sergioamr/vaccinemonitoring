@@ -155,13 +155,10 @@ void events_run(time_t currentTime) {
 		return;
 
 	pEvent = &g_sEvents.events[nextEvent];
-	if (pEvent == NULL)
-		return;
-
-	if (currentTime < pEvent->nextEventRun)
-		return;
-
-	event_run_now(pEvent, currentTime);
+	while (currentTime >= pEvent->nextEventRun && pEvent!=NULL) {
+		event_run_now(pEvent, currentTime);
+		pEvent = &g_sEvents.events[nextEvent];
+	}
 }
 
 /*******************************************************************************************************/
@@ -181,6 +178,8 @@ void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
 		*pEvent->pInterval = MINUTES_(MSG_REFRESH_INTERVAL);
 		pEvent->nextEventRun = pEvent->nextEventRun + *pEvent->pInterval;
 	}
+
+	event_force_event_by_id(EVT_DISPLAY, 0);
 }
 
 void event_pull_time(void *event, time_t currentTime) {
