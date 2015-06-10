@@ -1,10 +1,10 @@
 #include "thermalcanyon.h"
 #include "stringutils.h"
 #include "events.h"
+#include "alarms.h"
 
-extern
-	FRESULT sync_fs (	/* FR_OK: successful, FR_DISK_ERR: failed */
-	FATFS* fs		/* File system object */
+extern FRESULT sync_fs( /* FR_OK: successful, FR_DISK_ERR: failed */
+FATFS* fs /* File system object */
 );
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
@@ -97,8 +97,8 @@ char* get_simplified_date_string(struct tm* timeData) {
 	return g_szDateString;
 }
 
-
-char* get_current_fileName(struct tm* timeData, const char *folder, const char *ext) {
+char* get_current_fileName(struct tm* timeData, const char *folder,
+		const char *ext) {
 	if (timeData->tm_mday == 0 && timeData->tm_mon && timeData->tm_year == 0) {
 		strcpy(g_szFatFileName, LOG_FILE_UNKNOWN);
 		return g_szFatFileName;
@@ -122,8 +122,33 @@ void fat_check_error(FRESULT fr) {
 	lcd_printf(LINEE, "%s", FR_ERRORS[fr]);
 }
 
+FRESULT fat_create_folders() {
+	FRESULT fr;
+
+	fr = f_mkdir(FOLDER_LOG);
+	if (fr != FR_EXIST)
+		fat_check_error(fr);
+
+	fr = f_mkdir(FOLDER_TEXT);
+	if (fr != FR_EXIST)
+		fat_check_error(fr);
+
+	fr = f_mkdir(FOLDER_DATA);
+	if (fr != FR_EXIST)
+		fat_check_error(fr);
+
+	// Remount fat, we have to check why is it not updating the structure in memory
+	fr = f_mount(&FatFs, "", 0);
+	fat_check_error(fr);
+	if (fr != FR_OK)
+		return fr;
+
+	return fr;
+}
+
 FRESULT fat_init_drive() {
 	FRESULT fr;
+	FILINFO fno;
 
 	/* Register work area to the default drive */
 	fr = f_mount(&FatFs, "", 0);
@@ -131,34 +156,20 @@ FRESULT fat_init_drive() {
 	if (fr != FR_OK)
 		return fr;
 
-	fr = f_mkdir(FOLDER_DATA);
-	if (fr != FR_EXIST)
-		fat_check_error(fr);
-
-	// Failed to initialize FAT!
-	if (fr != FR_OK || fr != FR_EXIST)
-		return fr;
-
-	fr = f_mkdir(FOLDER_TEXT);
-	if (fr != FR_EXIST)
-		fat_check_error(fr);
-
-	fr = f_mkdir(FOLDER_LOG);
-	if (fr != FR_EXIST)
-		fat_check_error(fr);
-
-	fr = sync_fs(&FatFs);
-	if (fr != FR_OK) {
-		fat_check_error(fr);
-		return fr;
+	fr = f_stat(FOLDER_DATA, &fno);
+	if (fr == FR_NO_FILE) {
+		fr = fat_create_folders();
 	}
+
+	fat_check_error(fr);
+	if (fr!=FR_OK)
+		return fr;
 
 	// Fat is ready
 	g_bFatInitialized = true;
 
 	fr = log_append_("");
-	fr = log_append_(
-			"********************************************************");
+	fr = log_append_("***********");
 	fr = log_appendf("Start Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
 	return fr;
 }
