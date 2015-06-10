@@ -29,7 +29,8 @@ __attribute__((__packed__)) {
 	void (*callback)(void *, time_t);
 	time_t nextEventRun;
 	time_t lastEventRun;
-	time_t interval;    // Interval between events in minutes
+	time_t intervalDefault;    // Interval between events in minutes
+	time_t *pInterval;		   // Interval pointer
 	time_t startTime; // Minute of the current day to start this event
 					  // 0 is now
 } EVENT;

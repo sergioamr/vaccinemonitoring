@@ -162,24 +162,24 @@ FRESULT fat_init_drive() {
 	}
 
 	fat_check_error(fr);
-	if (fr!=FR_OK)
+	if (fr != FR_OK)
 		return fr;
 
 	// Fat is ready
 	g_bFatInitialized = true;
 
 	fr = log_append_("");
-	fr = log_append_("***********");
+	fr = log_append_("*****************************************************");
 	fr = log_appendf("Start Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
 	return fr;
 }
 
 FRESULT log_append_(char *text) {
-	char szLog[32];
 	FIL fobj;
 	int t = 0;
 	int len = 0;
 	int bw = 0;
+	char szLog[32];
 	FRESULT fr;
 
 	if (!g_bFatInitialized)

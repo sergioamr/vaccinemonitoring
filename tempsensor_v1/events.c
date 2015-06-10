@@ -43,8 +43,14 @@ void events_find_next_event(time_t currentTime) {
 	g_sEvents.nextEvent = nextEvent;
 }
 
+size_t event_getInterval(EVENT *pEvent) {
+	return *pEvent->pInterval;
+}
+
+// The interval can be dynamic
 void events_register(EVENT_IDS id, char *name, time_t startTime,
-		time_t interval, void (*functionCall)(void *, time_t)) {
+		void (*functionCall)(void *, time_t), time_t intervalDefault,
+		time_t *pInterval) {
 	EVENT *pEvent;
 	uint8_t nextEvent;
 
@@ -57,7 +63,13 @@ void events_register(EVENT_IDS id, char *name, time_t startTime,
 	pEvent = &g_sEvents.events[nextEvent];
 	pEvent->id = id;
 	strncpy(pEvent->name, name, sizeof(pEvent->name));
-	pEvent->interval = interval;
+
+	pEvent->intervalDefault = intervalDefault;
+	if (pInterval == NULL)
+		pEvent->pInterval = &pEvent->intervalDefault;
+	else
+		pEvent->pInterval = pInterval;
+
 	pEvent->lastEventRun = 0;
 	pEvent->nextEventRun = 0;
 	pEvent->startTime = startTime;
@@ -66,12 +78,12 @@ void events_register(EVENT_IDS id, char *name, time_t startTime,
 }
 
 void event_init(EVENT *pEvent, time_t currentTime) {
-	pEvent->nextEventRun = currentTime + pEvent->interval + pEvent->startTime;
+	pEvent->nextEventRun = currentTime + pEvent->startTime + *pEvent->pInterval;
 }
 
 void event_next(EVENT *pEvent, time_t currentTime) {
 	pEvent->lastEventRun = pEvent->nextEventRun;
-	pEvent->nextEventRun = currentTime + pEvent->interval;
+	pEvent->nextEventRun = currentTime + *pEvent->pInterval;
 }
 
 void events_sync(time_t currentTime) {
@@ -117,7 +129,7 @@ void event_run_now(EVENT *pEvent, time_t currentTime) {
 void event_run_now_by_id(EVENT_IDS id) {
 
 	EVENT *pEvent = events_find(id);
-	if (pEvent==NULL)
+	if (pEvent == NULL)
 		return;
 
 	event_run_now(pEvent, thermal_update_time());
@@ -127,7 +139,7 @@ void event_force_event_by_id(EVENT_IDS id, time_t offset) {
 
 	time_t currentTime;
 	EVENT *pEvent = events_find(id);
-	if (pEvent==NULL)
+	if (pEvent == NULL)
 		return;
 
 	currentTime = thermal_update_time();
@@ -166,8 +178,8 @@ void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
 	EVENT *pEvent = (EVENT *) event;
 	sms_process_messages();
 	if (g_pDevCfg->cfgServerConfigReceived == 1) {
-		pEvent->interval = MINUTES_(MSG_REFRESH_INTERVAL);
-		pEvent->nextEventRun = pEvent->nextEventRun + pEvent->interval;
+		*pEvent->pInterval = MINUTES_(MSG_REFRESH_INTERVAL);
+		pEvent->nextEventRun = pEvent->nextEventRun + *pEvent->pInterval;
 	}
 }
 
@@ -223,26 +235,30 @@ void events_init() {
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
 
 #ifdef _DEBUG
-	events_register(EVT_SMS_TEST, "SMS_TEST", 0, MINUTES_(30), &event_sms_test);
+	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(30),
+			NULL);
 #endif
-	events_register(EVT_PULLTIME, "PULLTIME", 0, HOURS_(12), &event_pull_time);
+	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12),
+			NULL);
 
-	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, MINUTES_(SAMPLE_PERIOD),
-			&event_sample_temperature);
+	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1,
+			&event_sample_temperature, MINUTES_(SAMPLE_PERIOD), NULL);
 
 	// Check every 30 seconds until we get the configuration message from server;
-	events_register(EVT_SMSCHECK, "SMSCHECK", 0, SECONDS_(30), &event_SIM_check_incoming_msgs);
+	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs,
+			SECONDS_(30), NULL);
 
-	events_register(EVT_LCD_OFF, "LCD OFF", 1, MINUTES_(10),
-			&event_display_off);
+	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off, MINUTES_(10),
+			NULL);
 
-	events_register(EVT_DISPLAY, "DISPLAY", 0, MINUTES_(LCD_REFRESH_INTERVAL), &event_update_display);
+	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
+			MINUTES_(LCD_REFRESH_INTERVAL), NULL);
 
-	events_register(EVT_SAMPLE_TEMP, "SAMPLE TMP", 0,
-			MINUTES_(g_pDevCfg->stIntervalParam.loggingInterval),
-			&event_sample_temperature);
+	events_register(EVT_SAMPLE_TEMP, "SAMPLE TMP", 0, &event_sample_temperature,
+			MINUTES_(SAMPLE_PERIOD),
+			&g_pDevCfg->stIntervalParam.loggingInterval);
 
-	events_register(EVT_UPLOAD_SAMPLES, "UPLOAD", 0,
-			MINUTES_(g_pDevCfg->stIntervalParam.uploadInterval),
-			&event_upload_samples);
+	events_register(EVT_UPLOAD_SAMPLES, "UPLOAD", 0, &event_upload_samples,
+			MINUTES_(UPLOAD_PERIOD),
+			&g_pDevCfg->stIntervalParam.uploadInterval);
 }

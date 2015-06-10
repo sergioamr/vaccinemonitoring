@@ -170,8 +170,8 @@ typedef struct {
 } BATT_POWER_ALERT_PARAM;
 
 typedef struct {
-	int uploadInterval;
-	int loggingInterval;
+	time_t uploadInterval;
+	time_t loggingInterval;
 } INTERVAL_PARAM;
 
 typedef struct
