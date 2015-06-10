@@ -23,6 +23,7 @@
 #include "battery.h"
 #include "pmm.h"
 #include "fatdata.h"
+#include "events.h"
 
 // Send back data after an SMS request
 void sms_send_data_request(char *number) {
@@ -182,6 +183,7 @@ int8_t sms_process_messages() {
 	delallmsg();
 	uart_tx("AT+CSDH=1\r\n"); // Restore extended output
 
+	event_force_event_by_id(EVT_DISPLAY, 0);
 	return UART_SUCCESS;
 }
 
