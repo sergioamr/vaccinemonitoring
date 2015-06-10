@@ -48,7 +48,7 @@ extern char* g_TmpSMScmdBuffer;
 void uploadsms();
 
 void sampletemp();
-void monitoralarm();
+void alarm_monitor();
 
 void thermal_canyon_loop();
 time_t thermal_update_time();

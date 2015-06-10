@@ -141,7 +141,7 @@ void thermal_canyon_loop(void) {
 			}
 #endif
 			//monitor for temperature alarms
-			monitoralarm();
+			alarm_monitor();
 			g_isConversionDone = 0;
 
 			if ((((iMinuteTick - iUploadTimeElapsed) >= g_iUploadPeriod)
