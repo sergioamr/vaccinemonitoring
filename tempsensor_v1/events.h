@@ -9,8 +9,7 @@
 #define EVENTS_H_
 
 typedef enum {
-	EVT_EMPTY = 0,
-	EVT_DISPLAY,
+	EVT_DISPLAY = 0,
 	EVT_PULLTIME,
 	EVT_SMSCHECK,
 	EVT_SAMPLE_TEMP,
@@ -39,6 +38,7 @@ __attribute__((__packed__)) {
 typedef struct
 __attribute__((__packed__)) {
 	EVENT events[MAX_EVENTS];
+	uint8_t registeredEvents;
 	uint8_t nextEvent;
 } EVENT_MANAGER;
 
