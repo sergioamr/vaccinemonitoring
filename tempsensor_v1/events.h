@@ -16,6 +16,7 @@ typedef enum {
 	EVT_SMS_TEST,
 	EVT_CHECK_NETWORK,
 	EVT_LCD_OFF,
+	EVT_UPLOAD_SAMPLES,
 	EVT_LAST
 } EVENT_IDS;
 
@@ -45,6 +46,8 @@ void events_find_next_event();
 void events_run(time_t);
 void events_init();
 void events_sync(time_t currentTime);
+void event_force_event_by_id(EVENT_IDS id, time_t offset);
+void event_run_now_by_id(EVENT_IDS id);
 
 void event_LCD_turn_on();
 EVENT *events_find(EVENT_IDS id);

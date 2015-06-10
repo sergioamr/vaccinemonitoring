@@ -71,7 +71,7 @@ void event_init(EVENT *pEvent, time_t currentTime) {
 
 void event_next(EVENT *pEvent, time_t currentTime) {
 	pEvent->lastEventRun = pEvent->nextEventRun;
-	pEvent->nextEventRun += pEvent->interval;
+	pEvent->nextEventRun = currentTime + pEvent->interval;
 }
 
 void events_sync(time_t currentTime) {
@@ -98,6 +98,43 @@ void events_debug(time_t currentTime) {
 #endif
 }
 
+void event_run_now(EVENT *pEvent, time_t currentTime) {
+
+	// Disable hardware interruptions before running the actions
+	hardware_disable_buttons();
+
+	// Store in the log file
+	config_save_command(pEvent->name);
+
+	// Move the interval to the next time
+	event_next(pEvent, currentTime);
+	pEvent->callback(pEvent, currentTime);
+	events_find_next_event(currentTime);
+
+	hardware_enable_buttons();
+}
+
+void event_run_now_by_id(EVENT_IDS id) {
+
+	EVENT *pEvent = events_find(id);
+	if (pEvent==NULL)
+		return;
+
+	event_run_now(pEvent, thermal_update_time());
+}
+
+void event_force_event_by_id(EVENT_IDS id, time_t offset) {
+
+	time_t currentTime;
+	EVENT *pEvent = events_find(id);
+	if (pEvent==NULL)
+		return;
+
+	currentTime = thermal_update_time();
+	pEvent->nextEventRun = currentTime + offset;
+	events_find_next_event(currentTime);
+}
+
 void events_run(time_t currentTime) {
 	EVENT *pEvent;
 	uint8_t nextEvent = g_sEvents.nextEvent;
@@ -112,16 +149,7 @@ void events_run(time_t currentTime) {
 	if (currentTime < pEvent->nextEventRun)
 		return;
 
-	// Disable hardware interruptions before running the actions
-	hardware_disable_buttons();
-
-	config_save_command(pEvent->name);
-	// Move the interval to the next time
-	event_next(pEvent, currentTime);
-	pEvent->callback(pEvent, currentTime);
-	events_find_next_event(currentTime);
-
-	hardware_enable_buttons();
+	event_run_now(pEvent, currentTime);
 }
 
 /*******************************************************************************************************/
@@ -161,7 +189,12 @@ void event_display_off(void *event, time_t currentTime) {
 
 // modem_check_network(); // Checks network and if it is down it does the swapping
 void event_sample_temperature(void *event, time_t currentTime) {
+	UINT bytes_written = 0;
 	temperature_sample();
+	log_sample_web_format(&bytes_written);
+}
+
+void event_upload_samples(void *event, time_t currentTime) {
 }
 
 EVENT *events_find(EVENT_IDS id) {
@@ -190,36 +223,26 @@ void events_init() {
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
 
 #ifdef _DEBUG
+	events_register(EVT_SMS_TEST, "SMS_TEST", 0, MINUTES_(30), &event_sms_test);
+#endif
+	events_register(EVT_PULLTIME, "PULLTIME", 0, HOURS_(12), &event_pull_time);
+
+	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, MINUTES_(SAMPLE_PERIOD),
+			&event_sample_temperature);
+
+	// Check every 30 seconds until we get the configuration message from server;
+	events_register(EVT_SMSCHECK, "SMSCHECK", 0, SECONDS_(30), &event_SIM_check_incoming_msgs);
 
 	events_register(EVT_LCD_OFF, "LCD OFF", 1, MINUTES_(10),
 			&event_display_off);
 
-	events_register(EVT_SMS_TEST, "SMS_TEST", 0, MINUTES_(30), &event_sms_test);
-	events_register(EVT_PULLTIME, "PULLTIME", 0, HOURS_(1), &event_pull_time);
-	events_register(EVT_DISPLAY, "DISPLAY", 0, SECONDS_(60),
-			&event_update_display);
-
-	events_register(EVT_SMSCHECK, "SMSCHECK", 0, SECONDS_(30),
-			&event_SIM_check_incoming_msgs);
-
-	events_register(EVT_SAMPLE_TEMP, "SAMPLE TMP", 0, MINUTES_(SAMPLE_PERIOD),
-			&event_sample_temperature);
-
-	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, MINUTES_(SAMPLE_PERIOD),
-			&event_sample_temperature);
-
-#else
-	events_register(EVT_LCD_OFF, "LCD OFF", 1, MINUTES_(5),
-			&event_display_off);
-
-	events_register(EVT_PULLTIME, "PULLTIME", 0, HOURS_(12), &event_pull_time);
 	events_register(EVT_DISPLAY, "DISPLAY", 0, MINUTES_(LCD_REFRESH_INTERVAL), &event_update_display);
 
-	// Check every 30 seconds until we get the configuration message from server;
-	events_register(EVT_SMSCHECK, "SMSCHECK", 0, SECONDS_(30), &event_SIM_check_incoming_msgs);
-	events_register(EVT_SAMPLE_TEMP, "SAMPLE TMP", 0, MINUTES_(SAMPLE_PERIOD), &event_sample_temperature);
-	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, MINUTES_(SAMPLE_PERIOD),
+	events_register(EVT_SAMPLE_TEMP, "SAMPLE TMP", 0,
+			MINUTES_(g_pDevCfg->stIntervalParam.loggingInterval),
 			&event_sample_temperature);
 
-#endif
+	events_register(EVT_UPLOAD_SAMPLES, "UPLOAD", 0,
+			MINUTES_(g_pDevCfg->stIntervalParam.uploadInterval),
+			&event_upload_samples);
 }

@@ -711,7 +711,6 @@ FRESULT move_window (
 /* Synchronize file system and strage device                             */
 /*-----------------------------------------------------------------------*/
 #if !_FS_READONLY
-static
 FRESULT sync_fs (	/* FR_OK: successful, FR_DISK_ERR: failed */
 	FATFS* fs		/* File system object */
 )

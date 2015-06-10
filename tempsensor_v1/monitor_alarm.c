@@ -7,7 +7,23 @@
 
 #include "thermalcanyon.h"
 
-void monitoralarm() {
+/*************************************************************************************************************/
+/* General events that will generate responses from the system */
+/*************************************************************************************************************/
+
+// TODO There was a problem in the SD Card, reinit fat
+void alarm_sd_card_problem(FRESULT fr)
+{
+	// THERE WAS A PROBLEM
+
+	// SETUP event FAT INIT ATTEMPT
+}
+
+/*************************************************************************************************************/
+/* Monitor alarm */
+/*************************************************************************************************************/
+
+void alarm_monitor() {
 	int8_t iCnt = 0;
 
 	//iterate through sensors

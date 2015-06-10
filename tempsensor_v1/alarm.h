@@ -9,33 +9,25 @@
 #define TEMPSENSOR_V1_ALARM_H_
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
+void alarm_sd_card_problem(FRESULT fr);
 
 //*****************************************************************************
-//
 //! \brief Check for threshold, trigger buzzer and SMS on alarm condition.
-//!
 //! \param none
-//!
 //! \return None
-//
 //*****************************************************************************
-extern void monitoralarm();
+void alarm_monitor();
 
 //*****************************************************************************
-//
 //! \brief Check for valid thresholds and set default thresholds in case of
 //! invalid values.
-//!
 //! \param none
-//!
 //! \return None
-//
 //*****************************************************************************
-extern void validatealarmthreshold();
+void validatealarmthreshold();
 
 #ifdef __cplusplus
 }

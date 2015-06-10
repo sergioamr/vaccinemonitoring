@@ -2,6 +2,11 @@
 #include "stringutils.h"
 #include "events.h"
 
+extern
+	FRESULT sync_fs (	/* FR_OK: successful, FR_DISK_ERR: failed */
+	FATFS* fs		/* File system object */
+);
+
 #pragma SET_DATA_SECTION(".aggregate_vars")
 char g_szFatFileName[64];
 FATFS FatFs; /* Work area (file system object) for logical drive */
@@ -110,6 +115,8 @@ void fat_check_error(FRESULT fr) {
 	if (fr == FR_DISK_ERR || fr == FR_NOT_READY)
 		g_bFatInitialized = false;
 
+	alarm_sd_card_problem(fr);
+
 	event_LCD_turn_on();
 	lcd_printl(LINEC, "SD CARD FAILURE");
 	lcd_printf(LINEE, "%s", FR_ERRORS[fr]);
@@ -128,6 +135,10 @@ FRESULT fat_init_drive() {
 	if (fr != FR_EXIST)
 		fat_check_error(fr);
 
+	// Failed to initialize FAT!
+	if (fr != FR_OK || fr != FR_EXIST)
+		return fr;
+
 	fr = f_mkdir(FOLDER_TEXT);
 	if (fr != FR_EXIST)
 		fat_check_error(fr);
@@ -135,6 +146,12 @@ FRESULT fat_init_drive() {
 	fr = f_mkdir(FOLDER_LOG);
 	if (fr != FR_EXIST)
 		fat_check_error(fr);
+
+	fr = sync_fs(&FatFs);
+	if (fr != FR_OK) {
+		fat_check_error(fr);
+		return fr;
+	}
 
 	// Fat is ready
 	g_bFatInitialized = true;
