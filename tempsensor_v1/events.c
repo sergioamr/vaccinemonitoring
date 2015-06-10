@@ -13,7 +13,9 @@
 #define MINUTES_(m) (m*60L)
 #define HOURS_(h)   (h*60L*60L)
 
+#pragma SET_DATA_SECTION(".xbigdata_vars")
 EVENT_MANAGER g_sEvents;
+#pragma SET_DATA_SECTION()
 
 /*******************************************************************************************************/
 /* Event based system */
@@ -22,7 +24,27 @@ EVENT_MANAGER g_sEvents;
 extern char* get_date_string(struct tm* timeData);
 
 time_t events_getTick() {
-	return iMinuteTick;
+
+	static time_t oldTime = 0;
+	static time_t frameDiff = 0;
+	static time_t elapsedTime = 0;
+
+	time_t newTime = thermal_update_time();
+	if (oldTime==0) {
+		oldTime=newTime;
+		return 0;
+	}
+
+	frameDiff = (newTime - oldTime);
+
+	if (frameDiff<10000) {
+		elapsedTime+=frameDiff;
+	} else {
+		_NOP();
+	}
+
+	oldTime=newTime;
+	return elapsedTime;
 }
 
 void events_send_data(char *phone) {
@@ -302,5 +324,5 @@ void events_init() {
 			MINUTES_(UPLOAD_PERIOD),
 			&g_pDevCfg->stIntervalParam.uploadInterval);
 
-	events_sync(thermal_update_time());
+	events_sync();
 }
