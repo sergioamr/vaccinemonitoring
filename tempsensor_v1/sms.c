@@ -165,6 +165,7 @@ int8_t sms_process_messages() {
 
 	if (usedr==0) {
 		lcd_printf(LINEC, "No new messages", usedr);
+		event_force_event_by_id(EVT_DISPLAY, 0);
 		return UART_SUCCESS;
 	}
 
@@ -183,7 +184,7 @@ int8_t sms_process_messages() {
 	delallmsg();
 	uart_tx("AT+CSDH=1\r\n"); // Restore extended output
 
-	event_force_event_by_id(EVT_DISPLAY, 0);
+	//event_force_event_by_id(EVT_DISPLAY, 0);
 	return UART_SUCCESS;
 }
 

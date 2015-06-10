@@ -26,15 +26,12 @@ void events_find_next_event(time_t currentTime) {
 	time_t nextEventTime = UINT32_MAX;
 	uint8_t nextEvent = 0;
 
-	if (g_sEvents.registeredEvents == 0)
-		return;
-
 	nextEvent = 0;
 
 	// Search for the event that is closer in time
-	for (t = 0; t < g_sEvents.registeredEvents; t++) {
+	for (t = 0; t < MAX_EVENTS; t++) {
 		pEvent = &g_sEvents.events[t];
-		if (pEvent->nextEventRun < nextEventTime) {
+		if (pEvent->id!=EVT_EMPTY && pEvent->nextEventRun < nextEventTime) {
 			nextEventTime = pEvent->nextEventRun;
 			nextEvent = t;
 		}
@@ -52,15 +49,12 @@ void events_register(EVENT_IDS id, char *name, time_t startTime,
 		void (*functionCall)(void *, time_t), time_t intervalDefault,
 		time_t *pInterval) {
 	EVENT *pEvent;
-	uint8_t nextEvent;
 
 	// Not enough space to register an event.
-	if (g_sEvents.registeredEvents >= MAX_EVENTS)
+	if (id >= MAX_EVENTS)
 		return;
 
-	nextEvent = g_sEvents.registeredEvents;
-
-	pEvent = &g_sEvents.events[nextEvent];
+	pEvent = &g_sEvents.events[id];
 	pEvent->id = id;
 	strncpy(pEvent->name, name, sizeof(pEvent->name));
 
@@ -74,10 +68,12 @@ void events_register(EVENT_IDS id, char *name, time_t startTime,
 	pEvent->nextEventRun = 0;
 	pEvent->startTime = startTime;
 	pEvent->callback = functionCall;
-	g_sEvents.registeredEvents++;
 }
 
 void event_init(EVENT *pEvent, time_t currentTime) {
+	if (pEvent->id==EVT_EMPTY)
+		return;
+
 	pEvent->nextEventRun = currentTime + pEvent->startTime + *pEvent->pInterval;
 }
 
@@ -90,7 +86,7 @@ void events_sync(time_t currentTime) {
 	EVENT *pEvent;
 	int t;
 
-	for (t = 0; t < g_sEvents.registeredEvents; t++) {
+	for (t = 0; t < MAX_EVENTS; t++) {
 		pEvent = &g_sEvents.events[t];
 		event_init(pEvent, currentTime);
 	}
@@ -155,13 +151,10 @@ void events_run(time_t currentTime) {
 		return;
 
 	pEvent = &g_sEvents.events[nextEvent];
-	if (pEvent == NULL)
-		return;
-
-	if (currentTime < pEvent->nextEventRun)
-		return;
-
-	event_run_now(pEvent, currentTime);
+	while (currentTime >= pEvent->nextEventRun && pEvent!=NULL) {
+		event_run_now(pEvent, currentTime);
+		pEvent = &g_sEvents.events[nextEvent];
+	}
 }
 
 /*******************************************************************************************************/
@@ -170,6 +163,7 @@ void events_run(time_t currentTime) {
 
 void event_sms_test(void *event, time_t currentTime) {
 	sms_send_data_request(LOCAL_TESTING_NUMBER);
+	event_force_event_by_id(EVT_DISPLAY, 0);
 }
 
 void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
@@ -210,15 +204,11 @@ void event_upload_samples(void *event, time_t currentTime) {
 }
 
 EVENT *events_find(EVENT_IDS id) {
-	int t;
+	EVENT *pEvent = &g_sEvents.events[id];
+	if (pEvent->id!=id)
+		return NULL;
 
-	for (t = 0; t < g_sEvents.registeredEvents; t++) {
-		EVENT *pEvent = &g_sEvents.events[t];
-		if (pEvent->id == id)
-			return pEvent;
-	}
-
-	return NULL;
+	return pEvent;
 }
 
 // turns on the screen, resets the timeout to turn it off
@@ -235,7 +225,7 @@ void events_init() {
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
 
 #ifdef _DEBUG
-	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(30),
+	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(10),
 			NULL);
 #endif
 	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12),
