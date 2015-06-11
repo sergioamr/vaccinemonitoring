@@ -145,7 +145,9 @@ int8_t sms_process_messages() {
 	uint8_t usedr = 0; // Reading memory
 	uint8_t totalr = 0;
 
+#ifdef _DEBUG
 	config_setLastCommand(COMMAND_SMS_PROCESS);
+#endif
 
 	memset(SM_ME, 0, sizeof(SM_ME));
 

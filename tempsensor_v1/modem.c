@@ -665,7 +665,9 @@ void modem_getPreferredOperatorList() {
 
 void modem_init() {
 
+#ifdef _DEBUG
 	config_setLastCommand(COMMAND_MODEMINIT);
+#endif
 
 	if (config_getSelectedSIM() > 1) {
 		// Memory not initialized

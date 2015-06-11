@@ -8,6 +8,7 @@
 #include "main_system.h"
 #include "hardware_buttons.h"
 #include "sms.h"
+#include "fatdata.h"
 
 #define SECONDS_(s) (s)
 #define MINUTES_(m) (m*60L)
@@ -23,22 +24,22 @@ EVENT_MANAGER g_sEvents;
 
 extern char* get_date_string(struct tm* timeData);
 
-time_t event_getInterval(EVENT *pEvent) {
+time_t inline event_getInterval(EVENT *pEvent) {
 	if (pEvent == NULL)
 		return UINT32_MAX;
 
-	if (pEvent->interval == NULL)
+	if (pEvent->interval == 0)
 		return pEvent->intervalDefault;
 
-	return MINUTES_(*pEvent->interval);
+	return pEvent->interval;
 }
 
 void event_setInterval(EVENT *pEvent, time_t time) {
 	if (pEvent == NULL)
 		return;
 
-	if (pEvent->interval != NULL) {
-		*pEvent->interval = time / 60L;
+	if (pEvent->interval != 0) {
+		pEvent->interval = time / 60L;
 		return;
 	}
 
@@ -148,7 +149,7 @@ void events_find_next_event(time_t currentTime) {
 // The interval can be dynamic
 void events_register(EVENT_IDS id, char *name, time_t startTime,
 		void (*functionCall)(void *, time_t), time_t intervalDefault,
-		time_t *pInterval) {
+		time_t interval) {
 	EVENT *pEvent;
 	uint8_t nextEvent;
 
@@ -163,13 +164,14 @@ void events_register(EVENT_IDS id, char *name, time_t startTime,
 	strncpy(pEvent->name, name, sizeof(pEvent->name));
 
 	pEvent->intervalDefault = intervalDefault;
-	pEvent->interval = pInterval;
+	pEvent->interval = MINUTES_(interval);
 
 	pEvent->lastEventRun = 0;
 	pEvent->nextEventRun = 0;
 	pEvent->startTime = startTime;
 	pEvent->callback = functionCall;
 	g_sEvents.registeredEvents++;
+	event_init(pEvent, 0);
 }
 
 void event_init(EVENT *pEvent, time_t currentTime) {
@@ -334,41 +336,38 @@ void event_LCD_turn_on() {
 	EVENT *event = events_find(EVT_LCD_OFF);
 	if (event == NULL)
 		return;
-
 	lcd_turn_on();
 	event_init(event, events_getTick());
 }
 
 void events_init() {
+
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
 
 #ifdef _DEBUG
 	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(30),
 	NULL);
 #endif
-	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12),
-	NULL);
+	//events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12), NULL);
 
-	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1,
-			&event_sample_temperature, MINUTES_(SAMPLE_PERIOD), NULL);
+	//events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, &event_sample_temperature, MINUTES_(SAMPLE_PERIOD), NULL);
 
 	// Check every 30 seconds until we get the configuration message from server;
-	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs,
-			SECONDS_(45), NULL);
+	//events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs, SECONDS_(45), NULL);
 
-	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off, MINUTES_(10),
-	NULL);
+//	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off, MINUTES_(10),NULL);
 
 	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
 			MINUTES_(LCD_REFRESH_INTERVAL), NULL);
 
 	events_register(EVT_SAMPLE_TEMP, "SAMPLE TMP", 0, &event_sample_temperature,
 			MINUTES_(SAMPLE_PERIOD),
-			&g_pDevCfg->stIntervalParam.loggingInterval);
+			g_pDevCfg->stIntervalParam.loggingInterval);
 
 	events_register(EVT_UPLOAD_SAMPLES, "UPLOAD", 0, &event_upload_samples,
 			MINUTES_(UPLOAD_PERIOD),
-			&g_pDevCfg->stIntervalParam.uploadInterval);
+			g_pDevCfg->stIntervalParam.uploadInterval
+			);
 
 	events_sync();
 }
