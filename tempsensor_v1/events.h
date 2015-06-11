@@ -45,6 +45,7 @@ __attribute__((__packed__)) {
 
 extern EVENT_MANAGER g_sEvents;
 
+void event_setInterval_by_id(EVENT_IDS id, time_t time);
 void events_send_data(char *phone);
 void events_debug();
 void events_find_next_event();

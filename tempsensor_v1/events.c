@@ -34,8 +34,12 @@ time_t inline event_getInterval(EVENT *pEvent) {
 	return pEvent->interval;
 }
 
-void event_setInterval(EVENT *pEvent, time_t time) {
+void inline event_setInterval(EVENT *pEvent, time_t time) {
 	if (pEvent == NULL)
+		return;
+
+	// Intervals more than reset time will not be accepted.
+	if (time>HOURS_(48))
 		return;
 
 	if (pEvent->interval != 0) {
@@ -44,6 +48,14 @@ void event_setInterval(EVENT *pEvent, time_t time) {
 	}
 
 	pEvent->intervalDefault = time;
+}
+
+void event_setInterval_by_id(EVENT_IDS id, time_t time) {
+	EVENT *pEvent = events_find(id);
+	if (pEvent == NULL)
+		return;
+
+	event_setInterval(pEvent, time);
 }
 
 time_t events_getTick() {
@@ -348,14 +360,14 @@ void events_init() {
 	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(30),
 	NULL);
 #endif
-	//events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12), NULL);
+	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12), NULL);
 
-	//events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, &event_sample_temperature, MINUTES_(SAMPLE_PERIOD), NULL);
+	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, &event_sample_temperature, MINUTES_(SAMPLE_PERIOD), NULL);
 
 	// Check every 30 seconds until we get the configuration message from server;
-	//events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs, SECONDS_(45), NULL);
+	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs, SECONDS_(45), NULL);
 
-//	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off, MINUTES_(10),NULL);
+	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off, MINUTES_(10),NULL);
 
 	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
 			MINUTES_(LCD_REFRESH_INTERVAL), NULL);

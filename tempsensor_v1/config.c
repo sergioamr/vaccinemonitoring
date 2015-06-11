@@ -344,6 +344,10 @@ int config_parse_configuration(char *msg) {
 	log_append_("configuration success");
 
 	g_pDevCfg->cfgServerConfigReceived = 1;
+
+	event_setInterval_by_id(EVT_SAMPLE_TEMP, g_pDevCfg->stIntervalParam.loggingInterval);
+	event_setInterval_by_id(EVT_UPLOAD_SAMPLES, g_pDevCfg->stIntervalParam.uploadInterval);
+
 	return UART_SUCCESS;
 }
 
