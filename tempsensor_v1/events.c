@@ -23,6 +23,28 @@ EVENT_MANAGER g_sEvents;
 
 extern char* get_date_string(struct tm* timeData);
 
+time_t event_getInterval(EVENT *pEvent) {
+	if (pEvent == NULL)
+		return UINT32_MAX;
+
+	if (pEvent->interval == NULL)
+		return pEvent->intervalDefault;
+
+	return MINUTES_(*pEvent->interval);
+}
+
+void event_setInterval(EVENT *pEvent, time_t time) {
+	if (pEvent == NULL)
+		return;
+
+	if (pEvent->interval != NULL) {
+		*pEvent->interval = time / 60L;
+		return;
+	}
+
+	pEvent->intervalDefault = time;
+}
+
 time_t events_getTick() {
 
 	static time_t oldTime = 0;
@@ -30,20 +52,20 @@ time_t events_getTick() {
 	static time_t elapsedTime = 0;
 
 	time_t newTime = thermal_update_time();
-	if (oldTime==0) {
-		oldTime=newTime;
+	if (oldTime == 0) {
+		oldTime = newTime;
 		return 0;
 	}
 
 	frameDiff = (newTime - oldTime);
 
-	if (frameDiff<10000) {
-		elapsedTime+=frameDiff;
+	if (frameDiff < 10000) {
+		elapsedTime += frameDiff;
 	} else {
 		_NOP();
 	}
 
-	oldTime=newTime;
+	oldTime = newTime;
 	return elapsedTime;
 }
 
@@ -63,12 +85,13 @@ void events_send_data(char *phone) {
 	for (t = 0; t < g_sEvents.registeredEvents; t++) {
 		pEvent = &g_sEvents.events[t];
 		length = (pEvent->nextEventRun - currentTime);
-		sprintf(msg, "%s : interval %d next %d", pEvent->name,
-				(uint16_t) length, (uint16_t) *pEvent->pInterval);
+
+		sprintf(msg, "%s : left %d next %d", pEvent->name,
+				(uint16_t) length, (uint16_t) event_getInterval(pEvent));
 		sms_send_message_number(phone, msg);
-		sms_send_data_request(phone);
 	}
 
+	sms_send_data_request(phone);
 	sprintf(msg, "[%s] Events end", get_date_string(&g_tmCurrTime));
 	sms_send_message_number(phone, msg);
 }
@@ -76,7 +99,7 @@ void events_send_data(char *phone) {
 // Populates the next event index depending on event times
 void events_find_next_event(time_t currentTime) {
 	int t;
-	EVENT *pEvent;
+	EVENT *pEvent = NULL;
 	time_t nextEventTime = UINT32_MAX;
 	uint8_t nextEvent = 0;
 
@@ -88,6 +111,7 @@ void events_find_next_event(time_t currentTime) {
 	// Search for the event that is closer in time
 	for (t = 0; t < g_sEvents.registeredEvents; t++) {
 		pEvent = &g_sEvents.events[t];
+
 		if (pEvent->nextEventRun < nextEventTime) {
 			nextEventTime = pEvent->nextEventRun;
 			nextEvent = t;
@@ -95,10 +119,8 @@ void events_find_next_event(time_t currentTime) {
 	}
 
 	g_sEvents.nextEvent = nextEvent;
-}
 
-size_t event_getInterval(EVENT *pEvent) {
-	return *pEvent->pInterval;
+	_NOP();
 }
 
 // The interval can be dynamic
@@ -119,10 +141,7 @@ void events_register(EVENT_IDS id, char *name, time_t startTime,
 	strncpy(pEvent->name, name, sizeof(pEvent->name));
 
 	pEvent->intervalDefault = intervalDefault;
-	if (pInterval == NULL)
-		pEvent->pInterval = &pEvent->intervalDefault;
-	else
-		pEvent->pInterval = pInterval;
+	pEvent->interval = pInterval;
 
 	pEvent->lastEventRun = 0;
 	pEvent->nextEventRun = 0;
@@ -132,19 +151,20 @@ void events_register(EVENT_IDS id, char *name, time_t startTime,
 }
 
 void event_init(EVENT *pEvent, time_t currentTime) {
-	pEvent->nextEventRun = currentTime + pEvent->startTime + *pEvent->pInterval;
+	pEvent->nextEventRun = currentTime + pEvent->startTime
+			+ event_getInterval(pEvent);
 }
 
 void event_next(EVENT *pEvent, time_t currentTime) {
 	pEvent->lastEventRun = pEvent->nextEventRun;
-	pEvent->nextEventRun = currentTime + *pEvent->pInterval;
+	pEvent->nextEventRun = currentTime + event_getInterval(pEvent);
 }
 
 void events_sync() {
 	EVENT *pEvent;
 	int t;
 
-	time_t currentTime=events_getTick();
+	time_t currentTime = events_getTick();
 
 	for (t = 0; t < g_sEvents.registeredEvents; t++) {
 		pEvent = &g_sEvents.events[t];
@@ -155,7 +175,7 @@ void events_sync() {
 
 void events_debug() {
 #ifdef _DEBUG
-	time_t currentTime=events_getTick();
+	time_t currentTime = events_getTick();
 
 	EVENT *pEvent = &g_sEvents.events[g_sEvents.nextEvent];
 	//if (pEvent->id == EVT_DISPLAY)
@@ -170,7 +190,7 @@ void events_debug() {
 
 void event_run_now(EVENT *pEvent) {
 
-	time_t currentTime=events_getTick();
+	time_t currentTime = events_getTick();
 
 	// Disable hardware interruptions before running the actions
 	hardware_disable_buttons();
@@ -202,7 +222,7 @@ void event_force_event_by_id(EVENT_IDS id, time_t offset) {
 	if (pEvent == NULL)
 		return;
 
-	currentTime=events_getTick();
+	currentTime = events_getTick();
 	pEvent->nextEventRun = currentTime + offset;
 	events_find_next_event(currentTime);
 }
@@ -215,11 +235,12 @@ void events_run() {
 	if (nextEvent > MAX_EVENTS)
 		return;
 
-	currentTime=events_getTick();
+	currentTime = events_getTick();
 
 	pEvent = &g_sEvents.events[nextEvent];
 	while (currentTime >= pEvent->nextEventRun && pEvent != NULL) {
 		event_run_now(pEvent);
+		nextEvent = g_sEvents.nextEvent;
 		pEvent = &g_sEvents.events[nextEvent];
 	}
 }
@@ -238,8 +259,8 @@ void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
 	EVENT *pEvent = (EVENT *) event;
 	sms_process_messages();
 	if (g_pDevCfg->cfgServerConfigReceived == 1) {
-		*pEvent->pInterval = MINUTES_(MSG_REFRESH_INTERVAL);
-		pEvent->nextEventRun = pEvent->nextEventRun + *pEvent->pInterval;
+		event_setInterval(pEvent, MINUTES_(MSG_REFRESH_INTERVAL));
+		pEvent->nextEventRun = pEvent->nextEventRun + event_getInterval(pEvent);
 	}
 
 	event_force_event_by_id(EVT_DISPLAY, 0);
@@ -308,7 +329,7 @@ void events_init() {
 
 	// Check every 30 seconds until we get the configuration message from server;
 	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs,
-			SECONDS_(15), NULL);
+			SECONDS_(45), NULL);
 
 	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off, MINUTES_(10),
 	NULL);

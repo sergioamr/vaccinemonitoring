@@ -164,6 +164,10 @@ int modem_connect_network(uint8_t attempts) {
 	// enable network registration and location information unsolicited result code;
 	// if there is a change of the network cell. +CGREG: <stat>[,<lac>,<ci>]
 
+#ifdef _DEBUG
+	attempts = 1;
+#endif
+
 	uart_tx("AT+CGREG=2\r\n");
 	do {
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
@@ -350,7 +354,7 @@ int8_t modem_first_init() {
 		}
 
 #ifdef _DEBUG
-		backend_get_configuration();
+		//backend_get_configuration();
 #endif
 
 		// One or more of the sims had a catastrofic failure on init, set the device
@@ -704,7 +708,7 @@ void modem_init() {
 	//uart_tx("AT+CPMS=\"ME\",\"ME\",\"ME\"");
 
 	// Check if there are pending messages in the SMS queue
-	delay(4000);
+	delay(3000);
 
 	// We have to wait for the network to be ready, it will take some time. In debug we just wait on connect.
 #ifndef _DEBUG

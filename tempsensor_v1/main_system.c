@@ -107,6 +107,9 @@ void modem_turn_off() {
 	P4OUT |= BIT0;
 }
 
+extern char __STACK_END;
+extern char __STACK_SIZE;
+
 void system_boot() {
 	UINT bytes_written = 0;
 
@@ -179,6 +182,8 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 /****************************************************************************/
 
 int main(void) {
+
+	memset((void*)(&__STACK_END - &__STACK_SIZE),0xa5, __STACK_SIZE);
 
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 	system_boot();

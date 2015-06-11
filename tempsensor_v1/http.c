@@ -168,7 +168,7 @@ int http_check_error(int *retry) {
 }
 
 int http_get_configuration() {
-	char szTemp[128];
+	char szTemp[100];
 	int uart_state = UART_FAILED;
 	int retry = 1;
 	int attempts = HTTP_COMMAND_ATTEMPTS;

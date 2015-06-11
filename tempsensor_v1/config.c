@@ -164,7 +164,7 @@ void config_save_command(char *str) {
 		strcat(g_pSysCfg->lastCommandTime, itoa_pad(g_tmCurrTime.tm_sec));
 	}
 
-	log_appendf(str);
+	log_append_(str);
 }
 
 void config_reconfigure() {

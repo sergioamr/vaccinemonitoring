@@ -8,8 +8,10 @@ FATFS* fs /* File system object */
 );
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
-char g_szFatFileName[64];
 FATFS FatFs; /* Work area (file system object) for logical drive */
+char g_szFatFileName[64];
+char g_szYMDString[16];
+char g_szDateString[32]; // "YYYY-MM-DD HH:MM:S IST"
 #pragma SET_DATA_SECTION()
 
 char g_bFatInitialized = false;
@@ -34,7 +36,6 @@ DWORD get_fattime(void) {
 	return tmr;
 }
 
-char g_szYMDString[16];
 
 char* get_YMD_String(struct tm* timeData) {
 
@@ -48,8 +49,6 @@ char* get_YMD_String(struct tm* timeData) {
 	strcat(g_szYMDString, itoa_pad(timeData->tm_mday));
 	return g_szYMDString;
 }
-
-char g_szDateString[32]; // "YYYY-MM-DD HH:MM:S IST"
 
 char* get_date_string(struct tm* timeData) {
 

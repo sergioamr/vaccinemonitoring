@@ -30,7 +30,7 @@ __attribute__((__packed__)) {
 	time_t nextEventRun;
 	time_t lastEventRun;
 	time_t intervalDefault;    // Interval between events in minutes
-	time_t *pInterval;		   // Interval pointer
+	time_t *interval;		   // Interval pointer
 	time_t startTime; // Minute of the current day to start this event
 					  // 0 is now
 } EVENT;
