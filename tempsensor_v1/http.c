@@ -386,6 +386,7 @@ int http_post(char* postdata) {
 	return iRetVal;
 }
 
+/*
 int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 		char* seperator, int8_t iFlagVal, char* pcExtSrc, int8_t iFieldSize) {
 	char* pcTmp = NULL;
@@ -438,4 +439,4 @@ int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 
 	return ret;
 }
-
+*/

@@ -29,7 +29,6 @@ extern volatile int32_t ADCvar[MAX_NUM_SENSORS];
 
 extern char ATresponse[ATRESP_MAX_LEN];
 
-extern char SampleData[SAMPLE_LEN];
 extern struct tm g_tmCurrTime;
 
 extern int8_t g_iSignalLevel;

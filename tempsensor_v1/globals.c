@@ -27,9 +27,11 @@ volatile uint16_t g_iStatus = LOG_TIME_STAMP;
 char ATresponse[ATRESP_MAX_LEN] = { };
 #pragma SET_DATA_SECTION()
 
+/*
 #pragma SET_DATA_SECTION(".xbigdata_vars")
 char SampleData[SAMPLE_LEN];
 #pragma SET_DATA_SECTION()
+*/
 
 char SensorName[MAX_NUM_SENSORS][NAME_LEN] = { "A", "B", "C", "D", "E" };
 uint8_t SensorDisplayName[MAX_NUM_SENSORS] = { 0xA, 0xB, 0xC, 0xD, 0xE };

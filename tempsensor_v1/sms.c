@@ -71,7 +71,7 @@ extern const char AT_MSG_OK[];
 int8_t sms_process_memory_message(int8_t index) {
 	int t=0, len=0;
 	char *token;
-	char msg[160];
+	char msg[SMS_MAX_SIZE];
 	char state[16];
 	char ok[8];
 	char phoneNumber[32];
@@ -195,6 +195,7 @@ int8_t sms_process_messages() {
 }
 
 void sms_send_heart_beat() {
+	char msg[SMS_MAX_SIZE];
 
 	char* pcTmp = NULL;
 	SIM_CARD_CONFIG *sim = config_getSIM();
@@ -203,44 +204,44 @@ void sms_send_heart_beat() {
 
 	lcd_print("SMS SYNC");
 	//send heart beat
-	memset(SampleData, 0, sizeof(SampleData));
-	strcat(SampleData, SMS_HB_MSG_TYPE);
-	strcat(SampleData, g_pDevCfg->cfgIMEI);
-	strcat(SampleData, ",");
+	memset(msg, 0, sizeof(msg));
+	strcat(msg, SMS_HB_MSG_TYPE);
+	strcat(msg, g_pDevCfg->cfgIMEI);
+	strcat(msg, ",");
 	if (config_getSelectedSIM()) {
-		strcat(SampleData, "1,");
+		strcat(msg, "1,");
 	} else {
-		strcat(SampleData, "0,");
+		strcat(msg, "0,");
 	}
-	strcat(SampleData, g_pDevCfg->cfgGatewaySMS);
-	strcat(SampleData, ",");
-	strcat(SampleData, sim->cfgSMSCenter);
-	strcat(SampleData, ",");
+	strcat(msg, g_pDevCfg->cfgGatewaySMS);
+	strcat(msg, ",");
+	strcat(msg, sim->cfgSMSCenter);
+	strcat(msg, ",");
 	for (i = 0; i < MAX_NUM_SENSORS; i++) {
 		if (Temperature[i][0] == '-') {
-			strcat(SampleData, "0,");
+			strcat(msg, "0,");
 		} else {
-			strcat(SampleData, "1,");
+			strcat(msg, "1,");
 		}
 	}
 
 	pcTmp = itoa_pad(batt_getlevel());	//opt by directly using tmpstr
-	strcat(SampleData, pcTmp);
+	strcat(msg, pcTmp);
 	if (P4IN & BIT4) {
-		strcat(SampleData, ",0");
+		strcat(msg, ",0");
 	} else {
-		strcat(SampleData, ",1");
+		strcat(msg, ",1");
 	}
 
 	// Attach Fimware release date
-	strcat(SampleData, ",");
-	strcat(SampleData, g_pSysCfg->firmwareVersion);
+	strcat(msg, ",");
+	strcat(msg, g_pSysCfg->firmwareVersion);
 #ifdef _DEBUG
-	strcat(SampleData, " dev");
+	strcat(msg, " dev");
 #endif
-	strcat(SampleData, "");
+	strcat(msg, "");
 
-	sms_send_message(SampleData);
+	sms_send_message(msg);
 }
 
 extern char* itoa_nopadding(int num);

@@ -9,6 +9,7 @@
 #include "hardware_buttons.h"
 #include "sms.h"
 #include "fatdata.h"
+#include "modem.h"
 
 #define SECONDS_(s) (s)
 #define MINUTES_(m) (m*60L)
@@ -83,7 +84,7 @@ time_t events_getTick() {
 }
 
 void events_send_data(char *phone) {
-	char msg[160];
+	char msg[SMS_MAX_SIZE];
 	EVENT *pEvent;
 	int t;
 	size_t length;
@@ -328,6 +329,10 @@ void event_sample_temperature(void *event, time_t currentTime) {
 	log_sample_web_format(&bytes_written);
 }
 
+void event_network_ckeck(void *event, time_t currentTime) {
+	modem_connect_network();
+}
+
 void event_upload_samples(void *event, time_t currentTime) {
 }
 
@@ -357,20 +362,29 @@ void events_init() {
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
 
 #ifdef _DEBUG
-	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(30),
+	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(5),
 	NULL);
 #endif
 	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12), NULL);
 
-	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, &event_sample_temperature, MINUTES_(SAMPLE_PERIOD), NULL);
+	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, &event_network_ckeck, MINUTES_(2), NULL);
 
 	// Check every 30 seconds until we get the configuration message from server;
-	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs, SECONDS_(45), NULL);
+	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs, MINUTES_(3), NULL);
 
 	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off, MINUTES_(10),NULL);
 
 	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
 			MINUTES_(LCD_REFRESH_INTERVAL), NULL);
+
+	uint16_t c = g_pDevCfg->stIntervalParam.loggingInterval;
+	uint16_t value1 = c;
+
+	uint16_t *p = &g_pDevCfg->stIntervalParam.loggingInterval;
+	uint16_t value2 = *p;
+
+	if (value1 != value2)
+		log_appendf(" hello world ");
 
 	events_register(EVT_SAMPLE_TEMP, "SAMPLE TMP", 0, &event_sample_temperature,
 			MINUTES_(SAMPLE_PERIOD),

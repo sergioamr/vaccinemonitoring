@@ -173,12 +173,11 @@ SECTIONS
     	globals.obj (.aggregate_vars)
     	i2c.obj (.aggregate_vars)
     	modem_uart.obj (.aggregate_vars)
-    	globals.obj (.xbigdata_vars)
     	events.obj (.xbigdata_vars)
     	fatdata.obj (.aggregate_vars)
     } > FRAM
 
-    .stack      : {} > RAM (HIGH)           *//* SOFTWARE SYSTEM STACK             */
+    .stack      : {} > RAM (HIGH)           /* SOFTWARE SYSTEM STACK             */
 
     .infoA     : {} > INFOA
     .infoB     : {} > INFOB type=NOINIT
