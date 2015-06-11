@@ -50,6 +50,8 @@ void process_batch() {
 	FIL filr;
 	FRESULT fr;
 	DIR dir;
+	FIL filr;
+	FRESULT fr;
 	char line[64];
 	char* firstDateString = NULL;
 	char* defSID = NULL;
@@ -65,10 +67,10 @@ void process_batch() {
 	lcd_printl(LINE2, "Transmitting...");
 
 	// Cycle through all files using f_findfirst, f_findnext.
-	fr = f_findfirst(&dir, &fili, "/data", ".CSV");
+	fr = f_findfirst(&dir, &fili, "/txt", ".txt");
 	while(fr == 0) {
 		fr = f_open(&filr, fili.fname, FA_READ | FA_OPEN_ALWAYS);
-		while(f_gets(line, strlen(line), &filr) == 0) {
+		while(f_gets(line, strlen(line), &filr) == 0 && fr == 0) {
 			if(lineIndex == 0) {
 				parse_time_from_line(&firstDate, line);
 				firstDateString = get_date_string(&firstDate, "/", ":", 0);
@@ -96,7 +98,7 @@ void process_batch() {
 		// otherwise save the line number (when TX buffer was full or the
 		// interval rule was broken).
 		fr = f_close(&filr);
-		g_pCalibrationCfg = 0;
+		g_pSysCfg->lastLineRead = 0;
 		fr = f_findnext(&dir, &fili);
 	}
 	*/
