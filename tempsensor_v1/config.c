@@ -263,7 +263,6 @@ void config_update_system_time() {
 	// Gets the current time and stores it in FRAM
 	rtc_getlocal(&g_tmCurrTime);
 	memcpy(&g_pDevCfg->lastSystemTime, &g_tmCurrTime, sizeof(g_tmCurrTime));
-	events_sync(mktime(&g_tmCurrTime));
 }
 
 // http://54.241.2.213/coldtrace/uploads/multi/v3/358072043112124/1/

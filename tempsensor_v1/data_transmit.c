@@ -47,8 +47,6 @@ void process_batch() {
 	/*
 	int lineIndex = 0;
 	FILINFO fili;
-	FIL filr;
-	FRESULT fr;
 	DIR dir;
 	FIL filr;
 	FRESULT fr;
