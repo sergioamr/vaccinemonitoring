@@ -50,7 +50,10 @@ char* get_YMD_String(struct tm* timeData) {
 	return g_szYMDString;
 }
 
-char* get_date_string(struct tm* timeData) {
+char g_szDateString[32]; // "YYYY-MM-DD HH:MM:SS IST"
+
+char* get_date_string(struct tm* timeData, char* dateSeperator,
+		char* dateTimeSeperator, uint8_t includeTZ) {
 
 	g_szDateString[0] = 0;
 	if (timeData->tm_year < 1900 || timeData->tm_year > 3000) // Working for 1000 years?
@@ -58,11 +61,11 @@ char* get_date_string(struct tm* timeData) {
 	else
 		strcpy(g_szDateString, itoa_nopadding(timeData->tm_year));
 
-	strcat(g_szDateString, "-");
+	strcat(g_szDateString, dateSeperator);
 	strcat(g_szDateString, itoa_pad(timeData->tm_mon + 1));
-	strcat(g_szDateString, "-");
+	strcat(g_szDateString, dateSeperator);
 	strcat(g_szDateString, itoa_pad(timeData->tm_mday));
-	strcat(g_szDateString, " ");
+	strcat(g_szDateString, dateTimeSeperator);
 	strcat(g_szDateString, itoa_pad(timeData->tm_hour));
 	strcat(g_szDateString, ":");
 	strcat(g_szDateString, itoa_pad(timeData->tm_min));
@@ -71,8 +74,8 @@ char* get_date_string(struct tm* timeData) {
 
 	//[TODO] Check timezone
 
-	if (timeData->tm_isdst == 1) {
-		strcat(g_szDateString, " DST");
+	if (includeTZ && timeData->tm_isdst) {
+		strcat(g_szDateString, "DST");
 	}
 	return g_szDateString;
 }
@@ -94,6 +97,89 @@ char* get_simplified_date_string(struct tm* timeData) {
 	strcat(g_szDateString, itoa_pad(timeData->tm_sec));
 	return g_szDateString;
 }
+
+void parse_time_from_line(struct tm* timeToConstruct, char* formattedLine) {
+	char dateAttribute[5];
+	char* token = NULL;
+	int timeIndex = 0;
+
+	token = strtok(formattedLine, ",");
+	token = strtok(token, ":");
+
+	if (token != NULL) {
+		strncpy(dateAttribute, g_szDateString, 4);
+		dateAttribute[4] = 0;
+		timeToConstruct->tm_year = atoi(&dateAttribute[0]);
+
+		strncpy(dateAttribute, &g_szDateString[4], 2);
+		dateAttribute[2] = 0;
+		timeToConstruct->tm_mon = atoi(&dateAttribute[0]);
+
+		strncpy(dateAttribute, &g_szDateString[6], 2);
+		dateAttribute[2] = 0;
+		timeToConstruct->tm_mday = atoi(&dateAttribute[0]);
+	}
+
+	token = strtok(NULL, ":");
+	while (token != NULL) {
+		switch (timeIndex) {
+		case 0:
+			timeToConstruct->tm_hour = atoi(token);
+			break;
+		case 1:
+			timeToConstruct->tm_min = atoi(token);
+			break;
+		case 2:
+			timeToConstruct->tm_sec = atoi(token);
+		}
+
+		if (timeIndex == 1) {
+			// Needs to be tested
+			token = strtok(NULL, ",");
+		} else {
+			token = strtok(NULL, ":");
+		}
+
+		timeIndex++;
+	}
+}
+
+// Takes a string with the same format that is stored in file $TS=TIMESTAMP,INTERVAL,
+int date_within_interval(struct tm* timeToCompare, struct tm* baseTime, int interval) {
+	struct tm baseInterval;
+	int timeVal;
+
+	if (timeToCompare == NULL || baseTime == NULL)
+		return 0;
+
+	// Generically this needs to work for 31/12/xxxx 23:59:59 + 1 second
+	// (which is 01/01/(xxxx+1) 00:00:00 - In our case a different day = different file
+	// so it only needs to be accurate up to hours.
+	// Leniancy ~+-1 minute (not guaranteed to be 60 seconds but minimum is 30)
+	timeVal = baseTime->tm_min + interval;
+	baseInterval.tm_sec = baseTime->tm_sec;
+	if	(timeVal >= 60) {
+		while (timeVal >= 60) {
+			timeVal -= 60;
+			baseInterval.tm_min = timeVal;
+			baseInterval.tm_hour = baseTime->tm_hour + 1;
+		}
+	} else {
+		baseInterval.tm_min = timeVal;
+	}
+
+	if (timeToCompare->tm_hour != baseInterval.tm_hour) {
+		return 0;
+	}
+
+	if ((timeToCompare->tm_min <= baseInterval.tm_min + 1) &&
+			(timeToCompare->tm_min >= baseInterval.tm_min - 1)) {
+		return 1;
+	}
+
+	return 0;
+}
+
 
 char* get_current_fileName(struct tm* timeData, const char *folder,
 		const char *ext) {
@@ -279,7 +365,7 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 	char *date;
 	FRESULT fr;
 
-	date = get_date_string(&g_tmCurrTime);
+	date = get_date_string(&g_tmCurrTime, "-", " ", 1);
 	fr = f_write(fobj, date, strlen(date), &bw);
 	if (fr != FR_OK)
 		return fr;

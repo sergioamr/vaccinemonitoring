@@ -106,9 +106,10 @@ float resistance_to_temperature(float R) {
 
 void temperature_process_ADC_values() {
 	int iIdx;
-	//convert the current sensor ADC value to temperature
-	for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++)
+	// convert the current sensor ADC value to temperature
+	for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
 		digital_amp_to_temp_string(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
+	}
 }
 
 void digital_amp_to_temp_string(int32_t ADCval, char* TemperatureVal,

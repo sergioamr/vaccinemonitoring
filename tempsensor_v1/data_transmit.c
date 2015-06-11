@@ -42,10 +42,69 @@ void data_send_temperatures_sms() {
 	sms_send_message(data);
 }
 
-void data_upload_sms() {
+// FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
+void process_batch() {
+	/*
+	int lineIndex = 0;
+	FILINFO fili;
+	FIL filr;
+	FRESULT fr;
+	DIR dir;
+	char line[64];
+	char* firstDateString = NULL;
+	char* defSID = NULL;
+	SIM_CARD_CONFIG *sim = config_getSIM();
+	struct tm firstDate, currentDate;
 
+	if(MAX_NUM_SENSORS == 5) {
+		defSID = "0|1|2|3|4";
+	} else {
+		defSID = "0|1|2|3";
+	}
+
+	lcd_printl(LINE2, "Transmitting...");
+
+	// Cycle through all files using f_findfirst, f_findnext.
+	fr = f_findfirst(&dir, &fili, "/data", ".CSV");
+	while(fr == 0) {
+		fr = f_open(&filr, fili.fname, FA_READ | FA_OPEN_ALWAYS);
+		while(f_gets(line, strlen(line), &filr) == 0) {
+			if(lineIndex == 0) {
+				parse_time_from_line(&firstDate, line);
+				firstDateString = get_date_string(&firstDate, "/", ":", 0);
+				sprintf(SampleData, "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%lu",
+						g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa",
+						defSID, firstDateString,
+						g_pDevCfg->stIntervalParam.loggingInterval);
+			} else {
+				strcat(SampleData, line);
+				if(f_gets(line, strlen(line), &filr) == 0) {
+					parse_time_from_line(&currentDate, line);
+					if(!date_within_interval(&currentDate, &firstDate,
+							g_pDevCfg->stIntervalParam.loggingInterval)) {
+						break;
+					}
+				}
+			}
+
+			g_pSysCfg->lastLineRead = lineIndex;
+			lineIndex++;
+		}
+		// Send the data if the last line has been passed or
+		// the TXbuffer is full or the interval time rule was broken.
+		// If it was the last line delete the file & set line number to 0,
+		// otherwise save the line number (when TX buffer was full or the
+		// interval rule was broken).
+		fr = f_close(&filr);
+		g_pCalibrationCfg = 0;
+		fr = f_findnext(&dir, &fili);
+	}
+	*/
+}
+
+void data_upload_sms() {
 /*
- * int iPOSTstatus = 0;
+	int iPOSTstatus = 0;
 	char* pcData = NULL;
 	char* pcTmp = NULL;
 	char* pcSrc1 = NULL;
@@ -252,27 +311,26 @@ int data_transmit(uint8_t *pSampleCnt) {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	lcd_printl(LINE2, "Transmitting...");
-//iStatus &= ~TEST_FLAG;
+
+	//iStatus &= ~TEST_FLAG;
 #ifdef SMS_ALERT
 	g_iStatus &= ~SMSED_HIGH_TEMP;
 	g_iStatus &= ~SMSED_LOW_TEMP;
 #endif
 	if ((iMinuteTick - iUploadTimeElapsed) >= g_iUploadPeriod) {
-		//if(((g_iUploadPeriod/g_iSamplePeriod) < MAX_NUM_CONTINOUS_SAMPLES) ||
-		//    (iStatus & ALERT_UPLOAD_ON))
-		if ((g_iUploadPeriod / g_iSamplePeriod) < MAX_NUM_CONTINOUS_SAMPLES) {
+		if((g_iUploadPeriod/g_iSamplePeriod) < MAX_NUM_CONTINOUS_SAMPLES){
 			//trigger a new timestamp
 			g_iStatus |= LOG_TIME_STAMP;
 			*pSampleCnt = 0;
 			//iStatus &= ~ALERT_UPLOAD_ON;	//reset alert upload indication
 		}
-
 		iUploadTimeElapsed = iMinuteTick;
 	} else if ((g_iStatus & ALERT_UPLOAD_ON)
 			&& (*pSampleCnt < MAX_NUM_CONTINOUS_SAMPLES)) {
 		//trigger a new timestamp
 		g_iStatus |= LOG_TIME_STAMP;
 		*pSampleCnt = 0;
+		g_iStatus &= ~ALERT_UPLOAD_ON;
 	}
 
 //reset the alert uplaod indication

@@ -150,7 +150,8 @@ void thermal_canyon_loop(void) {
 					|| (g_iStatus & ALERT_UPLOAD_ON))
 					&& !(g_iStatus & NETWORK_DOWN)) {
 
-				data_transmit(&iSampleCnt);
+				//data_transmit(&iSampleCnt);
+				process_batch();
 			}
 		}
 

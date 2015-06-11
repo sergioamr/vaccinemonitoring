@@ -86,7 +86,7 @@ EXTERN int8_t g_iSystemSetup;
 
 //Sampling configuration
 #define SAMPLE_PERIOD			1		//in minutes
-#define UPLOAD_PERIOD			2		//in minutes
+#define UPLOAD_PERIOD			10		//in minutes
 #define SMS_RX_POLL_INTERVAL	5		//poll interval in minutes for sms msg TODO change back
 #define LCD_REFRESH_INTERVAL	5
 #define MSG_REFRESH_INTERVAL	5
@@ -199,6 +199,7 @@ __attribute__((__packed__)) {
 	uint8_t memoryInitialized;
 	uint32_t numberRuns;
 	uint32_t numberConfigurationRuns;
+	int32_t lastLineRead;
 	uint8_t calibrationFinished;
 	char firmwareVersion[17];
 	uint16_t configStructureSize; // Size to check if there are changes on this structure
