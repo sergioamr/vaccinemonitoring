@@ -183,7 +183,7 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 
 int main(void) {
 
-	memset((void*)(&__STACK_END - &__STACK_SIZE),0xa5, __STACK_SIZE);
+	memset((void*)(&__STACK_END - &__STACK_SIZE),0xa5, (size_t) __STACK_SIZE);
 
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
 	system_boot();

@@ -51,6 +51,7 @@ void events_find_next_event();
 void events_run();
 void events_init();
 void events_sync();
+void event_init(EVENT *pEvent, time_t currentTime);
 void event_force_event_by_id(EVENT_IDS id, time_t offset);
 void event_run_now_by_id(EVENT_IDS id);
 

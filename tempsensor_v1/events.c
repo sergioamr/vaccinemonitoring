@@ -96,6 +96,28 @@ void events_send_data(char *phone) {
 	sms_send_message_number(phone, msg);
 }
 
+void event_sanity_check(EVENT *pEvent, time_t currentTime) {
+
+	time_t maxRunTime = currentTime + pEvent->startTime
+			+ event_getInterval(pEvent);
+
+	if (pEvent->nextEventRun <= maxRunTime)
+		return;
+
+	event_init(pEvent, currentTime);
+	_NOP();
+}
+
+void events_sanity(time_t currentTime) {
+	int t;
+	EVENT *pEvent = NULL;
+
+	for (t = 0; t < g_sEvents.registeredEvents; t++) {
+		pEvent = &g_sEvents.events[t];
+		event_sanity_check(pEvent, currentTime);
+	}
+}
+
 // Populates the next event index depending on event times
 void events_find_next_event(time_t currentTime) {
 	int t;
@@ -242,7 +264,10 @@ void events_run() {
 		event_run_now(pEvent);
 		nextEvent = g_sEvents.nextEvent;
 		pEvent = &g_sEvents.events[nextEvent];
+		currentTime = events_getTick();
 	}
+
+	events_sanity(currentTime);
 }
 
 /*******************************************************************************************************/
