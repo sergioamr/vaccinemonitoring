@@ -103,7 +103,10 @@ void events_send_data(char *phone) {
 		sms_send_message_number(phone, msg);
 	}
 
+<<<<<<< HEAD
 	sms_send_data_request(phone);
+=======
+>>>>>>> Method change fixes
 	sprintf(msg, "[%s] Events end", get_date_string(&g_tmCurrTime, "-", " ", 1));
 	sms_send_message_number(phone, msg);
 }

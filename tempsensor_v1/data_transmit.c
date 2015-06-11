@@ -753,7 +753,6 @@ int data_transmit(uint8_t *pSampleCnt) {
 #endif
 		config_setLastCommand(COMMAND_POST + COMMAND_END);
 	}
-
-	return iPOSTstatus;
-	*/
+*/
+	return 0;
 }
