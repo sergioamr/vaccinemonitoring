@@ -42,7 +42,12 @@ SYSTEM_STATE *g_pSysState = &g_SystemState;
 
 // Clear all the errors for the network connection.
 void state_network_success(uint8_t sim) {
+	SIM_STATE *simState = &g_pSysState->simState[sim];
 
+	// Eveything is fine
+	simState->failsGPRS = 0;
+	simState->failsGSM = 0;
+	simState->modemErrors = 0;
 }
 
 // Checks several parameters to see if we have to reset the modem, switch sim card, etc.
@@ -59,13 +64,19 @@ void state_failed_sdcard(uint16_t error) {
 }
 
 void state_failed_gprs(uint8_t sim) {
-
+	SIM_STATE *simState = &g_pSysState->simState[sim];
+	simState->failsGSM++;
 }
 
 void state_failed_gsm(uint8_t sim) {
-
+	SIM_STATE *simState = &g_pSysState->simState[sim];
+	simState->failsGPRS++;
 }
 
 void state_process() {
+
+}
+
+void state_sensor_temperature(uint8_t sensor, float temp) {
 
 }

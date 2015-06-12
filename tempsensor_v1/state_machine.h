@@ -23,5 +23,6 @@ void state_failed_gprs(uint8_t sim);
 void state_failed_gsm(uint8_t sim);
 
 void state_process();
+void state_sensor_temperature(uint8_t sensor, float temp);
 
 #endif /* STATE_MACHINE_H_ */

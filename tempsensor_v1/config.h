@@ -219,7 +219,12 @@ __attribute__((__packed__)) {
 	uint8_t modemErrors;
 	uint8_t failsGPRS;
 	uint8_t failsGSM;
+} SIM_STATE;
+
+typedef struct
+__attribute__((__packed__)) {
 	uint8_t failsSD_card;
+	SIM_STATE simState[MAX_SMS_NUM];
 } SYSTEM_STATE;
 
 typedef struct {
