@@ -174,7 +174,6 @@ void state_power_out() {
 	if (g_pSysState->time_powerOutage==0)
 		g_pSysState->time_powerOutage = rtc_get_second_tick();
 
-	// TODO Check the power down time to generate an alert
 }
 
 void state_power_on() {
@@ -187,11 +186,36 @@ void state_power_on() {
 	g_pSysState->time_powerOutage = 0;
 }
 
+void state_power_disconnected() {
+	lcd_printl(LINEC, "POWER CABLE");
+	lcd_printf(LINEE, "DISCONNECTED");
+}
+
+void state_power_resume() {
+	lcd_printl(LINEC, "POWER");
+	lcd_printf(LINEH, "RESUMED");
+	event_force_event_by_id(EVT_DISPLAY, 0);
+}
+
+#define POWER_ON !(P4IN & BIT4)
+
 void state_check_power() {
-	if (!(P4IN & BIT4))
+
+	static uint8_t last_state = STATE_OFF;
+
+	if (POWER_ON)
 		state_power_on();
 	else
 		state_power_out();
+
+	if (last_state!=g_pSysState->power) {
+		if (POWER_ON)
+			state_power_resume();
+		else
+			state_power_disconnected();
+
+		last_state=g_pSysState->power;
+	}
 
 	if (g_pSysState->power == STATE_ON)
 		return;
@@ -201,6 +225,8 @@ void state_check_power() {
 
 	time_t currentTime = rtc_get_second_tick();
 	time_t elapsed = currentTime - g_pSysState->time_powerOutage;
+
+	// Check the power down time to generate an alert
 
 	if (elapsed>(g_pDevCfg->stBattPowerAlertParam.minutesPower)*60) {
 		state_alarm_on("POWER OUT");
