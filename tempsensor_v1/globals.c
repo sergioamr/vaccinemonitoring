@@ -28,6 +28,8 @@ volatile int32_t ADCvar[MAX_NUM_SENSORS];
 /*****************************************************************************************************/
 /* Variables to revisit */
 
+volatile uint8_t g_iDebug = 0;
+
 // Current display view
 volatile uint8_t g_iDisplayId = 0;
 

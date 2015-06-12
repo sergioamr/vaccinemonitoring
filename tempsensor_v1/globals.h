@@ -15,9 +15,12 @@
 #define ATRESP_MAX_LEN		512
 #define FILE_BUFFER_LEN     64
 
-extern CONFIG_INFOA* g_pDevCfg;
-extern CONFIG_CALIBRATION* g_pCalibrationCfg;
-extern CONFIG_SYSTEM* g_pSysCfg; // System configuration
+extern volatile uint8_t g_iDebug;
+
+extern CONFIG_DEVICE *g_pDevCfg;
+extern CONFIG_CALIBRATION *g_pCalibrationCfg;
+extern CONFIG_SYSTEM *g_pSysCfg; // System configuration
+extern SYSTEM_STATE *g_pSysState;
 
 extern uint32_t g_iAlarmStatus;
 extern volatile uint8_t g_iDisplayId;

@@ -10,6 +10,7 @@
 #include "sms.h"
 #include "fatdata.h"
 #include "modem.h"
+#include "state_machine.h"
 
 #define SECONDS_(s) (s)
 #define MINUTES_(m) (m*60L)
@@ -211,6 +212,9 @@ void events_sync() {
 
 void events_debug() {
 #ifdef _DEBUG
+	if (!g_iDebug)
+		return;
+
 	time_t currentTime = events_getTick();
 
 	EVENT *pEvent = &g_sEvents.events[g_sEvents.nextEvent];
@@ -309,6 +313,7 @@ void event_pull_time(void *event, time_t currentTime) {
 	modem_pull_time();
 	// We update all the timers according to the new time
 	events_sync();
+	event_force_event_by_id(EVT_DISPLAY, 0);
 }
 
 void event_update_display(void *event, time_t currentTime) {
@@ -327,10 +332,17 @@ void event_sample_temperature(void *event, time_t currentTime) {
 	UINT bytes_written = 0;
 	temperature_sample();
 	log_sample_web_format(&bytes_written);
+	event_force_event_by_id(EVT_DISPLAY, 0);
 }
 
-void event_network_ckeck(void *event, time_t currentTime) {
-	modem_connect_network();
+void event_network_check(void *event, time_t currentTime) {
+
+	if (modem_connect_network(1)!=UART_SUCCESS) {
+		// Checks several parameters to see if we have to reset the modem, switch sim card, etc.
+
+	}
+
+	event_force_event_by_id(EVT_DISPLAY, 0);
 }
 
 void event_upload_samples(void *event, time_t currentTime) {
@@ -367,7 +379,7 @@ void events_init() {
 #endif
 	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12), NULL);
 
-	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, &event_network_ckeck, MINUTES_(2), NULL);
+	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, &event_network_check, MINUTES_(2), NULL);
 
 	// Check every 30 seconds until we get the configuration message from server;
 	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs, MINUTES_(3), NULL);

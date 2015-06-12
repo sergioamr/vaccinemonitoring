@@ -27,20 +27,20 @@ int g_iUploadPeriod = UPLOAD_PERIOD;
 /************************** BEGIN CONFIGURATION MEMORY ****************************************/
 
 #pragma SET_DATA_SECTION(".ConfigurationArea")
-CONFIG_INFOA g_InfoA;
-CONFIG_SYSTEM g_SystemConfig;
+CONFIG_DEVICE g_ConfigDevice;	// configuration of the device, APN, gateways, etc.
+CONFIG_SYSTEM g_ConfigSystem;   // is system initialized, number of runs, and overall stats
 #pragma SET_DATA_SECTION()
 
 #pragma SET_DATA_SECTION(".calibration_globals")
-CONFIG_CALIBRATION g_Calibration;
+CONFIG_CALIBRATION g_ConfigCalibration;
 #pragma SET_DATA_SECTION()
 
 // Since we use the area outside the 16 bits we have to use the large memory model.
 // The compiler gives a warning accessing the structure directly and it can fail. Better accessing it through the pointer.
-CONFIG_INFOA* g_pDevCfg = &g_InfoA;
-CONFIG_CALIBRATION* g_pCalibrationCfg = &g_Calibration;
+CONFIG_DEVICE *g_pDevCfg = &g_ConfigDevice;
+CONFIG_SYSTEM* g_pSysCfg = &g_ConfigSystem;
+CONFIG_CALIBRATION *g_pCalibrationCfg = &g_ConfigCalibration;
 
-CONFIG_SYSTEM* g_pSysCfg = &g_SystemConfig;
 // Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
 
 /************************** END CONFIGURATION MEMORY ****************************************/
@@ -170,7 +170,8 @@ void config_save_command(char *str) {
 void config_reconfigure() {
 	g_pSysCfg->memoryInitialized = 0xFF;
 	PMM_trigBOR();
-	while (1);
+	while (1)
+		;
 }
 
 void config_init() {
@@ -205,7 +206,7 @@ void config_init() {
 	}
 
 	// Init Config InfoA
-	memset(g_pDevCfg, 0, sizeof(CONFIG_INFOA));
+	memset(g_pDevCfg, 0, sizeof(CONFIG_DEVICE));
 
 	// Setup InfoA config data
 	g_pDevCfg->cfgSIM_slot = 0;
@@ -346,8 +347,10 @@ int config_parse_configuration(char *msg) {
 
 	g_pDevCfg->cfgServerConfigReceived = 1;
 
-	event_setInterval_by_id(EVT_SAMPLE_TEMP, g_pDevCfg->stIntervalParam.loggingInterval);
-	event_setInterval_by_id(EVT_UPLOAD_SAMPLES, g_pDevCfg->stIntervalParam.uploadInterval);
+	event_setInterval_by_id(EVT_SAMPLE_TEMP,
+			g_pDevCfg->stIntervalParam.loggingInterval);
+	event_setInterval_by_id(EVT_UPLOAD_SAMPLES,
+			g_pDevCfg->stIntervalParam.uploadInterval);
 
 	return UART_SUCCESS;
 }

@@ -38,17 +38,12 @@
 #include "temperature.h"
 #include "events.h"
 #include "time.h"
+#include "state_machine.h"
 
 //------------- FUNCTIONS MOVED FROM MAIN - WAITING CLEANUP -------------------
 
 #define FORMAT_FIELD_OFF	1		//2 if field name is 1 character & equal, 3 if field name is 2 character & equal...
 extern volatile uint32_t iMinuteTick;
-extern char* g_TmpSMScmdBuffer;
-
-void uploadsms();
-
-void sampletemp();
-void alarm_monitor();
 
 void thermal_canyon_loop();
 time_t thermal_update_time();

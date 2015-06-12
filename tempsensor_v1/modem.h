@@ -49,6 +49,7 @@ int8_t modem_first_init();
 int8_t modem_check_network();
 void modem_getSMSCenter();
 void modem_set_max_messages();
+int modem_connect_network(uint8_t attempts);
 
 void modem_setNumericError(char errorToken, int16_t errorCode);
 uint16_t modem_parse_error(const char *error);

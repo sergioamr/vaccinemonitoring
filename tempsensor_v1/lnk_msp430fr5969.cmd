@@ -57,9 +57,9 @@ MEMORY
     PERIPHERALS_8BIT        : origin = 0x0010, length = 0x00F0
     PERIPHERALS_16BIT       : origin = 0x0100, length = 0x0100
     RAM                     : origin = 0x1C00, length = 0x0800, fill = 0xA3A4
-    INFOA                   : origin = 0x1900, length = 0x0100
+    STATE_MACHINE           : origin = 0x1900, length = 0x0100
     CALIBRATION             : origin = 0x1880, length = 0x0080
-    INFOD                   : origin = 0x1800, length = 0x0080
+    HELPERS                 : origin = 0x1800, length = 0x0080
     FRAM                    : origin = 0x4400, length = 0xBB80
     FRAM2                   : origin = 0x10000,length = 0x3E00
     PERMANENT_AREA          : origin = 0x13E00,length = 0x0200, fill = 0x0000
@@ -176,15 +176,15 @@ SECTIONS
     	fatdata.obj (.aggregate_vars)
     } > FRAM
 
-    .stack      : {} > RAM (HIGH)           /* SOFTWARE SYSTEM STACK             */
+    .stack           : {} > RAM (HIGH)           /* SOFTWARE SYSTEM STACK             */
 
-    .infoA     : {} > INFOA
-    .infoC     : {
+    .state_machine   : {} > STATE_MACHINE
+    .global_vars : {
     	*(.calibration_globals)
     } > CALIBRATION type=NOINIT
-    .infoD     : {
+    .helpers     : {
     	*(.helper_vars)
-    } > INFOD
+    } > HELPERS
 
     .PermanentArea : {
    		 *(.ConfigurationArea)

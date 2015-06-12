@@ -31,6 +31,7 @@
 #include "hardware_buttons.h"
 #include "fatdata.h"
 #include "main_system.h"
+#include "alarms.h"
 
 void thermal_handle_system_button() {
 	if (!system_isRunning())

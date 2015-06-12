@@ -26,6 +26,7 @@
 #include "http.h"
 #include "temperature.h"
 #include "fatdata.h"
+#include "state_machine.h"
 
 char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
@@ -160,6 +161,7 @@ int modem_connect_network(uint8_t attempts) {
 	int net_status = 0;
 	int net_mode = 0;
 	int tests = 0;
+	int nsim = config_getSelectedSIM();
 
 	// enable network registration and location information unsolicited result code;
 	// if there is a change of the network cell. +CGREG: <stat>[,<lac>,<ci>]
@@ -172,7 +174,7 @@ int modem_connect_network(uint8_t attempts) {
 	do {
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
 
-			lcd_printf(LINEC, "SIM %d status", config_getSelectedSIM() + 1);
+			lcd_printf(LINEC, "SIM %d status", nsim + 1);
 			lcd_printl(LINEH,
 					(char *) modem_getNetworkStatusText(net_mode, net_status));
 
@@ -181,10 +183,14 @@ int modem_connect_network(uint8_t attempts) {
 					&& (net_status == NETWORK_STATUS_REGISTERED_HOME_NETWORK
 							|| net_status == NETWORK_STATUS_REGISTERED_ROAMING)) {
 
+				state_network_success(nsim);
+
 				// We tested more than once, lets show a nice we are connected message
 				if (tests > 0)
 					delay(HUMAN_DISPLAY_INFO_DELAY);
 				return UART_SUCCESS;
+			} else {
+				state_network_fail(nsim, STATE_CONNECTION);
 			}
 
 			tests++;

@@ -49,6 +49,10 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 	case P2IV_P2IFG2:
 		//P3OUT &= ~BIT4;                           // buzzer off
 		g_iStatus &= ~BUZZER_ON;
+#ifdef _DEBUG
+		g_iDebug = 1;
+		g_iSystemSetup = 0;
+#endif
 		event_LCD_turn_on();
 		break;
 	default:

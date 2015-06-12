@@ -192,7 +192,7 @@ __attribute__((__packed__)) {
 
 	SIM_CARD_CONFIG SIM[NUM_SIM_CARDS];
 	struct tm lastSystemTime;
-} CONFIG_INFOA;
+} CONFIG_DEVICE;
 
 typedef struct
 __attribute__((__packed__)) {
@@ -213,6 +213,14 @@ __attribute__((__packed__)) {
 	uint16_t lastCommand; // Command that was last executed to control flow.
 	char lastCommandTime[2 + 2 + 2 + 1 + 1 + 1]; //
 } CONFIG_SYSTEM;
+
+typedef struct
+__attribute__((__packed__)) {
+	uint8_t modemErrors;
+	uint8_t failsGPRS;
+	uint8_t failsGSM;
+	uint8_t failsSD_card;
+} SYSTEM_STATE;
 
 typedef struct {
 	int32_t dwLastSeek;
