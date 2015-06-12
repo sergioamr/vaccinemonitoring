@@ -8,6 +8,8 @@
 #ifndef HARDWARE_BUTTONS_H_
 #define HARDWARE_BUTTONS_H_
 
+#define POWER_ON !(P4IN & BIT4)
+
 void switchers_setupIO();
 uint8_t switch_check_service_pressed();
 

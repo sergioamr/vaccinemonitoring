@@ -164,6 +164,8 @@ void state_battery_level(uint8_t battery_level) {
 /***********************************************************************************************************************/
 
 // Power out, we store the time in which the power went down
+// called from the Interruption, careful
+
 void state_power_out() {
 	//P4OUT |= BIT7; // BLUE LED 3 ON
 
@@ -176,6 +178,7 @@ void state_power_out() {
 
 }
 
+// called from the Interruption, careful
 void state_power_on() {
 	//P4OUT &= ~BIT7; // BLUE  LED 3 OFF
 
@@ -196,8 +199,6 @@ void state_power_resume() {
 	lcd_printf(LINEH, "RESUMED");
 	event_force_event_by_id(EVT_DISPLAY, 0);
 }
-
-#define POWER_ON !(P4IN & BIT4)
 
 void state_check_power() {
 

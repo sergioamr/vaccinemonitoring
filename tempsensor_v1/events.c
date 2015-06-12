@@ -373,6 +373,10 @@ void events_check_battery(void *event, time_t currentTime) {
 	batt_getlevel();
 }
 
+void events_health_check(void *event, time_t currentTime) {
+	state_process();
+}
+
 void events_init() {
 
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
@@ -391,6 +395,8 @@ void events_init() {
 	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs, MINUTES_(3), NULL);
 
 	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off, MINUTES_(10),NULL);
+
+	events_register(EVT_ALARMS_CHECK, "ALARMS", 1, &events_health_check, MINUTES_(2),NULL);
 
 	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
 			MINUTES_(LCD_REFRESH_INTERVAL), NULL);
@@ -415,3 +421,4 @@ void events_init() {
 
 	events_sync();
 }
+

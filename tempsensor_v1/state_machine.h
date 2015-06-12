@@ -15,6 +15,9 @@ extern SYSTEM_STATE *g_pSysState;
 #define STATE_ON 1
 
 void state_init();
+void state_power_on();
+void state_power_out();
+
 void state_network_fail(uint8_t sim, uint16_t error);
 void state_network_success(uint8_t sim);
 

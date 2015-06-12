@@ -150,9 +150,9 @@ void thermal_canyon_loop(void) {
 		}
 
 #ifndef BUZZER_DISABLED
-		if(g_iStatus & BUZZER_ON)
+		if(g_iStatus & BUZZER_ON || g_pSysState->buzzer)
 		{
-			iIdx = 10;	//TODO fine-tune for 5 to 10 secs
+			int iIdx = 10;	//TODO fine-tune for 5 to 10 secs
 			while((iIdx--) && (g_iStatus & BUZZER_ON))
 			{
 				P3OUT |= BIT4;

@@ -9,7 +9,6 @@
 #include "timer.h"
 
 volatile uint16_t iTick = 0;
-
 volatile uint32_t delay_count = 0;
 
 // Timer0_A0 interrupt service routine

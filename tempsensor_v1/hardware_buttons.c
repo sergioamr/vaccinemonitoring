@@ -6,6 +6,8 @@
  */
 #include "thermalcanyon.h"
 #include "state_machine.h"
+#include "hardware_buttons.h"
+#include "state_machine.h"
 
 void thermal_handle_system_button();
 // Interrupt services
@@ -102,7 +104,12 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
 	case P4IV_P4IFG0:
 		break;
 	case P4IV_P4IFG4:
-		state_check_power();
+		if (POWER_ON)
+			state_power_on();
+		else
+			state_power_out();
+
+		event_force_event_by_id(EVT_ALARMS_CHECK, 0);
 		break;
 	case P4IV_P4IFG1:
 		g_iDisplayId++;
