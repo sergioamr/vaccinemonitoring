@@ -57,9 +57,8 @@ MEMORY
     PERIPHERALS_8BIT        : origin = 0x0010, length = 0x00F0
     PERIPHERALS_16BIT       : origin = 0x0100, length = 0x0100
     RAM                     : origin = 0x1C00, length = 0x0800, fill = 0xA3A4
-    INFOA                   : origin = 0x1980, length = 0x0080
-    INFOB                   : origin = 0x1900, length = 0x0080
-    INFOC                   : origin = 0x1880, length = 0x0080
+    INFOA                   : origin = 0x1900, length = 0x0100
+    CALIBRATION             : origin = 0x1880, length = 0x0080
     INFOD                   : origin = 0x1800, length = 0x0080
     FRAM                    : origin = 0x4400, length = 0xBB80
     FRAM2                   : origin = 0x10000,length = 0x3E00
@@ -180,12 +179,11 @@ SECTIONS
     .stack      : {} > RAM (HIGH)           /* SOFTWARE SYSTEM STACK             */
 
     .infoA     : {} > INFOA
-    .infoB     : {} > INFOB type=NOINIT
     .infoC     : {
-    	*(.config_vars_infoC)
-    } > INFOC
+    	*(.calibration_globals)
+    } > CALIBRATION type=NOINIT
     .infoD     : {
-    	*(.config_vars_infoD)
+    	*(.helper_vars)
     } > INFOD
 
     .PermanentArea : {

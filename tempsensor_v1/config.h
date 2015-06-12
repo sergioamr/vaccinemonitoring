@@ -217,7 +217,7 @@ __attribute__((__packed__)) {
 typedef struct {
 	int32_t dwLastSeek;
 	double calibration[MAX_NUM_SENSORS][2];
-} CONFIG_INFOB;
+} CONFIG_CALIBRATION;
 
 // Returns the current structure containing the info for the current SIM selected
 SIM_CARD_CONFIG *config_getSIM();

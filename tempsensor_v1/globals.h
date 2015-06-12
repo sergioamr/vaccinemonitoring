@@ -16,16 +16,17 @@
 #define FILE_BUFFER_LEN     64
 
 extern CONFIG_INFOA* g_pDevCfg;
-extern CONFIG_INFOB* g_pCalibrationCfg;
+extern CONFIG_CALIBRATION* g_pCalibrationCfg;
 extern CONFIG_SYSTEM* g_pSysCfg; // System configuration
 
 extern uint32_t g_iAlarmStatus;
 extern volatile uint8_t g_iDisplayId;
 
-extern char SensorName[MAX_NUM_SENSORS][NAME_LEN];
-extern char Temperature[MAX_NUM_SENSORS][TEMP_DATA_LEN + 1];
-extern uint8_t SensorDisplayName[MAX_NUM_SENSORS];
+extern const char SensorName[MAX_NUM_SENSORS][NAME_LEN];
+extern const uint8_t SensorDisplayName[MAX_NUM_SENSORS];
 extern volatile int32_t ADCvar[MAX_NUM_SENSORS];
+
+extern char Temperature[MAX_NUM_SENSORS][TEMP_DATA_LEN + 1];
 
 extern char ATresponse[ATRESP_MAX_LEN];
 extern struct tm g_tmCurrTime;

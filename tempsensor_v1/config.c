@@ -31,14 +31,14 @@ CONFIG_INFOA g_InfoA;
 CONFIG_SYSTEM g_SystemConfig;
 #pragma SET_DATA_SECTION()
 
-#pragma SET_DATA_SECTION(".infoB")
-CONFIG_INFOB g_InfoB;
+#pragma SET_DATA_SECTION(".calibration_globals")
+CONFIG_CALIBRATION g_Calibration;
 #pragma SET_DATA_SECTION()
 
 // Since we use the area outside the 16 bits we have to use the large memory model.
 // The compiler gives a warning accessing the structure directly and it can fail. Better accessing it through the pointer.
 CONFIG_INFOA* g_pDevCfg = &g_InfoA;
-CONFIG_INFOB* g_pCalibrationCfg = &g_InfoB;
+CONFIG_CALIBRATION* g_pCalibrationCfg = &g_Calibration;
 
 CONFIG_SYSTEM* g_pSysCfg = &g_SystemConfig;
 // Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.

@@ -10,9 +10,7 @@
 #include "driverlib.h"
 #include "stdlib.h"
 
-#pragma SET_DATA_SECTION(".config_vars_infoC")
-Calendar calTime;
-#pragma SET_DATA_SECTION()
+Calendar g_rtcCalendarTime;
 
 volatile uint32_t iMinuteTick=0;
 const int8_t daysinMon[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
@@ -22,18 +20,17 @@ void converttoUTC(struct tm* pTime);
 void multiply16(int16_t op1, int16_t op2, uint32_t* pResult);
 void multiply32(int16_t op1, int32_t op2, uint32_t* pResult);
 
-
 void rtc_init(struct tm* pTime)
 {
 	if(pTime)
 	{
-		calTime.Seconds = pTime->tm_sec;
-		calTime.Minutes = pTime->tm_min;
-		calTime.Hours = pTime->tm_hour;
-		calTime.DayOfWeek = pTime->tm_wday;
-		calTime.DayOfMonth = pTime->tm_mday;
-		calTime.Month = pTime->tm_mon;
-		calTime.Year = pTime->tm_year;
+		g_rtcCalendarTime.Seconds = pTime->tm_sec;
+		g_rtcCalendarTime.Minutes = pTime->tm_min;
+		g_rtcCalendarTime.Hours = pTime->tm_hour;
+		g_rtcCalendarTime.DayOfWeek = pTime->tm_wday;
+		g_rtcCalendarTime.DayOfMonth = pTime->tm_mday;
+		g_rtcCalendarTime.Month = pTime->tm_mon;
+		g_rtcCalendarTime.Year = pTime->tm_year;
 
 	    //Initialize Calendar Mode of RTC
 	    /*
@@ -42,7 +39,7 @@ void rtc_init(struct tm* pTime)
 	     * Use BCD as Calendar Register Format
 	     */
 	    RTC_B_initCalendar(RTC_B_BASE,
-	                       &calTime,
+	                       &g_rtcCalendarTime,
 	                       RTC_B_FORMAT_BINARY);
 
 	    //Specify an interrupt to assert every minute
@@ -70,17 +67,17 @@ void rtc_init(struct tm* pTime)
 
 void rtc_get(struct tm* pTime)
 {
-	calTime = RTC_B_getCalendarTime(RTC_B_BASE);
+	g_rtcCalendarTime = RTC_B_getCalendarTime(RTC_B_BASE);
 
 	if(pTime)
 	{
-		pTime->tm_sec = calTime.Seconds;
-		pTime->tm_min = calTime.Minutes;
-		pTime->tm_hour = calTime.Hours;
-		pTime->tm_wday = calTime.DayOfWeek;
-		pTime->tm_mon = calTime.Month;
-		pTime->tm_mday = calTime.DayOfMonth;
-		pTime->tm_year = calTime.Year;
+		pTime->tm_sec = g_rtcCalendarTime.Seconds;
+		pTime->tm_min = g_rtcCalendarTime.Minutes;
+		pTime->tm_hour = g_rtcCalendarTime.Hours;
+		pTime->tm_wday = g_rtcCalendarTime.DayOfWeek;
+		pTime->tm_mon = g_rtcCalendarTime.Month;
+		pTime->tm_mday = g_rtcCalendarTime.DayOfMonth;
+		pTime->tm_year = g_rtcCalendarTime.Year;
 		//convert to utc
 		converttoUTC(pTime);
 		//return mktime(pTime);
@@ -89,17 +86,17 @@ void rtc_get(struct tm* pTime)
 
 void rtc_getlocal(struct tm* pTime)
 {
-	calTime = RTC_B_getCalendarTime(RTC_B_BASE);
+	g_rtcCalendarTime = RTC_B_getCalendarTime(RTC_B_BASE);
 
 	if(pTime)
 	{
-		pTime->tm_sec = calTime.Seconds;
-		pTime->tm_min = calTime.Minutes;
-		pTime->tm_hour = calTime.Hours;
-		pTime->tm_wday = calTime.DayOfWeek;
-		pTime->tm_mon = calTime.Month;
-		pTime->tm_mday = calTime.DayOfMonth;
-		pTime->tm_year = calTime.Year;
+		pTime->tm_sec = g_rtcCalendarTime.Seconds;
+		pTime->tm_min = g_rtcCalendarTime.Minutes;
+		pTime->tm_hour = g_rtcCalendarTime.Hours;
+		pTime->tm_wday = g_rtcCalendarTime.DayOfWeek;
+		pTime->tm_mon = g_rtcCalendarTime.Month;
+		pTime->tm_mday = g_rtcCalendarTime.DayOfMonth;
+		pTime->tm_year = g_rtcCalendarTime.Year;
 	}
 }
 
