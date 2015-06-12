@@ -13,12 +13,29 @@
 Calendar g_rtcCalendarTime;
 
 volatile uint32_t iMinuteTick=0;
+volatile time_t iSecondTick=0;
 const int8_t daysinMon[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 //local functions
 void converttoUTC(struct tm* pTime);
 void multiply16(int16_t op1, int16_t op2, uint32_t* pResult);
 void multiply32(int16_t op1, int32_t op2, uint32_t* pResult);
+
+time_t rtc_get_second_tick() {
+	return iSecondTick;
+}
+
+// Returns tick in minute granularity
+uint32_t rtc_get_minute_tick() {
+	return iMinuteTick;
+}
+
+extern struct tm g_tmCurrTime;
+
+time_t rtc_update_time() {
+	rtc_getlocal(&g_tmCurrTime);
+	return mktime(&g_tmCurrTime);
+}
 
 void rtc_init(struct tm* pTime)
 {
@@ -57,7 +74,7 @@ void rtc_init(struct tm* pTime)
 	    //                      RTCRDYIE + RTCTEVIE + RTCAIE);
 
 	    RTC_B_enableInterrupt(RTC_B_BASE,
-	                          RTCTEVIE + RTCAIE);
+	    					RTCRDYIE+ RTCTEVIE + RTCAIE);
 
 	    //Start RTC Clock
 	    RTC_B_startClock(RTC_B_BASE);
@@ -220,6 +237,7 @@ void RTC_B_ISR(void)
     case RTCIV_NONE: break;      //No interrupts
     case RTCIV_RTCRDYIFG:             //RTCRDYIFG
         //every second
+    	iSecondTick++;
         break;
     case RTCIV_RTCTEVIFG:             //RTCEVIFG
         //Interrupts every minute

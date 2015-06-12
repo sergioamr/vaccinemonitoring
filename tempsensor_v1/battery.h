@@ -36,8 +36,6 @@ extern "C"
 #define BATT_TAPER_VOLT_2			0x5E
 #define BATT_FULLCHRGCAP			0x0E
 
-extern uint8_t g_iBatteryLevel;
-
 //*****************************************************************************
 //! \brief Initialize Battery fuel guage.
 //! \param speed

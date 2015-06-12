@@ -104,10 +104,10 @@ void lcd_show() {
 
 	static time_t lastRefresh = 0;
 
-	if (lastRefresh == thermal_update_time())
+	if (lastRefresh == rtc_get_second_tick())
 		return;
 
-	lastRefresh = thermal_update_time();
+	lastRefresh = rtc_get_second_tick();
 
 	//check if there is a change in display id
 	//if(iLastDisplayId != iItemId) lcd_clear();
@@ -135,7 +135,7 @@ void lcd_show() {
 		digital_amp_to_temp_string(ADCvar[1], &Temperature[1][0], 1);
 		strcat(lcdBuffer, Temperature[1]);
 		strcat(lcdBuffer, "C ");
-		strcat(lcdBuffer, itoa_pad(g_iBatteryLevel));
+		strcat(lcdBuffer, itoa_pad(batt_getlevel()));
 		strcat(lcdBuffer, "% ");
 		if ((g_iSignalLevel >= NETWORK_DOWN_SS)
 				&& (g_iSignalLevel <= NETWORK_MAX_SS)) {
@@ -177,14 +177,14 @@ void lcd_show() {
 		case 5: iCnt = 0xff;
 #endif
 
-		strcat(lcdBuffer, itoa_pad(g_iBatteryLevel));
+		strcat(lcdBuffer, itoa_pad(batt_getlevel()));
 		strcat(lcdBuffer, "% ");
 		if (TEMP_ALARM_GET(MAX_NUM_SENSORS) == TEMP_ALERT_CNF) {
 			strcat(lcdBuffer, "BATT ALERT");
 		} else if (P4IN & BIT4)	//power not plugged
 		{
 			strcat(lcdBuffer, "POWER OUT");
-		} else if (((P4IN & BIT6)) && (g_iBatteryLevel == 100)) {
+		} else if (((P4IN & BIT6)) && (batt_getlevel() == 100)) {
 			strcat(lcdBuffer, "FULL CHARGE");
 		} else {
 			strcat(lcdBuffer, "CHARGING");

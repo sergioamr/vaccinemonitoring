@@ -32,7 +32,7 @@
 #include "fatdata.h"
 #include "main_system.h"
 #include "alarms.h"
-#include "state.h"
+#include "state_machine.h"
 
 void thermal_handle_system_button() {
 	if (!system_isRunning())
@@ -43,14 +43,14 @@ void thermal_handle_system_button() {
 
 	switch (g_iSystemSetup) {
 	case 1:
-		lcd_print("PRESS AGAIN");
+		lcd_printl(LINEC, "PRESS AGAIN");
 		lcd_printl(LINE2, "TO SWAP SIM");
 		break;
 	case 2:
 		modem_swap_SIM();
 		break;
 	case 3:
-		lcd_print("PRESS AGAIN");
+		lcd_printl(LINEC, "PRESS AGAIN");
 		lcd_printl(LINE2, "TO RE-CALIBRATE");
 		break;
 	case 4:
@@ -61,11 +61,6 @@ void thermal_handle_system_button() {
 
 }
 
-time_t thermal_update_time() {
-	rtc_getlocal(&g_tmCurrTime);
-	return mktime(&g_tmCurrTime);
-}
-
 void thermal_low_battery_message() {
 	lcd_turn_on();
 	lcd_print("Low Battery     ");
@@ -74,17 +69,13 @@ void thermal_low_battery_message() {
 	delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 }
 
-void thermal_low_battery() {
+void thermal_low_battery_hibernate() {
 
 	// If we have more than 10% of battery,
 	// or we are connected to power, stay here until power is resumed.
 
-	if ((g_iBatteryLevel > 10) || (P4IN & BIT4)) {
-		return;
-	}
-
 	//Wait until battery is
-	while (g_iBatteryLevel <= 10) {
+	while (batt_check_level() <= BATTERY_HIBERNATE_THRESHOLD) {
 
 		thermal_low_battery_message();
 		//power plugged in
@@ -112,13 +103,13 @@ void thermal_canyon_loop(void) {
 
 	config_update_intervals();
 
-	events_sync(thermal_update_time());
+	events_sync(rtc_update_time());
 	lcd_show();
 
 	while (1) {
-		currentTime = thermal_update_time();
+		currentTime = rtc_update_time();
 #ifdef _DEBUG
-		events_debug(currentTime);
+		events_debug(rtc_get_second_tick());
 #endif
 
 		// Checks all the events that we have and runs the right one.
@@ -171,9 +162,6 @@ void thermal_canyon_loop(void) {
 			}
 		}
 #endif
-
-		//low power behavior
-		thermal_low_battery();
 
 		delay(MAIN_SLEEP_TIME);
 

@@ -33,7 +33,7 @@ void sms_send_data_request(char *number) {
 
 	//get temperature values
 	memset(data, 0, MSG_RESPONSE_LEN);
-	thermal_update_time();
+	rtc_update_time();
 	strcat(data, get_simplified_date_string(&g_tmCurrTime));
 	for (iOffset = 0; iOffset < MAX_NUM_SENSORS; iOffset++) {
 		strcat(data, SensorName[iOffset]);
@@ -44,12 +44,12 @@ void sms_send_data_request(char *number) {
 
 	// added for show msg//
 	strcat(data, "Battery:");
-	strcat(data, itoa_pad(g_iBatteryLevel));
+	strcat(data, itoa_pad(batt_getlevel()));
 	strcat(data, "%, ");
 	if (P4IN & BIT4)	//power not plugged
 	{
 		strcat(data, "POWER OUT");
-	} else if (((P4IN & BIT6)) && (g_iBatteryLevel == 100)) {
+	} else if (((P4IN & BIT6)) && (batt_getlevel() == 100)) {
 		strcat(data, "FULL CHARGE");
 	} else {
 		strcat(data, "CHARGING");

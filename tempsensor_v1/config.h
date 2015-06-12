@@ -26,6 +26,16 @@
 
 #define LOCAL_TESTING_NUMBER "07977345678"
 
+// Threshold in percentage in which the device will enter deep hibernate mode
+#define BATTERY_HIBERNATE_THRESHOLD 10
+#define BATTERY_MINUTES_THRESHOLD 60
+
+#define POWER_MINUTES_THRESHOLD 100
+#define POWER_ENABLE_ALERT 1
+
+// Thershold when the alarm will sound if there is a power cut (seconds)
+#define THRESHOLD_TIME_POWER_OUT_ALARM 60*60*1
+
 /**************************************************************************************************************************/
 /* END FACTORY CONFIGURATION 																							  */
 /**************************************************************************************************************************/
@@ -223,7 +233,17 @@ __attribute__((__packed__)) {
 
 typedef struct
 __attribute__((__packed__)) {
+	char alarm_message[32];
+	uint8_t alarm; // We are in alarm mode!
+
 	uint8_t failsSD_card;
+
+	uint8_t battery_level;
+	uint8_t buzzer;
+
+	uint8_t power;
+	time_t time_powerOutage;
+
 	SIM_STATE simState[MAX_SMS_NUM];
 } SYSTEM_STATE;
 

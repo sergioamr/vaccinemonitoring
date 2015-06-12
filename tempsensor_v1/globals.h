@@ -49,7 +49,6 @@ extern int g_iCurrDay;
 extern double iTemp;
 extern int16_t g_iAlarmCnfCnt[MAX_NUM_SENSORS + 2];	//additional two for power and battery alert
 
-extern uint8_t g_iBatteryLevel;
 extern int8_t g_iSignalLevel;
 //opt
 extern uint8_t iPostSuccess;

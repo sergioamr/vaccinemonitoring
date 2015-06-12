@@ -31,6 +31,7 @@
 #include "hardware_buttons.h"
 #include "fatdata.h"
 #include "events.h"
+#include "state_machine.h"
 
 int g_iRunning = 0;
 
@@ -154,7 +155,7 @@ void system_boot() {
 		_NOP(); // Modem failed to power on
 	}
 
-	g_iBatteryLevel = batt_check_level();
+	batt_check_level();
 
 	// Init finished, we disabled the debugging display
 	g_iDisplayId = 0;
@@ -168,8 +169,6 @@ void system_boot() {
 
 	g_iRunning = 1;		// System finished booting and we are going to run
 	g_iSystemSetup = 0;	// Reset system setup button state
-
-	events_init();
 }
 
 _Sigfun * signal(int i, _Sigfun *proc) {
@@ -177,15 +176,33 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 	return NULL;
 }
 
+// Testing LEDS
+/*
+void setup_leds() {
+	P4DIR |= (BIT5 + BIT6 + BIT7);	 // Setup leds to output
+	P4OUT &= ~(BIT5 + BIT6 + BIT7);  // Turn off all LEDS
+
+	P4OUT |= BIT5; // LED 1
+	P4OUT |= BIT6; // LED 2
+	P4OUT |= BIT7; // LED 3
+
+	P4OUT &= ~BIT7; // BLUE LED 3 OFF
+}
+*/
+
 /****************************************************************************/
 /*  MAIN                                                                    */
 /****************************************************************************/
 
 int main(void) {
-	memset((void*)(&__STACK_END - &__STACK_SIZE),0xa5, (size_t) __STACK_SIZE);
-
+	memset((void*) (&__STACK_END - &__STACK_SIZE), 0xa5, (size_t) __STACK_SIZE);
 	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
+
+	state_init();  // Clean the state machine
 	system_boot();
 
+	events_init();
+
+	state_process();
 	thermal_canyon_loop();
 }

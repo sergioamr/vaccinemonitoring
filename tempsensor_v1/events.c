@@ -64,7 +64,7 @@ time_t events_getTick() {
 	static time_t frameDiff = 0;
 	static time_t elapsedTime = 0;
 
-	time_t newTime = thermal_update_time();
+	time_t newTime = rtc_get_second_tick();
 	if (oldTime == 0) {
 		oldTime = newTime;
 		return 0;
@@ -369,6 +369,10 @@ void event_LCD_turn_on() {
 	event_init(event, events_getTick());
 }
 
+void events_check_battery(void *event, time_t currentTime) {
+	batt_getlevel();
+}
+
 void events_init() {
 
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
@@ -377,6 +381,8 @@ void events_init() {
 	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(5),
 	NULL);
 #endif
+	events_register(EVT_BATTERY_CHECK, "BATTERY", 0, &events_check_battery, MINUTES_(15), NULL);
+
 	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12), NULL);
 
 	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, &event_network_check, MINUTES_(2), NULL);

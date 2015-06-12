@@ -5,21 +5,23 @@
  *      Author: rajeevnx
  */
 
+#include "thermalcanyon.h"
 #include "config.h"
 #include "battery.h"
 #include "i2c.h"
 #include "timer.h"
 #include "lcd.h"
+#include "state_machine.h"
 
 #define  TRANS_DELAY 		10
 
 #ifndef BATTERY_DISABLED
 
-uint8_t g_iBatteryLevel = 100;
+
 int16_t g_iFullRecharge = 0;
 
 int8_t batt_isPlugged() {
-	if (g_iBatteryLevel==0 || g_iBatteryLevel>100)
+	if (g_pSysState->battery_level==0 || g_pSysState->battery_level>100)
 		return 0;
 
 	return 1;
@@ -215,6 +217,12 @@ void batt_init()
 
 uint8_t batt_getlevel()
 {
+	// Read battery levels only in minutes
+	static uint32_t lastTick = UINT32_MAX;
+	if (g_pSysState->battery_level!=0 && lastTick==rtc_get_minute_tick())
+		return g_pSysState->battery_level;
+
+	lastTick = rtc_get_minute_tick();
 	uint8_t level = 0;
 	double adjustedlevel = 0.0;
 
@@ -229,6 +237,9 @@ uint8_t batt_getlevel()
 	{
 		level = (int8_t)adjustedlevel;
 	}
+
+	g_pSysState->battery_level = level;
+	state_battery_level(level);
 	return level;
 }
 #endif

@@ -154,7 +154,7 @@ void alarm_monitor() {
 
 	//check for battery alert
 	iCnt = MAX_NUM_SENSORS;
-	if (g_iBatteryLevel < g_pDevCfg->stBattPowerAlertParam.battThreshold) {
+	if (g_pSysState->battery_level < g_pDevCfg->stBattPowerAlertParam.battThreshold) {
 		//check if battery alarm is set
 		if (TEMP_ALARM_GET(iCnt) != BATT_ALARM_ON) {
 			TEMP_ALARM_CLR(iCnt);//reset the alarm in case it was earlier confirmed

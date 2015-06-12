@@ -5,6 +5,7 @@
  *      Author: sergioam
  */
 #include "thermalcanyon.h"
+#include "state_machine.h"
 
 void thermal_handle_system_button();
 // Interrupt services
@@ -16,6 +17,7 @@ uint8_t switch_check_service_pressed() {
 void switchers_setupIO() {
 	// Setup buttons
 	P4IE |= BIT1;							// enable interrupt for button input
+	P4IE |= BIT4;							// enable interrupt for Power input
 	P2IE |= BIT2;							// enable interrupt for buzzer off
 	P3IE |= BIT5;							// enable interrupt for extra button setup
 }
@@ -98,6 +100,9 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
 	case P4IV_NONE:
 		break;
 	case P4IV_P4IFG0:
+		break;
+	case P4IV_P4IFG4:
+		state_check_power();
 		break;
 	case P4IV_P4IFG1:
 		g_iDisplayId++;

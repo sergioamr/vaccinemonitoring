@@ -46,7 +46,10 @@
 extern volatile uint32_t iMinuteTick;
 
 void thermal_canyon_loop();
-time_t thermal_update_time();
+time_t rtc_update_time();
+time_t rtc_get_second_tick();
+void thermal_low_battery_hibernate();
+uint32_t rtc_get_minute_tick();
 void encode(double input_val, char output_chars[]); // Encode function from encode.c
 
 #endif /* TEMPSENSOR_V1_THERMALCANYON_H_ */

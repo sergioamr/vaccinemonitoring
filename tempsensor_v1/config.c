@@ -224,6 +224,12 @@ void config_init() {
 	g_pDevCfg->stIntervalParam.loggingInterval = SAMPLE_PERIOD;
 	g_pDevCfg->stIntervalParam.uploadInterval = UPLOAD_PERIOD;
 
+	// Battery and power alarms
+	g_pDevCfg->stBattPowerAlertParam.battThreshold = BATTERY_HIBERNATE_THRESHOLD;
+	g_pDevCfg->stBattPowerAlertParam.minutesBattThresh = BATTERY_MINUTES_THRESHOLD;
+	g_pDevCfg->stBattPowerAlertParam.enablePowerAlert =  POWER_ENABLE_ALERT;
+	g_pDevCfg->stBattPowerAlertParam.minutesPower = POWER_MINUTES_THRESHOLD;
+
 	// Init System internals
 
 	// Setup internal system counters and checks

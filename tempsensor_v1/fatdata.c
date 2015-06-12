@@ -371,6 +371,7 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 	UINT bw = 0;
 	char *date;
 	FRESULT fr;
+	int iBatteryLevel;
 
 	date = get_date_string(&g_tmCurrTime, "-", " ", 1);
 	fr = f_write(fobj, date, strlen(date), &bw);
@@ -379,10 +380,10 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 
 	*pBw += bw;
 
-	g_iBatteryLevel = batt_getlevel();
+	iBatteryLevel = batt_getlevel();
 
 	sprintf(szLog, ",\"%d%%\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\r\n",
-			g_iBatteryLevel, getPowerStateString(), Temperature[0],
+			iBatteryLevel, getPowerStateString(), Temperature[0],
 			Temperature[1], Temperature[2], Temperature[3], Temperature[4]);
 	fr = f_write(fobj, szLog, strlen(szLog), &bw);
 	return fr;
@@ -435,6 +436,7 @@ FRESULT log_sample_web_format(UINT *tbw) {
 FRESULT log_sample_to_disk(int* tbw) {
 	FIL fobj;
 	char szLog[64];
+	int iBatteryLevel;
 	FRESULT fr = FR_OK;
 
 	if (!g_bFatInitialized)
@@ -488,9 +490,9 @@ FRESULT log_sample_to_disk(int* tbw) {
 
 		//get battery level
 #ifndef BATTERY_DISABLED
-		g_iBatteryLevel = batt_getlevel();
+		iBatteryLevel = batt_getlevel();
 #else
-		g_iBatteryLevel = 0;
+		iBatteryLevel = 0;
 #endif
 
 		//log sample period, battery level, power plugged, temperature values
@@ -498,7 +500,7 @@ FRESULT log_sample_to_disk(int* tbw) {
 #if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
 		memset(szLog, 0, sizeof(szLog));
 		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,D%s,E%s\n",
-				itoa_pad(g_iBatteryLevel), !(P4IN & BIT4), Temperature[0],
+				itoa_pad(iBatteryLevel), !(P4IN & BIT4), Temperature[0],
 				Temperature[1], Temperature[2], Temperature[3], Temperature[4]);
 		fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 #else

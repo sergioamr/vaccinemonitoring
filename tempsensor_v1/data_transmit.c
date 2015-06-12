@@ -36,7 +36,7 @@ void data_send_temperatures_sms() {
 	}
 
 	strcat(data, ",");
-	strcat(data, itoa_nopadding(g_iBatteryLevel));
+	strcat(data, itoa_nopadding(batt_getlevel()));
 	strcat(data, ",");
 	strcat(data, itoa_nopadding(batt_isPlugged()));
 	sms_send_message(data);

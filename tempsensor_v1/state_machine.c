@@ -31,6 +31,7 @@
 #include "hardware_buttons.h"
 #include "fatdata.h"
 #include "events.h"
+#include "lcd.h"
 
 // Overall state of the device to take decisions upon the state of the modem, storage, alerts, etc.
 
@@ -41,11 +42,50 @@ SYSTEM_STATE g_SystemState;	// system states to control errors, connectivity, re
 SYSTEM_STATE *g_pSysState = &g_SystemState;
 
 /***********************************************************************************************************************/
+/* GENERAL */
+/***********************************************************************************************************************/
+
+void state_init() {
+	memset(g_pSysState, 0, sizeof (SYSTEM_STATE));
+}
+
+/***********************************************************************************************************************/
 /* GENERATE ALARMS */
 /***********************************************************************************************************************/
 
-void state_alert_on() {
+void state_alarm_on(char *alarm_msg) {
 
+	strncpy(g_pSysState->alarm_message, alarm_msg, sizeof(g_pSysState->alarm_message));
+	lcd_turn_on();
+	lcd_printl(LINEC, "ALARM!");
+	lcd_printf(LINE2, " %s ", alarm_msg);
+
+	// We are already in alarm mode
+	if (g_pSysState->alarm== STATE_ON)
+		return;
+
+	g_pSysState->alarm = STATE_ON;
+	g_pSysState->buzzer = STATE_ON;
+
+#ifdef _DEBUG
+	sms_send_message_number(LOCAL_TESTING_NUMBER, alarm_msg);
+#endif
+
+}
+
+// Everything is fine!
+void state_clear_alarm_state() {
+
+	// We were not in alarm mode
+	if (g_pSysState->alarm==STATE_OFF)
+		return;
+
+#ifdef _DEBUG
+	strcat(g_pSysState->alarm_message, " cleared");
+	sms_send_message_number(LOCAL_TESTING_NUMBER, g_pSysState->alarm_message);
+#endif
+
+	g_pSysState->buzzer = STATE_OFF;
 }
 
 /***********************************************************************************************************************/
@@ -81,6 +121,11 @@ void state_failed_gsm(uint8_t sim) {
 	simState->failsGPRS++;
 }
 
+void state_http_transfer(uint8_t sim, uint8_t success) {
+	if (success)
+		state_network_success(sim);
+}
+
 /***********************************************************************************************************************/
 /* STORAGE */
 /***********************************************************************************************************************/
@@ -101,8 +146,17 @@ void state_sensor_temperature(uint8_t sensor, float temp) {
 /* BATTERY CHECKS */
 /***********************************************************************************************************************/
 
-void state_battery_level(uint8_t battery_level) {
+void state_low_battery_alert() {
+	// Activate sound alarm
+	state_alarm_on("LOW BATTERY");
+}
 
+void state_battery_level(uint8_t battery_level) {
+	g_pSysState->battery_level = battery_level;
+	if (battery_level<g_pDevCfg->stBattPowerAlertParam.battThreshold && g_pSysState->power == STATE_OFF) {
+		state_low_battery_alert();
+		thermal_low_battery_hibernate();
+	}
 }
 
 /***********************************************************************************************************************/
@@ -111,15 +165,25 @@ void state_battery_level(uint8_t battery_level) {
 
 // Power out, we store the time in which the power went down
 void state_power_out() {
-	g_pSysState->power = STATE_POWER_OFF;
-	if (g_pSysState->time_powerOutage!=0)
-		g_pSysState->time_powerOutage = thermal_update_time();
+	//P4OUT |= BIT7; // BLUE LED 3 ON
+
+	if (g_pSysState->power == STATE_OFF)
+		return;
+
+	g_pSysState->power = STATE_OFF;
+	if (g_pSysState->time_powerOutage==0)
+		g_pSysState->time_powerOutage = rtc_get_second_tick();
 
 	// TODO Check the power down time to generate an alert
 }
 
 void state_power_on() {
-	g_pSysState->power = STATE_POWER_ON;
+	//P4OUT &= ~BIT7; // BLUE  LED 3 OFF
+
+	if (g_pSysState->power == STATE_ON)
+		return;
+
+	g_pSysState->power = STATE_ON;
 	g_pSysState->time_powerOutage = 0;
 }
 
@@ -127,7 +191,20 @@ void state_check_power() {
 	if (!(P4IN & BIT4))
 		state_power_on();
 	else
-		state_power_off();
+		state_power_out();
+
+	if (g_pSysState->power == STATE_ON)
+		return;
+
+	if (!g_pDevCfg->stBattPowerAlertParam.enablePowerAlert)
+		return;
+
+	time_t currentTime = rtc_get_second_tick();
+	time_t elapsed = currentTime - g_pSysState->time_powerOutage;
+
+	if (elapsed>(g_pDevCfg->stBattPowerAlertParam.minutesPower)*60) {
+		state_alarm_on("POWER OUT");
+	}
 }
 
 /***********************************************************************************************************************/
@@ -135,5 +212,11 @@ void state_check_power() {
 /***********************************************************************************************************************/
 
 void state_process() {
+
+	static uint32_t last_check = 0;
+	if (last_check == rtc_get_second_tick())
+		return;
+	last_check = rtc_get_second_tick();
+
 	state_check_power();
 }
