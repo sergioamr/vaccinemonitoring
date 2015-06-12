@@ -13,7 +13,7 @@
 #include "fatdata.h"
 #include "thermalcanyon.h"
 
-static char g_bLCD_state = 0;
+char g_bLCD_state = 0;
 
 void lcd_setupIO() {
 	PJDIR |= BIT6 | BIT7;      			// set LCD reset and Backlight enable

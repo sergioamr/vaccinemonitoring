@@ -41,9 +41,11 @@
 /**************************************************************************************************************************/
 
 #ifdef _DEBUG
-#define MAIN_SLEEP_TIME 1000
+#define MAIN_SLEEP_TIME 200
+#define MAIN_LCD_OFF_SLEEP_TIME 10000
 #else
-#define MAIN_SLEEP_TIME 60000
+#define MAIN_SLEEP_TIME 2000
+#define MAIN_LCD_OFF_SLEEP_TIME 30000
 #endif
 
 // Poll times trying to connect to the network.
@@ -245,6 +247,8 @@ __attribute__((__packed__)) {
 	time_t time_powerOutage;
 
 	SIM_STATE simState[MAX_SMS_NUM];
+
+	uint8_t buzzerFeedback;
 } SYSTEM_STATE;
 
 typedef struct {

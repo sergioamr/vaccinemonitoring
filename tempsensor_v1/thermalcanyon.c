@@ -89,6 +89,31 @@ void thermal_low_battery_hibernate() {
 	}
 }
 
+void thermal_buzzer_sound(void) {
+	int iIdx = 10;	//TODO fine-tune for 5 to 10 secs
+	while ((iIdx--)) {
+		P3OUT |= BIT4;
+		delayus(1);
+		P3OUT &= ~BIT4;
+		delayus(1);
+	}
+}
+
+void sleep_or_alarm() {
+	if (g_iStatus & BUZZER_ON || g_pSysState->buzzer
+			|| g_pSysState->buzzerFeedback > 0) {
+		thermal_buzzer_sound();
+		if (g_pSysState->buzzerFeedback > 0)
+			g_pSysState->buzzerFeedback--;
+	} else {
+
+		if (g_bLCD_state)
+			delay(MAIN_SLEEP_TIME);
+		else
+			delay(MAIN_LCD_OFF_SLEEP_TIME);
+	}
+}
+
 void thermal_canyon_loop(void) {
 	FRESULT fr;
 	uint8_t iSampleCnt = 0;
@@ -149,21 +174,7 @@ void thermal_canyon_loop(void) {
 			}
 		}
 
-#ifndef BUZZER_DISABLED
-		if(g_iStatus & BUZZER_ON || g_pSysState->buzzer)
-		{
-			int iIdx = 10;	//TODO fine-tune for 5 to 10 secs
-			while((iIdx--) && (g_iStatus & BUZZER_ON))
-			{
-				P3OUT |= BIT4;
-				delayus(1);
-				P3OUT &= ~BIT4;
-				delayus(1);
-			}
-		}
-#endif
-
-		delay(MAIN_SLEEP_TIME);
+		sleep_or_alarm();
 
 		// Wait here behind the interruption to check for a change on display.
 		// If a hardware button is pressed it will resume CPU

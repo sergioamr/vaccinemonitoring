@@ -43,15 +43,17 @@ void delay(uint32_t time) {
 }
 
 void delayus(int time) {
-	int cnt = time;
 
+	__delay_cycles (10000);
+	/*
+	delay_count = time;
 	TA0CCTL0 = CCIE;                          // TACCR0 interrupt enabled
 	TA0CCR0 = 110;						  // 250us (1 cnt = 1us @1MHz timer clk)
 	TA0CTL = TASSEL__SMCLK | MC__UP | ID__8;  // SMCLK/8 (1MHz), UP mode
 
-	while (cnt > iTick)
-		;
+	__bis_SR_register(LPM0_bits + GIE); // Disable CPU, keep functional master clock and slaves.
 
 	TA0CTL = MC__STOP;
 	iTick = 0;
+	*/
 }

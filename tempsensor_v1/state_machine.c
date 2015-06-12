@@ -49,6 +49,10 @@ void state_init() {
 	memset(g_pSysState, 0, sizeof (SYSTEM_STATE));
 }
 
+void buzzer_feedback() {
+	g_pSysState->buzzerFeedback = 10;
+}
+
 /***********************************************************************************************************************/
 /* GENERATE ALARMS */
 /***********************************************************************************************************************/
@@ -202,7 +206,7 @@ void state_power_resume() {
 
 void state_check_power() {
 
-	static uint8_t last_state = STATE_OFF;
+	static uint8_t last_state = STATE_ON;
 
 	if (POWER_ON)
 		state_power_on();

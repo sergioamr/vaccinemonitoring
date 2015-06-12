@@ -35,6 +35,7 @@
 #endif
 
 extern int g_iLCDVerbose;
+extern char g_bLCD_state;
 
 // Encapsulation, this should go into a class
 void lcd_setVerboseMode(int v);
