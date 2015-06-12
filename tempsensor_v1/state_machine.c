@@ -35,10 +35,22 @@
 // Overall state of the device to take decisions upon the state of the modem, storage, alerts, etc.
 
 #pragma SET_DATA_SECTION(".state_machine")
-SYSTEM_STATE g_SystemState;		// system states to control errors, connectivity, retries, etc
+SYSTEM_STATE g_SystemState;	// system states to control errors, connectivity, retries, etc
 #pragma SET_DATA_SECTION()
 
 SYSTEM_STATE *g_pSysState = &g_SystemState;
+
+/***********************************************************************************************************************/
+/* GENERATE ALARMS */
+/***********************************************************************************************************************/
+
+void state_alert_on() {
+
+}
+
+/***********************************************************************************************************************/
+/* MODEM & COMMUNICATIONS */
+/***********************************************************************************************************************/
 
 // Clear all the errors for the network connection.
 void state_network_success(uint8_t sim) {
@@ -59,10 +71,6 @@ void state_modem_timeout(uint8_t sim) {
 
 }
 
-void state_failed_sdcard(uint16_t error) {
-
-}
-
 void state_failed_gprs(uint8_t sim) {
 	SIM_STATE *simState = &g_pSysState->simState[sim];
 	simState->failsGSM++;
@@ -73,10 +81,59 @@ void state_failed_gsm(uint8_t sim) {
 	simState->failsGPRS++;
 }
 
-void state_process() {
+/***********************************************************************************************************************/
+/* STORAGE */
+/***********************************************************************************************************************/
+
+void state_failed_sdcard(uint16_t error) {
 
 }
 
+/***********************************************************************************************************************/
+/* TEMPERATURE CHECKS */
+/***********************************************************************************************************************/
+
 void state_sensor_temperature(uint8_t sensor, float temp) {
 
+}
+
+/***********************************************************************************************************************/
+/* BATTERY CHECKS */
+/***********************************************************************************************************************/
+
+void state_battery_level(uint8_t battery_level) {
+
+}
+
+/***********************************************************************************************************************/
+/* POWER CHECKS */
+/***********************************************************************************************************************/
+
+// Power out, we store the time in which the power went down
+void state_power_out() {
+	g_pSysState->power = STATE_POWER_OFF;
+	if (g_pSysState->time_powerOutage!=0)
+		g_pSysState->time_powerOutage = thermal_update_time();
+
+	// TODO Check the power down time to generate an alert
+}
+
+void state_power_on() {
+	g_pSysState->power = STATE_POWER_ON;
+	g_pSysState->time_powerOutage = 0;
+}
+
+void state_check_power() {
+	if (!(P4IN & BIT4))
+		state_power_on();
+	else
+		state_power_off();
+}
+
+/***********************************************************************************************************************/
+/* Check the state of every component */
+/***********************************************************************************************************************/
+
+void state_process() {
+	state_check_power();
 }

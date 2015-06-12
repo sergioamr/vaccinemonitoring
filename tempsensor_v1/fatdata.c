@@ -10,8 +10,6 @@ FATFS* fs /* File system object */
 #pragma SET_DATA_SECTION(".aggregate_vars")
 FATFS FatFs; /* Work area (file system object) for logical drive */
 char g_szFatFileName[64];
-char g_szYMDString[16];
-char g_szDateString[32]; // "YYYY-MM-DD HH:MM:S IST"
 #pragma SET_DATA_SECTION()
 
 char g_bFatInitialized = false;
@@ -36,8 +34,11 @@ DWORD get_fattime(void) {
 	return tmr;
 }
 
-
 char* get_YMD_String(struct tm* timeData) {
+
+#pragma SET_DATA_SECTION(".aggregate_vars")
+	static char g_szYMDString[16];
+#pragma SET_DATA_SECTION()
 
 	g_szYMDString[0] = 0;
 	if (timeData->tm_year < 1900 || timeData->tm_year > 3000) // Working for 1000 years?
@@ -50,10 +51,12 @@ char* get_YMD_String(struct tm* timeData) {
 	return g_szYMDString;
 }
 
-char g_szDateString[32]; // "YYYY-MM-DD HH:MM:SS IST"
-
 char* get_date_string(struct tm* timeData, char* dateSeperator,
 		char* dateTimeSeperator, uint8_t includeTZ) {
+
+#pragma SET_DATA_SECTION(".aggregate_vars")
+	static char g_szDateString[24]; // "YYYY-MM-DD HH:MM:SS IST"
+#pragma SET_DATA_SECTION()
 
 	g_szDateString[0] = 0;
 	if (timeData->tm_year < 1900 || timeData->tm_year > 3000) // Working for 1000 years?
@@ -83,6 +86,10 @@ char* get_date_string(struct tm* timeData, char* dateSeperator,
 // FORMAT IN FORMAT [YYYYMMDD:HHMMSS] Used for SMS timestamp
 char* get_simplified_date_string(struct tm* timeData) {
 
+#pragma SET_DATA_SECTION(".aggregate_vars")
+	static char g_szDateString[26]; // "YYYY-MM-DD HH:MM:S IST"
+#pragma SET_DATA_SECTION()
+
 	g_szDateString[0] = 0;
 	if (timeData->tm_year < 1900 || timeData->tm_year > 3000) // Working for 1000 years?
 		strcpy(g_szDateString, "0000");
@@ -107,15 +114,15 @@ void parse_time_from_line(struct tm* timeToConstruct, char* formattedLine) {
 	token = strtok(token, ":");
 
 	if (token != NULL) {
-		strncpy(dateAttribute, g_szDateString, 4);
+		strncpy(dateAttribute, formattedLine, 4);
 		dateAttribute[4] = 0;
 		timeToConstruct->tm_year = atoi(&dateAttribute[0]);
 
-		strncpy(dateAttribute, &g_szDateString[4], 2);
+		strncpy(dateAttribute, &formattedLine[4], 2);
 		dateAttribute[2] = 0;
 		timeToConstruct->tm_mon = atoi(&dateAttribute[0]);
 
-		strncpy(dateAttribute, &g_szDateString[6], 2);
+		strncpy(dateAttribute, &formattedLine[6], 2);
 		dateAttribute[2] = 0;
 		timeToConstruct->tm_mday = atoi(&dateAttribute[0]);
 	}
@@ -145,7 +152,8 @@ void parse_time_from_line(struct tm* timeToConstruct, char* formattedLine) {
 }
 
 // Takes a string with the same format that is stored in file $TS=TIMESTAMP,INTERVAL,
-int date_within_interval(struct tm* timeToCompare, struct tm* baseTime, int interval) {
+int date_within_interval(struct tm* timeToCompare, struct tm* baseTime,
+		int interval) {
 	struct tm baseInterval;
 	int timeVal;
 
@@ -158,7 +166,7 @@ int date_within_interval(struct tm* timeToCompare, struct tm* baseTime, int inte
 	// Leniancy ~+-1 minute (not guaranteed to be 60 seconds but minimum is 30)
 	timeVal = baseTime->tm_min + interval;
 	baseInterval.tm_sec = baseTime->tm_sec;
-	if	(timeVal >= 60) {
+	if (timeVal >= 60) {
 		while (timeVal >= 60) {
 			timeVal -= 60;
 			baseInterval.tm_min = timeVal;
@@ -172,14 +180,13 @@ int date_within_interval(struct tm* timeToCompare, struct tm* baseTime, int inte
 		return 0;
 	}
 
-	if ((timeToCompare->tm_min <= baseInterval.tm_min + 1) &&
-			(timeToCompare->tm_min >= baseInterval.tm_min - 1)) {
+	if ((timeToCompare->tm_min <= baseInterval.tm_min + 1)
+			&& (timeToCompare->tm_min >= baseInterval.tm_min - 1)) {
 		return 1;
 	}
 
 	return 0;
 }
-
 
 char* get_current_fileName(struct tm* timeData, const char *folder,
 		const char *ext) {
@@ -340,7 +347,7 @@ FRESULT log_appendf(const char *_format, ...) {
 
 const char HEADER_CSV[] =
 		"\"Date of Reading\",\"Battery %\",\"Power Status\",\"Sensor A (Deg. C)\",\"Sensor B (Deg. C)\","
-		"\"Sensor C (Deg. C)\",\"Sensor D (Deg. C)\",\"Sensor E (Deg. C)\"\r\n";
+				"\"Sensor C (Deg. C)\",\"Sensor D (Deg. C)\",\"Sensor E (Deg. C)\"\r\n";
 
 FRESULT log_write_header(FIL *fobj, UINT *pBw) {
 	return f_write(fobj, HEADER_CSV, sizeof(HEADER_CSV) - 1, pBw);

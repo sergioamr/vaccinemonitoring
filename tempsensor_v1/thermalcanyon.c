@@ -32,6 +32,7 @@
 #include "fatdata.h"
 #include "main_system.h"
 #include "alarms.h"
+#include "state.h"
 
 void thermal_handle_system_button() {
 	if (!system_isRunning())
@@ -122,6 +123,7 @@ void thermal_canyon_loop(void) {
 
 		// Checks all the events that we have and runs the right one.
 		events_run(currentTime);
+		state_process();
 
 		//check if conversion is complete
 		if (g_isConversionDone) {

@@ -7,6 +7,7 @@
 
 #define SMS_C_
 
+#include "thermalcanyon.h"
 #include "stdint.h"
 #include "stdio.h"
 #include "stringutils.h"
@@ -32,6 +33,8 @@ void sms_send_data_request(char *number) {
 
 	//get temperature values
 	memset(data, 0, MSG_RESPONSE_LEN);
+	thermal_update_time();
+	strcat(data, get_simplified_date_string(&g_tmCurrTime));
 	for (iOffset = 0; iOffset < MAX_NUM_SENSORS; iOffset++) {
 		strcat(data, SensorName[iOffset]);
 		strcat(data, "=");
