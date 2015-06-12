@@ -26,7 +26,7 @@ extern "C"
 //#define I2C_DISABLED
 
 //#define NOTFROMFILE
-//#define BUZZER_DISABLED
+#define BUZZER_DISABLED
 #define ALERT_UPLOAD_DISABLED
 //#define CALIBRATION			//set this flag whenever the device has to undergo calibration
 #define MIN 14
@@ -101,12 +101,7 @@ extern "C"
  * Constants for different uses
  */
 
-#if MAX_NUM_SENSORS == 5
-#define MAX_DISPLAY_ID		9
-#else
-#define MAX_DISPLAY_ID		6
-#endif
-
+#define MAX_DISPLAY_ID		10
 
 //iStatus contants
 #define MODEM_POWERED_ON 	0x0001

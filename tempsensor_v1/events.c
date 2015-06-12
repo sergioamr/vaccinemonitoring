@@ -370,7 +370,7 @@ void event_LCD_turn_on() {
 }
 
 void events_check_battery(void *event, time_t currentTime) {
-	batt_getlevel();
+	state_battery_level(batt_getlevel());
 }
 
 void events_health_check(void *event, time_t currentTime) {
@@ -382,10 +382,10 @@ void events_init() {
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
 
 #ifdef _DEBUG
-	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(5),
+	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(30),
 	NULL);
 #endif
-	events_register(EVT_BATTERY_CHECK, "BATTERY", 0, &events_check_battery, MINUTES_(15), NULL);
+	events_register(EVT_BATTERY_CHECK, "BATTERY", 0, &events_check_battery, MINUTES_(5), NULL);
 
 	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12), NULL);
 

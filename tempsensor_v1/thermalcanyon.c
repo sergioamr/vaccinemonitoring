@@ -100,18 +100,23 @@ void thermal_buzzer_sound(void) {
 }
 
 void sleep_or_alarm() {
-	if (g_iStatus & BUZZER_ON || g_pSysState->buzzer
-			|| g_pSysState->buzzerFeedback > 0) {
-		thermal_buzzer_sound();
-		if (g_pSysState->buzzerFeedback > 0)
-			g_pSysState->buzzerFeedback--;
-	} else {
 
-		if (g_bLCD_state)
-			delay(MAIN_SLEEP_TIME);
-		else
-			delay(MAIN_LCD_OFF_SLEEP_TIME);
+	if (g_pSysState->buzzerFeedback > 0) {
+		thermal_buzzer_sound();
+		g_pSysState->buzzerFeedback--;
+		return;
 	}
+	if (g_iStatus & BUZZER_ON || g_pSysState->buzzer) {
+#ifndef BUZZER_DISABLED
+		thermal_buzzer_sound();
+#endif
+		return;
+	}
+
+	if (g_bLCD_state)
+		delay(MAIN_SLEEP_TIME);
+	else
+		delay(MAIN_LCD_OFF_SLEEP_TIME);
 }
 
 void thermal_canyon_loop(void) {

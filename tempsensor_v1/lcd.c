@@ -167,7 +167,7 @@ void lcd_show() {
 	case 4:
 		iCnt = 3;
 		break;
-#if defined(MAX_NUM_SENSORS) & MAX_NUM_SENSORS == 5
+#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
 	case 5:
 		iCnt = 4;
 		break;
@@ -238,6 +238,10 @@ void lcd_show() {
 			}
 		}
 		break;
+
+	case 9:
+		lcd_printf(LINEC, "ALARM CONFIG TODO");
+		return;
 	default:
 		break;
 	}

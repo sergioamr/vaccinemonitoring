@@ -239,7 +239,6 @@ uint8_t batt_getlevel()
 	}
 
 	g_pSysState->battery_level = level;
-	state_battery_level(level);
 	return level;
 }
 #endif
