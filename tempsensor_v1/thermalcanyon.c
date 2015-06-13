@@ -120,8 +120,6 @@ void sleep_or_alarm() {
 }
 
 void thermal_canyon_loop(void) {
-	FRESULT fr;
-	uint8_t iSampleCnt = 0;
 	time_t currentTime = 0;
 	uint8_t iDisplayId = 0;
 
@@ -150,33 +148,9 @@ void thermal_canyon_loop(void) {
 		if (g_isConversionDone) {
 			config_setLastCommand(COMMAND_MONITOR_ALARM);
 
-			//convert the current sensor ADC value to temperature
-			temperature_process_ADC_values();
-
-#ifndef  NOTFROMFILE
-			//log to file
-			fr = log_sample_to_disk((int *) &iBytesLogged);
-			if (fr == FR_OK) {
-				iSampleCnt++;
-				if (iSampleCnt >= MAX_NUM_CONTINOUS_SAMPLES) {
-					g_iStatus |= LOG_TIME_STAMP;
-					iSampleCnt = 0;
-				}
-			}
-#endif
 			//monitor for temperature alarms
 			alarm_monitor();
 			g_isConversionDone = 0;
-
-			if ((((iMinuteTick - iUploadTimeElapsed) >= g_iUploadPeriod)
-					|| (g_iStatus & TEST_FLAG)
-					|| (g_iStatus & BACKLOG_UPLOAD_ON)
-					|| (g_iStatus & ALERT_UPLOAD_ON))
-					&& !(g_iStatus & NETWORK_DOWN)) {
-
-				//data_transmit(&iSampleCnt);
-				process_batch();
-			}
 		}
 
 		sleep_or_alarm();
