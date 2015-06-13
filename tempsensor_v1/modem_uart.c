@@ -29,7 +29,7 @@ const char AT_ERROR[]= " ERROR:";
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 volatile char RXBuffer[RX_LEN + 1];
-char TXBuffer[TX_LEN + 1] ="";
+char TXBuffer[TX_LEN + 1] = "";
 #pragma SET_DATA_SECTION()
 
 volatile static char TransmissionEnd = 0;

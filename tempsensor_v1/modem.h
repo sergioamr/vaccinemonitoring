@@ -44,6 +44,7 @@ void modem_getExtraInfo();
 void modem_survey_network();
 int modem_swap_SIM();
 int modem_isSignalInRange(int iSignalLevel);
+int modem_connect_network(uint8_t attempts);
 void modem_pull_time();
 int8_t modem_first_init();
 int8_t modem_check_network();
