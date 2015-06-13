@@ -669,12 +669,6 @@ void modem_pull_time() {
 			lcd_printf(LINEC, "LAST DATE ");
 			lcd_printf(LINEH, get_YMD_String(&g_tmCurrTime));
 		}
-
-		if (g_tmCurrTime.tm_year != 0) {
-			// Day has changed so save the new date TODO keep trying until date is set. Call function ONCE PER DAY
-			g_iCurrDay = g_tmCurrTime.tm_mday;
-			break;
-		}
 	}
 }
 
