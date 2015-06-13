@@ -7,6 +7,7 @@
 #include "thermalcanyon.h"
 #include "main_system.h"
 #include "hardware_buttons.h"
+#include "data_transmit.h"
 #include "sms.h"
 #include "fatdata.h"
 #include "modem.h"
