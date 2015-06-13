@@ -331,22 +331,35 @@ void event_display_off(void *event, time_t currentTime) {
 // modem_check_network(); // Checks network and if it is down it does the swapping
 void event_sample_temperature(void *event, time_t currentTime) {
 	UINT bytes_written = 0;
-	temperature_sample();
-	log_sample_web_format(&bytes_written);
-	event_force_event_by_id(EVT_DISPLAY, 0);
+
+	if (!g_conversionTriggered) {
+		temperature_sample();
+		g_conversionTriggered = 1;
+	}
+
+	if (g_isConversionDone) {
+		log_sample_to_disk(&bytes_written);
+		log_sample_web_format(&bytes_written);
+		g_isConversionDone = 0;
+		g_conversionTriggered = 0;
+	} else {
+		// push the event forward to allow completion
+		event_force_event_by_id(EVT_SAMPLE_TEMP, 1);
+	}
+	// event_force_event_by_id(EVT_DISPLAY, 0);
 }
 
 void event_network_check(void *event, time_t currentTime) {
 
 	if (modem_connect_network(1)!=UART_SUCCESS) {
 		// Checks several parameters to see if we have to reset the modem, switch sim card, etc.
-
 	}
 
 	event_force_event_by_id(EVT_DISPLAY, 0);
 }
 
 void event_upload_samples(void *event, time_t currentTime) {
+	process_batch();
 }
 
 EVENT *events_find(EVENT_IDS id) {

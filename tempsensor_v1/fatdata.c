@@ -433,7 +433,7 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	return f_close(&fobj);
 }
 
-FRESULT log_sample_to_disk(int* tbw) {
+FRESULT log_sample_to_disk(UINT *tbw) {
 	FIL fobj;
 	char szLog[64];
 	int iBatteryLevel;
@@ -457,10 +457,17 @@ FRESULT log_sample_to_disk(int* tbw) {
 			return fr;
 		}
 
-		if (g_iStatus & LOG_TIME_STAMP) {
-			rtc_get(&g_tmCurrTime);
+		rtc_get(&g_tmCurrTime);
+		// If current time is out of previous interval, log a new time stamp
+		// to avoid time offset issues
+		if (!date_within_interval(&g_tmCurrTime, &g_lastSampleTime, g_iSamplePeriod)) {
+			g_iStatus |= LOG_TIME_STAMP;
+		}
+		memcpy(&g_lastSampleTime, &g_tmCurrTime, sizeof(struct tm));
 
-#if 1
+		// Log time stamp when it's a new day or when
+		// time gets pulled.
+		if (g_iStatus & LOG_TIME_STAMP) {
 			memset(szLog, 0, sizeof(szLog));
 			strcat(szLog, "$TS=");
 			strcat(szLog, itoa_pad(g_tmCurrTime.tm_year));
@@ -473,15 +480,12 @@ FRESULT log_sample_to_disk(int* tbw) {
 			strcat(szLog, ":");
 			strcat(szLog, itoa_pad(g_tmCurrTime.tm_sec));
 			strcat(szLog, ",");
-			strcat(szLog, "R");	//removed =
+			strcat(szLog, "R");
 			strcat(szLog, itoa_pad(g_iSamplePeriod));
 			strcat(szLog, ",");
 			strcat(szLog, "\n");
 			fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
-#else
-			bw = f_printf(fobj,"$TS=%04d%02d%02d:%02d:%02d:%02d,R=%d,", g_tmCurrTime.tm_year, g_tmCurrTime.tm_mon, g_tmCurrTime.tm_mday,
-					g_tmCurrTime.tm_hour, g_tmCurrTime.tm_min, g_tmCurrTime.tm_sec,g_iSamplePeriod);
-#endif
+
 			if (bw > 0) {
 				*tbw += bw;
 				g_iStatus &= ~LOG_TIME_STAMP;
@@ -498,15 +502,16 @@ FRESULT log_sample_to_disk(int* tbw) {
 		//log sample period, battery level, power plugged, temperature values
 		memset(szLog, 0, sizeof(szLog));
 #if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
-		memset(szLog, 0, sizeof(szLog));
 		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,D%s,E%s\n",
 				itoa_pad(iBatteryLevel), !(P4IN & BIT4), Temperature[0],
 				Temperature[1], Temperature[2], Temperature[3], Temperature[4]);
-		fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 #else
-		bw = f_printf(fobj,"F=%d,P=%d,A=%s,B=%s,C=%s,D=%s,", g_iBatteryLevel,
-				!(P4IN & BIT4),Temperature[0],Temperature[1],Temperature[2],Temperature[3]);
+		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,D%s\n",
+				itoa_pad(g_iBatteryLevel), !(P4IN & BIT4), Temperature[0],
+				Temperature[1], Temperature[2], Temperature[3]);
 #endif
+
+		fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 
 		if (bw > 0) {
 			*tbw += bw;

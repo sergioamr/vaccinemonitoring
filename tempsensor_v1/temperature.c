@@ -16,6 +16,7 @@
 
 volatile char g_isConversionDone = 0;
 volatile int g_iSamplesRead = 0;
+char g_conversionTriggered = 0;
 
 void ADC_setupIO() {
 
