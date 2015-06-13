@@ -30,25 +30,22 @@ int8_t batt_isPlugged() {
 uint8_t batt_check_level() {
 	uint8_t iBatteryLevel = 0;
 	// Battery checks
-	lcd_print("Battery check");
+	lcd_printl(LINEC, "Battery status");
 
 #ifndef BATTERY_DISABLED
 	iBatteryLevel = batt_getlevel();
 #endif
 
 	if (iBatteryLevel == 0)
-		lcd_printl(LINE2, "Battery FAIL");
+		lcd_printl(LINEE, "FAIL");
 	else if (iBatteryLevel > 100)
-		lcd_printl(LINE2, "Battery UNKNOWN");
+		lcd_printl(LINEE, "UNKNOWN");
 	else if (iBatteryLevel > 99)
-		lcd_printl(LINE2, "Battery FULL");
+		lcd_printl(LINE2, "FULL");
 	else if (iBatteryLevel > 15)
-		lcd_printl(LINE2, "Battery OK");
+		lcd_printl(LINE2, "OK");
 	else if (iBatteryLevel)
-		lcd_printl(LINE2, "Battery LOW");
-
-	if (iBatteryLevel<15 || iBatteryLevel>100)
-		delay(10000); // Delay to display that there is a state to show
+		lcd_printl(LINEE, "LOW");
 
 	return iBatteryLevel;
 }
