@@ -46,7 +46,7 @@ char* get_YMD_String(struct tm* timeData) {
 	else
 		strcpy(g_szYMDString, itoa_nopadding(timeData->tm_year));
 
-	strcat(g_szYMDString, itoa_pad(timeData->tm_mon + 1));
+	strcat(g_szYMDString, itoa_pad(timeData->tm_mon));
 	strcat(g_szYMDString, itoa_pad(timeData->tm_mday));
 	return g_szYMDString;
 }
@@ -114,15 +114,15 @@ void parse_time_from_line(struct tm* timeToConstruct, char* formattedLine) {
 	token = strtok(token, ":");
 
 	if (token != NULL) {
-		strncpy(dateAttribute, formattedLine, 4);
+		strncpy(dateAttribute, &token[4], 4);
 		dateAttribute[4] = 0;
 		timeToConstruct->tm_year = atoi(&dateAttribute[0]);
 
-		strncpy(dateAttribute, &formattedLine[4], 2);
+		strncpy(dateAttribute, &token[8], 2);
 		dateAttribute[2] = 0;
 		timeToConstruct->tm_mon = atoi(&dateAttribute[0]);
 
-		strncpy(dateAttribute, &formattedLine[6], 2);
+		strncpy(dateAttribute, &token[10], 2);
 		dateAttribute[2] = 0;
 		timeToConstruct->tm_mday = atoi(&dateAttribute[0]);
 	}
@@ -163,9 +163,9 @@ int date_within_interval(struct tm* timeToCompare, struct tm* baseTime,
 	// Generically this needs to work for 31/12/xxxx 23:59:59 + 1 second
 	// (which is 01/01/(xxxx+1) 00:00:00 - In our case a different day = different file
 	// so it only needs to be accurate up to hours.
-	// Leniancy ~+-1 minute (not guaranteed to be 60 seconds but minimum is 30)
+	// Leniancy ~+-1 minute (not guaranteed to be 60 seconds but min = 60 and max = 119)
+	memcpy(&baseInterval, baseTime, sizeof(struct tm));
 	timeVal = baseTime->tm_min + interval;
-	baseInterval.tm_sec = baseTime->tm_sec;
 	if (timeVal >= 60) {
 		while (timeVal >= 60) {
 			timeVal -= 60;
