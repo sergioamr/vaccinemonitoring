@@ -8,8 +8,8 @@
 #ifndef TEMPSENSOR_V1_UART_H_
 #define TEMPSENSOR_V1_UART_H_
 
-#define TX_LEN   			1024
-#define RX_LEN   			2048
+#define TX_LEN   			640
+#define RX_LEN   			1024
 #define TOKEN_LEN			3
 
 #define ATCMD_HTTPSND		1
