@@ -44,17 +44,19 @@ void data_send_temperatures_sms() {
 
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
 void process_batch() {
-	/*
 	int lineIndex = 0;
 	FILINFO fili;
 	DIR dir;
 	FIL filr;
 	FRESULT fr;
 	char line[64];
-	char* firstDateString = NULL;
+	int lineSize = sizeof(line)/sizeof(char);
+	char* dateString = NULL;
 	char* defSID = NULL;
 	SIM_CARD_CONFIG *sim = config_getSIM();
-	struct tm firstDate, currentDate;
+	struct tm firstDate;
+
+	memset(ATresponse, 0, sizeof(ATresponse));
 
 	if(MAX_NUM_SENSORS == 5) {
 		defSID = "0|1|2|3|4";
@@ -65,41 +67,57 @@ void process_batch() {
 	lcd_printl(LINE2, "Transmitting...");
 
 	// Cycle through all files using f_findfirst, f_findnext.
-	fr = f_findfirst(&dir, &fili, "/txt", ".txt");
-	while(fr == 0) {
-		fr = f_open(&filr, fili.fname, FA_READ | FA_OPEN_ALWAYS);
-		while(f_gets(line, strlen(line), &filr) == 0 && fr == 0) {
-			if(lineIndex == 0) {
+	fr = f_findfirst(&dir, &fili, FOLDER_TEXT, "*.TXT");
+	while(fr == FR_OK) {
+		strcpy(line, strcat("/txt/", fili.fname));
+		fr = f_open(&filr, line, FA_READ | FA_OPEN_ALWAYS);
+		// If we must carry on where we left off cycle through the lines
+		// until we get to where we left off
+		if (g_pSysCfg->lastLineRead > 0) {
+			while(lineIndex < g_pSysCfg->lastLineRead) {
+				if (f_gets(line, lineSize, &filr) == 0) {
+					lineIndex = 0;
+					break;
+				}
+				lineIndex++;
+			}
+		}
+
+		//strcpy(line, f_gets(line, strlen(line), &filr));
+		while(f_gets(line, lineSize, &filr) != 0) {
+			fr = f_close(&filr);
+			dateString = strstr(line, "$TS");
+			if(lineIndex == 0 || lineIndex == g_pSysCfg->lastLineRead) {
+				// What if this line isn't a date? -> Find previous date or next?
 				parse_time_from_line(&firstDate, line);
-				firstDateString = get_date_string(&firstDate, "/", ":", 0);
-				sprintf(SampleData, "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%lu",
+				dateString = get_date_string(&firstDate, "/", ":", 0);
+				sprintf(ATresponse, "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%iu",
 						g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa",
-						defSID, firstDateString,
+						defSID, dateString,
 						g_pDevCfg->stIntervalParam.loggingInterval);
 			} else {
-				strcat(SampleData, line);
-				if(f_gets(line, strlen(line), &filr) == 0) {
-					parse_time_from_line(&currentDate, line);
-					if(!date_within_interval(&currentDate, &firstDate,
-							g_pDevCfg->stIntervalParam.loggingInterval)) {
-						break;
-					}
+				// Stream data! When it's streamed we should always be able to send
+				// a whole block of data at a time (unless an error occurs)
+				if(dateString == NULL) {
+					strcat(ATresponse, line);
+				} else {
+					// Done - Send!
+					break; // Found next time stamp - Move to next batch now
 				}
 			}
 
 			g_pSysCfg->lastLineRead = lineIndex;
 			lineIndex++;
 		}
+
 		// Send the data if the last line has been passed or
-		// the TXbuffer is full or the interval time rule was broken.
+		// the TXbuffer is full.
 		// If it was the last line delete the file & set line number to 0,
-		// otherwise save the line number (when TX buffer was full or the
-		// interval rule was broken).
+		// otherwise save the line number (when TX buffer was full).
 		fr = f_close(&filr);
 		g_pSysCfg->lastLineRead = 0;
 		fr = f_findnext(&dir, &fili);
 	}
-	*/
 }
 
 void data_upload_sms() {

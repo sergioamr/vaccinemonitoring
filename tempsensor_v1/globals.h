@@ -41,10 +41,9 @@ extern char g_iGprs_network_indication;
 
 extern char szLog[FILE_BUFFER_LEN];
 
-//now moved to INFOD FRAM to optimize repeated temperature conversion
 extern struct tm g_tmCurrTime;
+extern struct tm g_lastSampleTime;
 extern int32_t iBytesLogged;
-extern int g_iCurrDay;
 
 extern double iTemp;
 extern int16_t g_iAlarmCnfCnt[MAX_NUM_SENSORS + 2];	//additional two for power and battery alert

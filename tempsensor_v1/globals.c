@@ -43,9 +43,10 @@ char ATresponse[ATRESP_MAX_LEN] = { };
 #pragma SET_DATA_SECTION(".helper_vars")
 //put all variables that are written less frequently
 struct tm g_tmCurrTime;
+struct tm g_lastSampleTime;
 time_t g_timeNextPull;  // Pulltime from modem every 12 hours
 int32_t iBytesLogged = 0;
-int g_iCurrDay = 0;
+#pragma SET_DATA_SECTION()
 
 //put all variables that are written less frequently
 uint32_t g_iAlarmStatus = 0;
