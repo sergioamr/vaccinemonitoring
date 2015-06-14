@@ -51,8 +51,8 @@ char* get_YMD_String(struct tm* timeData) {
 	return g_szYMDString;
 }
 
-char* get_date_string(struct tm* timeData, char* dateSeperator,
-		char* dateTimeSeperator, uint8_t includeTZ) {
+char* get_date_string(struct tm* timeData, const char* dateSeperator,
+		const char* dateTimeSeperator, uint8_t includeTZ) {
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 	static char g_szDateString[24]; // "YYYY-MM-DD HH:MM:SS IST"

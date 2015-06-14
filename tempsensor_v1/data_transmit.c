@@ -52,13 +52,14 @@ void process_batch() {
 	char line[64];
 	int lineSize = sizeof(line)/sizeof(char);
 	char* dateString = NULL;
-	char* defSID = NULL;
+	char* format = "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%s";
+	const static char* defSID = "0|1|2|3|4";
+	const static char* delim1 = "/";
+	const static char* delim2 = ":";
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	struct tm firstDate;
 
 	memset(ATresponse, 0, sizeof(ATresponse));
-
-	defSID = "0|1|2|3|4";
 
 	lcd_printl(LINE2, "Transmitting...");
 
@@ -81,16 +82,15 @@ void process_batch() {
 
 		//strcpy(line, f_gets(line, strlen(line), &filr));
 		while(f_gets(line, lineSize, &filr) != 0) {
-			fr = f_close(&filr);
-			dateString = strstr(line, "$TS");
+			//dateString = strstr(line, "$TS");
 			if(lineIndex == 0 || lineIndex == g_pSysCfg->lastLineRead) {
 				// What if this line isn't a date? -> Find previous date or next?
 				parse_time_from_line(&firstDate, line);
-				dateString = get_date_string(&firstDate, "/", ":", 0);
-				sprintf(ATresponse, "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%iu",
+				dateString = get_date_string(&firstDate, delim1, delim2, 0);
+				sprintf(ATresponse, format,
 						g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa",
 						defSID, dateString,
-						g_pDevCfg->stIntervalParam.loggingInterval);
+						itoa_nopadding(g_pDevCfg->stIntervalParam.loggingInterval));
 			} else {
 				// Stream data! When it's streamed we should always be able to send
 				// a whole block of data at a time (unless an error occurs)
