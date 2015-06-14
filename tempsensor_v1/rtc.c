@@ -12,6 +12,8 @@
 
 Calendar g_rtcCalendarTime;
 
+extern uint8_t event_wakeup_main();
+
 volatile uint32_t iMinuteTick=0;
 volatile time_t iSecondTick=0;
 const int8_t daysinMon[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
@@ -238,6 +240,12 @@ void RTC_B_ISR(void)
     case RTCIV_RTCRDYIFG:             //RTCRDYIFG
         //every second
     	iSecondTick++;
+
+    	// Resume execution if the device is in deep sleep mode
+    	if (event_wakeup_main()) {
+    		__bic_SR_register_on_exit(LPM0_bits); // Resume execution
+    	}
+
         break;
     case RTCIV_RTCTEVIFG:             //RTCEVIFG
         //Interrupts every minute

@@ -58,11 +58,7 @@ void process_batch() {
 
 	memset(ATresponse, 0, sizeof(ATresponse));
 
-	if(MAX_NUM_SENSORS == 5) {
-		defSID = "0|1|2|3|4";
-	} else {
-		defSID = "0|1|2|3";
-	}
+	defSID = "0|1|2|3|4";
 
 	lcd_printl(LINE2, "Transmitting...");
 

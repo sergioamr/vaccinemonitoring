@@ -12,6 +12,7 @@
 #include "fatdata.h"
 #include "modem.h"
 #include "state_machine.h"
+#include "alarms.h"
 
 #define SECONDS_(s) (s)
 #define MINUTES_(m) (m*60L)
@@ -40,7 +41,7 @@ void inline event_setInterval(EVENT *pEvent, time_t time) {
 		return;
 
 	// Intervals more than reset time will not be accepted.
-	if (time>HOURS_(48))
+	if (time > HOURS_(48))
 		return;
 
 	if (pEvent->interval != 0) {
@@ -93,21 +94,23 @@ void events_send_data(char *phone) {
 		return;
 
 	size_t currentTime = events_getTick();
-	sprintf(msg, "[%s] Events start", get_date_string(&g_tmCurrTime, "-", " ", 1));
+	sprintf(msg, "[%s] Events start",
+			get_date_string(&g_tmCurrTime, "-", " ", 1));
 	sms_send_message_number(phone, msg);
 
 	for (t = 0; t < g_sEvents.registeredEvents; t++) {
 		pEvent = &g_sEvents.events[t];
 		length = (pEvent->nextEventRun - currentTime);
 
-		sprintf(msg, "%s : left %d next %d", pEvent->name,
-				(uint16_t) length, (uint16_t) event_getInterval(pEvent));
+		sprintf(msg, "%s : left %d next %d", pEvent->name, (uint16_t) length,
+				(uint16_t) event_getInterval(pEvent));
 		sms_send_message_number(phone, msg);
 	}
 
 	sms_send_data_request(phone);
 
-	sprintf(msg, "[%s] Events end", get_date_string(&g_tmCurrTime, "-", " ", 1));
+	sprintf(msg, "[%s] Events end",
+			get_date_string(&g_tmCurrTime, "-", " ", 1));
 	sms_send_message_number(phone, msg);
 }
 
@@ -268,6 +271,10 @@ void event_force_event_by_id(EVENT_IDS id, time_t offset) {
 	events_find_next_event(currentTime);
 }
 
+EVENT inline *events_getNextEvent() {
+	return &g_sEvents.events[g_sEvents.nextEvent];
+}
+
 void events_run() {
 	time_t currentTime;
 	EVENT *pEvent;
@@ -328,7 +335,6 @@ void event_display_off(void *event, time_t currentTime) {
 	lcd_turn_off();
 }
 
-// modem_check_network(); // Checks network and if it is down it does the swapping
 void event_sample_temperature(void *event, time_t currentTime) {
 	UINT bytes_written = 0;
 
@@ -340,6 +346,12 @@ void event_sample_temperature(void *event, time_t currentTime) {
 	if (g_isConversionDone) {
 		log_sample_to_disk(&bytes_written);
 		log_sample_web_format(&bytes_written);
+
+		config_setLastCommand(COMMAND_MONITOR_ALARM);
+
+		//monitor for temperature alarms
+		alarm_monitor();
+
 		g_isConversionDone = 0;
 		g_conversionTriggered = 0;
 	} else {
@@ -351,7 +363,8 @@ void event_sample_temperature(void *event, time_t currentTime) {
 
 void event_network_check(void *event, time_t currentTime) {
 
-	if (modem_connect_network(1)!=UART_SUCCESS) {
+	// Checks network and if it is down it does the swapping
+	if (modem_connect_network(1) != UART_SUCCESS) {
 		// Checks several parameters to see if we have to reset the modem, switch sim card, etc.
 	}
 
@@ -391,6 +404,36 @@ void events_health_check(void *event, time_t currentTime) {
 	state_process();
 }
 
+// Sleeping state
+uint32_t iMainSleep = 0;
+
+// Resume execution if the device is in deep sleep mode
+// Triggered by the interruption
+uint8_t event_wakeup_main() {
+	if (iMainSleep==0)
+		return 0;
+
+	EVENT *pNext = events_getNextEvent();
+
+	if (events_getTick() > pNext->nextEventRun)
+		return 1;
+
+	return 0;
+}
+
+// Main sleep, if there are not events happening it will just sleep
+
+void event_main_sleep() {
+	iMainSleep = 1;
+
+	if (g_bLCD_state)
+		delay(MAIN_SLEEP_TIME);
+	else
+		delay(MAIN_LCD_OFF_SLEEP_TIME);
+
+	iMainSleep = 0;
+}
+
 void events_init() {
 
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
@@ -399,18 +442,24 @@ void events_init() {
 	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(30),
 	NULL);
 #endif
-	events_register(EVT_BATTERY_CHECK, "BATTERY", 0, &events_check_battery, MINUTES_(5), NULL);
+	events_register(EVT_BATTERY_CHECK, "BATTERY", 0, &events_check_battery,
+			MINUTES_(5), NULL);
 
-	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12), NULL);
+	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12),
+			NULL);
 
-	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, &event_network_check, MINUTES_(2), NULL);
+	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, &event_network_check,
+			MINUTES_(2), NULL);
 
 	// Check every 30 seconds until we get the configuration message from server;
-	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs, MINUTES_(3), NULL);
+	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs,
+			MINUTES_(3), NULL);
 
-	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off, MINUTES_(10),NULL);
+	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off, MINUTES_(10),
+			NULL);
 
-	events_register(EVT_ALARMS_CHECK, "ALARMS", 1, &events_health_check, MINUTES_(2),NULL);
+	events_register(EVT_ALARMS_CHECK, "ALARMS", 1, &events_health_check,
+			MINUTES_(2), NULL);
 
 	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
 			MINUTES_(LCD_REFRESH_INTERVAL), NULL);
@@ -429,9 +478,7 @@ void events_init() {
 			g_pDevCfg->stIntervalParam.loggingInterval);
 
 	events_register(EVT_UPLOAD_SAMPLES, "UPLOAD", 0, &event_upload_samples,
-			MINUTES_(UPLOAD_PERIOD),
-			g_pDevCfg->stIntervalParam.uploadInterval
-			);
+			MINUTES_(UPLOAD_PERIOD), g_pDevCfg->stIntervalParam.uploadInterval);
 
 	events_sync();
 }

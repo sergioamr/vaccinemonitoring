@@ -113,10 +113,8 @@ void sleep_or_alarm() {
 		return;
 	}
 
-	if (g_bLCD_state)
-		delay(MAIN_SLEEP_TIME);
-	else
-		delay(MAIN_LCD_OFF_SLEEP_TIME);
+	// Sleeps the CPU, it wakes up for events triggered by interruptions.
+	event_main_sleep();
 }
 
 void thermal_canyon_loop(void) {
@@ -144,19 +142,9 @@ void thermal_canyon_loop(void) {
 		events_run(currentTime);
 		state_process();
 
-		//check if conversion is complete
-		if (g_isConversionDone) {
-			config_setLastCommand(COMMAND_MONITOR_ALARM);
-
-			//monitor for temperature alarms
-			alarm_monitor();
-			g_isConversionDone = 0;
-		}
-
-		sleep_or_alarm();
-
 		// Wait here behind the interruption to check for a change on display.
 		// If a hardware button is pressed it will resume CPU
+		sleep_or_alarm();
 
 		if (iDisplayId != g_iDisplayId) {
 			iDisplayId = g_iDisplayId;
