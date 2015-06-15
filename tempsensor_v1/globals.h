@@ -12,7 +12,7 @@
 #include "common.h"
 #include "ff.h"
 
-#define ATRESP_MAX_LEN		128
+#define ATRESP_MAX_LEN		256
 #define FILE_BUFFER_LEN     64
 
 extern volatile uint8_t g_iDebug;

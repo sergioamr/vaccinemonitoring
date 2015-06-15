@@ -13,6 +13,7 @@
 #include "modem.h"
 #include "state_machine.h"
 #include "alarms.h"
+#include "timer.h"
 
 #define SECONDS_(s) (s)
 #define MINUTES_(m) (m*60L)

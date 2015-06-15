@@ -18,6 +18,7 @@
 #include "stringutils.h"
 #include "modem.h"
 #include "fatdata.h"
+#include "timer.h"
 
 // AT Messages returns to check.
 const char AT_MSG_OK[]={ 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
@@ -56,9 +57,6 @@ size_t iRxLen = RX_LEN;
 
 // Carriage return
 #define ATCR 10
-
-//local functions
-extern void delay(int time);
 
 void uart_resetbuffer() {
 	RXHeadIdx = RXTailIdx = 0; //ZZZZ reset Rx index to faciliate processing in uart_rx
