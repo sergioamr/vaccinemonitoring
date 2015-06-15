@@ -114,6 +114,9 @@ void process_batch() {
 		g_pSysCfg->lastLineRead = 0;
 		fr = f_findnext(&dir, &fili);
 	}
+
+	lcd_printl(LINEC, "Transmit");
+	lcd_printl(LINE2, "Done");
 }
 
 void data_upload_sms() {

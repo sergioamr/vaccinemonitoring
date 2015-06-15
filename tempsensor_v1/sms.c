@@ -119,9 +119,9 @@ int8_t sms_process_memory_message(int8_t index) {
 			lcd_printf(LINE2, "   *** %d ***  ", (10 - t));
 			lcd_progress_wait(1000);
 		}
+
 		//reset the board by issuing a SW BOR
-		PMM_trigBOR();
-		while (1);	//code should not come here
+		system_reboot("NET_COMMAND");
 	case 'E':
 	case 'e':
 		events_send_data(phone);

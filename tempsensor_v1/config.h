@@ -100,7 +100,7 @@ EXTERN int8_t g_iSystemSetup;
 #define SAMPLE_PERIOD			1		//in minutes
 #define UPLOAD_PERIOD			1		//in minutes
 #define SMS_RX_POLL_INTERVAL	3		//poll interval in minutes for sms msg TODO change back
-#define LCD_REFRESH_INTERVAL	5
+#define LCD_REFRESH_INTERVAL	1
 #define MSG_REFRESH_INTERVAL	5
 #define SAMPLE_COUNT			100
 

@@ -32,12 +32,21 @@
 #include "fatdata.h"
 #include "events.h"
 #include "state_machine.h"
+#include "main_system.h"
 
 int g_iRunning = 0;
 
 char system_isRunning() {
 	return g_iRunning;
 }
+
+//reset the board by issuing a SW BOR
+void system_reboot(const char *message) {
+	PMM_trigBOR();
+	log_appendf("REBOOT %s", message);
+	while (1);	//code should not come here
+}
+
 /****************************************************************************/
 /*  IO SETUP                                                                */
 /****************************************************************************/

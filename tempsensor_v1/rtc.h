@@ -16,6 +16,8 @@ extern "C"
 {
 #endif
 
+#define MINUTES_BEFORE_REBOOT 10
+void rtc_dead_mans_switch();
 //*****************************************************************************
 //
 //! \brief Initialize RTC.
@@ -25,7 +27,7 @@ extern "C"
 //! \return None
 //
 //*****************************************************************************
-extern void rtc_init(struct tm* pTime);
+void rtc_init(struct tm* pTime);
 
 //*****************************************************************************
 //
@@ -36,7 +38,7 @@ extern void rtc_init(struct tm* pTime);
 //! \return none
 //
 //*****************************************************************************
-extern void  rtc_get(struct tm* pTime);
+void  rtc_get(struct tm* pTime);
 
 //*****************************************************************************
 //
@@ -47,7 +49,7 @@ extern void  rtc_get(struct tm* pTime);
 //! \return none
 //
 //*****************************************************************************
-extern void rtc_getlocal(struct tm* pTime);
+void rtc_getlocal(struct tm* pTime);
 #ifdef __cplusplus
 }
 #endif

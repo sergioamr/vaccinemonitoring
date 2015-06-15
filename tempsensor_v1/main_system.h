@@ -8,6 +8,7 @@
 #ifndef MAIN_SYSTEM_H_
 #define MAIN_SYSTEM_H_
 
-int system_isRunning();
+char system_isRunning();
+void system_reboot(const char *message);
 
 #endif /* MAIN_SYSTEM_H_ */

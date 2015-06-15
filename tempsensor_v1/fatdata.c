@@ -78,7 +78,7 @@ char* get_date_string(struct tm* timeData, const char* dateSeperator,
 	//[TODO] Check timezone
 
 	if (includeTZ && timeData->tm_isdst) {
-		strcat(g_szDateString, "DST");
+		strcat(g_szDateString, " DST");
 	}
 	return g_szDateString;
 }
