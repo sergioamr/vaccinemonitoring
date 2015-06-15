@@ -14,7 +14,7 @@ int8_t http_setup();
 void http_deactivate();
 int http_get_configuration();
 void backend_get_configuration();
-int http_post(char* postdata);
+int8_t http_post(char* postdata);
 int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 		char* seperator, int8_t iFlagVal, char* pcExtSrc, int8_t iFieldSize);
 

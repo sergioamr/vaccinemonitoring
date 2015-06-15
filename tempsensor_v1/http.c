@@ -299,75 +299,17 @@ int http_post_gprs_connection_status(char status) {
 	return l_file_pointer_enabled_sms_status;
 }
 
-int http_post(char* postdata) {
-	int isHTTPResponseAvailable = 0;
-	int iRetVal = -1;
+int8_t http_post(char* postdata) {
+	char cmd[64];
 
-	if (g_iStatus & TEST_FLAG)
-		return iRetVal;
-#ifndef SAMPLE_POST
-	memset(ATresponse, 0, sizeof(ATresponse));
-#ifdef NOTFROMFILE
-	strcpy(ATresponse,"AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v2/\",");
-#else
-	strcpy(ATresponse, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",");
-#endif
-	strcat(ATresponse, itoa_pad(strlen(postdata)));
-	strcat(ATresponse, ",0\r\n");
-
-	isHTTPResponseAvailable = 0;
+	sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%s,0\r\n", itoa_pad(strlen(postdata)));
 
 	// Wait for prompt
 	uart_setHTTPPromptMode();
-	if (uart_tx_waitForPrompt(ATresponse, TIMEOUT_HTTPSND_PROMPT)) {
+	if (uart_tx_waitForPrompt(cmd, TIMEOUT_HTTPSND_PROMPT)) {
 		uart_tx_timeout(postdata, TIMEOUT_HTTPSND, 1);
-
-		// TODO Check if ok or RXBuffer contains Error
-		uart_rx(ATCMD_HTTPSND, ATresponse);
-		if (ATresponse[0] == '>') {
-			isHTTPResponseAvailable = 1;
-		} else {
-			_NOP();
-			// FAILED GETTING PROMPT!
-			return iRetVal;
-		}
 	}
-
-	if (isHTTPResponseAvailable) {
-		file_pointer_enabled_gprs_status = 1; // added for gprs status for file pointer movement///
-		uart_tx(postdata);
-		//delay(10000);
-		iRetVal = 0;
-		iPostSuccess++;
-	} else {
-		file_pointer_enabled_gprs_status = 0; // added for gprs status for file pointer movement..////
-		iPostFail++;
-	}
-#else
-	uart_tx("AT#HTTPCFG=1,\"67.205.14.22\",80,0,,,0,120,1\r\n");
-	delay(5000);
-	uart_tx("AT#HTTPSND=1,0,\"/post.php?dir=galcore&dump\",26,1\r\n");
-	isHTTPResponseAvailable = 0;
-	iIdx = 0;
-	while ((!isHTTPResponseAvailable) && iIdx <= HTTP_RESPONSE_RETRY)
-	{
-		delay(1000);
-		iIdx++;
-		uart_rx(ATCMD_HTTPSND,ATresponse);
-		if(ATresponse[0] == '>')
-		{
-			isHTTPResponseAvailable = 1;
-		}
-	}
-
-	if(isHTTPResponseAvailable)
-	{
-		iRetVal = 1;
-		uart_tx("imessy=martina&mary=johyyy");
-		delay(10000);
-	}
-#endif
-	return iRetVal;
+	return uart_getTransactionState();
 }
 
 /*
