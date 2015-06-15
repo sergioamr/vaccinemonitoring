@@ -247,8 +247,6 @@ void sms_send_heart_beat() {
 	sms_send_message(msg);
 }
 
-extern char* itoa_nopadding(int num);
-
 //#pragma SET_DATA_SECTION(".config_vars_infoD")
 //char g_TmpSMScmdBuffer[SMS_CMD_LEN];
 //#pragma SET_DATA_SECTION()
