@@ -50,6 +50,7 @@ void process_batch() {
 	FIL filr;
 	FRESULT fr;
 	char line[80];
+	char path[32];
 	int lineSize = sizeof(line)/sizeof(char);
 	char* dateString = NULL;
 	char* format = "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%s";
@@ -66,8 +67,8 @@ void process_batch() {
 	// Cycle through all files using f_findfirst, f_findnext.
 	fr = f_findfirst(&dir, &fili, FOLDER_TEXT, "*." EXTENSION_TEXT);
 	while(fr == FR_OK) {
-		sprintf(line, "%s/%s", FOLDER_TEXT, fili.fname);
-		fr = f_open(&filr, line, FA_READ | FA_OPEN_ALWAYS);
+		sprintf(path, "%s/%s", FOLDER_TEXT, fili.fname);
+		fr = f_open(&filr, path, FA_READ | FA_OPEN_ALWAYS);
 		// If we must carry on where we left off cycle through the lines
 		// until we get to where we left off
 		if (g_pSysCfg->lastLineRead > 0) {
@@ -111,7 +112,10 @@ void process_batch() {
 		// If it was the last line delete the file & set line number to 0,
 		// otherwise save the line number (when TX buffer was full).
 		fr = f_close(&filr);
-		g_pSysCfg->lastLineRead = 0;
+		if (fr == FR_OK) {
+			fr = f_unlink(path); // Delete the file
+			g_pSysCfg->lastLineRead = 0;
+		}
 		fr = f_findnext(&dir, &fili);
 	}
 
