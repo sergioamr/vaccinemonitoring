@@ -18,6 +18,7 @@
 #include "stringutils.h"
 #include "modem.h"
 #include "fatdata.h"
+#include "timer.h"
 
 // AT Messages returns to check.
 const char AT_MSG_OK[]={ 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
