@@ -245,9 +245,7 @@ void setup_http_post() {
 		if (http_post(ATresponse) != 0) {
 			// Try to upload via SMS instead
 			uart_tx("AT#SGACT=1,0\r\n"); // deactivate GPRS context
-			//if upload sms
-			delay(5000); // opt sleep to get http post response
-			data_upload_sms();
+			//data_upload_sms();
 			//file_pointer_enabled_sms_status =  TODO clarify what this return is for
 			http_post_sms_status();
 		} else {
@@ -265,7 +263,7 @@ void setup_http_post() {
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
 void process_batch() {
 	int lineIndex = 0;
-	uint8_t triggerTimestamp = 0;
+	uint8_t canSend = 0;
 	FILINFO fili;
 	DIR dir;
 	FIL filr;
@@ -274,7 +272,7 @@ void process_batch() {
 	char path[32];
 	int lineSize = sizeof(line)/sizeof(char);
 	char* dateString = NULL;
-	char* format = "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%s";
+	const static char* format = "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%s";
 	const static char* defSID = "0|1|2|3|4";
 	const static char* delim1 = "/";
 	const static char* delim2 = ":";
@@ -290,6 +288,9 @@ void process_batch() {
 	while(fr == FR_OK) {
 		sprintf(path, "%s/%s", FOLDER_TEXT, fili.fname);
 		fr = f_open(&filr, path, FA_READ | FA_OPEN_ALWAYS);
+		if (fr != FR_OK) {
+			break;
+		}
 		// If we must carry on where we left off cycle through the lines
 		// until we get to where we left off
 		if (g_pSysCfg->lastLineRead > 0) {
@@ -300,39 +301,43 @@ void process_batch() {
 				}
 				lineIndex++;
 			}
-			triggerTimestamp = 1;
 		}
 
 		//strcpy(line, f_gets(line, strlen(line), &filr));
 		while(f_gets(line, lineSize, &filr) != 0) {
 			dateString = strstr(line, "$TS");
-			if(lineIndex == 0 || triggerTimestamp) {
-				// What if this line isn't a date? -> Find previous date or next?
+			if(lineIndex == 0 || dateString != NULL) {
+				if(canSend) {
+					setup_http_post();
+					memset(ATresponse, 0, sizeof(ATresponse));
+					canSend = 0;
+					// Done - Send!
+					// Send the data if the last line has been passed or
+					// the TXbuffer is full.
+					// Found next time stamp - Move to next batch now
+				}
+				// TODO What if this line isn't a date? -> Find previous date or next?
 				parse_time_from_line(&firstDate, line);
 				dateString = get_date_string(&firstDate, delim1, delim2, 0);
 				sprintf(ATresponse, format,
 						g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa",
 						defSID, dateString,
 						itoa_nopadding(g_pDevCfg->stIntervalParam.loggingInterval));
-				triggerTimestamp = 0;
 			} else {
 				// Stream data! When it's streamed we should always be able to send
 				// a whole block of data at a time (unless an error occurs)
-				if(dateString == NULL) {
-					strcat(ATresponse, line);
-				} else {
-					//setup_http_post();
-					triggerTimestamp = 1;
-					memset(ATresponse, 0, sizeof(ATresponse));
-					// Done - Send!
-					// Send the data if the last line has been passed or
-					// the TXbuffer is full.
-					// Found next time stamp - Move to next batch now
-				}
+				strcat(ATresponse, line);
+				canSend = 1;
 			}
 
 			g_pSysCfg->lastLineRead = lineIndex;
 			lineIndex++;
+		}
+
+		if(canSend) {
+			setup_http_post();
+			memset(ATresponse, 0, sizeof(ATresponse));
+			canSend = 0;
 		}
 
 		if (f_close(&filr) == FR_OK) {
@@ -343,15 +348,12 @@ void process_batch() {
 			// TODO should really try to delete file again
 		}
 
-		if (f_findnext(&dir, &fili) != FR_OK) {
-			break;
+		fr = f_findnext(&dir, &fili);
+		if (fr != FR_OK) {
+			break; // Done
 		}
 	}
 
 	lcd_printl(LINEC, "Transmit");
 	lcd_printl(LINE2, "Done");
-}
-
-int data_transmit(uint8_t *pSampleCnt) {
-	return 0;
 }
