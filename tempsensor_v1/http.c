@@ -314,14 +314,10 @@ int http_post(char* postdata) {
 #endif
 	strcat(ATresponse, itoa_pad(strlen(postdata)));
 	strcat(ATresponse, ",0\r\n");
-	//uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
-	//delay(5000);
 
 	isHTTPResponseAvailable = 0;
-	//uart_tx("AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v2/\",383,0\r\n");
 
 	// Wait for prompt
-
 	uart_setHTTPPromptMode();
 	if (uart_tx_waitForPrompt(ATresponse, TIMEOUT_HTTPSND_PROMPT)) {
 		uart_tx_timeout(postdata, TIMEOUT_HTTPSND, 1);
@@ -340,16 +336,6 @@ int http_post(char* postdata) {
 	if (isHTTPResponseAvailable) {
 		file_pointer_enabled_gprs_status = 1; // added for gprs status for file pointer movement///
 		uart_tx(postdata);
-#if 0
-		//testing split http post
-		memset(filler,0,sizeof(filler));
-		memcpy(filler, postdata, 200);
-		uart_tx(filler);
-		delay(10000);
-		memset(filler,0,sizeof(filler));
-		memcpy(filler, &postdata[200], iLen - 200);
-		uart_tx(filler);
-#endif
 		//delay(10000);
 		iRetVal = 0;
 		iPostSuccess++;
