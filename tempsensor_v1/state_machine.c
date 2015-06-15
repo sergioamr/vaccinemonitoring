@@ -57,7 +57,20 @@ void buzzer_feedback() {
 /* GENERATE ALARMS */
 /***********************************************************************************************************************/
 
+SYSTEM_STATUS *state_getAlarms() {
+	return &g_pSysState->system;
+}
+
+void state_reset_sensor_alarm(int id) {
+	int t;
+
+	for (t=0; t<MAX_NUM_SENSORS; t++) {
+		g_pSysState->temp.state[t].status=0;
+	}
+}
+
 void state_alarm_on(char *alarm_msg) {
+	SYSTEM_STATUS *s = state_getAlarms();
 
 	strncpy(g_pSysState->alarm_message, alarm_msg, sizeof(g_pSysState->alarm_message));
 	lcd_turn_on();
@@ -65,11 +78,11 @@ void state_alarm_on(char *alarm_msg) {
 	lcd_printf(LINE2, " %s ", alarm_msg);
 
 	// We are already in alarm mode
-	if (g_pSysState->alarm== STATE_ON)
+	if (s->alarms.globalAlarm == STATE_ON)
 		return;
 
-	g_pSysState->alarm = STATE_ON;
-	g_pSysState->buzzer = STATE_ON;
+	s->alarms.globalAlarm = STATE_ON;
+	s->alarms.buzzer = STATE_ON;
 
 #ifdef _DEBUG
 	sms_send_message_number(LOCAL_TESTING_NUMBER, alarm_msg);
@@ -79,9 +92,10 @@ void state_alarm_on(char *alarm_msg) {
 
 // Everything is fine!
 void state_clear_alarm_state() {
+	SYSTEM_STATUS *s = state_getAlarms();
 
 	// We were not in alarm mode
-	if (g_pSysState->alarm==STATE_OFF)
+	if (s->alarms.globalAlarm==STATE_OFF)
 		return;
 
 #ifdef _DEBUG
@@ -89,7 +103,7 @@ void state_clear_alarm_state() {
 	sms_send_message_number(LOCAL_TESTING_NUMBER, g_pSysState->alarm_message);
 #endif
 
-	g_pSysState->buzzer = STATE_OFF;
+	s->alarms.buzzer = STATE_OFF;
 }
 
 /***********************************************************************************************************************/
@@ -156,8 +170,10 @@ void state_low_battery_alert() {
 }
 
 void state_battery_level(uint8_t battery_level) {
+	SYSTEM_STATUS *s = state_getAlarms();
+
 	g_pSysState->battery_level = battery_level;
-	if (battery_level<g_pDevCfg->stBattPowerAlertParam.battThreshold && g_pSysState->power == STATE_OFF) {
+	if (battery_level<g_pDevCfg->stBattPowerAlertParam.battThreshold && s->alarms.power == STATE_OFF) {
 		state_low_battery_alert();
 		thermal_low_battery_hibernate();
 	}
@@ -167,16 +183,22 @@ void state_battery_level(uint8_t battery_level) {
 /* POWER CHECKS */
 /***********************************************************************************************************************/
 
+uint8_t state_isBuzzerOn() {
+	SYSTEM_STATUS *s = state_getAlarms();
+	return s->alarms.buzzer;
+}
+
 // Power out, we store the time in which the power went down
 // called from the Interruption, careful
 
 void state_power_out() {
+	SYSTEM_STATUS *s = state_getAlarms();
 	//P4OUT |= BIT7; // BLUE LED 3 ON
 
-	if (g_pSysState->power == STATE_OFF)
+	if (s->alarms.power == STATE_OFF)
 		return;
 
-	g_pSysState->power = STATE_OFF;
+	s->alarms.power = STATE_OFF;
 	if (g_pSysState->time_powerOutage==0)
 		g_pSysState->time_powerOutage = rtc_get_second_tick();
 
@@ -184,12 +206,13 @@ void state_power_out() {
 
 // called from the Interruption, careful
 void state_power_on() {
+	SYSTEM_STATUS *s = state_getAlarms();
 	//P4OUT &= ~BIT7; // BLUE  LED 3 OFF
 
-	if (g_pSysState->power == STATE_ON)
+	if (s->alarms.power == STATE_ON)
 		return;
 
-	g_pSysState->power = STATE_ON;
+	s->alarms.power = STATE_ON;
 	g_pSysState->time_powerOutage = 0;
 }
 
@@ -207,22 +230,23 @@ void state_power_resume() {
 void state_check_power() {
 
 	static uint8_t last_state = STATE_ON;
+	SYSTEM_STATUS *s = state_getAlarms();
 
 	if (POWER_ON)
 		state_power_on();
 	else
 		state_power_out();
 
-	if (last_state!=g_pSysState->power) {
+	if (last_state!=s->alarms.power) {
 		if (POWER_ON)
 			state_power_resume();
 		else
 			state_power_disconnected();
 
-		last_state=g_pSysState->power;
+		last_state=s->alarms.power;
 	}
 
-	if (g_pSysState->power == STATE_ON)
+	if (s->alarms.power == STATE_ON)
 		return;
 
 	if (!g_pDevCfg->stBattPowerAlertParam.enablePowerAlert)

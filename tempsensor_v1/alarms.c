@@ -7,6 +7,8 @@
 
 #include "thermalcanyon.h"
 #include "sms.h"
+#include "globals.h"
+#include "temperature.h"
 
 #define SMS_ALERT
 
@@ -26,16 +28,31 @@ void alarm_sd_card_problem(FRESULT fr)
 /* Monitor alarm */
 /*************************************************************************************************************/
 
-void alarm_test_sensor(int sensor) {
-	float tmp;
-	float threshold;
-
-	tmp
-	= g_pDevCfg->stTempAlertParams[sensor].threshCold;
+/*************************************************************************************************************/
+void alarm_sensor_too_low(uint8_t sensorId) {
+	char msg[SMS_MAX_SIZE];
+	strcpy(msg, "Alert Sensor ");
+	strcat(msg, SensorName[sensorId]);
+	strcat(msg,": Temp too LOW for ");
+	strcat(msg,itoa_pad(g_pDevCfg->stTempAlertParams[sensorId].minCold));
+	strcat(msg," minutes. Current Temp is ");
+	strcat(msg,temperature_getString(sensorId));
+	strcat(msg,"degC. Take ACTION immediately.");
+	sms_send_message(msg);
 }
 
+void alarm_test_sensor(int sensor) {
+	float cold = g_pDevCfg->stTempAlertParams[sensor].threshCold;
+	float hot = g_pDevCfg->stTempAlertParams[sensor].threshHot;
+}
 
 void alarm_monitor() {
+	int8_t c;
+
+	for (c = 0; c < MAX_NUM_SENSORS; c++) {
+		alarm_test_sensor(c);
+	}
+
 /*
 	int8_t iCnt = 0;
 	char msg[SMS_MAX_SIZE];
@@ -83,15 +100,7 @@ void alarm_monitor() {
 					}
 #ifdef SMS_ALERT
 					//send sms if not send already
-						strcpy(msg, "Alert Sensor ");
-						strcat(msg, SensorName[iCnt]);
-						strcat(msg,": Temp too LOW for ");
-						strcat(msg,itoa_pad(g_pDevCfg->stTempAlertParams[iCnt].minCold));
-						strcat(msg," minutes. Current Temp is ");
-						strcat(msg,Temperature[iCnt]);
-						//strcat(msg,"�C. Take ACTION immediately.");	//superscript causes ERROR on sending SMS
-						strcat(msg,"degC. Take ACTION immediately.");
-						sms_send_message(msg);
+
 #endif
 
 					//initialize confirmation counter

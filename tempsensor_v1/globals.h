@@ -26,7 +26,6 @@ extern uint32_t g_iAlarmStatus;
 extern volatile uint8_t g_iDisplayId;
 
 extern const char SensorName[MAX_NUM_SENSORS][NAME_LEN];
-extern const uint8_t SensorDisplayName[MAX_NUM_SENSORS];
 extern char ATresponse[ATRESP_MAX_LEN];
 extern struct tm g_tmCurrTime;
 

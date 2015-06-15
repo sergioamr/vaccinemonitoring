@@ -36,7 +36,11 @@
 // Thershold when the alarm will sound if there is a power cut (seconds)
 #define THRESHOLD_TIME_POWER_OUT_ALARM 60*60*1
 
+#ifdef _DEBUG
+#define NUM_SAMPLES_CAPTURE 2
+#else
 #define NUM_SAMPLES_CAPTURE 10
+#endif
 
 /**************************************************************************************************************************/
 /* END FACTORY CONFIGURATION 																							  */
@@ -225,6 +229,21 @@ __attribute__((__packed__)) {
 	uint8_t failsGSM;
 } SIM_STATE;
 
+typedef union
+{
+	struct {
+		unsigned char lowAlarm : 1;
+		unsigned char highAlarm : 1;
+		unsigned char alarm : 1;
+		unsigned char bit4 : 1;
+		unsigned char bit5 : 1;
+		unsigned char bit6 : 1;
+		unsigned char bit7 : 1;
+		unsigned char bit8 : 1;
+	} alarms;
+  unsigned char status;
+} SENSOR_STATUS;
+
 typedef struct {
 	char name[2];
 	volatile int32_t iADC;
@@ -237,27 +256,35 @@ typedef struct {
 	uint16_t iCapturing;
 	uint16_t iSamplesRead;
 	uint16_t iSamplesRequired;
+	SENSOR_STATUS state[MAX_NUM_SENSORS];
 	TEMPERATURE_SENSOR sensors[MAX_NUM_SENSORS];
 } TEMPERATURE;
+
+typedef union
+{
+	struct {
+		unsigned char globalAlarm : 1;
+		unsigned char SD_cardFailure : 1;
+		unsigned char buzzer : 1;
+		unsigned char power : 1;
+		unsigned char bit5 : 1;
+		unsigned char battery : 1;
+		unsigned char bit7 : 1;
+		unsigned char bit8 : 1;
+	} alarms;
+  unsigned char status;
+} SYSTEM_STATUS;
 
 typedef struct
 __attribute__((__packed__)) {
 	char alarm_message[32];
-	uint8_t alarm; // We are in alarm mode!
-
-	uint8_t failsSD_card;
-
 	uint8_t battery_level;
-	uint8_t buzzer;
-
-	uint8_t power;
 	time_t time_powerOutage;
-
+	uint8_t buzzerFeedback;
 	SIM_STATE simState[MAX_SMS_NUM];
 
-	uint8_t buzzerFeedback;
-
 	TEMPERATURE temp;
+	SYSTEM_STATUS system;
 } SYSTEM_STATE;
 
 typedef struct {

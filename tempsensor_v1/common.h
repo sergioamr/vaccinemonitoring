@@ -32,24 +32,6 @@ extern "C"
 #define MIN 14
 
 /*
- *  Alarm monitoring
- */
-
-#define TEMP_ALERT_OFF	 	 0
-#define LOW_TEMP_ALARM_ON	 1
-#define HIGH_TEMP_ALARM_ON	 2
-#define TEMP_ALERT_CNF		 3
-
-#define BATT_ALERT_OFF		 0
-#define POWER_ALERT_OFF		 0
-#define BATT_ALARM_ON		 1
-#define POWER_ALARM_ON		 1
-
-#define TEMP_ALARM_CLR(sid)  g_iAlarmStatus &= ~(3 << (sid << 1))
-#define TEMP_ALARM_SET(sid,state) g_iAlarmStatus |= (state << (sid << 1))
-#define TEMP_ALARM_GET(sid) ((g_iAlarmStatus & ((0x3) << (sid << 1)))) >> (sid << 1)
-
-/*
  * Communication
  */
 

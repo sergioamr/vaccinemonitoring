@@ -8,6 +8,7 @@
 #include "rtc.h"
 #include "driverlib.h"
 #include "stdlib.h"
+#include "main_system.h"
 
 Calendar g_rtcCalendarTime;
 

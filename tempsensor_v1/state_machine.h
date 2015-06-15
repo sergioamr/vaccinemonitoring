@@ -14,9 +14,13 @@ extern SYSTEM_STATE *g_pSysState;
 #define STATE_OFF 0
 #define STATE_ON 1
 
+SYSTEM_STATUS *state_getAlarms();
+
+void state_reset_sensor_alarm(int c);
 void state_init();
 void state_power_on();
 void state_power_out();
+uint8_t state_isBuzzerOn();
 
 void state_network_fail(uint8_t sim, uint16_t error);
 void state_network_success(uint8_t sim);

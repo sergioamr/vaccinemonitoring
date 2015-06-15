@@ -15,7 +15,7 @@ extern void buzzer_feedback();
 void thermal_handle_system_button();
 // Interrupt services
 
-uint8_t switch_check_service_pressed() {
+uint8_t inline switch_check_service_pressed() {
 	return !(P3IN&BIT5);
 }
 
@@ -46,6 +46,9 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 #error Compiler not supported!
 #endif
 {
+	if (!system_isRunning())
+		return;
+
 	switch (__even_in_range(P2IV, P2IV_P2IFG7)) {
 	case P2IV_NONE:
 		break;
@@ -85,10 +88,13 @@ void __attribute__ ((interrupt(PORT3_VECTOR))) Port_3 (void)
 #error Compiler not supported!
 #endif
 {
+
 	switch (__even_in_range(P3IV, P3IV_P3IFG5)) {
-	case P4IV_NONE:
+	case P3IV_NONE:
 		break;
 	case P3IV_P3IFG5:
+		if (!system_isRunning())
+			return;
 		g_iSystemSetup ++;
 		thermal_handle_system_button();
 		event_LCD_turn_on();
@@ -120,6 +126,9 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
 	case P4IV_P4IFG0:
 		break;
 	case P4IV_P4IFG4:
+		if (!system_isRunning())
+			return;
+
 		if (POWER_ON)
 			state_power_on();
 		else
@@ -134,6 +143,8 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
     	}
 		break;
 	case P4IV_P4IFG1:
+		if (!system_isRunning())
+			return;
 
 #ifdef _DEBUG
 		g_iDebug = 0;

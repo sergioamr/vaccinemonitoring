@@ -106,7 +106,7 @@ void sleep_or_alarm() {
 		g_pSysState->buzzerFeedback--;
 		return;
 	}
-	if (g_iStatus & BUZZER_ON || g_pSysState->buzzer) {
+	if (g_iStatus & BUZZER_ON || state_isBuzzerOn()) {
 #ifndef BUZZER_DISABLED
 		thermal_buzzer_sound();
 #endif

@@ -178,7 +178,7 @@ void lcd_show() {
 
 		strcat(lcdBuffer, itoa_pad(batt_getlevel()));
 		strcat(lcdBuffer, "% ");
-		if (TEMP_ALARM_GET(MAX_NUM_SENSORS) == TEMP_ALERT_CNF) {
+		if (state_getAlarms()->alarms.battery) {
 			strcat(lcdBuffer, "BATT ALERT");
 		} else if (P4IN & BIT4)	//power not plugged
 		{
@@ -249,7 +249,7 @@ void lcd_show() {
 
 		digital_amp_to_temp_string(iCnt);
 
-		if (TEMP_ALARM_GET(iCnt) == TEMP_ALERT_CNF) {
+		if (g_pSysState->temp.state[iCnt].status!=0) {
 			strcat(lcdBuffer, "ALERT ");
 			strcat(lcdBuffer, SensorName[iCnt]);
 			strcat(lcdBuffer, " ");

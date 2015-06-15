@@ -15,6 +15,7 @@
 #include "hardware_buttons.h"
 #include "time.h"
 #include "events.h"
+#include "state_machine.h"
 
 // Setup mode in which we are at the moment
 // Triggered by the Switch 3 button
@@ -325,7 +326,7 @@ int config_parse_configuration(char *msg) {
 		//reset alarm state and counters
 		for (iCnt = 0; iCnt < MAX_NUM_SENSORS; iCnt++) {
 			//reset the alarm
-			TEMP_ALARM_CLR(iCnt);
+			state_reset_sensor_alarm(iCnt);
 			//initialize confirmation counter
 			g_iAlarmCnfCnt[iCnt] = 0;
 		}
