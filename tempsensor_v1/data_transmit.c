@@ -45,7 +45,7 @@ void data_send_temperatures_sms() {
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
 void process_batch() {
 	int lineIndex = 0;
-	uint8_t = triggerTimestamp = 0;
+	uint8_t triggerTimestamp = 0;
 	FILINFO fili;
 	DIR dir;
 	FIL filr;
@@ -102,6 +102,7 @@ void process_batch() {
 					strcat(ATresponse, line);
 				} else {
 					triggerTimestamp = 1;
+					memset(ATresponse, 0, sizeof(ATresponse));
 					// Done - Send!
 					// break; // Found next time stamp - Move to next batch now
 				}
