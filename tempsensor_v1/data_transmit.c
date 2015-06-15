@@ -45,6 +45,7 @@ void data_send_temperatures_sms() {
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
 void process_batch() {
 	int lineIndex = 0;
+	uint8_t = triggerTimestamp = 0;
 	FILINFO fili;
 	DIR dir;
 	FIL filr;
@@ -79,12 +80,13 @@ void process_batch() {
 				}
 				lineIndex++;
 			}
+			triggerTimestamp = 1;
 		}
 
 		//strcpy(line, f_gets(line, strlen(line), &filr));
 		while(f_gets(line, lineSize, &filr) != 0) {
-			//dateString = strstr(line, "$TS");
-			if(lineIndex == 0 || lineIndex == g_pSysCfg->lastLineRead) {
+			dateString = strstr(line, "$TS");
+			if(lineIndex == 0 || triggerTimestamp) {
 				// What if this line isn't a date? -> Find previous date or next?
 				parse_time_from_line(&firstDate, line);
 				dateString = get_date_string(&firstDate, delim1, delim2, 0);
@@ -92,14 +94,16 @@ void process_batch() {
 						g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa",
 						defSID, dateString,
 						itoa_nopadding(g_pDevCfg->stIntervalParam.loggingInterval));
+				triggerTimestamp = 0;
 			} else {
 				// Stream data! When it's streamed we should always be able to send
 				// a whole block of data at a time (unless an error occurs)
 				if(dateString == NULL) {
 					strcat(ATresponse, line);
 				} else {
+					triggerTimestamp = 1;
 					// Done - Send!
-					break; // Found next time stamp - Move to next batch now
+					// break; // Found next time stamp - Move to next batch now
 				}
 			}
 
@@ -111,12 +115,15 @@ void process_batch() {
 		// the TXbuffer is full.
 		// If it was the last line delete the file & set line number to 0,
 		// otherwise save the line number (when TX buffer was full).
-		fr = f_close(&filr);
-		if (fr == FR_OK) {
+		// TODO preoperly check all fr returns
+		if (f_close(&filr) == FR_OK) {
 			fr = f_unlink(path); // Delete the file
 			g_pSysCfg->lastLineRead = 0;
 		}
-		fr = f_findnext(&dir, &fili);
+
+		if (f_findnext(&dir, &fili) != FR_OK) {
+			break;
+		}
 	}
 
 	lcd_printl(LINEC, "Transmit");
