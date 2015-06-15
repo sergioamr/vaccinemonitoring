@@ -119,7 +119,7 @@ void sleep_or_alarm() {
 
 void thermal_canyon_loop(void) {
 	time_t currentTime = 0;
-	uint8_t iDisplayId = 0;
+	//uint8_t iDisplayId = 0;
 
 	iUploadTimeElapsed = iMinuteTick;		//initialize POST minute counter
 	iSampleTimeElapsed = iMinuteTick;
@@ -145,11 +145,6 @@ void thermal_canyon_loop(void) {
 		// Wait here behind the interruption to check for a change on display.
 		// If a hardware button is pressed it will resume CPU
 		sleep_or_alarm();
-
-		if (iDisplayId != g_iDisplayId) {
-			iDisplayId = g_iDisplayId;
-			lcd_show();
-		}
 
 		__no_operation();                       // SET BREAKPOINT HERE
 	}

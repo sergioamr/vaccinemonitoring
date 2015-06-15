@@ -64,6 +64,7 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 		g_iSystemSetup = 0;
 		event_LCD_turn_on();
 		buzzer_feedback();
+		event_force_event_by_id(EVT_DISPLAY, 0);
     	// Resume execution if the device is in deep sleep mode
     	if (event_wakeup_main()) {
     		__bic_SR_register_on_exit(LPM0_bits); // Resume execution
@@ -92,6 +93,7 @@ void __attribute__ ((interrupt(PORT3_VECTOR))) Port_3 (void)
 		thermal_handle_system_button();
 		event_LCD_turn_on();
 		buzzer_feedback();
+		event_force_event_by_id(EVT_DISPLAY, 0);
     	// Resume execution if the device is in deep sleep mode
     	if (event_wakeup_main()) {
     		__bic_SR_register_on_exit(LPM0_bits); // Resume execution
@@ -125,6 +127,7 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
 
 		buzzer_feedback();
 		event_force_event_by_id(EVT_ALARMS_CHECK, 0);
+		event_force_event_by_id(EVT_DISPLAY, 0);
     	// Resume execution if the device is in deep sleep mode
     	if (event_wakeup_main()) {
     		__bic_SR_register_on_exit(LPM0_bits); // Resume execution
@@ -140,6 +143,8 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
 		g_iDisplayId %= MAX_DISPLAY_ID;
 		event_LCD_turn_on();
 		buzzer_feedback();
+		event_force_event_by_id(EVT_DISPLAY, 0);
+
     	// Resume execution if the device is in deep sleep mode
     	if (event_wakeup_main()) {
     		__bic_SR_register_on_exit(LPM0_bits); // Resume execution

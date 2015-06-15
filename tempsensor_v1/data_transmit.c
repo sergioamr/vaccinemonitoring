@@ -49,7 +49,7 @@ void process_batch() {
 	DIR dir;
 	FIL filr;
 	FRESULT fr;
-	char line[64];
+	char line[80];
 	int lineSize = sizeof(line)/sizeof(char);
 	char* dateString = NULL;
 	char* defSID = NULL;
@@ -63,9 +63,9 @@ void process_batch() {
 	lcd_printl(LINE2, "Transmitting...");
 
 	// Cycle through all files using f_findfirst, f_findnext.
-	fr = f_findfirst(&dir, &fili, FOLDER_TEXT, "*.TXT");
+	fr = f_findfirst(&dir, &fili, FOLDER_TEXT, "*." EXTENSION_TEXT);
 	while(fr == FR_OK) {
-		strcpy(line, strcat("/txt/", fili.fname));
+		sprintf(line, "%s/%s", FOLDER_TEXT, fili.fname);
 		fr = f_open(&filr, line, FA_READ | FA_OPEN_ALWAYS);
 		// If we must carry on where we left off cycle through the lines
 		// until we get to where we left off

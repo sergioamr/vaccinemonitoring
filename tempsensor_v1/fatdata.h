@@ -23,15 +23,15 @@ FRESULT log_append_(char *text);
 FRESULT log_appendf(const char *_format, ...);
 FRESULT log_sample_web_format(UINT* tbw);
 
-#define FOLDER_LOG  "/log"
+#define FOLDER_LOG  "/LOG"
 
 // Web format data
-#define EXTENSION_DATA "csv"
-#define FOLDER_DATA "/data"
+#define EXTENSION_DATA "CSV"
+#define FOLDER_DATA "/DATA"
 
 // Old data transfer used for parsing and streaming
-#define EXTENSION_TEXT "txt"
-#define FOLDER_TEXT "/txt"
+#define EXTENSION_TEXT "TXT"
+#define FOLDER_TEXT "/TXT"
 
 #define LOG_FILE_PATH FOLDER_LOG "/system.log"
 #define LOG_FILE_UNKNOWN FOLDER_DATA "/unknown.csv"

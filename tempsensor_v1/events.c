@@ -358,7 +358,8 @@ void event_sample_temperature(void *event, time_t currentTime) {
 		// push the event forward to allow completion
 		event_force_event_by_id(EVT_SAMPLE_TEMP, 1);
 	}
-	// event_force_event_by_id(EVT_DISPLAY, 0);
+
+	event_force_event_by_id(EVT_DISPLAY, 0);
 }
 
 void event_network_check(void *event, time_t currentTime) {
@@ -443,7 +444,7 @@ void events_init() {
 	NULL);
 #endif
 	events_register(EVT_BATTERY_CHECK, "BATTERY", 0, &events_check_battery,
-			MINUTES_(5), NULL);
+			MINUTES_(2)+SECONDS_(30), NULL);
 
 	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12),
 			NULL);
