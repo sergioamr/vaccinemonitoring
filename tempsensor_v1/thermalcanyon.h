@@ -39,6 +39,7 @@
 #include "events.h"
 #include "time.h"
 #include "state_machine.h"
+#include "main_system.h"
 
 //------------- FUNCTIONS MOVED FROM MAIN - WAITING CLEANUP -------------------
 

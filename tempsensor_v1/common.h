@@ -78,7 +78,8 @@ extern "C"
  */
 
 //len constants
-#define IMEI_MAX_LEN		 15
+#define IMEI_MAX_LEN		 16
+#define IMEI_MIN_LEN		 15
 #define GW_MAX_LEN			 15
 #define APN_MAX_LEN     	 20
 #define ERROR_MAX_LEN   	 17
@@ -88,7 +89,7 @@ extern "C"
 #define MAX_SMS_NUM			 4
 #define SMS_NUM_LEN			 12
 #define SAMPLE_LEN			 512
-#define SMS_ENCODED_LEN		 154	//ZZZZ SMS_ENCODED_LEN + ENCODED_TEMP_LEN should less than aggregate_var size - RX buff size
+
 #define ENCODED_TEMP_LEN	 3
 #define MSG_RESPONSE_LEN	 100
 #define PHONE_NUM_LEN        14

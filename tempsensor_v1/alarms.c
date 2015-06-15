@@ -6,6 +6,9 @@
  */
 
 #include "thermalcanyon.h"
+#include "sms.h"
+
+#define SMS_ALERT
 
 /*************************************************************************************************************/
 /* General events that will generate responses from the system */
@@ -25,6 +28,7 @@ void alarm_sd_card_problem(FRESULT fr)
 
 void alarm_monitor() {
 	int8_t iCnt = 0;
+	char msg[SMS_MAX_SIZE];
 
 	//iterate through sensors
 	for (iCnt = 0; iCnt < MAX_NUM_SENSORS; iCnt++) {
@@ -69,21 +73,15 @@ void alarm_monitor() {
 					}
 #ifdef SMS_ALERT
 					//send sms if not send already
-					if(!(g_iStatus & SMSED_LOW_TEMP))
-					{
-						memset(SampleData,0,SMS_ENCODED_LEN);
-						strcat(SampleData, "Alert Sensor ");
-						strcat(SampleData, SensorName[iCnt]);
-						strcat(SampleData,": Temp too LOW for ");
-						strcat(SampleData,itoa_pad(g_pDevCfg->stTempAlertParams[iCnt].mincold));
-						strcat(SampleData," minutes. Current Temp is ");
-						strcat(SampleData,Temperature[iCnt]);
-						//strcat(SampleData,"�C. Take ACTION immediately.");	//superscript causes ERROR on sending SMS
-						strcat(SampleData,"degC. Take ACTION immediately.");
-						sendmsg(SampleData);
-
-						g_iStatus |= SMSED_LOW_TEMP;
-					}
+						strcpy(msg, "Alert Sensor ");
+						strcat(msg, SensorName[iCnt]);
+						strcat(msg,": Temp too LOW for ");
+						strcat(msg,itoa_pad(g_pDevCfg->stTempAlertParams[iCnt].minCold));
+						strcat(msg," minutes. Current Temp is ");
+						strcat(msg,Temperature[iCnt]);
+						//strcat(msg,"�C. Take ACTION immediately.");	//superscript causes ERROR on sending SMS
+						strcat(msg,"degC. Take ACTION immediately.");
+						sms_send_message(msg);
 #endif
 
 					//initialize confirmation counter
@@ -118,22 +116,15 @@ void alarm_monitor() {
 						g_iStatus |= BUZZER_ON;
 					}
 #ifdef SMS_ALERT
-					//send sms if not send already
-					if(!(g_iStatus & SMSED_HIGH_TEMP))
-					{
-						memset(SampleData,0,SMS_ENCODED_LEN);
-						strcat(SampleData, "Alert Sensor ");
-						strcat(SampleData, SensorName[iCnt]);
-						strcat(SampleData,": Temp too HIGH for ");
-						strcat(SampleData,itoa_pad(g_pDevCfg->stTempAlertParams[iCnt].minHot));
-						strcat(SampleData," minutes. Current Temp is ");
-						strcat(SampleData,Temperature[iCnt]);
-						//strcat(SampleData,"�C. Take ACTION immediately."); //superscript causes ERROR on sending SMS
-						strcat(SampleData,"degC. Take ACTION immediately.");
-						sendmsg(SampleData);
-
-						g_iStatus |= SMSED_HIGH_TEMP;
-					}
+					strcpy(msg, "Alert Sensor ");
+					strcat(msg, SensorName[iCnt]);
+					strcat(msg,": Temp too HIGH for ");
+					strcat(msg,itoa_pad(g_pDevCfg->stTempAlertParams[iCnt].minHot));
+					strcat(msg," minutes. Current Temp is ");
+					strcat(msg,Temperature[iCnt]);
+					//strcat(msg,"�C. Take ACTION immediately."); //superscript causes ERROR on sending SMS
+					strcat(msg,"degC. Take ACTION immediately.");
+					sms_send_message(msg);
 #endif
 					//initialize confirmation counter
 					g_iAlarmCnfCnt[iCnt] = 0;
@@ -175,11 +166,10 @@ void alarm_monitor() {
 				}
 #ifdef SMS_ALERT
 				//send sms LOW Battery: ColdTrace has now 15% battery left. Charge your device immediately.
-				memset(SampleData,0,SMS_ENCODED_LEN);
-				strcat(SampleData, "LOW Battery: ColdTrace has now ");
-				strcat(SampleData,itoa_pad(g_iBatteryLevel));
-				strcat(SampleData, "battery left. Charge your device immediately.");
-				sendmsg(SampleData);
+				strcpy(msg, "LOW Battery: ColdTrace has now ");
+				strcat(msg,itoa_pad(batt_getlevel()));
+				strcat(msg, "battery left. Charge your device immediately.");
+				sms_send_message(msg);
 #endif
 
 				//initialize confirmation counter
@@ -217,9 +207,8 @@ void alarm_monitor() {
 					}
 #ifdef SMS_ALERT
 					//send sms Power Outage: ATTENTION! Power is out in your clinic. Monitor the fridge temperature closely.
-					memset(SampleData,0,SMS_ENCODED_LEN);
-					strcat(SampleData, "Power Outage: ATTENTION! Power is out in your clinic. Monitor the fridge temperature closely.");
-					sendmsg(SampleData);
+					strcpy(msg, "Power Outage: ATTENTION! Power is out in your clinic. Monitor the fridge temperature closely.");
+					sms_send_message(msg);
 #endif
 					//initialize confirmation counter
 					g_iAlarmCnfCnt[iCnt] = 0;

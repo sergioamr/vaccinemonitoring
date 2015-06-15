@@ -133,7 +133,6 @@ void thermal_canyon_loop(void) {
 	lcd_show();
 
 	while (1) {
-		rtc_dead_mans_switch();
 		currentTime = rtc_update_time();
 #ifdef _DEBUG
 		events_debug(rtc_get_second_tick());

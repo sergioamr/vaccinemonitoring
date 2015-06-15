@@ -8,8 +8,8 @@
 #ifndef TEMPSENSOR_V1_UART_H_
 #define TEMPSENSOR_V1_UART_H_
 
-#define TX_LEN   			640
-#define RX_LEN   			1024
+#define TX_LEN   			256
+#define RX_LEN   			512
 #define TOKEN_LEN			3
 
 #define ATCMD_HTTPSND		1
@@ -50,7 +50,7 @@ extern "C"
 extern volatile int RXTailIdx;
 extern volatile int RXHeadIdx;
 extern size_t iRxLen;
-extern volatile char RXBuffer[RX_LEN+1];
+extern volatile char RXBuffer[RX_LEN];
 
 void uart_setOKMode();
 

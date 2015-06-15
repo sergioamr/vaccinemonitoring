@@ -17,29 +17,23 @@
 
 // 11,20150303:082208,interval,sensorid,DATADATADATAT,sensorid,DATADATADATA,sensorid,dATADATADA,sensorID,DATADATADATADATAT, sensorID,DATADATADATADATAT,batt level,battplugged.
 
-char *getSensorTemp(int sensorID) {
-	static char sensorData[64];
-
-	return sensorData;
-}
-
 void data_send_temperatures_sms() {
-	char data[180];
+	char msg[SMS_MAX_SIZE];
 	int t=0;
 
 	rtc_getlocal(&g_tmCurrTime);
 
-	strcpy(data, SMS_DATA_MSG_TYPE);
-	strcat(data, get_simplified_date_string(&g_tmCurrTime));
+	strcpy(msg, SMS_DATA_MSG_TYPE);
+	strcat(msg, get_simplified_date_string(&g_tmCurrTime));
 	for (t=0; t<MAX_NUM_SENSORS; t++) {
-		strcat(data, getSensorTemp(t));
+		strcat(msg, "DATADATA");
 	}
 
-	strcat(data, ",");
-	strcat(data, itoa_nopadding(batt_getlevel()));
-	strcat(data, ",");
-	strcat(data, itoa_nopadding(batt_isPlugged()));
-	sms_send_message(data);
+	strcat(msg, ",");
+	strcat(msg, itoa_nopadding(batt_getlevel()));
+	strcat(msg, ",");
+	strcat(msg, itoa_nopadding(batt_isPlugged()));
+	sms_send_message(msg);
 }
 
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...

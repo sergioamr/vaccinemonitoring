@@ -401,8 +401,8 @@ int modem_swap_SIM() {
 	}
 
 	lcd_printf(LINEC, "Activate SIM: %d", g_pDevCfg->cfgSIM_slot + 1);
-	modem_init();
 	modem_getExtraInfo();
+	modem_init();
 
 	// Wait for the modem to be ready to send messages
 #ifndef _DEBUG
@@ -485,32 +485,50 @@ void modem_getOwnNumber() {
 	}
 }
 
+uint8_t validateIMEI(char *IMEI) {
+	int t;
+	uint8_t len = strlen(IMEI);
+
+	for (t=0; t<len; t++) {
+		if (IMEI[t]=='\r' || IMEI[t]=='\n') {
+			IMEI[t]=0;
+			break;
+		}
+		if (IMEI[t]<'0' || IMEI[t]>'9')
+			return 0;
+	}
+
+	len = strlen(IMEI);
+	if (len<IMEI_MIN_LEN)
+		return 0;
+
+	return 1;
+}
+
 void modem_getIMEI() {
 	// added for IMEI number//
-	char IMEI_OK = false;
+	char IMEI[IMEI_MAX_LEN+1];
+	char *token = NULL;
 	config_incLastCmd();
 
 	uart_tx("AT+CGSN\r\n");
-	if (uart_rx_cleanBuf(ATCMD_CGSN, ATresponse,
-			sizeof(ATresponse))==UART_SUCCESS) {
+	memset(IMEI, 0, sizeof(IMEI));
 
-		if (memcmp(ATresponse, "INVALID", strlen("INVALID"))) {
-			//copy valid IMEI to FRAM
-			IMEI_OK = true;
-		} else {
-			lcd_printl(LINEE, "IMEI Error");
-		}
-	}
-
-	if (!IMEI_OK)
+	token = strstr((const char *) RXBuffer, "OK");
+	if (token == NULL)
 		return;
+
+	strncpy(IMEI, (const char *) &RXBuffer[RXHeadIdx+2], IMEI_MAX_LEN);
+	if (!validateIMEI(IMEI)) {
+		return;
+	}
 
 	if (check_address_empty(g_pDevCfg->cfgIMEI[0])) {
 		strcpy(g_pDevCfg->cfgIMEI, ATresponse);
 	}
 
 	// Lets check if we have the right IMEI from the modem, otherwise we flash it again into config.
-	if (memcmp(ATresponse, g_pDevCfg->cfgIMEI, 15) != 0) {
+	if (memcmp(ATresponse, g_pDevCfg->cfgIMEI, IMEI_MAX_LEN) != 0) {
 		strcpy(g_pDevCfg->cfgIMEI, ATresponse);
 	}
 

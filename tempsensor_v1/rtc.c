@@ -35,14 +35,15 @@ uint32_t rtc_get_minute_tick() {
 
 extern struct tm g_tmCurrTime;
 
-time_t rtc_update_time() {
-	rtc_getlocal(&g_tmCurrTime);
-	return mktime(&g_tmCurrTime);
-}
-
 #define MINUTES_BEFORE_REBOOT 10
 void rtc_dead_mans_switch() {
 	iDeadCountdown = MINUTES_BEFORE_REBOOT;
+}
+
+time_t rtc_update_time() {
+	rtc_dead_mans_switch();
+	rtc_getlocal(&g_tmCurrTime);
+	return mktime(&g_tmCurrTime);
 }
 
 void rtc_init(struct tm* pTime) {

@@ -28,8 +28,8 @@ const char AT_CMS_ERROR[]= "+CMS ERROR:"; // Sim error
 const char AT_ERROR[]= " ERROR:";
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
-volatile char RXBuffer[RX_LEN + 1];
-char TXBuffer[TX_LEN + 1] = "";
+volatile char RXBuffer[RX_LEN];
+char TXBuffer[TX_LEN] = "";
 #pragma SET_DATA_SECTION()
 
 volatile static char TransmissionEnd = 0;
@@ -53,13 +53,9 @@ size_t iRxLen = RX_LEN;
 #define INDEX_7 7
 #define INDEX_9 9
 #define INDEX_12 12
-#define MIN_OFFSET  0x30
-#define MAX_OFFSET 0x39
 
 // Carriage return
 #define ATCR 10
-
-#define IMEI_MAX_LEN		 15
 
 //local functions
 extern void delay(int time);
@@ -469,25 +465,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 				}
 			}
 			break;
-
-		case ATCMD_CGSN:
-			pToken1 = strstr((const char *) RXBuffer, "OK");
-			if (pToken1 != NULL) {
-				if ((RXBuffer[INDEX_2] >= MIN_OFFSET) && (RXBuffer[INDEX_2] <= MAX_OFFSET)
-						&& (RXBuffer[INDEX_5] >= MIN_OFFSET)
-						&& (RXBuffer[INDEX_5] <= MAX_OFFSET)
-						&& (RXBuffer[INDEX_7] >= MIN_OFFSET)
-						&& (RXBuffer[INDEX_7] <= MAX_OFFSET)
-						&& (RXBuffer[INDEX_9] >= MIN_OFFSET)
-						&& (RXBuffer[INDEX_9] <= MAX_OFFSET)
-						&& (RXBuffer[INDEX_12] >= MIN_OFFSET)
-						&& (RXBuffer[INDEX_12] <= MAX_OFFSET)) {
-					strncpy(pResponse, (const char *) &RXBuffer[2], IMEI_MAX_LEN);
-				} else {
-					strcpy(pResponse, "INVALID IMEI");
-				}
-				return UART_SUCCESS;
-			}						//	break;
 
 		case ATCMD_HTTPSND:
 			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ">>>");
