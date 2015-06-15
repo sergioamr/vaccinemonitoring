@@ -229,13 +229,15 @@ __attribute__((__packed__)) {
 	uint8_t failsGSM;
 } SIM_STATE;
 
+#define STATUS_NO_ALARM 0
+
 typedef union
 {
 	struct {
-		unsigned char lowAlarm : 1;
-		unsigned char highAlarm : 1;
-		unsigned char alarm : 1;
-		unsigned char bit4 : 1;
+		unsigned char alarm : 1;	   // Alarm is on
+		unsigned char lowAlarm : 1;    // Temperature below minimum
+		unsigned char highAlarm : 1;   // Temperature above maximum
+		unsigned char disconnected : 1;// Sensor not connected
 		unsigned char bit5 : 1;
 		unsigned char bit6 : 1;
 		unsigned char bit7 : 1;
@@ -256,6 +258,8 @@ typedef struct {
 	uint16_t iCapturing;
 	uint16_t iSamplesRead;
 	uint16_t iSamplesRequired;
+
+	time_t alarm_time;	// When was the alarm triggered
 	SENSOR_STATUS state[MAX_NUM_SENSORS];
 	TEMPERATURE_SENSOR sensors[MAX_NUM_SENSORS];
 } TEMPERATURE;

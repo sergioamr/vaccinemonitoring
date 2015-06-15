@@ -16,6 +16,7 @@ extern SYSTEM_STATE *g_pSysState;
 
 SYSTEM_STATUS *state_getAlarms();
 
+void state_alarm_on(char *alarm_msg) ;
 void state_reset_sensor_alarm(int c);
 void state_init();
 void state_power_on();
