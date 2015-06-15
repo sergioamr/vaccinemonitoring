@@ -401,8 +401,8 @@ int modem_swap_SIM() {
 	}
 
 	lcd_printf(LINEC, "Activate SIM: %d", g_pDevCfg->cfgSIM_slot + 1);
-	modem_getExtraInfo();
 	modem_init();
+	modem_getExtraInfo();
 
 	// Wait for the modem to be ready to send messages
 #ifndef _DEBUG
