@@ -23,7 +23,6 @@
 
 const char SensorName[MAX_NUM_SENSORS][NAME_LEN] = { "A", "B", "C", "D", "E" };
 const uint8_t SensorDisplayName[MAX_NUM_SENSORS] = { 0xA, 0xB, 0xC, 0xD, 0xE };
-volatile int32_t ADCvar[MAX_NUM_SENSORS];
 
 /*****************************************************************************************************/
 /* Variables to revisit */

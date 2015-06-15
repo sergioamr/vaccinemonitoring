@@ -36,6 +36,8 @@
 // Thershold when the alarm will sound if there is a power cut (seconds)
 #define THRESHOLD_TIME_POWER_OUT_ALARM 60*60*1
 
+#define NUM_SAMPLES_CAPTURE 10
+
 /**************************************************************************************************************************/
 /* END FACTORY CONFIGURATION 																							  */
 /**************************************************************************************************************************/
@@ -122,17 +124,6 @@ EXTERN int8_t g_iSystemSetup;
 #define LCD_LINE_LEN			16
 #define DEF_IMEI  "IMEI_UNKNOWN"
 
-//INFO memory segment address
-//#define INFOA_ADDR      		0x1980
-//#define INFOB_ADDR      		0x1900
-
-EXTERN int g_iSamplePeriod;
-EXTERN int g_iUploadPeriod;
-EXTERN int8_t g_iAlarmLowTempPeriod;
-EXTERN int8_t g_iAlarmHighTempPeriod;
-EXTERN int8_t g_iAlarmPowerPeriod;
-EXTERN int8_t g_iAlarmBatteryPeriod;
-
 // Used to store the sensors data
 #define TEMP_DATA_LEN		5
 
@@ -204,6 +195,7 @@ __attribute__((__packed__)) {
 
 	SIM_CARD_CONFIG SIM[NUM_SIM_CARDS];
 	struct tm lastSystemTime;
+
 } CONFIG_DEVICE;
 
 typedef struct
@@ -233,6 +225,21 @@ __attribute__((__packed__)) {
 	uint8_t failsGSM;
 } SIM_STATE;
 
+typedef struct {
+	char name[2];
+	volatile int32_t iADC;
+	float fTemperature;
+	char temperature[TEMP_DATA_LEN + 1];
+} TEMPERATURE_SENSOR;
+
+typedef struct {
+	// Raw voltage values
+	uint16_t iCapturing;
+	uint16_t iSamplesRead;
+	uint16_t iSamplesRequired;
+	TEMPERATURE_SENSOR sensors[MAX_NUM_SENSORS];
+} TEMPERATURE;
+
 typedef struct
 __attribute__((__packed__)) {
 	char alarm_message[32];
@@ -249,6 +256,8 @@ __attribute__((__packed__)) {
 	SIM_STATE simState[MAX_SMS_NUM];
 
 	uint8_t buzzerFeedback;
+
+	TEMPERATURE temp;
 } SYSTEM_STATE;
 
 typedef struct {
@@ -308,7 +317,7 @@ void config_save_command(char *string);
 void config_setLastCommand(uint16_t lastCmd);
 void config_incLastCmd();
 void config_update_system_time();
-void config_update_intervals();
+
 uint32_t config_get_boot_midnight_difference();
 uint8_t check_address_empty(uint8_t mem);
 

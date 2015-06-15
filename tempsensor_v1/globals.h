@@ -27,10 +27,6 @@ extern volatile uint8_t g_iDisplayId;
 
 extern const char SensorName[MAX_NUM_SENSORS][NAME_LEN];
 extern const uint8_t SensorDisplayName[MAX_NUM_SENSORS];
-extern volatile int32_t ADCvar[MAX_NUM_SENSORS];
-
-extern char Temperature[MAX_NUM_SENSORS][TEMP_DATA_LEN + 1];
-
 extern char ATresponse[ATRESP_MAX_LEN];
 extern struct tm g_tmCurrTime;
 

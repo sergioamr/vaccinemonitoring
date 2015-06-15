@@ -15,13 +15,12 @@
 #define TS_FIELD_OFFSET		1	//1 - $, 3 - $TS
 
 char *getSensorTemp(int sensorID) {
-	static char sensorData[64];
-
+	static char sensorData[4];
 	return sensorData;
 }
 
 void data_send_temperatures_sms() {
-	char data[180];
+	char data[SMS_MAX_SIZE];
 	int t=0;
 
 	rtc_getlocal(&g_tmCurrTime);
@@ -29,7 +28,7 @@ void data_send_temperatures_sms() {
 	strcpy(data, SMS_DATA_MSG_TYPE);
 	strcat(data, get_simplified_date_string(&g_tmCurrTime));
 	for (t=0; t<MAX_NUM_SENSORS; t++) {
-		strcat(data, getSensorTemp(t));
+		//strcat(data, getSensorTemp(t));
 	}
 
 	strcat(data, ",");

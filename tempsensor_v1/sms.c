@@ -38,7 +38,7 @@ void sms_send_data_request(char *number) {
 	for (iOffset = 0; iOffset < MAX_NUM_SENSORS; iOffset++) {
 		strcat(data, SensorName[iOffset]);
 		strcat(data, "=");
-		strcat(data, Temperature[iOffset]);
+		strcat(data, temperature_getString(iOffset));
 		strcat(data, "C, ");
 	}
 
@@ -221,7 +221,7 @@ void sms_send_heart_beat() {
 	strcat(msg, sim->cfgSMSCenter);
 	strcat(msg, ",");
 	for (i = 0; i < MAX_NUM_SENSORS; i++) {
-		if (Temperature[i][0] == '-') {
+		if (temperature_getString(i)[0] == '-') {
 			strcat(msg, "0,");
 		} else {
 			strcat(msg, "1,");

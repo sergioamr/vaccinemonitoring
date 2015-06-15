@@ -19,8 +19,6 @@
 // Setup mode in which we are at the moment
 // Triggered by the Switch 3 button
 int8_t g_iSystemSetup = -1;
-int g_iSamplePeriod = SAMPLE_PERIOD;
-int g_iUploadPeriod = UPLOAD_PERIOD;
 
 #define RUN_CALIBRATION
 
@@ -260,11 +258,6 @@ void config_init() {
 	calibrate_device();
 }
 
-void config_update_intervals() {
-	g_iUploadPeriod = g_pDevCfg->stIntervalParam.uploadInterval;
-	g_iSamplePeriod = g_pDevCfg->stIntervalParam.loggingInterval;
-}
-
 void config_update_system_time() {
 
 	// Gets the current time and stores it in FRAM
@@ -347,14 +340,16 @@ int config_parse_configuration(char *msg) {
 
 	PARSE_SKIP(token, delimiter, UART_FAILED); // $EN
 
-	config_update_intervals();
-
 	log_append_("configuration success");
 
 	g_pDevCfg->cfgServerConfigReceived = 1;
 
-	event_setInterval_by_id(EVT_SAMPLE_TEMP,
+	event_setInterval_by_id(EVT_SAVE_SAMPLE_TEMP,
 			g_pDevCfg->stIntervalParam.loggingInterval);
+
+	event_setInterval_by_id(EVT_SUBSAMPLE_TEMP,
+			g_pDevCfg->stIntervalParam.loggingInterval/(NUM_SAMPLES_CAPTURE-1));
+
 	event_setInterval_by_id(EVT_UPLOAD_SAMPLES,
 			g_pDevCfg->stIntervalParam.uploadInterval);
 

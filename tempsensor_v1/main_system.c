@@ -33,6 +33,7 @@
 #include "events.h"
 #include "state_machine.h"
 #include "main_system.h"
+#include "temperature.h"
 
 int g_iRunning = 0;
 
@@ -150,8 +151,9 @@ void system_boot() {
 
 	fat_init_drive();
 
-	// Initial trigger of temperature required
-	temperature_sample();
+	// Initial trigger of temperature capture. Just get one sample
+	temperature_trigger_init(1);
+	temperature_trigger_capture();
 
 #ifndef _DEBUG
 	// to allow conversion to get over and prevent any side-effects to other interface like modem
@@ -170,11 +172,13 @@ void system_boot() {
 	g_iDisplayId = 0;
 	lcd_disable_verbose();
 
-	lcd_print("Finished Boot");
 	log_appendf("Running tests");
 
+	temperature_analog_to_digital_conversion();
 	log_sample_web_format(&bytes_written);
 	sms_process_messages(0);
+
+	lcd_print("Finished Boot");
 
 	g_iRunning = 1;		// System finished booting and we are going to run
 	g_iSystemSetup = 0;	// Reset system setup button state
@@ -213,5 +217,6 @@ int main(void) {
 	events_init();
 
 	state_process();
+
 	thermal_canyon_loop();
 }

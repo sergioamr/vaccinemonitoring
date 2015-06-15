@@ -26,7 +26,17 @@ void alarm_sd_card_problem(FRESULT fr)
 /* Monitor alarm */
 /*************************************************************************************************************/
 
+void alarm_test_sensor(int sensor) {
+	float tmp;
+	float threshold;
+
+	tmp
+	= g_pDevCfg->stTempAlertParams[sensor].threshCold;
+}
+
+
 void alarm_monitor() {
+/*
 	int8_t iCnt = 0;
 	char msg[SMS_MAX_SIZE];
 
@@ -226,7 +236,7 @@ void alarm_monitor() {
 	if ((g_iStatus & BUZZER_ON) && (g_iAlarmStatus == 0)) {
 		g_iStatus &= ~BUZZER_ON;
 	}
-
+*/
 }
 
 void validatealarmthreshold() {

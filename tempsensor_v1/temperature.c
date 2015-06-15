@@ -13,10 +13,7 @@
 #include "math.h"
 #include "stdio.h"
 #include "string.h"
-
-volatile char g_isConversionDone = 0;
-volatile int g_iSamplesRead = 0;
-char g_conversionTriggered = 0;
+#include "events.h"
 
 void ADC_setupIO() {
 
@@ -58,37 +55,104 @@ void ADC_setupIO() {
 #if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
 	ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5 | ADC12IE6; // Enable ADC conv complete interrupt
 #else
-	ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5; // Enable ADC conv complete interrupt
+			ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5; // Enable ADC conv complete interrupt
 #endif
 
 }
 
-void temperature_sample() {
-	int iIdx = 0;
-	int iLastSamplesRead = 0;
-	g_iSamplesRead = 0;
+//--------------- TEMPERATURES ---------------------
 
-	config_setLastCommand(COMMAND_TEMPERATURE_SAMPLE);
+float inline temperature_getValue(uint8_t id) {
+	return g_pSysState->temp.sensors[id].fTemperature;
+}
+
+char *temperature_getString(uint8_t id) {
+	// Check if the value is valid
+	return g_pSysState->temp.sensors[id].temperature;
+}
+
+TEMPERATURE_SENSOR inline *sensor_get(uint8_t id) {
+	return &g_pSysState->temp.sensors[id];
+}
+
+void temperature_sensor_init(uint8_t id) {
+	TEMPERATURE_SENSOR *sensor = sensor_get(id);
+	sensor->name[0] = SensorName[id][0];
+	sensor->name[1] = 0;
+}
+
+void sensor_clear(uint8_t id) {
+	TEMPERATURE_SENSOR *sensor;
+	sensor = sensor_get(id);
+	sensor->iADC = 0;
+	sensor->fTemperature = 0;
+	sensor->temperature[0] = 0;
+}
+
+void temperature_analog_to_digital_conversion() {
+	int iIdx;
+	// Average sensors
+	TEMPERATURE *t = &g_pSysState->temp;
+
+	if (t->iSamplesRead == 0 || t->iSamplesRead > 10000)
+		return;
+
+	// convert the current sensor ADC value to temperature
+	for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++)
+		digital_amp_to_temp_string(iIdx);
+
+	t->iSamplesRead = 0;
+}
+
+void temperature_conversion_done() {
+	TEMPERATURE *t = &g_pSysState->temp;
+	if (t->iSamplesRequired == 0 || t->iSamplesRead == 0)
+		return;
+
+	temperature_analog_to_digital_conversion();
+}
+
+void temperature_trigger_init(uint16_t samples) {
+	int iIdx;
+	TEMPERATURE *t = &g_pSysState->temp;
+	t->iSamplesRead = 0;
+	t->iSamplesRequired = samples;
+	t->iCapturing = 0;
 
 	//initialze ADCvar
 	for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
-		ADCvar[iIdx] = 0;
+		sensor_clear(iIdx);
+	}
+}
+
+void temperature_trigger_capture() {
+	TEMPERATURE *t = &g_pSysState->temp;
+
+	// SUBSAMPLING TOO CLOSE FOR THE TRIGGER TO WORK
+	if (t->iCapturing > 0 && t->iCapturing <= MAX_NUM_SENSORS)
+		return;
+
+	// Turn on ADC conversion
+	ADC12CTL0 &= ~ADC12ENC;
+	ADC12CTL0 |= ADC12ENC | ADC12SC;
+
+	if (t->iCapturing == 0)
+		t->iCapturing = 1;
+}
+
+void temperature_sample() {
+	config_setLastCommand(COMMAND_TEMPERATURE_SAMPLE);
+	TEMPERATURE *t = &g_pSysState->temp;
+
+	if (t->iSamplesRead < t->iSamplesRequired) {
+		temperature_trigger_capture();
+		return;
 	}
 
-	for (iIdx = 0; iIdx < SAMPLE_COUNT; iIdx++) {
-		ADC12CTL0 &= ~ADC12ENC;
-		ADC12CTL0 |= ADC12ENC | ADC12SC;
-		while ((g_iSamplesRead - iLastSamplesRead) == 0);
-		iLastSamplesRead = g_iSamplesRead;
-	}
+	temperature_conversion_done();
 
-	if ((g_isConversionDone) && (g_iSamplesRead > 0)) {
-		for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
-			ADCvar[iIdx] /= g_iSamplesRead;
-		}
-	}
-
-	temperature_process_ADC_values();
+	temperature_trigger_init(NUM_SAMPLES_CAPTURE);
+	temperature_trigger_capture();
 }
 
 float resistance_to_temperature(float R) {
@@ -105,21 +169,25 @@ float resistance_to_temperature(float R) {
 	return tempdegC;
 }
 
-void temperature_process_ADC_values() {
-	int iIdx;
-	// convert the current sensor ADC value to temperature
-	for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
-		digital_amp_to_temp_string(ADCvar[iIdx], &Temperature[iIdx][0], iIdx);
-	}
-}
-
-void digital_amp_to_temp_string(int32_t ADCval, char* TemperatureVal,
-		int8_t iSensorIdx) {
+void digital_amp_to_temp_string(int8_t iSensorIdx) {
+	int c;
+	float ADCval;
 	float A0V2V, A0R2;
 	float A0tempdegC = 0.0;
 	int32_t A0tempdegCint = 0;
 	int8_t i = 0;
 	int8_t iTempIdx = 0;
+	TEMPERATURE *t = &g_pSysState->temp;
+	char* TemperatureVal = temperature_getString(iSensorIdx);
+	double *calibration;
+
+	if (t->iSamplesRead == 0)
+		return;
+
+	TEMPERATURE_SENSOR *sensor = sensor_get(iSensorIdx);
+	ADCval = (float) sensor->iADC / (float) t->iSamplesRead;
+
+	sensor->iADC = 0;
 
 	memset(TemperatureVal, 0, TEMP_DATA_LEN + 1);
 
@@ -131,22 +199,21 @@ void digital_amp_to_temp_string(int32_t ADCval, char* TemperatureVal,
 	A0tempdegC = resistance_to_temperature(A0R2);
 
 	//use calibration formula
-	if ((g_pCalibrationCfg->calibration[iSensorIdx][0] > -2.0)
-			&& (g_pCalibrationCfg->calibration[iSensorIdx][0] < 2.0)
-			&& (g_pCalibrationCfg->calibration[iSensorIdx][1] > -2.0)
-			&& (g_pCalibrationCfg->calibration[iSensorIdx][1] < 2.0)) {
-		A0tempdegC = A0tempdegC * g_pCalibrationCfg->calibration[iSensorIdx][1]
-				+ g_pCalibrationCfg->calibration[iSensorIdx][0];
+	calibration = &g_pCalibrationCfg->calibration[iSensorIdx][0];
+
+	if ((calibration[0] > -2.0) && (calibration[0] < 2.0)
+			&& (calibration[1] > -2.0) && (calibration[1] < 2.0)) {
+		A0tempdegC = A0tempdegC * calibration[1] + calibration[0];
 	}
+
+	sensor->fTemperature = A0tempdegC;
 
 	//Round to one digit after decimal point
 	A0tempdegCint = (int32_t) (A0tempdegC * 10);
 
 	if (A0tempdegCint < TEMP_CUTOFF) {
-		TemperatureVal[0] = '-';
-		TemperatureVal[1] = '-';
-		TemperatureVal[2] = '.';
-		TemperatureVal[3] = '-';
+		for (c = 0; c < 4; c++)
+			TemperatureVal[c] = '-';
 	} else {
 		if (A0tempdegCint < 0) {
 			iTempIdx = 1;
@@ -173,6 +240,8 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 #error Compiler not supported!
 #endif
 {
+	TEMPERATURE *t = &g_pSysState->temp;
+
 	switch (__even_in_range(ADC12IV, ADC12IV_ADC12RDYIFG)) {
 	case ADC12IV_NONE:
 		break;        // Vector  0:  No interrupt
@@ -196,27 +265,31 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 	case ADC12IV_ADC12IFG1:
 		break;        // Vector 14:  ADC12MEM1
 	case ADC12IV_ADC12IFG2:   		        // Vector 16:  ADC12MEM2
-		ADCvar[0] += ADC12MEM2;                     // Read conversion result
+		t->sensors[0].iADC += ADC12MEM2;
+		t->iCapturing++;
 		break;
 	case ADC12IV_ADC12IFG3:   		        // Vector 18:  ADC12MEM3
-		ADCvar[1] += ADC12MEM3;                     // Read conversion result
+		t->sensors[1].iADC += ADC12MEM3;
+		t->iCapturing++;
 		break;
 	case ADC12IV_ADC12IFG4:   		        // Vector 20:  ADC12MEM4
-		ADCvar[2] += ADC12MEM4;                     // Read conversion result
+		t->sensors[2].iADC += ADC12MEM4;
+		t->iCapturing++;
 		break;
 	case ADC12IV_ADC12IFG5:   		        // Vector 22:  ADC12MEM5
-		ADCvar[3] += ADC12MEM5;                     // Read conversion result
-#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 4
-		g_isConversionDone = 1;
-		g_iSamplesRead++;
-#endif
+		t->sensors[3].iADC += ADC12MEM5;
+		t->iCapturing++;
 		break;
 	case ADC12IV_ADC12IFG6:                 // Vector 24:  ADC12MEM6
-#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
-		ADCvar[4] += ADC12MEM6;                     // Read conversion result
-		g_isConversionDone = 1;
-		g_iSamplesRead++;
-#endif
+		t->sensors[4].iADC += ADC12MEM6;
+		t->iSamplesRead++;
+		t->iCapturing++;
+
+		// We are done sampling, we might want to store the results
+		if (t->iSamplesRead > t->iSamplesRequired) {
+			if (event_wakeup_main())
+				__bic_SR_register_on_exit(LPM0_bits); // Resume execution
+		}
 		break;
 	case ADC12IV_ADC12RDYIFG:
 		break;        // Vector 76:  ADC12RDY
@@ -224,4 +297,3 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 		break;
 	}
 }
-

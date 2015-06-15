@@ -24,7 +24,7 @@
 #include "modem.h"
 #include "sms.h"
 
-#define  CALIBRATE 4	//0 - default, 1 = device A, 2 = device B...
+#define  CALIBRATE 5	//0 - default, 1 = device A, 2 = device B...
 
 #include <msp430.h>
 
@@ -113,6 +113,27 @@ int main_calibration(void) {
 	//device D, sensor E
 	g_pCalibrationCfg->calibration[4][0] = 0.11215;
 	g_pCalibrationCfg->calibration[4][1] = 1.010953;
+
+#elif CALIBRATE == 5
+	//device D, sensor A
+	g_pCalibrationCfg->calibration[0][0] = 0.0;
+	g_pCalibrationCfg->calibration[0][1] = 1.0;
+
+	//device D, sensor B
+	g_pCalibrationCfg->calibration[1][0] = 0.0;
+	g_pCalibrationCfg->calibration[1][1] = 1.0;
+
+	//device D, sensor C
+	g_pCalibrationCfg->calibration[2][0] = 0.0;
+	g_pCalibrationCfg->calibration[2][1] = 1.0;
+
+	//device D, sensor D
+	g_pCalibrationCfg->calibration[3][0] = 0.0;
+	g_pCalibrationCfg->calibration[3][1] = 1.0;
+
+	//device D, sensor E
+	g_pCalibrationCfg->calibration[4][0] = 0.0;
+	g_pCalibrationCfg->calibration[4][1] = 1.0;
 
 #endif
 	return 1;

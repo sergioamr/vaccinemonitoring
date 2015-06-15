@@ -119,15 +119,6 @@ void sleep_or_alarm() {
 
 void thermal_canyon_loop(void) {
 	time_t currentTime = 0;
-	//uint8_t iDisplayId = 0;
-
-	iUploadTimeElapsed = iMinuteTick;		//initialize POST minute counter
-	iSampleTimeElapsed = iMinuteTick;
-	iSMSRxPollElapsed = iMinuteTick;
-	iLCDShowElapsed = iMinuteTick;
-	iMsgRxPollElapsed = iMinuteTick;
-
-	config_update_intervals();
 
 	events_sync(rtc_update_time());
 	lcd_show();
@@ -137,7 +128,6 @@ void thermal_canyon_loop(void) {
 #ifdef _DEBUG
 		events_debug(rtc_get_second_tick());
 #endif
-
 		// Checks all the events that we have and runs the right one.
 		events_run(currentTime);
 		state_process();
@@ -145,7 +135,5 @@ void thermal_canyon_loop(void) {
 		// Wait here behind the interruption to check for a change on display.
 		// If a hardware button is pressed it will resume CPU
 		sleep_or_alarm();
-
-		__no_operation();                       // SET BREAKPOINT HERE
 	}
 }

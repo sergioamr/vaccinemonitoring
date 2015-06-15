@@ -335,31 +335,20 @@ void event_display_off(void *event, time_t currentTime) {
 	lcd_turn_off();
 }
 
-void event_sample_temperature(void *event, time_t currentTime) {
+void event_save_samples(void *event, time_t currentTime) {
 	UINT bytes_written = 0;
+	log_sample_to_disk(&bytes_written);
+	log_sample_web_format(&bytes_written);
 
-	if (!g_conversionTriggered) {
-		temperature_sample();
-		g_conversionTriggered = 1;
-	}
+	config_setLastCommand(COMMAND_MONITOR_ALARM);
 
-	if (g_isConversionDone) {
-		log_sample_to_disk(&bytes_written);
-		log_sample_web_format(&bytes_written);
-
-		config_setLastCommand(COMMAND_MONITOR_ALARM);
-
-		//monitor for temperature alarms
-		alarm_monitor();
-
-		g_isConversionDone = 0;
-		g_conversionTriggered = 0;
-	} else {
-		// push the event forward to allow completion
-		event_force_event_by_id(EVT_SAMPLE_TEMP, 1);
-	}
-
+	//monitor for temperature alarms
+	alarm_monitor();
 	event_force_event_by_id(EVT_DISPLAY, 0);
+}
+
+void event_subsample_temperature(void *event, time_t currentTime) {
+	temperature_sample();
 }
 
 void event_network_check(void *event, time_t currentTime) {
@@ -406,7 +395,7 @@ void events_health_check(void *event, time_t currentTime) {
 }
 
 // Sleeping state
-uint32_t iMainSleep = 0;
+uint8_t iMainSleep = 0;
 
 // Resume execution if the device is in deep sleep mode
 // Triggered by the interruption
@@ -474,7 +463,10 @@ void events_init() {
 	if (value1 != value2)
 		log_appendf(" hello world ");
 
-	events_register(EVT_SAMPLE_TEMP, "SAMPLE TMP", 0, &event_sample_temperature,
+	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0, &event_subsample_temperature,
+			MINUTES_(SAMPLE_PERIOD)/(NUM_SAMPLES_CAPTURE-1), 0);
+
+	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 0, &event_save_samples,
 			MINUTES_(SAMPLE_PERIOD),
 			g_pDevCfg->stIntervalParam.loggingInterval);
 

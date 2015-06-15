@@ -2,6 +2,7 @@
 #include "stringutils.h"
 #include "events.h"
 #include "alarms.h"
+#include "temperature.h"
 
 extern FRESULT sync_fs( /* FR_OK: successful, FR_DISK_ERR: failed */
 FATFS* fs /* File system object */
@@ -383,8 +384,9 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 	iBatteryLevel = batt_getlevel();
 
 	sprintf(szLog, ",\"%d%%\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\r\n",
-			iBatteryLevel, getPowerStateString(), Temperature[0],
-			Temperature[1], Temperature[2], Temperature[3], Temperature[4]);
+			iBatteryLevel, getPowerStateString(), temperature_getString(0),
+			temperature_getString(1), temperature_getString(2),
+			temperature_getString(3), temperature_getString(4));
 	fr = f_write(fobj, szLog, strlen(szLog), &bw);
 	return fr;
 }
@@ -438,12 +440,17 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 	char szLog[64];
 	int iBatteryLevel;
 	FRESULT fr = FR_OK;
+	EVENT *evt;
+	uint16_t iSamplePeriod = 0;
 
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
 
 	int bw = 0;	//bytes written
 	char* fn = get_current_fileName(&g_tmCurrTime, FOLDER_TEXT, EXTENSION_TEXT);
+
+	evt = events_find(EVT_SAVE_SAMPLE_TEMP);
+	iSamplePeriod = evt->interval/60; // Time is in seconds, we need it in minutes
 
 	if (!(g_iStatus & TEST_FLAG)) {
 		fr = f_open(&fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
@@ -460,7 +467,8 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 		rtc_get(&g_tmCurrTime);
 		// If current time is out of previous interval, log a new time stamp
 		// to avoid time offset issues
-		if (!date_within_interval(&g_tmCurrTime, &g_lastSampleTime, g_iSamplePeriod)) {
+		if (!date_within_interval(&g_tmCurrTime, &g_lastSampleTime,
+				iSamplePeriod)) {
 			g_iStatus |= LOG_TIME_STAMP;
 		}
 		memcpy(&g_lastSampleTime, &g_tmCurrTime, sizeof(struct tm));
@@ -481,7 +489,7 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 			strcat(szLog, itoa_pad(g_tmCurrTime.tm_sec));
 			strcat(szLog, ",");
 			strcat(szLog, "R");
-			strcat(szLog, itoa_pad(g_iSamplePeriod));
+			strcat(szLog, itoa_pad(iSamplePeriod));
 			strcat(szLog, ",");
 			strcat(szLog, "\n");
 			fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
@@ -502,9 +510,10 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 		//log sample period, battery level, power plugged, temperature values
 		memset(szLog, 0, sizeof(szLog));
 #if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
-		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,D%s,E%s\n",
-				itoa_pad(iBatteryLevel), !(P4IN & BIT4), Temperature[0],
-				Temperature[1], Temperature[2], Temperature[3], Temperature[4]);
+		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,D%s,E%s\n", itoa_pad(iBatteryLevel),
+				!(P4IN & BIT4), temperature_getString(0),
+				temperature_getString(1), temperature_getString(2),
+				temperature_getString(3), temperature_getString(4));
 #else
 		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,D%s\n",
 				itoa_pad(g_iBatteryLevel), !(P4IN & BIT4), Temperature[0],

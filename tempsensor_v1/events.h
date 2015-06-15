@@ -12,7 +12,8 @@ typedef enum {
 	EVT_DISPLAY = 0,
 	EVT_PULLTIME,
 	EVT_SMSCHECK,
-	EVT_SAMPLE_TEMP,
+	EVT_SUBSAMPLE_TEMP,
+	EVT_SAVE_SAMPLE_TEMP,
 	EVT_SMS_TEST,
 	EVT_CHECK_NETWORK,
 	EVT_LCD_OFF,
@@ -58,6 +59,7 @@ void events_sync();
 void event_init(EVENT *pEvent, time_t currentTime);
 void event_force_event_by_id(EVENT_IDS id, time_t offset);
 void event_run_now_by_id(EVENT_IDS id);
+uint8_t event_wakeup_main();
 
 void event_LCD_turn_on();
 EVENT *events_find(EVENT_IDS id);

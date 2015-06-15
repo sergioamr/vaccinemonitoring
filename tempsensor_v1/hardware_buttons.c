@@ -57,7 +57,7 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 		//P3OUT &= ~BIT4;                           // buzzer off
 
 #ifdef _DEBUG
-		//g_iDebug = !g_iDebug;
+		g_iDebug = !g_iDebug;
 #endif
 
 		g_iStatus &= ~BUZZER_ON;

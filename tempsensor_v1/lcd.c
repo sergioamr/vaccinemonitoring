@@ -131,9 +131,8 @@ void lcd_show() {
 
 	switch (iItemId) {
 	case 0:
-		memset(&Temperature[1][0], 0, TEMP_DATA_LEN + 1); //initialize as it will be used as scratchpad during POST formatting
-		digital_amp_to_temp_string(ADCvar[1], &Temperature[1][0], 1);
-		strcat(lcdBuffer, Temperature[1]);
+		digital_amp_to_temp_string(0);
+		strcat(lcdBuffer, temperature_getString(0));
 		strcat(lcdBuffer, "C ");
 		strcat(lcdBuffer, itoa_pad(batt_getlevel()));
 		strcat(lcdBuffer, "% ");
@@ -247,20 +246,20 @@ void lcd_show() {
 	}
 
 	if (iCnt != 0xff) {
-		memset(&Temperature[iCnt], 0, TEMP_DATA_LEN + 1);//initialize as it will be used as scratchpad during POST formatting
-		digital_amp_to_temp_string(ADCvar[iCnt], &Temperature[iCnt][0], iCnt);
+
+		digital_amp_to_temp_string(iCnt);
 
 		if (TEMP_ALARM_GET(iCnt) == TEMP_ALERT_CNF) {
 			strcat(lcdBuffer, "ALERT ");
 			strcat(lcdBuffer, SensorName[iCnt]);
 			strcat(lcdBuffer, " ");
-			strcat(lcdBuffer, Temperature[iCnt]);
+			strcat(lcdBuffer, temperature_getString(iCnt));
 			strcat(lcdBuffer, "C ");
 		} else {
 			strcat(lcdBuffer, "Sensor ");
 			strcat(lcdBuffer, SensorName[iCnt]);
 			strcat(lcdBuffer, " ");
-			strcat(lcdBuffer, Temperature[iCnt]);
+			strcat(lcdBuffer, temperature_getString(iCnt));
 			strcat(lcdBuffer, "C ");
 		}
 	}
