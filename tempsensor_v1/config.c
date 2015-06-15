@@ -26,8 +26,8 @@ int8_t g_iSystemSetup = -1;
 /************************** BEGIN CONFIGURATION MEMORY ****************************************/
 
 #pragma SET_DATA_SECTION(".ConfigurationArea")
-CONFIG_DEVICE g_ConfigDevice;	// configuration of the device, APN, gateways, etc.
-CONFIG_SYSTEM g_ConfigSystem;   // is system initialized, number of runs, and overall stats
+CONFIG_DEVICE g_ConfigDevice; // configuration of the device, APN, gateways, etc.
+CONFIG_SYSTEM g_ConfigSystem; // is system initialized, number of runs, and overall stats
 #pragma SET_DATA_SECTION()
 
 #pragma SET_DATA_SECTION(".calibration_globals")
@@ -173,6 +173,34 @@ void config_reconfigure() {
 		;
 }
 
+int config_default_configuration() {
+	int i = 0;
+	TEMP_ALERT_PARAM *alert;
+	BATT_POWER_ALERT_PARAM *power;
+	for (i = 0; i < MAX_NUM_SENSORS; i++) {
+		alert = &g_pDevCfg->stTempAlertParams[i];
+
+		alert->maxTimeCold = ALARM_LOW_TEMP_PERIOD;
+		alert->maxTimeHot = ALARM_HIGH_TEMP_PERIOD;
+
+		alert->threshCold = LOW_TEMP_THRESHOLD;
+		alert->threshHot = HIGH_TEMP_THRESHOLD;
+	}
+
+	power = &g_pDevCfg->stBattPowerAlertParam;
+	power->enablePowerAlert = POWER_ENABLE_ALERT;
+	power->minutesBattThresh = ALARM_BATTERY_PERIOD;
+	power->minutesPower = ALARM_POWER_PERIOD;
+	power->battThreshold = BATTERY_HIBERNATE_THRESHOLD;
+
+	// TODO: default values for own number & sms center?
+	g_pDevCfg->stIntervalParam.loggingInterval = SAMPLE_PERIOD;
+	g_pDevCfg->stIntervalParam.uploadInterval = UPLOAD_PERIOD;
+
+	// Battery and power alarms
+	return 1;
+}
+
 void config_init() {
 
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
@@ -219,16 +247,6 @@ void config_init() {
 	strcpy(g_pDevCfg->SIM[0].cfgAPN, NEXLEAF_DEFAULT_APN);
 	strcpy(g_pDevCfg->SIM[1].cfgAPN, NEXLEAF_DEFAULT_APN);
 
-	// TODO: default values for own number & sms center?
-	g_pDevCfg->stIntervalParam.loggingInterval = SAMPLE_PERIOD;
-	g_pDevCfg->stIntervalParam.uploadInterval = UPLOAD_PERIOD;
-
-	// Battery and power alarms
-	g_pDevCfg->stBattPowerAlertParam.battThreshold = BATTERY_HIBERNATE_THRESHOLD;
-	g_pDevCfg->stBattPowerAlertParam.minutesBattThresh = BATTERY_MINUTES_THRESHOLD;
-	g_pDevCfg->stBattPowerAlertParam.enablePowerAlert =  POWER_ENABLE_ALERT;
-	g_pDevCfg->stBattPowerAlertParam.minutesPower = POWER_MINUTES_THRESHOLD;
-
 	// Init System internals
 
 	// Setup internal system counters and checks
@@ -248,6 +266,8 @@ void config_init() {
 	g_pSysCfg->maxATResponse = 0;
 	g_pSysCfg->maxRXBuffer = 0;
 	g_pSysCfg->maxTXBuffer = 0;
+
+	config_default_configuration();
 
 	lcd_printf(LINEC, "CONFIG MODE");
 	lcd_printl(LINEH, g_pSysCfg->firmwareVersion); // Show the firmware version
@@ -349,7 +369,8 @@ int config_parse_configuration(char *msg) {
 			g_pDevCfg->stIntervalParam.loggingInterval);
 
 	event_setInterval_by_id(EVT_SUBSAMPLE_TEMP,
-			g_pDevCfg->stIntervalParam.loggingInterval/(NUM_SAMPLES_CAPTURE-1));
+			g_pDevCfg->stIntervalParam.loggingInterval
+					/ (NUM_SAMPLES_CAPTURE - 1));
 
 	event_setInterval_by_id(EVT_UPLOAD_SAMPLES,
 			g_pDevCfg->stIntervalParam.uploadInterval);

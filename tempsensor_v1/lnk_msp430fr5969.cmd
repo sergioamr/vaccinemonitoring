@@ -139,11 +139,7 @@ SECTIONS
     } PALIGN(0x0400), RUN_END(fram_rx_start) > 0x4400
 
     .cinit            : {}  > FRAM          /* INITIALIZATION TABLES             */
-    .pinit            : {}  > FRAM          /* C++ CONSTRUCTOR TABLES            */
-    .init_array       : {}  > FRAM          /* C++ CONSTRUCTOR TABLES            */
-    .mspabi.exidx     : {}  > FRAM          /* C++ CONSTRUCTOR TABLES            */
-    .mspabi.extab     : {}  > FRAM          /* C++ CONSTRUCTOR TABLES            */
-    .const            : {} >> FRAM | FRAM2  /* CONSTANT DATA                     */
+    .const            : {}  > FRAM2  (HIGH) /* CONSTANT DATA                     */
 
     .text:_isr        : {}  > FRAM          /* CODE ISRs                         */
     .text             : {} >> FRAM2 | FRAM  /* CODE                              */

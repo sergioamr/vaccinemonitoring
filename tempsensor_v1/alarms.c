@@ -29,15 +29,11 @@ void alarm_sd_card_problem(FRESULT fr) {
 /*************************************************************************************************************/
 
 /*************************************************************************************************************/
-void alarm_sensor_too_low(uint8_t sensorId) {
+void alarm_sensor_sms(uint8_t sensorId, int elapsed) {
 	char msg[SMS_MAX_SIZE];
-	strcpy(msg, "Alert Sensor ");
-	strcat(msg, SensorName[sensorId]);
-	strcat(msg, ": Temp too LOW for ");
-	strcat(msg, itoa_pad(g_pDevCfg->stTempAlertParams[sensorId].minCold));
-	strcat(msg, " minutes. Current Temp is ");
-	strcat(msg, temperature_getString(sensorId));
-	strcat(msg, "degC. Take ACTION immediately.");
+	sprintf(msg, "Alert Sensor %s at %s degC for %d minutes", SensorName[sensorId],
+			temperature_getString(sensorId), elapsed/60 );
+	strcat(msg, " Take ACTION immediately.");
 	sms_send_message(msg);
 }
 
@@ -62,7 +58,7 @@ void alarm_test_sensor(int id) {
 			s->alarms.disconnected = true;
 			sprintf(msg, "%s disconnected", SensorName[id]);
 			goto alarm_error;
-		}
+		};
 		return;
 	}
 
@@ -80,7 +76,8 @@ void alarm_test_sensor(int id) {
 	else
 		elapsed = events_getTick() - tem->alarm_time;
 
-	lcd_printf(LINEC, "Sensor \"%s\" = %s", SensorName[id], getFloatNumber2Text(temperature, msg));
+	lcd_printf(LINEC, "Sensor \"%s\" %s", SensorName[id],
+			getFloatNumber2Text(temperature, msg));
 	if (temperature < cold) {
 		if (elapsed > g_pDevCfg->stTempAlertParams[id].maxTimeCold) {
 			sprintf(msg, "%s too cold", SensorName[id]);
@@ -101,9 +98,9 @@ void alarm_test_sensor(int id) {
 		return;
 	}
 
-	alarm_error:
-		s->alarms.alarm = true;
-		state_alarm_on(msg);
+	alarm_error: s->alarms.alarm = true;
+	state_alarm_on(msg);
+	alarm_sensor_sms(id, elapsed);
 }
 
 void alarm_monitor() {

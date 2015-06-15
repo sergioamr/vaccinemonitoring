@@ -28,9 +28,6 @@
 
 // Threshold in percentage in which the device will enter deep hibernate mode
 #define BATTERY_HIBERNATE_THRESHOLD 10
-#define BATTERY_MINUTES_THRESHOLD 60
-
-#define POWER_MINUTES_THRESHOLD 100
 #define POWER_ENABLE_ALERT 1
 
 // Thershold when the alarm will sound if there is a power cut (seconds)
@@ -140,7 +137,7 @@ EXTERN int8_t g_iSystemSetup;
 
 #define NUM_SIM_CARDS 2
 
-typedef struct __attribute__((__packed__)) {
+typedef struct {
 	char cfgSMSCenter[GW_MAX_LEN + 1]; // Service Message Center number
 	char cfgPhoneNum[GW_MAX_LEN + 1];
 	char cfgAPN[APN_MAX_LEN + 1];
@@ -162,8 +159,6 @@ typedef struct __attribute__((__packed__)) {
 #define MAX_IP_SIZE 3*4+3+1
 
 typedef struct {
-	int minCold;
-	int minHot;
 	float threshCold;
 	float threshHot;
 	uint32_t maxTimeCold;
@@ -182,8 +177,7 @@ typedef struct {
 	uint16_t loggingInterval;
 } INTERVAL_PARAM;
 
-typedef struct
-__attribute__((__packed__)) {
+typedef struct {
 	int8_t cfgSIM_slot;
 	int8_t cfgSyncId;
 
@@ -202,8 +196,7 @@ __attribute__((__packed__)) {
 
 } CONFIG_DEVICE;
 
-typedef struct
-__attribute__((__packed__)) {
+typedef struct  {
 	uint8_t memoryInitialized;
 	uint32_t numberRuns;
 	uint32_t numberConfigurationRuns;
@@ -222,8 +215,7 @@ __attribute__((__packed__)) {
 	char lastCommandTime[2 + 2 + 2 + 1 + 1 + 1]; //
 } CONFIG_SYSTEM;
 
-typedef struct
-__attribute__((__packed__)) {
+typedef struct {
 	uint8_t modemErrors;
 	uint8_t failsGPRS;
 	uint8_t failsGSM;
@@ -279,8 +271,7 @@ typedef union
   unsigned char status;
 } SYSTEM_STATUS;
 
-typedef struct
-__attribute__((__packed__)) {
+typedef struct {
 	char alarm_message[32];
 	uint8_t battery_level;
 	time_t time_powerOutage;
