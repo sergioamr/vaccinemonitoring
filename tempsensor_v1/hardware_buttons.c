@@ -76,8 +76,11 @@ void hardware_actions() {
 
 	if (lcd_on) {
 		event_LCD_turn_on();
-		event_force_event_by_id(EVT_DISPLAY, 0);
+		event_force_event_by_id(EVT_DISPLAY, 1);
 	}
+
+	event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 0);
+
 	buzzer_feedback();
 	g_iHardware_actions=HWD_NOTHING;
 }

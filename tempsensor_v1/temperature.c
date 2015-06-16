@@ -165,6 +165,10 @@ void temperature_analog_to_digital_conversion() {
 
 void temperature_subsamples(uint8_t samples)  {
 	USE_TEMPERATURE
+
+	if (tem->iSamplesRequired!=0)
+		return;
+
 	temperature_trigger_init();
 	tem->iSamplesRequired = samples;
 }
@@ -191,8 +195,8 @@ void temperature_single_capture() {
 		return;
 
 	if (tem->iSamplesRead == tem->iSamplesRequired) {
-		tem->iSamplesRequired = 0;
 		temperature_analog_to_digital_conversion();
+		tem->iSamplesRequired = 0;
 		return;
 	}
 	temperature_trigger_capture();
