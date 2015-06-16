@@ -196,6 +196,7 @@ int config_default_configuration() {
 	// TODO: default values for own number & sms center?
 	g_pDevCfg->stIntervalParam.loggingInterval = SAMPLE_PERIOD;
 	g_pDevCfg->stIntervalParam.uploadInterval = UPLOAD_PERIOD;
+	g_pDevCfg->stIntervalParam.reboot = REBOOT_PERIOD;
 
 #ifdef _DEBUG
 	uint16_t c = g_pDevCfg->stIntervalParam.loggingInterval;

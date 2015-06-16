@@ -76,11 +76,13 @@ char* get_date_string(struct tm* timeData, const char* dateSeperator,
 	strcat(g_szDateString, ":");
 	strcat(g_szDateString, itoa_pad(timeData->tm_sec));
 
-	//[TODO] Check timezone
+	//[TODO] Check timezone it doesnt work
 
+	/*
 	if (includeTZ && timeData->tm_isdst) {
 		strcat(g_szDateString, " DST");
 	}
+	*/
 	return g_szDateString;
 }
 

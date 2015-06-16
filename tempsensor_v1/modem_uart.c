@@ -60,7 +60,7 @@ size_t iRxLen = RX_LEN;
 
 void uart_resetbuffer() {
 	RXHeadIdx = RXTailIdx = 0; //ZZZZ reset Rx index to faciliate processing in uart_rx
-#ifdef _DEBUG
+#ifdef _DEBUG_EXT
 	memset((char *) RXBuffer, 0, sizeof(RXBuffer));
 #endif
 }
@@ -394,17 +394,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 	//input check
 	if (pResponse) {
 		switch (atCMD) {
-		case ATCMD_CMGS:
-			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "ERROR");
-			if (pToken1!=NULL)
-				return UART_ERROR;
-
-			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "+CMGS:");
-			if (pToken1!=NULL) {
-				strcpy(pResponse, pToken1+6);
-				return UART_SUCCESS;
-			}
-			return UART_FAILED;
 
 		// Getting the SIM Message Center to send it to the backend in order to get the APN
 

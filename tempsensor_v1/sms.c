@@ -72,7 +72,7 @@ const char COMMAND_RESULT_CMGR[] = "+CMGR: ";
 extern const char AT_MSG_OK[];
 
 int8_t sms_process_memory_message(int8_t index) {
-	int t=0, len=0;
+	int t = 0, len = 0;
 	char *token;
 	char msg[SMS_MAX_SIZE];
 	char state[16];
@@ -88,12 +88,13 @@ int8_t sms_process_memory_message(int8_t index) {
 
 	PARSE_FINDSTR_RET(token, COMMAND_RESULT_CMGR, UART_FAILED);
 	PARSE_FIRSTSTRING(token, state, sizeof(state), ",\n", UART_FAILED);
-	PARSE_NEXTSTRING(token, phoneNumber, sizeof(phoneNumber), ",\n", UART_FAILED);
+	PARSE_NEXTSTRING(token, phoneNumber, sizeof(phoneNumber), ",\n",
+			UART_FAILED);
 
 	len = strlen(phoneNumber);
-	for (t=0; t<len; t++)
-		if (phoneNumber[t]=='\"')
-			phoneNumber[t]=0;
+	for (t = 0; t < len; t++)
+		if (phoneNumber[t] == '\"')
+			phoneNumber[t] = 0;
 
 	PARSE_SKIP(token, "\n", UART_FAILED);
 
@@ -101,9 +102,9 @@ int8_t sms_process_memory_message(int8_t index) {
 
 	// Jump first \n to get the OK
 	PARSE_SKIP(token, "\n", UART_FAILED);
-	ok[0]=0;
+	ok[0] = 0;
 	PARSE_NEXTSTRING(token, ok, sizeof(ok), "\n", UART_FAILED);
-	if (ok[0]!='O' || ok[1]!='K' )
+	if (ok[0] != 'O' || ok[1] != 'K')
 		return UART_FAILED;
 
 	phone = &phoneNumber[1];
@@ -174,7 +175,7 @@ int8_t sms_process_messages() {
 		sim->iMaxMessages = totalr;
 	}
 
-	if (usedr==0) {
+	if (usedr == 0) {
 		lcd_printf(LINEC, "No new messages", usedr);
 		return UART_SUCCESS;
 	}
@@ -184,8 +185,8 @@ int8_t sms_process_messages() {
 
 	uart_tx("AT+CSDH=0\r\n"); // Disable extended output
 
-	for (iIdx = 1; iIdx<=totalr; iIdx++) {
-		if (sms_process_memory_message(iIdx)==UART_SUCCESS)
+	for (iIdx = 1; iIdx <= totalr; iIdx++) {
+		if (sms_process_memory_message(iIdx) == UART_SUCCESS)
 			usedr--;
 		else
 			_NOP();
@@ -257,6 +258,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	int res = UART_ERROR;
 	int verbose = g_iLCDVerbose;
 	int phonecode = 129;
+	char *token;
 
 	if (g_iStatus & TEST_FLAG)
 		return UART_SUCCESS;
@@ -273,18 +275,28 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	// 129 - number in national format
 	// 145 - number in international format (contains the "+")
 
-	if (szPhoneNumber[0]=='+')
+	if (szPhoneNumber[0] == '+')
 		phonecode = 145;
 
+	http_deactivate();
 	sprintf(szCmd, "AT+CMGS=\"%s\",%d\r\n", szPhoneNumber, phonecode);
 
 	uart_setSMSPromptMode();
 	if (uart_tx_waitForPrompt(szCmd, TIMEOUT_CMGS_PROMPT)) {
 		uart_tx_timeout(pData, TIMEOUT_CMGS, 1);
 
-		// TODO Check if ok or RXBuffer contains Error
-		res = uart_rx(ATCMD_CMGS, ATresponse);
-		msgNumber = atoi(ATresponse);
+
+		token = strstr((const char *) &RXBuffer[RXHeadIdx], "ERROR");
+		if (token == NULL) {
+			token = strstr((const char *) &RXBuffer[RXHeadIdx], "+CMGS:");
+			msgNumber = atoi(token + 6);
+			if (msgNumber != 0)
+				res = UART_SUCCESS;
+			else
+				res = UART_ERROR;
+		} else {
+			res = UART_ERROR;
+		}
 	}
 
 	if (verbose == VERBOSE_BOOTING)

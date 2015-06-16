@@ -404,6 +404,10 @@ void events_health_check(void *event, time_t currentTime) {
 	state_process();
 }
 
+void event_reboot_system(void *event, time_t currentTime) {
+	system_reboot("Scheduled");
+}
+
 // Sleeping state
 uint8_t iMainSleep = 0;
 
@@ -467,12 +471,15 @@ void events_init() {
 	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0, &event_subsample_temperature,
 			(MINUTES_(SAMPLE_PERIOD)), g_pDevCfg->stIntervalParam.loggingInterval);
 
-	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 15, &event_save_samples,
+	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 30, &event_save_samples,
 			MINUTES_(SAMPLE_PERIOD),
 			g_pDevCfg->stIntervalParam.loggingInterval);
 
 	events_register(EVT_UPLOAD_SAMPLES, "UPLOAD", 0, &event_upload_samples,
 			MINUTES_(UPLOAD_PERIOD), g_pDevCfg->stIntervalParam.uploadInterval);
+
+	events_register(EVT_PERIODIC_REBOOT, "REBOOT", 0, &event_reboot_system,
+			HOURS_(24), g_pDevCfg->stIntervalParam.reboot);
 
 	events_sync();
 }

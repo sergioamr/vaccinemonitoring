@@ -165,11 +165,8 @@ SECTIONS
     .TI.noinit  : {} > FRAM                  /* For #pragma NOINIT                */
     .xusersect  : 							/* user data section                */
     {
-    	globals.obj (.aggregate_vars)
-    	i2c.obj (.aggregate_vars)
-    	modem_uart.obj (.aggregate_vars)
+    	*(.aggregate_vars)
     	events.obj (.xbigdata_vars)
-    	fatdata.obj (.aggregate_vars)
     } > FRAM
 
     .stack           : {} > RAM (HIGH)           /* SOFTWARE SYSTEM STACK             */

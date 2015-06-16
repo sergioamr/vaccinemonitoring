@@ -35,7 +35,8 @@ volatile uint8_t g_iDisplayId = 0;
 volatile uint16_t g_iStatus = LOG_TIME_STAMP;
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
-char ATresponse[ATRESP_MAX_LEN] = { };
+char ATresponse[ATRESP_MAX_LEN];
+
 #pragma SET_DATA_SECTION()
 
 #pragma SET_DATA_SECTION(".helper_vars")
