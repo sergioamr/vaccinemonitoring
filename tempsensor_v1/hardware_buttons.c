@@ -11,6 +11,7 @@
 
 extern void buzzer_feedback();
 
+void state_alarm_turnoff_buzzer();
 void thermal_handle_system_button();
 // Interrupt services
 
@@ -33,6 +34,52 @@ void hardware_disable_buttons() {
 
 void hardware_enable_buttons() {
 	switchers_setupIO();
+}
+
+typedef enum {
+	HWD_NOTHING = 0,
+	HWD_POWER_CHANGE,
+	HWD_BUZZER_OFF,
+	HWD_TURN_SCREEN,
+	HWD_THERMAL_SYSTEM,
+
+} HARDWARE_ACTIONS;
+
+HARDWARE_ACTIONS g_iHardware_actions = HWD_NOTHING;
+
+void hardware_actions() {
+	uint8_t lcd_on = false;
+	if (g_iHardware_actions==HWD_NOTHING)
+		return;
+
+	switch (g_iHardware_actions) {
+		case HWD_POWER_CHANGE:
+			if (POWER_ON)
+				state_power_on();
+			else
+				state_power_out();
+
+			event_force_event_by_id(EVT_ALARMS_CHECK, 0);
+			lcd_on = 1;
+		break;
+		case HWD_THERMAL_SYSTEM:
+			thermal_handle_system_button();
+			lcd_on = 1;
+		break;
+		case HWD_BUZZER_OFF:
+			state_alarm_turnoff_buzzer();
+			g_iSystemSetup = 0;
+		case HWD_TURN_SCREEN:
+			lcd_on = 1;
+		break;
+	}
+
+	if (lcd_on) {
+		event_LCD_turn_on();
+		event_force_event_by_id(EVT_DISPLAY, 0);
+	}
+	buzzer_feedback();
+	g_iHardware_actions=HWD_NOTHING;
 }
 
 // Port 2 interrupt service routine
@@ -58,12 +105,7 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 #ifdef _DEBUG
 		g_iDebug = !g_iDebug;
 #endif
-
-		g_iStatus &= ~BUZZER_ON;
-		g_iSystemSetup = 0;
-		event_LCD_turn_on();
-		buzzer_feedback();
-		event_force_event_by_id(EVT_DISPLAY, 0);
+		g_iHardware_actions = HWD_TURN_SCREEN;
     	// Resume execution if the device is in deep sleep mode
 		EVENT_WAKEUP
 		break;
@@ -89,10 +131,6 @@ void __attribute__ ((interrupt(PORT3_VECTOR))) Port_3 (void)
 	case P3IV_P3IFG5:
 		SYSTEM_RUNNING_CHECK
 		g_iSystemSetup ++;
-		thermal_handle_system_button();
-		event_LCD_turn_on();
-		buzzer_feedback();
-		event_force_event_by_id(EVT_DISPLAY, 0);
     	// Resume execution if the device is in deep sleep mode
 		EVENT_WAKEUP
 		break;
@@ -118,29 +156,15 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
 		break;
 	case P4IV_P4IFG4:
 		SYSTEM_RUNNING_CHECK
-		if (POWER_ON)
-			state_power_on();
-		else
-			state_power_out();
-
-		buzzer_feedback();
-		event_force_event_by_id(EVT_ALARMS_CHECK, 0);
-		event_force_event_by_id(EVT_DISPLAY, 0);
+		g_iHardware_actions = HWD_POWER_CHANGE;
     	// Resume execution if the device is in deep sleep mode
 		EVENT_WAKEUP
 		break;
 	case P4IV_P4IFG1:
 		SYSTEM_RUNNING_CHECK
-
-#ifdef _DEBUG
-		g_iDebug = 0;
-#endif
-		g_iSystemSetup = 0;
 		g_iDisplayId++;
 		g_iDisplayId %= MAX_DISPLAY_ID;
-		event_LCD_turn_on();
-		buzzer_feedback();
-		event_force_event_by_id(EVT_DISPLAY, 0);
+		g_iHardware_actions = HWD_TURN_SCREEN;
 
     	// Resume execution if the device is in deep sleep mode
 		EVENT_WAKEUP

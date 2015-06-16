@@ -15,5 +15,6 @@ uint8_t switch_check_service_pressed();
 
 void hardware_disable_buttons();
 void hardware_enable_buttons();
+void hardware_actions();
 
 #endif /* HARDWARE_BUTTONS_H_ */

@@ -69,6 +69,12 @@ void state_reset_sensor_alarm(int id) {
 	}
 }
 
+void state_alarm_turnoff_buzzer() {
+	SYSTEM_STATUS *s = state_getAlarms();
+	s->alarms.buzzer = STATE_OFF;
+	g_iStatus &= ~BUZZER_ON;
+}
+
 void state_alarm_on(char *alarm_msg) {
 	SYSTEM_STATUS *s = state_getAlarms();
 

@@ -106,6 +106,7 @@ void sleep_or_alarm() {
 		g_pSysState->buzzerFeedback--;
 		return;
 	}
+
 	if (g_iStatus & BUZZER_ON || state_isBuzzerOn()) {
 #ifndef BUZZER_DISABLED
 		thermal_buzzer_sound();
@@ -135,5 +136,6 @@ void thermal_canyon_loop(void) {
 		// Wait here behind the interruption to check for a change on display.
 		// If a hardware button is pressed it will resume CPU
 		sleep_or_alarm();
+		hardware_actions();
 	}
 }
