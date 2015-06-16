@@ -406,63 +406,8 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 			}
 			return UART_FAILED;
 
-		case ATCMD_CNUM:
-			pToken1 = strstr((const char *) RXBuffer, "CNUM:");
-			if (pToken1 != NULL) {
-				pToken2 = strstr(&pToken1[5], "\""); // Find begin of number on format "Address"
-				if (pToken2 == NULL)
-					return UART_ERROR;
-
-				pToken2++;
-				pToken1 = strstr(pToken2, "\""); // Find end of number
-				if (pToken1 == NULL)
-					return UART_ERROR;
-
-				memcpy(pResponse, pToken2, pToken1 - pToken2);
-				return UART_SUCCESS;
-			}
-			break;
-
 		// Getting the SIM Message Center to send it to the backend in order to get the APN
-		case ATCMD_CSCA:
-			pToken1 = strstr((const char *) RXBuffer, "CSCA:");
-			if (pToken1 != NULL) {
-				// TODO Parse the format "+CSCA: address,address_type"
-				pToken2 = strstr(&pToken1[5], "\""); // Find begin of number on format "Address"
-				if (pToken2 == NULL)
-					return UART_ERROR;
 
-				pToken2++;
-				pToken1 = strstr(pToken2, "\""); // Find end of number
-				if (pToken1 == NULL)
-					return UART_ERROR;
-
-				memcpy(pResponse, pToken2, pToken1 - pToken2);
-				return UART_SUCCESS;
-			}
-			break;
-
-		case ATCMD_CPMS_CURRENT:
-			iMaxTok--;
-		case ATCMD_CPMS_MAX:
-			pToken1 = strstr((const char *) RXBuffer, "CPMS:");
-			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
-				pResponse[0] = '0';
-				pToken1 = strtok(&pToken1[5], ",");
-				while (pToken1 != NULL) {
-					if (iEndIdx < iMaxTok) {
-						pToken2 = pToken1;
-					} else if (iEndIdx == iMaxTok) {
-						numberLen = pToken1 - pToken2;
-						strncpy(pResponse, pToken2, numberLen);
-						pResponse[numberLen] = '\0';
-						return UART_SUCCESS;
-					}
-					pToken1 = strtok(NULL, ",");
-					iEndIdx++;
-				}
-			}
-			break;
 
 		case ATCMD_HTTPSND:
 			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ">>>");

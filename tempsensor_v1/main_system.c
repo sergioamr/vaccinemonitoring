@@ -132,6 +132,7 @@ void system_boot() {
 #endif
 	modem_turn_on();
 
+	hardware_enable_buttons();
 	lcd_init();
 	config_init(); // Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
 	config_setLastCommand(COMMAND_BOOT);

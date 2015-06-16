@@ -115,15 +115,15 @@ void temperature_conversion_done() {
 
 void temperature_trigger_init(uint16_t samples) {
 	USE_TEMPERATURE
-	int iIdx;
+	int c;
 
 	tem->iSamplesRead = 0;
 	tem->iSamplesRequired = samples;
 	tem->iCapturing = 0;
 
 	//initialze ADCvar
-	for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++) {
-		sensor_clear(iIdx);
+	for (c = 0; c < MAX_NUM_SENSORS; c++) {
+		sensor_get(c)->iADC = 0;
 	}
 }
 

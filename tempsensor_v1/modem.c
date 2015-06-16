@@ -452,37 +452,34 @@ int modem_getSignal() {
 	return iSignalLevel;
 }
 
-void modem_getSMSCenter() {
-
-	SIM_CARD_CONFIG *sim = config_getSIM();
+int8_t modem_parse_string(char *cmd, char *response, char *destination, uint16_t size) {
+	char *token;
+	int8_t uart_state;
 	config_incLastCmd();
 
-	// Reading the Service Center Address to use as message gateway
-	// http://www.developershome.com/sms/cscaCommand.asp
-	// Get service center address; format "+CSCA: address,address_type"
-
-	// added for SMS Message center number to be sent in the heart beat
-	uart_tx("AT+CSCA?\r\n");
-
-	if (uart_rx_cleanBuf(ATCMD_CSCA, ATresponse,
-			sizeof(ATresponse))==UART_SUCCESS) {
-
-		memcpy(sim->cfgSMSCenter, ATresponse, strlen(ATresponse));
+	uart_tx(cmd);
+	uart_state = uart_getTransactionState();
+	if (uart_state == UART_SUCCESS) {
+		PARSE_FINDSTR_RET(token, response, UART_FAILED);
+		PARSE_FIRSTSTRING(token, destination, size, "\"", UART_FAILED);
 	}
+
+	return uart_state;
 }
 
-void modem_getOwnNumber() {
+// Reading the Service Center Address to use as message gateway
+// http://www.developershome.com/sms/cscaCommand.asp
+// Get service center address; format "+CSCA: address,address_type"
 
+int8_t modem_getSMSCenter() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
-	config_incLastCmd();
+	return modem_parse_string("AT+CSCA?\r\n", "CSCA: \"", sim->cfgSMSCenter, GW_MAX_LEN+1);
+	// added for SMS Message center number to be sent in the heart beat
+}
 
-	uart_tx("AT+CNUM\r\n");
-
-	if (uart_rx_cleanBuf(ATCMD_CNUM, ATresponse,
-			sizeof(ATresponse))==UART_SUCCESS) {
-
-		memcpy(sim->cfgPhoneNum, ATresponse, strlen(ATresponse));
-	}
+int8_t modem_getOwnNumber() {
+	SIM_CARD_CONFIG *sim = config_getSIM();
+	return modem_parse_string("AT+CNUM?\r\n", "CNUM: \"", sim->cfgPhoneNum, GW_MAX_LEN+1);
 }
 
 uint8_t validateIMEI(char *IMEI) {
@@ -536,8 +533,7 @@ void modem_getIMEI() {
 
 void modem_getExtraInfo() {
 	modem_getIMEI();
-	modem_getOwnNumber();
-	delay(100);
+	delay(50);
 }
 
 // 2 minutes timeout by the TELIT documentation
@@ -659,11 +655,47 @@ int modem_parse_time(struct tm* pTime) {
 	return UART_SUCCESS;
 }
 
-void modem_set_max_messages() {
+/*
+		case ATCMD_CPMS_CURRENT:
+			iMaxTok--;
+		case ATCMD_CPMS_MAX:
+			pToken1 = strstr((const char *) RXBuffer, "CPMS:");
+			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
+				pResponse[0] = '0';
+				pToken1 = strtok(&pToken1[5], ",");
+				while (pToken1 != NULL) {
+					if (iEndIdx < iMaxTok) {
+						pToken2 = pToken1;
+					} else if (iEndIdx == iMaxTok) {
+						numberLen = pToken1 - pToken2;
+						strncpy(pResponse, pToken2, numberLen);
+						pResponse[numberLen] = '\0';
+						return UART_SUCCESS;
+					}
+					pToken1 = strtok(NULL, ",");
+					iEndIdx++;
+				}
+			}
+			break;
+*/
+
+int8_t modem_set_max_messages() {
+	int8_t uart_state;
+	char *token;
+	char memory[16];
+	int storedmessages = 0;
 	//check if messages are available
 	uart_tx("AT+CPMS?\r\n");
-	uart_rx_cleanBuf(ATCMD_CPMS_MAX, ATresponse, sizeof(ATresponse));
-	config_getSIM()->iMaxMessages = atoi(ATresponse);
+	uart_state = uart_getTransactionState();
+	if (uart_state == UART_SUCCESS) {
+		PARSE_FINDSTR_RET(token, "CPMS: \"", UART_FAILED);
+		PARSE_FIRSTSTRING(token, memory, 16, "\"", UART_FAILED);
+		PARSE_NEXTVALUE(token, &storedmessages, ",\n", UART_FAILED);
+		PARSE_NEXTVALUE(token, &config_getSIM()->iMaxMessages, ",\n", UART_FAILED);
+	}
+
+	_NOP();
+	return uart_state;
 }
 
 void modem_pull_time() {
@@ -797,6 +829,8 @@ void modem_init() {
 
 	// Disable echo from modem
 	uart_tx("ATE0\r\n");
+
+	modem_getOwnNumber();
 
 	// Check if the network/sim card works
 	modem_isSIM_Operational();
