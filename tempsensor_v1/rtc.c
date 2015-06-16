@@ -225,9 +225,7 @@ void RTC_B_ISR(void) {
 		iSecondTick++;
 
 		// Resume execution if the device is in deep sleep mode
-		if (event_wakeup_main) {
-			__bic_SR_register_on_exit(LPM0_bits); // Resume execution
-		}
+		EVENT_WAKEUP
 
 		break;
 	case RTCIV_RTCTEVIFG:             //RTCEVIFG

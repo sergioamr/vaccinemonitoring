@@ -35,7 +35,7 @@
 #include "state_machine.h"
 
 void thermal_handle_system_button() {
-	if (!system_isRunning())
+	if (!g_iRunning)
 		return;
 
 	if (g_iSystemSetup < 0)

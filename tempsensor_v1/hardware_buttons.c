@@ -45,9 +45,6 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 #error Compiler not supported!
 #endif
 {
-	if (!system_isRunning())
-		return;
-
 	switch (__even_in_range(P2IV, P2IV_P2IFG7)) {
 	case P2IV_NONE:
 		break;
@@ -57,7 +54,7 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 		break;
 	case P2IV_P2IFG2:
 		//P3OUT &= ~BIT4;                           // buzzer off
-
+		SYSTEM_RUNNING_CHECK
 #ifdef _DEBUG
 		g_iDebug = !g_iDebug;
 #endif
@@ -68,9 +65,7 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 		buzzer_feedback();
 		event_force_event_by_id(EVT_DISPLAY, 0);
     	// Resume execution if the device is in deep sleep mode
-    	if (event_wakeup_main) {
-    		__bic_SR_register_on_exit(LPM0_bits); // Resume execution
-    	}
+		EVENT_WAKEUP
 		break;
 	default:
 		break;
@@ -92,17 +87,14 @@ void __attribute__ ((interrupt(PORT3_VECTOR))) Port_3 (void)
 	case P3IV_NONE:
 		break;
 	case P3IV_P3IFG5:
-		if (!system_isRunning())
-			return;
+		SYSTEM_RUNNING_CHECK
 		g_iSystemSetup ++;
 		thermal_handle_system_button();
 		event_LCD_turn_on();
 		buzzer_feedback();
 		event_force_event_by_id(EVT_DISPLAY, 0);
     	// Resume execution if the device is in deep sleep mode
-    	if (event_wakeup_main) {
-    		__bic_SR_register_on_exit(LPM0_bits); // Resume execution
-    	}
+		EVENT_WAKEUP
 		break;
 	default:
 		break;
@@ -125,9 +117,7 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
 	case P4IV_P4IFG0:
 		break;
 	case P4IV_P4IFG4:
-		if (!system_isRunning())
-			return;
-
+		SYSTEM_RUNNING_CHECK
 		if (POWER_ON)
 			state_power_on();
 		else
@@ -137,13 +127,10 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
 		event_force_event_by_id(EVT_ALARMS_CHECK, 0);
 		event_force_event_by_id(EVT_DISPLAY, 0);
     	// Resume execution if the device is in deep sleep mode
-    	if (event_wakeup_main) {
-    		__bic_SR_register_on_exit(LPM0_bits); // Resume execution
-    	}
+		EVENT_WAKEUP
 		break;
 	case P4IV_P4IFG1:
-		if (!system_isRunning())
-			return;
+		SYSTEM_RUNNING_CHECK
 
 #ifdef _DEBUG
 		g_iDebug = 0;
@@ -156,9 +143,7 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
 		event_force_event_by_id(EVT_DISPLAY, 0);
 
     	// Resume execution if the device is in deep sleep mode
-    	if (event_wakeup_main) {
-    		__bic_SR_register_on_exit(LPM0_bits); // Resume execution
-    	}
+		EVENT_WAKEUP
 		break;
 	default:
 		break;

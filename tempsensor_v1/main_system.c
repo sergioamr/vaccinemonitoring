@@ -37,10 +37,6 @@
 
 int g_iRunning = 0;
 
-char system_isRunning() {
-	return g_iRunning;
-}
-
 //reset the board by issuing a SW BOR
 void system_reboot(const char *message) {
 	PMM_trigBOR();

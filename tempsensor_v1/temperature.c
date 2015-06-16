@@ -267,8 +267,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 
 		// We are done sampling, we might want to store the results
 		if (tem->iSamplesRead > tem->iSamplesRequired) {
-			if (event_wakeup_main)
-				__bic_SR_register_on_exit(LPM0_bits); // Resume execution
+			EVENT_WAKEUP
 		}
 		break;
 	case ADC12IV_ADC12RDYIFG:
