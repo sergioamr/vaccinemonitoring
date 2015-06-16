@@ -242,14 +242,15 @@ typedef struct {
 	char name[2];
 	volatile int32_t iADC;
 	float fTemperature;
+	uint16_t iSamplesRead;
 	char temperature[TEMP_DATA_LEN + 1];
 } TEMPERATURE_SENSOR;
 
 typedef struct {
 	// Raw voltage values
 	uint16_t iCapturing;
-	uint16_t iSamplesRead;
 	uint16_t iSamplesRequired;
+	uint16_t iSamplesRead;
 
 	time_t alarm_time;	// When was the alarm triggered
 	SENSOR_STATUS state[MAX_NUM_SENSORS];

@@ -459,7 +459,7 @@ void events_init() {
 			MINUTES_(LCD_REFRESH_INTERVAL), NULL);
 
 	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0, &event_subsample_temperature,
-			(MINUTES_(SAMPLE_PERIOD)/(NUM_SAMPLES_CAPTURE-1)), 0);
+			(MINUTES_(SAMPLE_PERIOD)/(NUM_SAMPLES_CAPTURE)), 0);
 
 	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 0, &event_save_samples,
 			MINUTES_(SAMPLE_PERIOD),

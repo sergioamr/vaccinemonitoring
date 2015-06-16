@@ -16,7 +16,6 @@ void temperature_trigger_capture();
 void temperature_sample();
 char *temperature_getString(uint8_t id);
 float resistance_to_temperature(float R);
-void digital_amp_to_temp_string(int8_t iSensorIdx);
 char *getFloatNumber2Text(float number, char *ret);
 
 void temperature_process_ADC_values();

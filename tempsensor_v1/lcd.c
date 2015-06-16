@@ -131,7 +131,6 @@ void lcd_show() {
 
 	switch (iItemId) {
 	case 0:
-		digital_amp_to_temp_string(0);
 		strcat(lcdBuffer, temperature_getString(0));
 		strcat(lcdBuffer, "C ");
 		strcat(lcdBuffer, itoa_pad(batt_getlevel()));
@@ -246,8 +245,6 @@ void lcd_show() {
 	}
 
 	if (iCnt != 0xff) {
-
-		digital_amp_to_temp_string(iCnt);
 
 		if (g_pSysState->temp.state[iCnt].status!=0) {
 			strcat(lcdBuffer, "ALERT ");
