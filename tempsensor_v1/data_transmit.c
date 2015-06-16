@@ -235,23 +235,15 @@ void setup_http_post() {
 	config_setLastCommand(COMMAND_POST);
 	uart_resetbuffer();
 
+	uart_txf("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN);
+	uart_tx("AT#SGACT=1,1\r\n");
+	uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
 	if (http_post(ATresponse) != 0) {
-		//redo the post
-		// Define Packet Data Protocol Context - +CGDCONT
-		uart_txf("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN);
-		uart_tx("AT#SGACT=1,1\r\n");
-		uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
-#ifdef NO_CODE_SIZE_LIMIT
-		if (http_post(ATresponse) != 0) {
-			// Try to upload via SMS instead
-			uart_tx("AT#SGACT=1,0\r\n"); // deactivate GPRS context
-			//data_upload_sms();
-			//file_pointer_enabled_sms_status =  TODO clarify what this return is for
-			http_post_sms_status();
-		} else {
-			__no_operation();
-		}
-#endif
+		// Try to upload via SMS instead
+		uart_tx("AT#SGACT=1,0\r\n"); // deactivate GPRS context
+		//data_upload_sms();
+		//file_pointer_enabled_sms_status =  TODO clarify what this return is for
+		http_post_sms_status();
 	}
 
 #ifdef POWER_SAVING_ENABLED
