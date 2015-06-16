@@ -62,7 +62,7 @@ void event_setInterval_by_id(EVENT_IDS id, time_t time) {
 }
 
 time_t events_getTick() {
-
+#ifdef USING_REALTIME_CLOCK
 	static time_t oldTime = 0;
 	static time_t frameDiff = 0;
 	static time_t elapsedTime = 0;
@@ -83,6 +83,9 @@ time_t events_getTick() {
 
 	oldTime = newTime;
 	return elapsedTime;
+#else
+	return rtc_get_second_tick();
+#endif
 }
 
 void events_send_data(char *phone) {
@@ -400,7 +403,7 @@ uint8_t iMainSleep = 0;
 
 // Resume execution if the device is in deep sleep mode
 // Triggered by the interruption
-uint8_t event_wakeup_main() {
+uint8_t event_wake_up_main() {
 	if (iMainSleep==0)
 		return 0;
 
@@ -454,15 +457,6 @@ void events_init() {
 
 	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
 			MINUTES_(LCD_REFRESH_INTERVAL), NULL);
-
-	uint16_t c = g_pDevCfg->stIntervalParam.loggingInterval;
-	uint16_t value1 = c;
-
-	uint16_t *p = &g_pDevCfg->stIntervalParam.loggingInterval;
-	uint16_t value2 = *p;
-
-	if (value1 != value2)
-		log_appendf(" hello world ");
 
 	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0, &event_subsample_temperature,
 			MINUTES_(SAMPLE_PERIOD)/(NUM_SAMPLES_CAPTURE-1), 0);

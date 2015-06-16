@@ -8,11 +8,10 @@
 #include "rtc.h"
 #include "driverlib.h"
 #include "stdlib.h"
+#include "events.h"
 #include "main_system.h"
 
 Calendar g_rtcCalendarTime;
-
-extern uint8_t event_wakeup_main();
 
 volatile uint32_t iMinuteTick = 0;
 volatile time_t iSecondTick = 0;
@@ -226,7 +225,7 @@ void RTC_B_ISR(void) {
 		iSecondTick++;
 
 		// Resume execution if the device is in deep sleep mode
-		if (event_wakeup_main()) {
+		if (event_wakeup_main) {
 			__bic_SR_register_on_exit(LPM0_bits); // Resume execution
 		}
 

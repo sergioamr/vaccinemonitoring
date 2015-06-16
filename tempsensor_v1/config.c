@@ -197,6 +197,18 @@ int config_default_configuration() {
 	g_pDevCfg->stIntervalParam.loggingInterval = SAMPLE_PERIOD;
 	g_pDevCfg->stIntervalParam.uploadInterval = UPLOAD_PERIOD;
 
+#ifdef _DEBUG
+	uint16_t c = g_pDevCfg->stIntervalParam.loggingInterval;
+	uint16_t value1 = c;
+
+	uint16_t *p = &g_pDevCfg->stIntervalParam.loggingInterval;
+	uint16_t value2 = *p;
+
+	if (value1 != value2)
+		_NOP();
+
+#endif
+
 	// Battery and power alarms
 	return 1;
 }

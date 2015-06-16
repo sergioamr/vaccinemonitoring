@@ -8,6 +8,10 @@
 #ifndef EVENTS_H_
 #define EVENTS_H_
 
+extern uint8_t iMainSleep;
+extern volatile time_t iSecondTick;
+#define event_wakeup_main (iMainSleep!=0 && iSecondTick > g_sEvents.events[g_sEvents.nextEvent].nextEventRun)
+
 typedef enum {
 	EVT_DISPLAY = 0,
 	EVT_PULLTIME,
@@ -60,7 +64,6 @@ void events_sync();
 void event_init(EVENT *pEvent, time_t currentTime);
 void event_force_event_by_id(EVENT_IDS id, time_t offset);
 void event_run_now_by_id(EVENT_IDS id);
-uint8_t event_wakeup_main();
 
 void event_LCD_turn_on();
 EVENT *events_find(EVENT_IDS id);

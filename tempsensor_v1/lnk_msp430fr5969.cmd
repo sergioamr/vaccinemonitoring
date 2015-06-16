@@ -139,7 +139,7 @@ SECTIONS
     } PALIGN(0x0400), RUN_END(fram_rx_start) > 0x4400
 
     .cinit            : {}  > FRAM          /* INITIALIZATION TABLES             */
-    .const            : {}  > FRAM2  (HIGH) /* CONSTANT DATA                     */
+    .const            : {}  > FRAM  /* CONSTANT DATA                     */
 
     .text:_isr        : {}  > FRAM          /* CODE ISRs                         */
     .text             : {} >> FRAM2 | FRAM  /* CODE                              */
