@@ -189,8 +189,6 @@ void digital_amp_to_temp_string(int8_t iSensorIdx) {
 
 	sensor->iADC = 0;
 
-	memset(TemperatureVal, 0, TEMP_DATA_LEN + 1);
-
 	A0V2V = 0.00061 * ADCval;		//Converting to voltage. 2.5/4096 = 0.00061
 
 	A0R2 = (A0V2V * 10000.0) / (2.5 - A0V2V);			//R2= (V2*R1)/(V1-V2)
