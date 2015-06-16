@@ -521,12 +521,12 @@ void modem_getIMEI() {
 	}
 
 	if (check_address_empty(g_pDevCfg->cfgIMEI[0])) {
-		strcpy(g_pDevCfg->cfgIMEI, ATresponse);
+		strcpy(g_pDevCfg->cfgIMEI, IMEI);
 	}
 
 	// Lets check if we have the right IMEI from the modem, otherwise we flash it again into config.
-	if (memcmp(ATresponse, g_pDevCfg->cfgIMEI, IMEI_MAX_LEN) != 0) {
-		strcpy(g_pDevCfg->cfgIMEI, ATresponse);
+	if (memcmp(IMEI, g_pDevCfg->cfgIMEI, IMEI_MAX_LEN) != 0) {
+		strcpy(g_pDevCfg->cfgIMEI, IMEI);
 	}
 
 }
