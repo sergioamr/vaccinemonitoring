@@ -165,6 +165,18 @@ int http_check_error(int *retry) {
 	return UART_SUCCESS;
 }
 
+int http_open_connection(int data_length) {
+	char cmd[64];
+	sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%d,0\r\n", data_length);
+
+	// Wait for prompt
+	uart_setHTTPPromptMode();
+	if (uart_tx_waitForPrompt(cmd, TIMEOUT_HTTPSND_PROMPT)) {
+		return UART_SUCCESS;
+	}
+	return uart_getTransactionState();
+}
+
 int http_get_configuration() {
 	char szTemp[100];
 	int uart_state = UART_FAILED;
@@ -176,7 +188,7 @@ int http_get_configuration() {
 	// Parameters:
 	// <prof_id> - Numeric parameter indicating the profile identifier. Range: 0-2
 	// <command>: Numeric parameter indicating the command requested to HTTP server:
-	// 0 � GET 1 � HEAD 2 � DELETE
+	// 0 GET 1 HEAD 2 DELETE
 
 	sprintf(szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/%s/1/\"\r\n",
 			g_pDevCfg->cfgIMEI);
@@ -311,58 +323,3 @@ int8_t http_post(char* postdata) {
 	}
 	return uart_getTransactionState();
 }
-
-/*
-int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
-		char* seperator, int8_t iFlagVal, char* pcExtSrc, int8_t iFieldSize) {
-	char* pcTmp = NULL;
-	char* pcExt = NULL;
-	int32_t iSampleCnt = 0;
-	int16_t ret = 0;
-	int8_t iFlag = 0;
-
-	//pcTmp = strstr(pcSrc,fieldstr);
-	pcTmp = strchr(pcSrc, fieldstr[0]);
-	iFlag = iFlagVal;
-	while ((pcTmp && !lastoffset)
-			|| (pcTmp && (char *) lastoffset && (pcTmp < (char *) lastoffset))) {
-		iSampleCnt = lastoffset - (int) pcTmp;
-		if ((iSampleCnt > 0) && (iSampleCnt < iFieldSize)) {
-			//the field is splitted across
-			//reuse the SampleData tail part to store the complete timestamp
-			pcExt = &SampleData[SAMPLE_LEN - 1] - iFieldSize - 1;//to accommodate field pair and null termination
-			//memset(g_TmpSMScmdBuffer,0,SMS_CMD_LEN);
-			//pcExt = &g_TmpSMScmdBuffer[0];
-			memset(pcExt, 0, iFieldSize + 1);
-			memcpy(pcExt, pcTmp, iSampleCnt);
-			memcpy(&pcExt[iSampleCnt], pcExtSrc, iFieldSize - iSampleCnt);
-			pcTmp = pcExt;	//point to the copied field
-		}
-
-		iSampleCnt = 0;
-		while (pcTmp[FORMAT_FIELD_OFF + iSampleCnt] != ',')	//TODO recheck whenever the log formatting changes
-		{
-			iSampleCnt++;
-		}
-		if (iFlag) {
-			//non first instance
-			strcat(SampleData, ",");
-			strncat(SampleData, &pcTmp[FORMAT_FIELD_OFF], iSampleCnt);
-		} else {
-			//first instance
-			if (seperator) {
-				strcat(SampleData, seperator);
-				strncat(SampleData, &pcTmp[FORMAT_FIELD_OFF], iSampleCnt);
-			} else {
-				strncat(SampleData, &pcTmp[FORMAT_FIELD_OFF], iSampleCnt);
-			}
-		}
-		//pcTmp = strstr(&pcTmp[3],fieldstr);
-		pcTmp = strchr(&pcTmp[FORMAT_FIELD_OFF], fieldstr[0]);
-		iFlag++;
-		ret = 1;
-	}
-
-	return ret;
-}
-*/

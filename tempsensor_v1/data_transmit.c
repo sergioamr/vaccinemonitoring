@@ -39,6 +39,8 @@ void data_send_temperatures_sms() {
 }
 
 void data_upload_sms() {
+
+	// TODO Implement
 /*
 	int iPOSTstatus = 0;
 	char* pcData = NULL;
@@ -230,29 +232,34 @@ void data_upload_sms() {
 
 // 11,20150303:082208,interval,sensorid,DATADATADATAT,sensorid,DATADATADATA,
 // sensorid,dATADATADA,sensorID,DATADATADATADATAT, sensorID,DATADATADATADATAT,batt level,battplugged.
-void setup_http_post() {
-	SIM_CARD_CONFIG *sim = config_getSIM();
-	config_setLastCommand(COMMAND_POST);
-	uart_resetbuffer();
-
-	uart_txf("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN);
-	uart_tx("AT#SGACT=1,1\r\n");
-	uart_tx("AT#HTTPCFG=1,\"54.241.2.213\",80\r\n");
-	if (http_post(ATresponse) != 0) {
-		// Try to upload via SMS instead
-		uart_tx("AT#SGACT=1,0\r\n"); // deactivate GPRS context
-		//data_upload_sms();
-		//file_pointer_enabled_sms_status =  TODO clarify what this return is for
-		http_post_sms_status();
+// FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
+/*
+void http_send_file(FIL *file, size_t start, size_t end) {
+	// Setup connection
+	if (modem_check_network() != UART_SUCCESS) {
+		return;
 	}
 
-#ifdef POWER_SAVING_ENABLED
-		modem_enter_powersave_mode();
-#endif
-	config_setLastCommand(COMMAND_POST + COMMAND_END);
-}
+	if (http_setup() != UART_SUCCESS) {
+		// TODO sms
+		http_deactivate();
+		return;
+	}
 
-// FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
+	f_lseek(file, start);
+
+	size_t length = end-start;
+	http_open_connection(length);
+
+	// check that the transmitted data equals the size
+	while(f_gets(line, lineSize, &filr) != 0) {
+		uart_tx(line);
+	}
+
+	http_deactivate();
+}
+*/
+
 void process_batch() {
 	int lineIndex = 0;
 	uint8_t canSend = 0;
@@ -261,6 +268,7 @@ void process_batch() {
 	FIL filr;
 	FRESULT fr;
 	char line[80];
+	char msg[128];
 	char path[32];
 	int lineSize = sizeof(line)/sizeof(char);
 	char* dateString = NULL;
@@ -271,18 +279,24 @@ void process_batch() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	struct tm firstDate;
 
-	memset(ATresponse, 0, sizeof(ATresponse));
+	memset(msg, 0, sizeof(msg));
 
+	config_setLastCommand(COMMAND_POST);
 	lcd_printl(LINE2, "Transmitting...");
 
 	// Cycle through all files using f_findfirst, f_findnext.
 	fr = f_findfirst(&dir, &fili, FOLDER_TEXT, "*." EXTENSION_TEXT);
+	if (fr != FR_OK) {
+		return;
+	}
+
 	while(fr == FR_OK) {
 		sprintf(path, "%s/%s", FOLDER_TEXT, fili.fname);
 		fr = f_open(&filr, path, FA_READ | FA_OPEN_ALWAYS);
 		if (fr != FR_OK) {
 			break;
 		}
+
 		// If we must carry on where we left off cycle through the lines
 		// until we get to where we left off
 		if (g_pSysCfg->lastLineRead > 0) {
@@ -300,8 +314,7 @@ void process_batch() {
 			dateString = strstr(line, "$TS");
 			if(lineIndex == 0 || dateString != NULL) {
 				if(canSend) {
-					setup_http_post();
-					memset(ATresponse, 0, sizeof(ATresponse));
+					memset(msg, 0, sizeof(msg));
 					canSend = 0;
 					// Done - Send!
 					// Send the data if the last line has been passed or
@@ -311,14 +324,14 @@ void process_batch() {
 				// TODO What if this line isn't a date? -> Find previous date or next?
 				parse_time_from_line(&firstDate, line);
 				dateString = get_date_string(&firstDate, delim1, delim2, 0);
-				sprintf(ATresponse, format,
+				sprintf(msg, format,
 						g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa",
 						defSID, dateString,
 						itoa_nopadding(g_pDevCfg->stIntervalParam.loggingInterval));
 			} else {
 				// Stream data! When it's streamed we should always be able to send
 				// a whole block of data at a time (unless an error occurs)
-				strcat(ATresponse, line);
+				strcat(msg, line);
 				canSend = 1;
 			}
 
@@ -326,11 +339,7 @@ void process_batch() {
 			lineIndex++;
 		}
 
-		if(canSend) {
-			setup_http_post();
-			memset(ATresponse, 0, sizeof(ATresponse));
-			canSend = 0;
-		}
+		//http_send_file(FIL *file, size_t start, size_t end);
 
 		if (f_close(&filr) == FR_OK) {
 			fr = f_unlink(path); // Delete the file
@@ -346,6 +355,8 @@ void process_batch() {
 		}
 	}
 
+
 	lcd_printl(LINEC, "Transmit");
 	lcd_printl(LINE2, "Done");
+
 }

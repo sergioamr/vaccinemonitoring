@@ -359,9 +359,7 @@ int8_t modem_first_init() {
 			}
 		}
 
-#ifdef _DEBUG
-		//backend_get_configuration();
-#endif
+		backend_get_configuration();
 
 		// One or more of the sims had a catastrofic failure on init, set the device
 		switch (iSIM_Error) {
@@ -830,7 +828,9 @@ void modem_init() {
 	// Disable echo from modem
 	uart_tx("ATE0\r\n");
 
+#ifndef _DEBUG
 	modem_getOwnNumber();
+#endif
 
 	// Check if the network/sim card works
 	modem_isSIM_Operational();
