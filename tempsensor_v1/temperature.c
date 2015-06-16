@@ -94,23 +94,19 @@ void temperature_analog_to_digital_conversion() {
 	int iIdx;
 	// Average sensors
 
-	if (tem->iSamplesRead == 0 || tem->iSamplesRead > 10000)
+	if (tem->iSamplesRequired == 0 || tem->iSamplesRead == 0)
 		return;
+
+	if (tem->iSamplesRead > 10000) {
+		tem->iSamplesRead = 0;
+		return;
+	}
 
 	// convert the current sensor ADC value to temperature
 	for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++)
 		digital_amp_to_temp_string(iIdx);
 
 	tem->iSamplesRead = 0;
-}
-
-void temperature_conversion_done() {
-	USE_TEMPERATURE
-
-	if (tem->iSamplesRequired == 0 || tem->iSamplesRead == 0)
-		return;
-
-	temperature_analog_to_digital_conversion();
 }
 
 void temperature_trigger_init(uint16_t samples) {
@@ -147,12 +143,12 @@ void temperature_sample() {
 
 	config_setLastCommand(COMMAND_TEMPERATURE_SAMPLE);
 
-	if (tem->iSamplesRead < tem->iSamplesRequired) {
+	if (tem->iSamplesRead <= tem->iSamplesRequired) {
 		temperature_trigger_capture();
 		return;
 	}
 
-	temperature_conversion_done();
+	temperature_analog_to_digital_conversion();
 
 	temperature_trigger_init(NUM_SAMPLES_CAPTURE);
 	temperature_trigger_capture();
@@ -186,9 +182,6 @@ void digital_amp_to_temp_string(int8_t iSensorIdx) {
 
 	TEMPERATURE_SENSOR *sensor = sensor_get(iSensorIdx);
 	ADCval = (float) sensor->iADC / (float) tem->iSamplesRead;
-
-	sensor->iADC = 0;
-
 	A0V2V = 0.00061 * ADCval;		//Converting to voltage. 2.5/4096 = 0.00061
 
 	A0R2 = (A0V2V * 10000.0) / (2.5 - A0V2V);			//R2= (V2*R1)/(V1-V2)
@@ -260,17 +253,22 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 		break;
 	case ADC12IV_ADC12IFG6:                 // Vector 24:  ADC12MEM6
 		tem->sensors[4].iADC += ADC12MEM6;
-		tem->iSamplesRead++;
 		tem->iCapturing++;
-
-		// We are done sampling, we might want to store the results
-		if (tem->iSamplesRead > tem->iSamplesRequired) {
-			EVENT_WAKEUP
-		}
 		break;
 	case ADC12IV_ADC12RDYIFG:
 		break;        // Vector 76:  ADC12RDY
 	default:
 		break;
 	}
+
+	if (tem->iCapturing==MAX_NUM_SENSORS+1) {
+		tem->iSamplesRead++;
+
+		// We are done sampling, we might want to store the results
+		if (tem->iSamplesRead > tem->iSamplesRequired) {
+			EVENT_WAKEUP
+		}
+		tem->iCapturing=0;
+	}
+
 }
