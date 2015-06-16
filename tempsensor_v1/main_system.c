@@ -149,9 +149,8 @@ void system_boot() {
 	fat_init_drive();
 
 	// Initial trigger of temperature capture. Just get one sample
-	temperature_trigger_init(1);
-	temperature_trigger_capture();
-
+	temperature_subsamples(1);
+	temperature_single_capture();
 #ifndef _DEBUG
 	// to allow conversion to get over and prevent any side-effects to other interface like modem
 	// TODO is this delay to help on the following bug from texas instruments ? (http://www.ti.com/lit/er/slaz627b/slaz627b.pdf)

@@ -341,6 +341,11 @@ void event_display_off(void *event, time_t currentTime) {
 
 void event_save_samples(void *event, time_t currentTime) {
 	UINT bytes_written = 0;
+
+	// Push subsampling in the future to align with saving
+	EVENT *subsampling = events_find(EVT_SUBSAMPLE_TEMP);
+	event_next(subsampling,currentTime);
+
 	log_sample_to_disk(&bytes_written);
 	log_sample_web_format(&bytes_written);
 
@@ -352,7 +357,8 @@ void event_save_samples(void *event, time_t currentTime) {
 }
 
 void event_subsample_temperature(void *event, time_t currentTime) {
-	temperature_sample();
+	temperature_subsamples(NUM_SAMPLES_CAPTURE);
+	temperature_single_capture();
 }
 
 void event_network_check(void *event, time_t currentTime) {
@@ -459,9 +465,9 @@ void events_init() {
 			MINUTES_(LCD_REFRESH_INTERVAL), NULL);
 
 	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0, &event_subsample_temperature,
-			(MINUTES_(SAMPLE_PERIOD)/(NUM_SAMPLES_CAPTURE)), 0);
+			(MINUTES_(SAMPLE_PERIOD)), g_pDevCfg->stIntervalParam.loggingInterval);
 
-	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 0, &event_save_samples,
+	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 15, &event_save_samples,
 			MINUTES_(SAMPLE_PERIOD),
 			g_pDevCfg->stIntervalParam.loggingInterval);
 

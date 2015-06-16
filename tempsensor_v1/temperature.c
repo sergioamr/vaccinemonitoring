@@ -89,11 +89,10 @@ void sensor_clear(uint8_t id) {
 	sensor->temperature[0] = 0;
 }
 
-void temperature_trigger_init(uint16_t samples) {
+void temperature_trigger_init() {
 	USE_TEMPERATURE
 	int c;
 
-	tem->iSamplesRequired = samples;
 	tem->iCapturing = 0;
 	tem->iSamplesRead = 0;
 
@@ -104,20 +103,6 @@ void temperature_trigger_init(uint16_t samples) {
 	}
 }
 
-void temperature_trigger_capture() {
-	USE_TEMPERATURE
-
-	// SUBSAMPLING TOO CLOSE FOR THE TRIGGER TO WORK
-	if (tem->iCapturing > 0 && tem->iCapturing <= MAX_NUM_SENSORS)
-		return;
-
-	// Turn on ADC conversion
-	ADC12CTL0 &= ~ADC12ENC;
-	ADC12CTL0 |= ADC12ENC | ADC12SC;
-
-	if (tem->iCapturing == 0)
-		tem->iCapturing = 1;
-}
 
 float resistance_to_temperature(float R) {
 	float A1 = 0.00335, B1 = 0.0002565, C1 = 0.0000026059, D1 = 0.00000006329,
@@ -178,19 +163,38 @@ void temperature_analog_to_digital_conversion() {
 		temperature_subsampling_calculate(iIdx);
 }
 
-void temperature_sample() {
+void temperature_subsamples(uint8_t samples)  {
+	USE_TEMPERATURE
+	temperature_trigger_init();
+	tem->iSamplesRequired = samples;
+}
+
+void temperature_trigger_capture() {
 	USE_TEMPERATURE
 
-	config_setLastCommand(COMMAND_TEMPERATURE_SAMPLE);
+	// SUBSAMPLING TOO CLOSE FOR THE TRIGGER TO WORK
+	if (tem->iCapturing > 0 && tem->iCapturing <= MAX_NUM_SENSORS)
+		return;
 
-	if (tem->iSamplesRead <= tem->iSamplesRequired) {
-		temperature_trigger_capture();
+	// Turn on ADC conversion
+	ADC12CTL0 &= ~ADC12ENC;
+	ADC12CTL0 |= ADC12ENC | ADC12SC;
+
+	if (tem->iCapturing == 0)
+		tem->iCapturing = 1;
+}
+
+void temperature_single_capture() {
+	USE_TEMPERATURE
+	config_setLastCommand(COMMAND_TEMPERATURE_SAMPLE);
+	if (tem->iSamplesRequired==0)
+		return;
+
+	if (tem->iSamplesRead == tem->iSamplesRequired) {
+		tem->iSamplesRequired = 0;
+		temperature_analog_to_digital_conversion();
 		return;
 	}
-
-	temperature_analog_to_digital_conversion();
-
-	temperature_trigger_init(NUM_SAMPLES_CAPTURE);
 	temperature_trigger_capture();
 }
 
@@ -255,12 +259,11 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 	tem->iCapturing++;
 	if (tem->iCapturing == MAX_NUM_SENSORS + 1) {
 		tem->iSamplesRead++;
-
-		// We are done sampling, we might want to store the results
-		if (tem->iSamplesRead > tem->iSamplesRequired) {
-			EVENT_WAKEUP
-		}
 		tem->iCapturing = 0;
+		// Instantly run this event after the capture is finished
+		if (tem->iSamplesRead<=tem->iSamplesRequired)
+			event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 0);
+		EVENT_WAKEUP
 	}
 
 }

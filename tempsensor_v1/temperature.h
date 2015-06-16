@@ -11,9 +11,11 @@
 #define USE_TEMPERATURE TEMPERATURE *tem = &g_pSysState->temp;
 
 void temperature_analog_to_digital_conversion();
-void temperature_trigger_init(uint16_t samples);
+void temperature_subsamples(uint8_t samples); // Captures N subsamples
+void temperature_trigger_init();
 void temperature_trigger_capture();
-void temperature_sample();
+void temperature_single_capture();
+
 char *temperature_getString(uint8_t id);
 float resistance_to_temperature(float R);
 char *getFloatNumber2Text(float number, char *ret);

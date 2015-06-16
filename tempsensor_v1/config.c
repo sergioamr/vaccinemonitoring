@@ -381,8 +381,7 @@ int config_parse_configuration(char *msg) {
 			g_pDevCfg->stIntervalParam.loggingInterval);
 
 	event_setInterval_by_id(EVT_SUBSAMPLE_TEMP,
-			g_pDevCfg->stIntervalParam.loggingInterval
-					/ (NUM_SAMPLES_CAPTURE));
+			g_pDevCfg->stIntervalParam.loggingInterval);
 
 	event_setInterval_by_id(EVT_UPLOAD_SAMPLES,
 			g_pDevCfg->stIntervalParam.uploadInterval);
