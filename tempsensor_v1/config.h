@@ -44,7 +44,7 @@
 /**************************************************************************************************************************/
 
 #ifdef _DEBUG
-#define MAIN_SLEEP_TIME 200
+#define MAIN_SLEEP_TIME 10000
 #define MAIN_LCD_OFF_SLEEP_TIME 10000
 #else
 #define MAIN_SLEEP_TIME 2000
