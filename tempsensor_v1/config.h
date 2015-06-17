@@ -183,6 +183,8 @@ typedef struct {
 
 typedef struct {
 	int8_t cfgSIM_slot;
+	int8_t cfgNewSIM_slot;
+
 	int8_t cfgSyncId;
 
 	int8_t cfgServerConfigReceived; // The server sent us a configuration package

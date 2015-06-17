@@ -118,6 +118,9 @@ void state_alarm_on(char *alarm_msg) {
 void state_clear_alarm_state() {
 	SYSTEM_STATUS *s = state_getAlarms();
 
+	//set buzzer OFF
+	//reset alarm state and counters
+
 	// We were not in alarm mode
 	if (s->alarms.globalAlarm == STATE_OFF)
 		return;

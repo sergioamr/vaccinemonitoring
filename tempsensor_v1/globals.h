@@ -41,7 +41,6 @@ extern struct tm g_lastSampleTime;
 extern int32_t iBytesLogged;
 
 extern double iTemp;
-extern int16_t g_iAlarmCnfCnt[MAX_NUM_SENSORS + 2];	//additional two for power and battery alert
 
 extern int8_t g_iSignalLevel;
 //opt

@@ -292,6 +292,7 @@ void config_init() {
 
 // Setup InfoA config data
 	g_pDevCfg->cfgSIM_slot = 0;
+	g_pDevCfg->cfgNewSIM_slot = 0;
 
 	strcpy(g_pDevCfg->cfgGatewayIP, NEXLEAF_DEFAULT_SERVER_IP); // HTTP server nextleaf
 	strcpy(g_pDevCfg->cfgGatewaySMS, NEXLEAF_SMS_GATEWAY); // Gateway to nextleaf
@@ -396,18 +397,11 @@ int config_parse_configuration(char *msg) {
 			delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); // Reset alert
 	if (tempValue > 0) {
-		g_iStatus |= RESET_ALERT;
-//set buzzer OFF
-		g_iStatus &= ~BUZZER_ON;
-//reset alarm state and counters
+		state_clear_alarm_state();
 		for (iCnt = 0; iCnt < MAX_NUM_SENSORS; iCnt++) {
 			//reset the alarm
 			state_reset_sensor_alarm(iCnt);
-			//initialize confirmation counter
-			g_iAlarmCnfCnt[iCnt] = 0;
 		}
-	} else {
-		g_iStatus &= ~RESET_ALERT;
 	}
 
 	// Value from the server comes 1 or 2. We use 0 to 1 format.
@@ -418,7 +412,7 @@ int config_parse_configuration(char *msg) {
 		tempValue=0;
 
 	if (g_pDevCfg->cfgSIM_slot != tempValue) {
-		modem_swap_SIM();
+		g_pDevCfg->cfgNewSIM_slot=tempValue;
 	}
 
 	PARSE_SKIP(token, delimiter, UART_FAILED); // $EN

@@ -50,7 +50,6 @@ int32_t iBytesLogged = 0;
 //put all variables that are written less frequently
 uint32_t g_iAlarmStatus = 0;
 double iTemp = 0.0;
-int16_t g_iAlarmCnfCnt[MAX_NUM_SENSORS + 2];//additional two for power and battery alert
 
 int8_t g_iSignalLevel = 99;
 //opt

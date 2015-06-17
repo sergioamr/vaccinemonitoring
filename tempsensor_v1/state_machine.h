@@ -14,6 +14,8 @@ extern SYSTEM_STATE *g_pSysState;
 #define STATE_OFF 0
 #define STATE_ON 1
 
+void state_clear_alarm_state();
+
 SYSTEM_STATUS *state_getAlarms();
 
 void state_alarm_turnon_buzzer();
