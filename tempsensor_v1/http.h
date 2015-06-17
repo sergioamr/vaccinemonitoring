@@ -13,6 +13,7 @@ void backend_get_configuration();
 int8_t http_setup();
 void http_deactivate();
 int http_get_configuration();
+int http_open_connection(int data_length);
 void backend_get_configuration();
 int8_t http_post(char* postdata);
 int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,

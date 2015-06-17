@@ -167,7 +167,9 @@ int http_check_error(int *retry) {
 
 int http_open_connection(int data_length) {
 	char cmd[64];
-	sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%d,0\r\n", data_length);
+	// Test post URL
+	sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/intel/upload/\",%d,0\r\n", data_length);
+	//sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%d,0\r\n", data_length);
 
 	// Wait for prompt
 	uart_setHTTPPromptMode();
