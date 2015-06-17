@@ -60,6 +60,7 @@ DSTATUS disk_initialize (
 		MMC_OTHER_ERROR
 		MMC_TIMEOUT_ERROR
 		*/
+	return stat;
 }
 
 

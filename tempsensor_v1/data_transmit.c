@@ -233,44 +233,7 @@ void data_upload_sms() {
 // 11,20150303:082208,interval,sensorid,DATADATADATAT,sensorid,DATADATADATA,
 // sensorid,dATADATADA,sensorID,DATADATADATADATAT, sensorID,DATADATADATADATAT,batt level,battplugged.
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
-/*
-void http_send_file(FIL *file, size_t start, size_t end) {
-	// Setup connection
-	if (modem_check_network() != UART_SUCCESS) {
-		return;
-	}
-
-	if (http_setup() != UART_SUCCESS) {
-		// TODO sms
-		http_deactivate();
-		return;
-	}
-
-	f_lseek(file, start);
-
-	size_t length = end-start;
-	http_open_connection(length);
-
-	// check that the transmitted data equals the size
-	while(f_gets(line, lineSize, &filr) != 0) {
-		uart_tx(line);
-	}
-
-	http_deactivate();
-}
-*/
-
-void process_batch() {
-	int lineIndex = 0;
-	uint8_t canSend = 0;
-	FILINFO fili;
-	DIR dir;
-	FIL filr;
-	FRESULT fr;
-	char line[80];
-	char msg[128];
-	char path[32];
-	int lineSize = sizeof(line)/sizeof(char);
+void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	char* dateString = NULL;
 	const static char* format = "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%s";
 	const static char* defSID = "0|1|2|3|4";
@@ -278,10 +241,63 @@ void process_batch() {
 	const static char* delim2 = ":";
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	struct tm firstDate;
+	char line[80];
+	int lineSize = sizeof(line)/sizeof(char);
+	uint8_t dateLine = 1;
 
-	memset(msg, 0, sizeof(msg));
+	// Setup connection
+	if (modem_check_network() != UART_SUCCESS) {
+		return;
+	}
 
-	config_setLastCommand(COMMAND_POST);
+	if (http_setup() != UART_SUCCESS) {
+		// TODO try to send sms
+		http_deactivate();
+		return;
+	}
+
+	f_lseek(file, start);
+
+	uint32_t length = end-start;
+	http_open_connection(length);
+
+	// check that the transmitted data equals the size
+	while (file->fptr < end) {
+		if(f_gets(line, lineSize, file) != 0) {
+			if (dateLine) {
+				parse_time_from_line(&firstDate, line);
+				dateString = get_date_string(&firstDate, delim1, delim2, 0);
+				sprintf(line, format,
+						g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa",
+						defSID, dateString,
+						itoa_nopadding(g_pDevCfg->stIntervalParam.loggingInterval));
+				dateLine = 0;
+			} else {
+				strcat(line, "|");
+			}
+
+			uart_tx(line);
+		} else {
+			break;
+		}
+	}
+
+	http_deactivate();
+}
+
+void process_batch() {
+	uint8_t canSend = 0;
+	uint32_t seekFrom = g_pSysCfg->lastSeek;
+	char line[80];
+	char path[32];
+	int lineSize = sizeof(line)/sizeof(char);
+
+	//config_setLastCommand(COMMAND_POST);
+
+	FILINFO fili;
+	DIR dir;
+	FIL filr;
+	FRESULT fr;
 	lcd_printl(LINE2, "Transmitting...");
 
 	// Cycle through all files using f_findfirst, f_findnext.
@@ -297,66 +313,37 @@ void process_batch() {
 			break;
 		}
 
-		// If we must carry on where we left off cycle through the lines
-		// until we get to where we left off
-		if (g_pSysCfg->lastLineRead > 0) {
-			while(lineIndex < g_pSysCfg->lastLineRead) {
-				if (f_gets(line, lineSize, &filr) == 0) {
-					lineIndex = 0;
-					break;
-				}
-				lineIndex++;
-			}
+		if (g_pSysCfg->lastSeek > 0) {
+			f_lseek(&filr, g_pSysCfg->lastSeek);
 		}
 
-		//strcpy(line, f_gets(line, strlen(line), &filr));
 		while(f_gets(line, lineSize, &filr) != 0) {
-			dateString = strstr(line, "$TS");
-			if(lineIndex == 0 || dateString != NULL) {
+			if(filr.fptr == 0 || strstr(line, "$TS") != NULL) {
 				if(canSend) {
-					memset(msg, 0, sizeof(msg));
+					http_send_batch(&filr, seekFrom, filr.fptr);
+					seekFrom = filr.fptr;
 					canSend = 0;
-					// Done - Send!
-					// Send the data if the last line has been passed or
-					// the TXbuffer is full.
 					// Found next time stamp - Move to next batch now
+				} else {
+					// TODO: what if it broke not on a date (rollback?)
 				}
-				// TODO What if this line isn't a date? -> Find previous date or next?
-				parse_time_from_line(&firstDate, line);
-				dateString = get_date_string(&firstDate, delim1, delim2, 0);
-				sprintf(msg, format,
-						g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa",
-						defSID, dateString,
-						itoa_nopadding(g_pDevCfg->stIntervalParam.loggingInterval));
 			} else {
-				// Stream data! When it's streamed we should always be able to send
-				// a whole block of data at a time (unless an error occurs)
-				strcat(msg, line);
 				canSend = 1;
 			}
-
-			g_pSysCfg->lastLineRead = lineIndex;
-			lineIndex++;
 		}
-
-		//http_send_file(FIL *file, size_t start, size_t end);
 
 		if (f_close(&filr) == FR_OK) {
 			fr = f_unlink(path); // Delete the file
-			g_pSysCfg->lastLineRead = 0;
+			g_pSysCfg->lastSeek = 0;
+			g_iStatus |= LOG_TIME_STAMP;
 		} else {
 			break; // Something broke, run away and try again later
-			// TODO should really try to delete file again
+			// TODO should really try to delete file again?
 		}
 
 		fr = f_findnext(&dir, &fili);
-		if (fr != FR_OK) {
-			break; // Done
-		}
 	}
-
 
 	lcd_printl(LINEC, "Transmit");
 	lcd_printl(LINE2, "Done");
-
 }
