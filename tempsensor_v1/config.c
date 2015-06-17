@@ -199,7 +199,7 @@ void config_send_configuration(char *number) {
 	sms_send_message_number(number, msg);
 
 	power = &g_pDevCfg->stBattPowerAlertParam;
-	sprintf(msg, "Power Active %d(time %d) Batt (time %d thres %d)\r\n",
+	sprintf(msg, "Power Active %d(time %d) \r\nBatt (time %d thres %d)\r\n",
 			power->enablePowerAlert, (int) power->minutesPower,
 			(int) power->minutesBattThresh, (int) power->battThreshold);
 
@@ -422,13 +422,13 @@ int config_parse_configuration(char *msg) {
 	g_pDevCfg->cfgServerConfigReceived = 1;
 
 	event_setInterval_by_id(EVT_SAVE_SAMPLE_TEMP,
-			g_pDevCfg->stIntervalParam.loggingInterval);
+			g_pDevCfg->stIntervalParam.loggingInterval*60);
 
 	event_setInterval_by_id(EVT_SUBSAMPLE_TEMP,
-			g_pDevCfg->stIntervalParam.loggingInterval);
+			g_pDevCfg->stIntervalParam.loggingInterval*60);
 
 	event_setInterval_by_id(EVT_UPLOAD_SAMPLES,
-			g_pDevCfg->stIntervalParam.uploadInterval);
+			g_pDevCfg->stIntervalParam.uploadInterval*60);
 
 	return UART_SUCCESS;
 }
