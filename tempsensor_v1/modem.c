@@ -377,7 +377,7 @@ int8_t modem_first_init() {
 				if (config_getSIMError(t) == NO_ERROR) {
 					if (config_getSelectedSIM() != t) {
 						g_pDevCfg->cfgSIM_slot = t;
-						g_pDevCfg->cfgNewSIM_slot = t;
+						g_pDevCfg->cfgSelectedSIM_slot = t;
 						modem_init();
 					}
 				}
@@ -397,7 +397,7 @@ int8_t modem_first_init() {
 }
 
 void modem_check_sim_active() {
-	if (g_pDevCfg->cfgSIM_slot != g_pDevCfg->cfgNewSIM_slot) {
+	if (g_pDevCfg->cfgSIM_slot != g_pDevCfg->cfgSelectedSIM_slot) {
 		modem_swap_SIM();
 	}
 }
@@ -407,7 +407,7 @@ int modem_swap_SIM() {
 
 	config_incLastCmd();
 	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
-	g_pDevCfg->cfgNewSIM_slot = g_pDevCfg->cfgSIM_slot;
+	g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;
 
 	lcd_printf(LINEC, "Activate SIM: %d", g_pDevCfg->cfgSIM_slot + 1);
 	modem_init();

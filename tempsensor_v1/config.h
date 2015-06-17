@@ -183,7 +183,7 @@ typedef struct {
 
 typedef struct {
 	int8_t cfgSIM_slot;
-	int8_t cfgNewSIM_slot;
+	int8_t cfgSelectedSIM_slot;
 
 	int8_t cfgSyncId;
 

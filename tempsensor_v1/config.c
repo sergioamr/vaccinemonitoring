@@ -292,7 +292,7 @@ void config_init() {
 
 // Setup InfoA config data
 	g_pDevCfg->cfgSIM_slot = 0;
-	g_pDevCfg->cfgNewSIM_slot = 0;
+	g_pDevCfg->cfgSelectedSIM_slot = 0;
 
 	strcpy(g_pDevCfg->cfgGatewayIP, NEXLEAF_DEFAULT_SERVER_IP); // HTTP server nextleaf
 	strcpy(g_pDevCfg->cfgGatewaySMS, NEXLEAF_SMS_GATEWAY); // Gateway to nextleaf
@@ -412,7 +412,7 @@ int config_parse_configuration(char *msg) {
 		tempValue=0;
 
 	if (g_pDevCfg->cfgSIM_slot != tempValue) {
-		g_pDevCfg->cfgNewSIM_slot=tempValue;
+		g_pDevCfg->cfgSelectedSIM_slot=tempValue;
 	}
 
 	PARSE_SKIP(token, delimiter, UART_FAILED); // $EN
