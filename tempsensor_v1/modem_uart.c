@@ -275,12 +275,15 @@ int waitForReady(uint32_t timeoutTimeMs) {
 
 uint8_t iModemErrors=0;
 
+char modem_lastCommand[16];
+
 // Try a command until success with timeout and number of attempts to be made at running it
 uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
-		lcd_print_boot((char *) cmd, LINE1);
+		lcd_print_progress();
 	}
+	strncpy(modem_lastCommand, cmd, 16);
 
 	while(attempts>0) {
 		sendCommand(cmd);
@@ -293,6 +296,7 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 		}
 		attempts--;
 		if (g_iLCDVerbose == VERBOSE_BOOTING) {
+			lcd_printl(LINEC, modem_lastCommand);
 			lcd_print_boot("MODEM TIMEOUT", LINE2);
 			log_appendf("TIMEOUT: SIM %d cmd[%s]", config_getSelectedSIM(), cmd);
 		}
@@ -348,7 +352,9 @@ uint8_t uart_txf(const char *_format, ...) {
 }
 
 uint8_t uart_tx(const char *cmd) {
+#ifdef _DEBUG_OUTPUT
 	char* pToken1;
+#endif
 	int uart_state;
 	int transaction_completed;
 
@@ -360,13 +366,14 @@ uint8_t uart_tx(const char *cmd) {
 
 	uart_state = uart_getTransactionState();
 	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
+#ifdef _DEBUG_OUTPUT
 		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": \""); // Display the command returned
 		if (pToken1 != NULL) {
 			lcd_print_boot((char *) pToken1 + 3, LINE2);
 		} else {
-			//lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2],
-			//LINE2); // Display the OK message
+			lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2], LINE2); // Display the OK message
 		}
+#endif
 	} else
 		modem_check_uart_error();
 

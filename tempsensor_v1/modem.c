@@ -31,6 +31,8 @@
 char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
 
+extern char modem_lastCommand[16];
+
 /*
  * AT Commands Reference Guide 80000ST10025a Rev. 9 � 2010-10-04
  *
@@ -243,6 +245,7 @@ static const char AT_ERROR[] = " ERROR: ";
 
 void modem_check_uart_error() {
 	char *pToken1;
+	char *pEnd;
 	char errorToken;
 
 	int uart_state = uart_getTransactionState();
@@ -256,14 +259,19 @@ void modem_check_uart_error() {
 
 		log_appendf("ERROR: SIM %d cmd[%s]", config_getSelectedSIM(), error);
 		errorToken = *(pToken1 - 1);
-#ifndef _DEBUG
-		if (errorToken=='S') {
-			lcd_printl(LINEC, "SERVICE ERROR");
-		} else {
-			lcd_printl(LINEC, "MODEM ERROR");
+		lcd_printl(LINEC, modem_lastCommand);
+
+		pEnd = strstr(pToken1, "\r\n");
+		if (pEnd!=NULL) {
+			pEnd[0]=0;
 		}
-#endif
-		lcd_printl(LINEE, error);
+
+		if (errorToken=='S') {
+			lcd_printf(LINEE, "SERVICE %s ERROR", error);
+		} else {
+			lcd_printf(LINEE, "MODEM %s ERROR", error);
+		}
+
 		modem_setNumericError(errorToken, atoi(error));
 	}
 
@@ -766,9 +774,9 @@ void modem_init() {
 	// Check if there are pending messages in the SMS queue
 
 	// We have to wait for the network to be ready, it will take some time. In debug we just wait on connect.
-#ifndef _DEBUG
-	lcd_progress_wait(2000);
-#endif
+
+	delay(2000);
+
 	// After autoband it could take up to 90 seconds for the bands trial and error.
 	// So we have to wait for the modem to be ready.
 

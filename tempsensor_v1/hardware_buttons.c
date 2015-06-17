@@ -134,6 +134,7 @@ void __attribute__ ((interrupt(PORT3_VECTOR))) Port_3 (void)
 	case P3IV_P3IFG5:
 		SYSTEM_RUNNING_CHECK
 		g_iSystemSetup ++;
+		g_iHardware_actions = HWD_THERMAL_SYSTEM;
     	// Resume execution if the device is in deep sleep mode
 		WAKEUP_MAIN
 		break;
