@@ -79,10 +79,10 @@ char* get_date_string(struct tm* timeData, const char* dateSeperator,
 	//[TODO] Check timezone it doesnt work
 
 	/*
-	if (includeTZ && timeData->tm_isdst) {
-		strcat(g_szDateString, " DST");
-	}
-	*/
+	 if (includeTZ && timeData->tm_isdst) {
+	 strcat(g_szDateString, " DST");
+	 }
+	 */
 	return g_szDateString;
 }
 
@@ -452,85 +452,81 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 	char* fn = get_current_fileName(&g_tmCurrTime, FOLDER_TEXT, EXTENSION_TEXT);
 
 	evt = events_find(EVT_SAVE_SAMPLE_TEMP);
-	iSamplePeriod = evt->interval/60; // Time is in seconds, we need it in minutes
+	iSamplePeriod = evt->interval / 60; // Time is in seconds, we need it in minutes
 
-	if (!(g_iStatus & TEST_FLAG)) {
-		fr = f_open(&fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
-		if (fr == FR_OK) {
-			if (fobj.fsize) {
-				//append to the file
-				f_lseek(&fobj, fobj.fsize);
-			}
-		} else {
-			fat_check_error(fr);
-			return fr;
+	fr = f_open(&fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
+	if (fr == FR_OK) {
+		if (fobj.fsize) {
+			//append to the file
+			f_lseek(&fobj, fobj.fsize);
 		}
+	} else {
+		fat_check_error(fr);
+		return fr;
+	}
 
-		rtc_get(&g_tmCurrTime);
-		// If current time is out of previous interval, log a new time stamp
-		// to avoid time offset issues
-		if (!date_within_interval(&g_tmCurrTime, &g_lastSampleTime,
-				iSamplePeriod)) {
-			g_iStatus |= LOG_TIME_STAMP;
-		}
-		memcpy(&g_lastSampleTime, &g_tmCurrTime, sizeof(struct tm));
+	rtc_get(&g_tmCurrTime);
+	// If current time is out of previous interval, log a new time stamp
+	// to avoid time offset issues
+	if (!date_within_interval(&g_tmCurrTime, &g_lastSampleTime,
+			iSamplePeriod)) {
+		g_iStatus |= LOG_TIME_STAMP;
+	}
+	memcpy(&g_lastSampleTime, &g_tmCurrTime, sizeof(struct tm));
 
-		// Log time stamp when it's a new day or when
-		// time gets pulled.
-		if (g_iStatus & LOG_TIME_STAMP) {
-			memset(szLog, 0, sizeof(szLog));
-			strcat(szLog, "$TS=");
-			strcat(szLog, itoa_pad(g_tmCurrTime.tm_year));
-			strcat(szLog, itoa_pad(g_tmCurrTime.tm_mon));
-			strcat(szLog, itoa_pad(g_tmCurrTime.tm_mday));
-			strcat(szLog, ":");
-			strcat(szLog, itoa_pad(g_tmCurrTime.tm_hour));
-			strcat(szLog, ":");
-			strcat(szLog, itoa_pad(g_tmCurrTime.tm_min));
-			strcat(szLog, ":");
-			strcat(szLog, itoa_pad(g_tmCurrTime.tm_sec));
-			strcat(szLog, ",");
-			strcat(szLog, "R");
-			strcat(szLog, itoa_pad(iSamplePeriod));
-			strcat(szLog, ",");
-			strcat(szLog, "\n");
-			fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
-
-			if (bw > 0) {
-				*tbw += bw;
-				g_iStatus &= ~LOG_TIME_STAMP;
-			}
-		}
-
-		//get battery level
-#ifndef BATTERY_DISABLED
-		iBatteryLevel = batt_getlevel();
-#else
-		iBatteryLevel = 0;
-#endif
-
-		//log sample period, battery level, power plugged, temperature values
+	// Log time stamp when it's a new day or when
+	// time gets pulled.
+	if (g_iStatus & LOG_TIME_STAMP) {
 		memset(szLog, 0, sizeof(szLog));
-#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
-		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,D%s,E%s\n", itoa_pad(iBatteryLevel),
-				!(P4IN & BIT4), temperature_getString(0),
-				temperature_getString(1), temperature_getString(2),
-				temperature_getString(3), temperature_getString(4));
-#else
-		sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,D%s\n",
-				itoa_pad(g_iBatteryLevel), !(P4IN & BIT4), Temperature[0],
-				Temperature[1], Temperature[2], Temperature[3]);
-#endif
-
+		strcat(szLog, "$TS=");
+		strcat(szLog, itoa_pad(g_tmCurrTime.tm_year));
+		strcat(szLog, itoa_pad(g_tmCurrTime.tm_mon));
+		strcat(szLog, itoa_pad(g_tmCurrTime.tm_mday));
+		strcat(szLog, ":");
+		strcat(szLog, itoa_pad(g_tmCurrTime.tm_hour));
+		strcat(szLog, ":");
+		strcat(szLog, itoa_pad(g_tmCurrTime.tm_min));
+		strcat(szLog, ":");
+		strcat(szLog, itoa_pad(g_tmCurrTime.tm_sec));
+		strcat(szLog, ",");
+		strcat(szLog, "R");
+		strcat(szLog, itoa_pad(iSamplePeriod));
+		strcat(szLog, ",");
+		strcat(szLog, "\n");
 		fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 
 		if (bw > 0) {
 			*tbw += bw;
+			g_iStatus &= ~LOG_TIME_STAMP;
 		}
-
-		f_sync(&fobj);
-		return f_close(&fobj);
-	} else {
-		return FR_OK;
 	}
+
+	//get battery level
+#ifndef BATTERY_DISABLED
+	iBatteryLevel = batt_getlevel();
+#else
+	iBatteryLevel = 0;
+#endif
+
+	//log sample period, battery level, power plugged, temperature values
+	memset(szLog, 0, sizeof(szLog));
+#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
+	sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,D%s,E%s\n", itoa_pad(iBatteryLevel),
+			!(P4IN & BIT4), temperature_getString(0), temperature_getString(1),
+			temperature_getString(2), temperature_getString(3),
+			temperature_getString(4));
+#else
+	sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,D%s\n",
+			itoa_pad(g_iBatteryLevel), !(P4IN & BIT4), Temperature[0],
+			Temperature[1], Temperature[2], Temperature[3]);
+#endif
+
+	fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
+
+	if (bw > 0) {
+		*tbw += bw;
+	}
+
+	f_sync(&fobj);
+	return f_close(&fobj);
 }

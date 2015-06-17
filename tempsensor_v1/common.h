@@ -91,12 +91,10 @@ extern "C"
 #define ALERT_UPLOAD_ON		0x0002
 #define LOG_TIME_STAMP		0x0004
 #define SPLIT_TIME_STAMP	0x0008
-#define ENABLE_SECOND_SLOT	0x0010
+
 #define RESET_ALERT  		0x0020
 #define BUZZER_ON	  		0x0040
-#define TEST_FLAG			0x0080
 #define BACKLOG_UPLOAD_ON	0x0100
-#define NETWORK_DOWN		0x0200
 #define SYSTEM_SETUP  		0x0400
 
 #define LOW_RANGE_MIN 		0

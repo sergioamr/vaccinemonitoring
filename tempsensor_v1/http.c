@@ -224,8 +224,6 @@ int http_post_sms_status(void) {
 	int isHTTPResponseAvailable = 0;
 	int i = 0, j = 0;
 
-	if (g_iStatus & TEST_FLAG)
-		return l_file_pointer_enabled_sms_status;
 	iHTTPRespDelayCnt = 0;
 	while ((!isHTTPResponseAvailable)
 			&& iHTTPRespDelayCnt <= HTTP_RESPONSE_RETRY) {
@@ -253,9 +251,6 @@ int http_post_sms_status(void) {
 int http_post_gprs_connection_status(char status) {
 	int l_file_pointer_enabled_sms_status = 0;
 	int i = 0, j = 0;
-
-	if (g_iStatus & TEST_FLAG)
-		return l_file_pointer_enabled_sms_status;
 
 	iHTTPRespDelayCnt = 0;
 

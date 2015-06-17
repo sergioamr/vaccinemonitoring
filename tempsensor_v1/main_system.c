@@ -34,6 +34,7 @@
 #include "state_machine.h"
 #include "main_system.h"
 #include "temperature.h"
+#include "watchdog.h"
 
 int g_iRunning = 0;
 
@@ -191,7 +192,8 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 
 int main(void) {
 	memset((void*) (&__STACK_END - &__STACK_SIZE), 0xa5, (size_t) __STACK_SIZE);
-	WDTCTL = WDTPW | WDTHOLD;                 // Stop WDT
+	// Disable for init since we are not going to be able to respond to it.
+	watchdog_disable();
 
 	state_init();  // Clean the state machine
 	system_boot();
@@ -200,5 +202,7 @@ int main(void) {
 
 	state_process();
 
+	// Done init, start watchdog
+	watchdog_init();
 	thermal_canyon_loop();
 }

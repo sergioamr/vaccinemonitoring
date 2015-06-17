@@ -101,10 +101,17 @@ uint16_t config_getSIMError(int slot) {
 // Returns the current structure containing the info for the current SIM selected
 SIM_CARD_CONFIG *config_getSIM() {
 	uint8_t slot = g_pDevCfg->cfgSIM_slot;
+	if (slot<0 || slot>1)
+		g_pDevCfg->cfgSIM_slot=0;
+
 	return &g_pDevCfg->SIM[slot];
 }
 
 uint8_t config_getSelectedSIM() {
+	if (g_pDevCfg->cfgSIM_slot<0 ||
+		g_pDevCfg->cfgSIM_slot>1)
+		g_pDevCfg->cfgSIM_slot=0;
+
 	return g_pDevCfg->cfgSIM_slot;
 }
 
@@ -403,7 +410,13 @@ int config_parse_configuration(char *msg) {
 		g_iStatus &= ~RESET_ALERT;
 	}
 
+	// Value from the server comes 1 or 2. We use 0 to 1 format.
 	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); ////
+
+	tempValue--;
+	if (tempValue<0 || tempValue>=2)
+		tempValue=0;
+
 	if (g_pDevCfg->cfgSIM_slot != tempValue) {
 		modem_swap_SIM();
 	}

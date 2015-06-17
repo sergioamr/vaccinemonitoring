@@ -167,7 +167,7 @@ int modem_connect_network(uint8_t attempts) {
 	// if there is a change of the network cell. +CGREG: <stat>[,<lac>,<ci>]
 
 #ifdef _DEBUG
-	attempts = 1;
+	attempts = 10;
 #endif
 
 	uart_tx("AT+CGREG=2\r\n");
@@ -313,7 +313,7 @@ int8_t modem_first_init() {
 	int iSIM_Error = 0;
 
 	lcd_printl(LINEC, "Modem power on");
-	delay(2500);
+	delay(500);
 
 	//check Modem is powered on
 	for (iIdx = 0; iIdx < MODEM_CHECK_RETRY; iIdx++) {
@@ -394,12 +394,6 @@ int modem_swap_SIM() {
 	config_incLastCmd();
 	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
 
-	if(g_pDevCfg->cfgSIM_slot == 0) {
-		g_iStatus &= ~ENABLE_SECOND_SLOT;
-	} else {
-		g_iStatus |= ENABLE_SECOND_SLOT;
-	}
-
 	lcd_printf(LINEC, "Activate SIM: %d", g_pDevCfg->cfgSIM_slot + 1);
 	modem_init();
 	modem_getExtraInfo();
@@ -423,11 +417,9 @@ int modem_swap_SIM() {
 int modem_isSignalInRange(int iSignalLevel) {
 
 	if ((iSignalLevel < NETWORK_DOWN_SS) || (iSignalLevel > NETWORK_MAX_SS)) {
-		g_iStatus |= NETWORK_DOWN;
 		return 0;
 	}
 
-	g_iStatus &= ~NETWORK_DOWN;
 	return 1;
 }
 
@@ -734,10 +726,7 @@ void modem_init() {
 	config_setLastCommand(COMMAND_MODEMINIT);
 #endif
 
-	if (config_getSelectedSIM() > 1) {
-		// Memory not initialized
-		g_pDevCfg->cfgSIM_slot = 0;
-	}
+	config_getSelectedSIM(); // Init the SIM and check boundaries
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
@@ -775,11 +764,10 @@ void modem_init() {
 	//uart_tx("AT+CPMS=\"ME\",\"ME\",\"ME\"");
 
 	// Check if there are pending messages in the SMS queue
-	delay(3000);
 
 	// We have to wait for the network to be ready, it will take some time. In debug we just wait on connect.
 #ifndef _DEBUG
-	lcd_progress_wait(1000);
+	lcd_progress_wait(2000);
 #endif
 	// After autoband it could take up to 90 seconds for the bands trial and error.
 	// So we have to wait for the modem to be ready.

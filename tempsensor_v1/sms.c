@@ -269,9 +269,6 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	int phonecode = 129;
 	char *token;
 
-	if (g_iStatus & TEST_FLAG)
-		return UART_SUCCESS;
-
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_clear();
 		lcd_printf(LINE1, "SYNC SMS %d ", g_pDevCfg->cfgSIM_slot + 1);
