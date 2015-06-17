@@ -274,15 +274,18 @@ void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	http_open_connection(length);
 
 	// Send the date line
-	uart_tx(line);
+	uart_tx_nowait(line);
 
 	// check that the transmitted data equals the size to send
 	while (file->fptr < end) {
 		if (f_gets(line, lineSize, file) != 0) {
 			if (file->fptr != end) {
 				replace_character(line, '\n', '|');
+				uart_tx_nowait(line);
+			} else {
+				// Last line! Wait for OK
+				uart_tx(line);
 			}
-			uart_tx_nowait(line);
 		} else {
 			break;
 		}
