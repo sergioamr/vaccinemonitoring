@@ -267,7 +267,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 		// Instantly run this event after the capture is finished
 		if (tem->iSamplesRequired>1 && tem->iSamplesRead<=tem->iSamplesRequired)
 			event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 0);
-		EVENT_WAKEUP
+		WAKEUP_MAIN
 	}
 
 }

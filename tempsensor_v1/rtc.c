@@ -223,10 +223,8 @@ void RTC_B_ISR(void) {
 	case RTCIV_RTCRDYIFG:             //RTCRDYIFG
 		//every second
 		iSecondTick++;
-
 		// Resume execution if the device is in deep sleep mode
-		EVENT_WAKEUP
-
+		WAKEUP_EVENT
 		break;
 	case RTCIV_RTCTEVIFG:             //RTCEVIFG
 		//Interrupts every minute

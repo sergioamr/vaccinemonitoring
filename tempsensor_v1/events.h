@@ -14,7 +14,11 @@ extern uint8_t iMainSleep;
 extern volatile time_t iSecondTick;
 
 // Resume execution
-#define EVENT_WAKEUP if (iMainSleep!=0 || iSecondTick > g_sEvents.events[g_sEvents.nextEvent].nextEventRun) __bic_SR_register_on_exit(LPM0_bits);
+#define WAKEUP_EVENT if (iMainSleep!=0 && iSecondTick > g_sEvents.events[g_sEvents.nextEvent].nextEventRun) \
+		__bic_SR_register_on_exit(LPM0_bits);
+
+#define WAKEUP_MAIN if (iMainSleep!=0) __bic_SR_register_on_exit(LPM0_bits);
+
 #define SYSTEM_RUNNING_CHECK if (!g_iRunning) break;
 
 typedef enum {

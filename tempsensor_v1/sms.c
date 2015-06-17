@@ -164,8 +164,8 @@ int8_t sms_process_messages() {
 
 	memset(SM_ME, 0, sizeof(SM_ME));
 
-	lcd_printf(LINEC, "Fetching SMS");
-	lcd_printf(LINE2, "SIM %d ", config_getSelectedSIM());
+	lcd_printf(LINEC, "Fetching SMSs");
+	lcd_printf(LINE2, "SIM %d ", config_getSelectedSIM()+1);
 
 	//check if messages are available
 	uart_tx("AT+CPMS?\r\n");
@@ -257,10 +257,6 @@ void sms_send_heart_beat() {
 	sms_send_message(msg);
 }
 
-//#pragma SET_DATA_SECTION(".config_vars_infoD")
-//char g_TmpSMScmdBuffer[SMS_CMD_LEN];
-//#pragma SET_DATA_SECTION()
-
 uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	char szCmd[64];
 	uint16_t msgNumber = 0; // Validation number from the network returned by the CMGS command
@@ -290,7 +286,6 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	uart_setSMSPromptMode();
 	if (uart_tx_waitForPrompt(szCmd, TIMEOUT_CMGS_PROMPT)) {
 		uart_tx_timeout(pData, TIMEOUT_CMGS, 1);
-
 
 		token = strstr((const char *) &RXBuffer[RXHeadIdx], "ERROR");
 		if (token == NULL) {

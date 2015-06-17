@@ -110,7 +110,7 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 #endif
 		g_iHardware_actions = HWD_TURN_SCREEN;
     	// Resume execution if the device is in deep sleep mode
-		EVENT_WAKEUP
+		WAKEUP_MAIN
 		break;
 	default:
 		break;
@@ -135,7 +135,7 @@ void __attribute__ ((interrupt(PORT3_VECTOR))) Port_3 (void)
 		SYSTEM_RUNNING_CHECK
 		g_iSystemSetup ++;
     	// Resume execution if the device is in deep sleep mode
-		EVENT_WAKEUP
+		WAKEUP_MAIN
 		break;
 	default:
 		break;
@@ -161,7 +161,7 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
 		SYSTEM_RUNNING_CHECK
 		g_iHardware_actions = HWD_POWER_CHANGE;
     	// Resume execution if the device is in deep sleep mode
-		EVENT_WAKEUP
+		WAKEUP_MAIN
 		break;
 	case P4IV_P4IFG1:
 		SYSTEM_RUNNING_CHECK
@@ -170,7 +170,7 @@ void __attribute__ ((interrupt(PORT4_VECTOR))) Port_4 (void)
 		g_iHardware_actions = HWD_TURN_SCREEN;
 
     	// Resume execution if the device is in deep sleep mode
-		EVENT_WAKEUP
+		WAKEUP_MAIN
 		break;
 	default:
 		break;

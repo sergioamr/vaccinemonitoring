@@ -814,7 +814,7 @@ void modem_init() {
 	g_iGprs_network_indication = http_post_gprs_connection_status(GSM);
 
 	// Disable echo from modem
-	uart_tx("ATE0\r\n");
+	//uart_tx("ATE0\r\n");
 
 #ifndef _DEBUG
 	modem_getOwnNumber();

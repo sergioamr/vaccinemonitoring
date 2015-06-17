@@ -191,20 +191,20 @@ void config_send_configuration(char *number) {
 	msg[0]=0;
 	for (i = 0; i < MAX_NUM_SENSORS; i++) {
 		alert = &g_pDevCfg->stTempAlertParams[i];
-		sprintf(temp, "%s[mc%d, mh%d, tc%d,th%d]\r\n", SensorName[i],
+		sprintf(temp, "%s(Max Cold %dm, Max Hot %d, Thres Cold %d,Thres Hot %d)\r\n", SensorName[i],
 				(int) alert->maxTimeCold, (int) alert->maxTimeHot, (int) alert->threshCold,
 				(int) alert->threshHot);
 		strcat(msg, temp);
 	}
 
 	power = &g_pDevCfg->stBattPowerAlertParam;
-	sprintf(temp, "Power %d[%d, %d] Batt [%d]\r\n",
-			power->enablePowerAlert, (int) power->minutesBattThresh, (int) power->minutesPower,
-			(int) power->battThreshold);
+	sprintf(temp, "Power Active %d(time %d) Batt (time %d thres %d)\r\n",
+			power->enablePowerAlert, (int) power->minutesPower,
+			(int) power->minutesBattThresh, (int) power->battThreshold);
 
 	strcat(msg, temp);
 
-	sprintf(temp, "Interval l%d,u%d,r%d,c%d\r\n",
+	sprintf(temp, "Interval log %d upl %d reb %d cfg %d\r\n",
 			(int) g_pDevCfg->stIntervalParam.loggingInterval,
 			(int) g_pDevCfg->stIntervalParam.uploadInterval,
 			(int) g_pDevCfg->stIntervalParam.reboot,
