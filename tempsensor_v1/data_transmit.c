@@ -322,7 +322,7 @@ void process_batch() {
 		}
 
 		lcd_printl(LINEC, "Transmitting...");
-		lcd_printl(LINE2, path);
+		lcd_printl(LINE2, fili.fname);
 
 		if (g_pSysCfg->lastSeek > 0) {
 			f_lseek(&filr, g_pSysCfg->lastSeek);
