@@ -185,20 +185,6 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 	return NULL;
 }
 
-// Testing LEDS
-/*
-void setup_leds() {
-	P4DIR |= (BIT5 + BIT6 + BIT7);	 // Setup leds to output
-	P4OUT &= ~(BIT5 + BIT6 + BIT7);  // Turn off all LEDS
-
-	P4OUT |= BIT5; // LED 1
-	P4OUT |= BIT6; // LED 2
-	P4OUT |= BIT7; // LED 3
-
-	P4OUT &= ~BIT7; // BLUE LED 3 OFF
-}
-*/
-
 /****************************************************************************/
 /*  MAIN                                                                    */
 /****************************************************************************/

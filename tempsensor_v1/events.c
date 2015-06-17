@@ -344,7 +344,7 @@ void event_save_samples(void *event, time_t currentTime) {
 
 	// Push subsampling in the future to align with saving
 	EVENT *subsampling = events_find(EVT_SUBSAMPLE_TEMP);
-	event_next(subsampling,currentTime);
+	event_next(subsampling, currentTime);
 
 	log_sample_to_disk(&bytes_written);
 	log_sample_web_format(&bytes_written);
@@ -408,13 +408,17 @@ void event_reboot_system(void *event, time_t currentTime) {
 	system_reboot("Scheduled");
 }
 
+void event_fetch_configuration(void *event, time_t currentTime) {
+	backend_get_configuration();
+}
+
 // Sleeping state
 uint8_t iMainSleep = 0;
 
 // Resume execution if the device is in deep sleep mode
 // Triggered by the interruption
 uint8_t event_wake_up_main() {
-	if (iMainSleep==0)
+	if (iMainSleep == 0)
 		return 0;
 
 	EVENT *pNext = events_getNextEvent();
@@ -447,10 +451,10 @@ void events_init() {
 	NULL);
 #endif
 	events_register(EVT_BATTERY_CHECK, "BATTERY", 0, &events_check_battery,
-			MINUTES_(2)+SECONDS_(30), NULL);
+	MINUTES_(2) + SECONDS_(30), NULL);
 
 	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12),
-			NULL);
+	NULL);
 
 	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, &event_network_check,
 			MINUTES_(2), NULL);
@@ -460,7 +464,7 @@ void events_init() {
 			MINUTES_(3), NULL);
 
 	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off, MINUTES_(10),
-			NULL);
+	NULL);
 
 	events_register(EVT_ALARMS_CHECK, "ALARMS", 1, &events_health_check,
 			MINUTES_(2), NULL);
@@ -468,8 +472,9 @@ void events_init() {
 	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
 			MINUTES_(LCD_REFRESH_INTERVAL), NULL);
 
-	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0, &event_subsample_temperature,
-			(MINUTES_(SAMPLE_PERIOD)), g_pDevCfg->stIntervalParam.loggingInterval);
+	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0,
+			&event_subsample_temperature, (MINUTES_(SAMPLE_PERIOD)),
+			g_pDevCfg->stIntervalParam.loggingInterval);
 
 	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 30, &event_save_samples,
 			MINUTES_(SAMPLE_PERIOD),
@@ -480,6 +485,9 @@ void events_init() {
 
 	events_register(EVT_PERIODIC_REBOOT, "REBOOT", 0, &event_reboot_system,
 			HOURS_(24), g_pDevCfg->stIntervalParam.reboot);
+
+	events_register(EVT_CONFIGURATION, "CONFIG", 30, &event_fetch_configuration,
+			MINUTES_(30), g_pDevCfg->stIntervalParam.configuration_fetch);
 
 	events_sync();
 }

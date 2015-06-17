@@ -29,12 +29,13 @@
 // Send back data after an SMS request
 void sms_send_data_request(char *number) {
 	uint32_t iOffset;
-	char data[128];
+	char data[SMS_MAX_SIZE];
 
 	//get temperature values
 	memset(data, 0, MSG_RESPONSE_LEN);
 	rtc_update_time();
 	strcat(data, get_simplified_date_string(&g_tmCurrTime));
+	strcat(data, " ");
 	for (iOffset = 0; iOffset < MAX_NUM_SENSORS; iOffset++) {
 		strcat(data, SensorName[iOffset]);
 		strcat(data, "=");
@@ -126,6 +127,14 @@ int8_t sms_process_memory_message(int8_t index) {
 	case 'E':
 	case 'e':
 		events_send_data(phone);
+		break;
+	case 'c':
+	case 'C':
+		config_send_configuration(phone);
+		break;
+	case 'a':
+	case 'A':
+		state_alarm_turnon_buzzer();
 		break;
 	default:
 		config_process_configuration(token);

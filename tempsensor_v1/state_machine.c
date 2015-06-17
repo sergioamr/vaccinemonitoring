@@ -46,7 +46,7 @@ SYSTEM_STATE *g_pSysState = &g_SystemState;
 /***********************************************************************************************************************/
 
 void state_init() {
-	memset(g_pSysState, 0, sizeof (SYSTEM_STATE));
+	memset(g_pSysState, 0, sizeof(SYSTEM_STATE));
 }
 
 void buzzer_feedback() {
@@ -64,8 +64,8 @@ SYSTEM_STATUS *state_getAlarms() {
 void state_reset_sensor_alarm(int id) {
 	int t;
 
-	for (t=0; t<MAX_NUM_SENSORS; t++) {
-		g_pSysState->temp.state[t].status=0;
+	for (t = 0; t < MAX_NUM_SENSORS; t++) {
+		g_pSysState->temp.state[t].status = 0;
 	}
 }
 
@@ -75,17 +75,20 @@ void state_alarm_turnoff_buzzer() {
 	g_iStatus &= ~BUZZER_ON;
 }
 
+void state_alarm_turnon_buzzer() {
+	SYSTEM_STATUS *s = state_getAlarms();
+	s->alarms.buzzer = STATE_ON;
+}
+
 void state_alarm_on(char *alarm_msg) {
 	SYSTEM_STATUS *s = state_getAlarms();
-
-	strncpy(g_pSysState->alarm_message, alarm_msg, sizeof(g_pSysState->alarm_message));
-	lcd_turn_on();
-	lcd_printl(LINEC, "ALARM!");
-	lcd_printf(LINE2, " %s ", alarm_msg);
+	static uint16_t count = 0;
+	uint16_t elapsed;
 
 	// We are already in alarm mode
-	if (s->alarms.globalAlarm == STATE_ON)
-		return;
+	if (s->alarms.globalAlarm == STATE_ON) {
+		goto display_alarm;
+	}
 
 	s->alarms.globalAlarm = STATE_ON;
 	s->alarms.buzzer = STATE_ON;
@@ -94,6 +97,21 @@ void state_alarm_on(char *alarm_msg) {
 	sms_send_message_number(LOCAL_TESTING_NUMBER, alarm_msg);
 #endif
 
+	display_alarm:
+
+	elapsed = events_getTick() - count;
+	if (elapsed > 30) {
+		if (g_bLCD_state == 1) {
+			lcd_turn_off();
+		} else {
+			strncpy(g_pSysState->alarm_message, alarm_msg,
+					sizeof(g_pSysState->alarm_message));
+			lcd_turn_on();
+			lcd_printl(LINEC, "ALARM!");
+			lcd_printf(LINE2, " %s ", alarm_msg);
+		}
+		count = events_getTick();
+	}
 }
 
 // Everything is fine!
@@ -101,7 +119,7 @@ void state_clear_alarm_state() {
 	SYSTEM_STATUS *s = state_getAlarms();
 
 	// We were not in alarm mode
-	if (s->alarms.globalAlarm==STATE_OFF)
+	if (s->alarms.globalAlarm == STATE_OFF)
 		return;
 
 #ifdef _DEBUG
@@ -162,8 +180,6 @@ void state_failed_sdcard(uint16_t error) {
 /* TEMPERATURE CHECKS */
 /***********************************************************************************************************************/
 
-
-
 /***********************************************************************************************************************/
 /* BATTERY CHECKS */
 /***********************************************************************************************************************/
@@ -177,7 +193,8 @@ void state_battery_level(uint8_t battery_level) {
 	SYSTEM_STATUS *s = state_getAlarms();
 
 	g_pSysState->battery_level = battery_level;
-	if (battery_level<g_pDevCfg->stBattPowerAlertParam.battThreshold && s->alarms.power == STATE_OFF) {
+	if (battery_level
+			< g_pDevCfg->stBattPowerAlertParam.battThreshold&& s->alarms.power == STATE_OFF) {
 		state_low_battery_alert();
 		thermal_low_battery_hibernate();
 	}
@@ -203,7 +220,7 @@ void state_power_out() {
 		return;
 
 	s->alarms.power = STATE_OFF;
-	if (g_pSysState->time_powerOutage==0)
+	if (g_pSysState->time_powerOutage == 0)
 		g_pSysState->time_powerOutage = rtc_get_second_tick();
 
 }
@@ -241,13 +258,13 @@ void state_check_power() {
 	else
 		state_power_out();
 
-	if (last_state!=s->alarms.power) {
+	if (last_state != s->alarms.power) {
 		if (POWER_ON)
 			state_power_resume();
 		else
 			state_power_disconnected();
 
-		last_state=s->alarms.power;
+		last_state = s->alarms.power;
 	}
 
 	if (s->alarms.power == STATE_ON)
@@ -261,7 +278,7 @@ void state_check_power() {
 
 	// Check the power down time to generate an alert
 
-	if (elapsed>(g_pDevCfg->stBattPowerAlertParam.minutesPower)*60) {
+	if (elapsed > (g_pDevCfg->stBattPowerAlertParam.minutesPower) * 60) {
 		state_alarm_on("POWER OUT");
 	}
 }

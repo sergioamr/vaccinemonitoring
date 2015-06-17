@@ -103,6 +103,7 @@ EXTERN int8_t g_iSystemSetup;
 #define SAMPLE_PERIOD			1		//in minutes
 #define UPLOAD_PERIOD			2		//in minutes
 #define REBOOT_PERIOD 			24*60   //in minutes
+#define CONFIGURATION_FETCH_PERIOD 30
 #define SMS_RX_POLL_INTERVAL	3		//poll interval in minutes for sms msg TODO change back
 #define LCD_REFRESH_INTERVAL	1
 #define MSG_REFRESH_INTERVAL	5
@@ -177,6 +178,7 @@ typedef struct {
 	uint16_t uploadInterval;
 	uint16_t loggingInterval;
 	uint16_t reboot;
+	uint16_t configuration_fetch;
 } INTERVAL_PARAM;
 
 typedef struct {
@@ -337,6 +339,7 @@ void config_SIM_operational();
 #define COMMAND_END 99
 
 void config_init();
+void config_send_configuration(char *number);
 void config_reconfigure();
 void config_save_command(char *string);
 void config_setLastCommand(uint16_t lastCmd);

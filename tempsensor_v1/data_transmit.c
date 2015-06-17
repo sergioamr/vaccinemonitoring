@@ -279,8 +279,6 @@ void process_batch() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	struct tm firstDate;
 
-	return;
-
 	memset(msg, 0, sizeof(msg));
 
 	config_setLastCommand(COMMAND_POST);

@@ -173,6 +173,41 @@ void config_reconfigure() {
 		;
 }
 
+// Send back data after an SMS request
+void config_send_configuration(char *number) {
+	TEMP_ALERT_PARAM *alert;
+	BATT_POWER_ALERT_PARAM *power;
+	char msg[SMS_MAX_SIZE];
+	char temp[32];
+	int i;
+
+	msg[0]=0;
+	for (i = 0; i < MAX_NUM_SENSORS; i++) {
+		alert = &g_pDevCfg->stTempAlertParams[i];
+		sprintf(temp, "%s[mc%d, mh%d, tc%d,th%d]\r\n", SensorName[i],
+				(int) alert->maxTimeCold, (int) alert->maxTimeHot, (int) alert->threshCold,
+				(int) alert->threshHot);
+		strcat(msg, temp);
+	}
+
+	power = &g_pDevCfg->stBattPowerAlertParam;
+	sprintf(temp, "Power %d[%d, %d] Batt [%d]\r\n",
+			power->enablePowerAlert, (int) power->minutesBattThresh, (int) power->minutesPower,
+			(int) power->battThreshold);
+
+	strcat(msg, temp);
+
+	sprintf(temp, "Interval l%d,u%d,r%d,c%d\r\n",
+			(int) g_pDevCfg->stIntervalParam.loggingInterval,
+			(int) g_pDevCfg->stIntervalParam.uploadInterval,
+			(int) g_pDevCfg->stIntervalParam.reboot,
+			(int) g_pDevCfg->stIntervalParam.configuration_fetch);
+
+	strcat(msg, temp);
+
+	sms_send_message_number(number, msg);
+}
+
 int config_default_configuration() {
 	int i = 0;
 	TEMP_ALERT_PARAM *alert;
@@ -193,10 +228,11 @@ int config_default_configuration() {
 	power->minutesPower = ALARM_POWER_PERIOD;
 	power->battThreshold = BATTERY_HIBERNATE_THRESHOLD;
 
-	// TODO: default values for own number & sms center?
+// TODO: default values for own number & sms center?
 	g_pDevCfg->stIntervalParam.loggingInterval = SAMPLE_PERIOD;
 	g_pDevCfg->stIntervalParam.uploadInterval = UPLOAD_PERIOD;
 	g_pDevCfg->stIntervalParam.reboot = REBOOT_PERIOD;
+	g_pDevCfg->stIntervalParam.configuration_fetch = CONFIGURATION_FETCH_PERIOD;
 
 #ifdef _DEBUG
 	uint16_t c = g_pDevCfg->stIntervalParam.loggingInterval;
@@ -210,7 +246,7 @@ int config_default_configuration() {
 
 #endif
 
-	// Battery and power alarms
+// Battery and power alarms
 	return 1;
 }
 
@@ -220,8 +256,8 @@ void config_init() {
 
 	if (!check_address_empty(g_pSysCfg->memoryInitialized)) {
 
-		// Check if the user is pressing the service mode
-		// Service Button was pressed during bootup. Rerun calibration
+// Check if the user is pressing the service mode
+// Service Button was pressed during bootup. Rerun calibration
 		if (switch_check_service_pressed()) {
 			lcd_printf(LINEC, "Service Mode");
 			lcd_printl(LINEH, g_pSysCfg->firmwareVersion); // Show the firmware version
@@ -229,13 +265,13 @@ void config_init() {
 			g_pSysCfg->calibrationFinished = 0;
 		}
 
-		// Data structure changed, something failed.
-		// Check firmware version?
+// Data structure changed, something failed.
+// Check firmware version?
 		if (g_pSysCfg->configStructureSize != sizeof(CONFIG_SYSTEM)) {
 			config_SafeMode();
 		}
 
-		// Problem calibrating? Try again.
+// Problem calibrating? Try again.
 		if (!g_pSysCfg->calibrationFinished) {
 			calibrate_device();
 			return;
@@ -245,10 +281,10 @@ void config_init() {
 		return; // Memory was initialized, we are fine here.
 	}
 
-	// Init Config InfoA
+// Init Config InfoA
 	memset(g_pDevCfg, 0, sizeof(CONFIG_DEVICE));
 
-	// Setup InfoA config data
+// Setup InfoA config data
 	g_pDevCfg->cfgSIM_slot = 0;
 
 	strcpy(g_pDevCfg->cfgGatewayIP, NEXLEAF_DEFAULT_SERVER_IP); // HTTP server nextleaf
@@ -260,19 +296,19 @@ void config_init() {
 	strcpy(g_pDevCfg->SIM[0].cfgAPN, NEXLEAF_DEFAULT_APN);
 	strcpy(g_pDevCfg->SIM[1].cfgAPN, NEXLEAF_DEFAULT_APN);
 
-	// Init System internals
+// Init System internals
 
-	// Setup internal system counters and checks
+// Setup internal system counters and checks
 	memset(g_pSysCfg, 0, sizeof(CONFIG_SYSTEM));
 
-	// First run
+// First run
 	g_pSysCfg->numberConfigurationRuns = 1;
 
-	// Value to check to make sure the structure is still the same size;
+// Value to check to make sure the structure is still the same size;
 	g_pSysCfg->configStructureSize = sizeof(CONFIG_SYSTEM);
 	g_pSysCfg->memoryInitialized = 1;
 
-	// Set the date and time of compilation as firmware version
+// Set the date and time of compilation as firmware version
 	strcpy(g_pSysCfg->firmwareVersion, "v(" __DATE__ ")");
 
 	g_pSysCfg->maxSamplebuffer = 0;
@@ -288,13 +324,13 @@ void config_init() {
 			delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 #endif
 
-	// First initalization, calibration code.
+// First initalization, calibration code.
 	calibrate_device();
 }
 
 void config_update_system_time() {
 
-	// Gets the current time and stores it in FRAM
+// Gets the current time and stores it in FRAM
 	rtc_getlocal(&g_tmCurrTime);
 	memcpy(&g_pDevCfg->lastSystemTime, &g_tmCurrTime, sizeof(g_tmCurrTime));
 }
@@ -311,12 +347,12 @@ int config_parse_configuration(char *msg) {
 
 	PARSE_FINDSTR_BUFFER_RET(token, msg, "$ST2,", UART_FAILED);
 
-	// Return success if no configuration has changed
+// Return success if no configuration has changed
 	PARSE_FIRSTVALUECOMPARE(token, g_pDevCfg->cfgSyncId, UART_SUCCESS,
 			UART_FAILED);
 	int i = 0;
 
-	// Temperature configuration for each sensor
+// Temperature configuration for each sensor
 	while (i < MAX_NUM_SENSORS) {
 		PARSE_NEXTVALUE(token, &g_pDevCfg->stTempAlertParams[i].maxTimeCold,
 				delimiter, UART_FAILED);
@@ -329,7 +365,7 @@ int config_parse_configuration(char *msg) {
 		i++;
 	}
 
-	// Battery config info.
+// Battery config info.
 	PARSE_NEXTVALUE(token, &g_pDevCfg->stBattPowerAlertParam.minutesPower,
 			delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &g_pDevCfg->stBattPowerAlertParam.enablePowerAlert,
@@ -339,7 +375,7 @@ int config_parse_configuration(char *msg) {
 	PARSE_NEXTVALUE(token, &g_pDevCfg->stBattPowerAlertParam.battThreshold,
 			delimiter, UART_FAILED);
 
-	// SIM info
+// SIM info
 	PARSE_SKIP(token, delimiter, UART_FAILED); // $ST1
 	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewaySMS[0], strlen(token),
 			delimiter, UART_FAILED); // GATEWAY NUM
@@ -354,9 +390,9 @@ int config_parse_configuration(char *msg) {
 	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); // Reset alert
 	if (tempValue > 0) {
 		g_iStatus |= RESET_ALERT;
-		//set buzzer OFF
+//set buzzer OFF
 		g_iStatus &= ~BUZZER_ON;
-		//reset alarm state and counters
+//reset alarm state and counters
 		for (iCnt = 0; iCnt < MAX_NUM_SENSORS; iCnt++) {
 			//reset the alarm
 			state_reset_sensor_alarm(iCnt);
@@ -394,7 +430,7 @@ int config_process_configuration() {
 	char *token;
 
 	log_append_("configuration processing");
-	// FINDSTR uses RXBuffer - There is no need to initialize the data to parse.
+// FINDSTR uses RXBuffer - There is no need to initialize the data to parse.
 	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
 	return config_parse_configuration((char *) &RXBuffer[RXHeadIdx]);
 }
