@@ -201,6 +201,7 @@ int main(void) {
 	events_init();
 
 	state_process();
+	sms_process_messages(0);
 
 	// Done init, start watchdog
 	watchdog_init();

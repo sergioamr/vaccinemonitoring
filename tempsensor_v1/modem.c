@@ -775,8 +775,6 @@ void modem_init() {
 	// Wait until connnection and registration is successful. (Just try NETWORK_CONNECTION_ATTEMPTS) network could be definitly down or not available.
 	modem_connect_network(NETWORK_CONNECTION_ATTEMPTS);
 
-	sms_process_messages(0);
-
 	uart_tx("AT#NITZ=1\r\n");   // #NITZ - Network Timezone
 
 	uart_tx("AT+CTZU=1\r\n"); //  4 - software bi-directional with filtering (XON/XOFF)
