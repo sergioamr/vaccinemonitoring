@@ -230,6 +230,8 @@ void data_upload_sms() {
 	 */
 }
 
+
+
 // 11,20150303:082208,interval,sensorid,DATADATADATAT,sensorid,DATADATADATA,
 // sensorid,dATADATADA,sensorID,DATADATADATADATAT, sensorID,DATADATADATADATAT,batt level,battplugged.
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
@@ -237,13 +239,11 @@ void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	char* dateString = NULL;
 	const static char* format = "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%s";
 	const static char* defSID = "0|1|2|3|4";
-	const static char* delim1 = "/";
-	const static char* delim2 = ":";
+	const static char* delim = "";
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	struct tm firstDate;
 	char line[80];
-	int lineSize = sizeof(line) / sizeof(char);
-	uint8_t dateLine = 1;
+	int lineSize = sizeof(line)/sizeof(char);
 
 	// Setup connection
 	if (modem_check_network() != UART_SUCCESS) {
@@ -258,24 +258,30 @@ void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 
 	f_lseek(file, start);
 
-	uint32_t length = end - start;
+	// Must get first line before transmitting to calculate the length properly
+	if (f_gets(line, lineSize, file) != 0) {
+		parse_time_from_line(&firstDate, line);
+		dateString = get_date_string(&firstDate, delim, delim, delim, 0);
+		sprintf(line, format,
+				g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa",
+				defSID, dateString,
+				itoa_nopadding(g_pDevCfg->stIntervalParam.loggingInterval));
+	} else {
+		return;
+	}
+
+	uint32_t length = strlen(line) + (end - file->fptr);
 	http_open_connection(length);
 
-	// check that the transmitted data equals the size
+	// Send the date line
+	uart_tx(line);
+
+	// check that the transmitted data equals the size to send
 	while (file->fptr < end) {
 		if (f_gets(line, lineSize, file) != 0) {
-			if (dateLine) {
-				parse_time_from_line(&firstDate, line);
-				dateString = get_date_string(&firstDate, delim1, delim2, 0);
-				sprintf(line, format, g_pDevCfg->cfgIMEI, sim->cfgPhoneNum,
-						"0.1pa", defSID, dateString,
-						itoa_nopadding(
-								g_pDevCfg->stIntervalParam.loggingInterval));
-				dateLine = 0;
-			} else {
-				strcat(line, "|");
+			if (file->fptr != end) {
+				replace_character(line, '\n', '|');
 			}
-
 			uart_tx_nowait(line);
 		} else {
 			break;
@@ -287,7 +293,7 @@ void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 
 void process_batch() {
 	uint8_t canSend = 0;
-	uint32_t seekFrom = g_pSysCfg->lastSeek;
+	uint32_t seekFrom = g_pSysCfg->lastSeek, seekTo = g_pSysCfg->lastSeek;
 	char line[80];
 	char path[32];
 	int lineSize = sizeof(line) / sizeof(char);
@@ -317,11 +323,11 @@ void process_batch() {
 			f_lseek(&filr, g_pSysCfg->lastSeek);
 		}
 
-		while (f_gets(line, lineSize, &filr) != 0) {
-			if (filr.fptr == 0 || strstr(line, "$TS") != NULL) {
-				if (canSend) {
-					http_send_batch(&filr, seekFrom, filr.fptr);
-					seekFrom = filr.fptr;
+		while(f_gets(line, lineSize, &filr) != 0) {
+			if(filr.fptr == 0 || strstr(line, "$TS") != NULL) {
+				if(canSend) {
+					http_send_batch(&filr, seekFrom, seekTo);
+					seekFrom = seekTo = filr.fptr;
 					canSend = 0;
 					// Found next time stamp - Move to next batch now
 				} else {
@@ -329,7 +335,15 @@ void process_batch() {
 				}
 			} else {
 				canSend = 1;
+				seekTo = filr.fptr;
 			}
+		}
+
+		if(canSend) {
+			http_send_batch(&filr, seekFrom, filr.fptr);
+			seekFrom = 0;
+			canSend = 0;
+			// Found next time stamp - Move to next batch now
 		}
 
 		if (f_close(&filr) == FR_OK) {

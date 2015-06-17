@@ -53,7 +53,7 @@ char* get_YMD_String(struct tm* timeData) {
 }
 
 char* get_date_string(struct tm* timeData, const char* dateSeperator,
-		const char* dateTimeSeperator, uint8_t includeTZ) {
+		const char* dateTimeSeperator, const char* timeSeparator, uint8_t includeTZ) {
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 	static char g_szDateString[24]; // "YYYY-MM-DD HH:MM:SS IST"
@@ -71,9 +71,9 @@ char* get_date_string(struct tm* timeData, const char* dateSeperator,
 	strcat(g_szDateString, itoa_pad(timeData->tm_mday));
 	strcat(g_szDateString, dateTimeSeperator);
 	strcat(g_szDateString, itoa_pad(timeData->tm_hour));
-	strcat(g_szDateString, ":");
+	strcat(g_szDateString, timeSeparator);
 	strcat(g_szDateString, itoa_pad(timeData->tm_min));
-	strcat(g_szDateString, ":");
+	strcat(g_szDateString, timeSeparator);
 	strcat(g_szDateString, itoa_pad(timeData->tm_sec));
 
 	//[TODO] Check timezone it doesnt work
@@ -376,7 +376,7 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 	FRESULT fr;
 	int iBatteryLevel;
 
-	date = get_date_string(&g_tmCurrTime, "-", " ", 1);
+	date = get_date_string(&g_tmCurrTime, "-", " ", ":", 1);
 	fr = f_write(fobj, date, strlen(date), &bw);
 	if (fr != FR_OK)
 		return fr;

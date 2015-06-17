@@ -367,8 +367,9 @@ uint8_t uart_tx(const char *cmd) {
 			//lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2],
 			//LINE2); // Display the OK message
 		}
-	} else
+	} else {
 		modem_check_uart_error();
+	}
 
 	return uart_state;
 }
