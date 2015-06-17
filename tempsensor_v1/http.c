@@ -96,6 +96,7 @@ int8_t http_enable() {
 		}
 
 	} while (uart_state != UART_SUCCESS && --attempts > 0);
+
 	return uart_state;
 }
 
@@ -114,10 +115,11 @@ int8_t http_setup() {
 
 	lcd_progress_wait(1000);
 
-	http_enable();
+	uart_state = http_enable();
 	// We were not successful trying to activate the HTTP transaction
-	if (uart_state != UART_SUCCESS)
+	if (uart_state != UART_SUCCESS) {
 		return UART_FAILED;
+	}
 
 	// LONG TIMEOUT
 	uart_txf("AT#HTTPCFG=1,\"%s\",80\r\n", g_pDevCfg->cfgGatewayIP);
@@ -175,7 +177,7 @@ int http_check_error(int *retry) {
 int http_open_connection(int data_length) {
 	char cmd[64];
 	// Test post URL
-	sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/intel/upload/\",%d,0\r\n", data_length);
+	sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/intel/upload/\",%d,0\r\n", data_length);
 	//sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%d,0\r\n", data_length);
 
 	// Wait for prompt
