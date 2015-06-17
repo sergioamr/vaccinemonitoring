@@ -244,6 +244,11 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 
 static const char AT_ERROR[] = " ERROR: ";
 
+uint8_t g_iUartIgnoreError = 0;
+void modem_ignore_next_errors(int errors) {
+	g_iUartIgnoreError = errors;
+}
+
 void modem_check_uart_error() {
 	char *pToken1;
 	char errorToken;
@@ -257,16 +262,19 @@ void modem_check_uart_error() {
 	if (pToken1 != NULL) { // ERROR FOUND;
 		char *error = (char *) (pToken1 + strlen(AT_ERROR));
 
-		log_appendf("ERROR: SIM %d cmd[%s]", config_getSelectedSIM(), error);
-		errorToken = *(pToken1 - 1);
-#ifndef _DEBUG
-		if (errorToken=='S') {
-			lcd_printl(LINEC, "SERVICE ERROR");
-		} else {
-			lcd_printl(LINEC, "MODEM ERROR");
+		if (g_iUartIgnoreError!=0) {
+			g_iUartIgnoreError--;
+			log_appendf("ERROR: SIM %d cmd[%s]", config_getSelectedSIM(), error);
+			errorToken = *(pToken1 - 1);
+	#ifndef _DEBUG
+			if (errorToken=='S') {
+				lcd_printl(LINEC, "SERVICE ERROR");
+			} else {
+				lcd_printl(LINEC, "MODEM ERROR");
+			}
+	#endif
+			lcd_printl(LINEE, error);
 		}
-#endif
-		lcd_printl(LINEE, error);
 		modem_setNumericError(errorToken, atoi(error));
 	}
 
@@ -475,7 +483,11 @@ int8_t modem_getSMSCenter() {
 
 int8_t modem_getOwnNumber() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
-	return modem_parse_string("AT+CNUM?\r\n", "CNUM: \"", sim->cfgPhoneNum, GW_MAX_LEN+1);
+	int8_t state;
+	modem_ignore_next_errors(1);
+	state = modem_parse_string("AT+CNUM?\r\n", "CNUM: \"", sim->cfgPhoneNum, GW_MAX_LEN+1);
+	modem_ignore_next_errors(0);
+	return state;
 }
 
 uint8_t validateIMEI(char *IMEI) {

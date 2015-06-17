@@ -55,6 +55,7 @@ int modem_connect_network(uint8_t attempts);
 void modem_setNumericError(char errorToken, int16_t errorCode);
 uint16_t modem_parse_error(const char *error);
 void modem_check_uart_error();
+void modem_ignore_next_errors(int errors);
 
 /*********************************************************************************/
 /* PARSING TOOLS  																 */
