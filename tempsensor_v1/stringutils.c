@@ -129,4 +129,17 @@ char* itoa_nopadding(int num) {
 	return g_szItoa;
 }
 
+char* replace_character(char* string, char charToFind, char charToReplace) {
+	int i = 0;
+
+	while (string[i] != '\0') {
+		if (string[i] == charToFind) {
+			string[i] = charToReplace;
+		}
+		i++;
+	}
+
+	return string;
+}
+
 
