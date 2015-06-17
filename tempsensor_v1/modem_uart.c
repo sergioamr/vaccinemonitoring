@@ -713,12 +713,12 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 
 	case USCI_UART_UCTXIFG:
 		UCA0TXBUF = TXBuffer[TXIdx];               // Transmit characters
+		TXIdx++;
 		if (TXIdx >= iTxLen) {
 			TXIdx = 0;
 			UCA0IE &= ~UCTXIE; 	// Finished transmision
 		}
 
-		TXIdx++;
 		break;
 
 	default:
