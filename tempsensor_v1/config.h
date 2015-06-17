@@ -202,7 +202,7 @@ typedef struct  {
 	uint8_t memoryInitialized;
 	uint32_t numberRuns;
 	uint32_t numberConfigurationRuns;
-	int32_t lastLineRead;
+	uint32_t lastSeek;
 	uint8_t calibrationFinished;
 	char firmwareVersion[17];
 	uint16_t configStructureSize; // Size to check if there are changes on this structure

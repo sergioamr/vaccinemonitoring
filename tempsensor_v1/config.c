@@ -267,6 +267,7 @@ void config_init() {
 
 	// First run
 	g_pSysCfg->numberConfigurationRuns = 1;
+	g_pSysCfg->lastSeek = 0;
 
 	// Value to check to make sure the structure is still the same size;
 	g_pSysCfg->configStructureSize = sizeof(CONFIG_SYSTEM);
