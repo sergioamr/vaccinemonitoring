@@ -335,6 +335,7 @@ void process_batch() {
 		if (f_close(&filr) == FR_OK) {
 			fr = f_unlink(path); // Delete the file
 			g_pSysCfg->lastSeek = 0;
+			g_iStatus |= LOG_TIME_STAMP;
 		} else {
 			break; // Something broke, run away and try again later
 			// TODO should really try to delete file again?
