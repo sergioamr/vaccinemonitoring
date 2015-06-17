@@ -163,6 +163,7 @@ void system_boot() {
 		_NOP(); // Modem failed to power on
 	}
 
+
 	batt_check_level();
 
 	// Init finished, we disabled the debugging display
@@ -174,6 +175,10 @@ void system_boot() {
 	temperature_analog_to_digital_conversion();
 	log_sample_web_format(&bytes_written);
 	sms_process_messages(0);
+
+	//#ifndef _DEBUG
+	backend_get_configuration();
+	//#endif
 
 	lcd_print("Finished Boot");
 

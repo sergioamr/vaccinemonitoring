@@ -370,10 +370,6 @@ int8_t modem_first_init() {
 			}
 		}
 
-#ifndef _DEBUG
-		backend_get_configuration();
-#endif
-
 		// One or more of the sims had a catastrofic failure on init, set the device
 		switch (iSIM_Error) {
 		case 1:
