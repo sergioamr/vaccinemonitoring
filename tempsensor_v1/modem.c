@@ -449,7 +449,8 @@ int8_t modem_parse_string(char *cmd, char *response, char *destination, uint16_t
 	int8_t uart_state;
 	config_incLastCmd();
 
-	uart_tx(cmd);
+	uart_tx_timeout(cmd, MODEM_TX_DELAY1, 1);
+
 	uart_state = uart_getTransactionState();
 	if (uart_state == UART_SUCCESS) {
 		PARSE_FINDSTR_RET(token, response, UART_FAILED);

@@ -112,7 +112,7 @@ int8_t http_setup() {
 	if (uart_getTransactionState() != UART_SUCCESS)
 		return UART_FAILED;
 
-	lcd_progress_wait(3000);
+	lcd_progress_wait(1000);
 
 	http_enable();
 	// We were not successful trying to activate the HTTP transaction
