@@ -307,7 +307,8 @@ void process_batch() {
 	DIR dir;
 	FIL filr;
 	FRESULT fr;
-	lcd_printl(LINE2, "Transmitting...");
+	lcd_printl(LINEC, "Transmitting...");
+	lcd_printl(LINEH, "Batch");
 
 	// Cycle through all files using f_findfirst, f_findnext.
 	fr = f_findfirst(&dir, &fili, FOLDER_TEXT, "*." EXTENSION_TEXT);

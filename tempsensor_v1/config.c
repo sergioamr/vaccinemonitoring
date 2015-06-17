@@ -185,32 +185,31 @@ void config_send_configuration(char *number) {
 	TEMP_ALERT_PARAM *alert;
 	BATT_POWER_ALERT_PARAM *power;
 	char msg[SMS_MAX_SIZE];
-	char temp[32];
+	char temp[64];
 	int i;
 
 	msg[0]=0;
 	for (i = 0; i < MAX_NUM_SENSORS; i++) {
 		alert = &g_pDevCfg->stTempAlertParams[i];
-		sprintf(temp, "%s(Max Cold %dm, Max Hot %d, Thres Cold %d,Thres Hot %d)\r\n", SensorName[i],
+		sprintf(temp, "%s(mC %d mH %d tC %d tH %d)\r\n", SensorName[i],
 				(int) alert->maxTimeCold, (int) alert->maxTimeHot, (int) alert->threshCold,
 				(int) alert->threshHot);
 		strcat(msg, temp);
 	}
+	sms_send_message_number(number, msg);
 
 	power = &g_pDevCfg->stBattPowerAlertParam;
-	sprintf(temp, "Power Active %d(time %d) Batt (time %d thres %d)\r\n",
+	sprintf(msg, "Power Active %d(time %d) Batt (time %d thres %d)\r\n",
 			power->enablePowerAlert, (int) power->minutesPower,
 			(int) power->minutesBattThresh, (int) power->battThreshold);
 
-	strcat(msg, temp);
+	sms_send_message_number(number, msg);
 
-	sprintf(temp, "Interval log %d upl %d reb %d cfg %d\r\n",
+	sprintf(msg, "Interval log %d upl %d reb %d cfg %d\r\n",
 			(int) g_pDevCfg->stIntervalParam.loggingInterval,
 			(int) g_pDevCfg->stIntervalParam.uploadInterval,
 			(int) g_pDevCfg->stIntervalParam.reboot,
 			(int) g_pDevCfg->stIntervalParam.configuration_fetch);
-
-	strcat(msg, temp);
 
 	sms_send_message_number(number, msg);
 }
