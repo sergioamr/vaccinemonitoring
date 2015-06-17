@@ -27,6 +27,7 @@
 #include "temperature.h"
 #include "fatdata.h"
 #include "state_machine.h"
+#include "main_system.h"
 
 char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
@@ -174,9 +175,11 @@ int modem_connect_network(uint8_t attempts) {
 	do {
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
 
-			lcd_printf(LINEC, "SIM %d status", nsim + 1);
-			lcd_printl(LINEH,
-					(char *) modem_getNetworkStatusText(net_mode, net_status));
+			if (!g_iRunning || net_status!=1) {
+				lcd_printf(LINEC, "SIM %d status", nsim + 1);
+				lcd_printl(LINEH,
+						(char *) modem_getNetworkStatusText(net_mode, net_status));
+			}
 
 			// If we are looking for a network
 			if ((net_mode == 1 || net_mode == 2)

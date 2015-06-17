@@ -40,8 +40,7 @@ typedef enum {
 
 #define MAX_EVENTS EVT_LAST
 
-typedef struct
-__attribute__((__packed__)) {
+typedef struct {
 	EVENT_IDS id;
 	char name[16];
 	void (*callback)(void *, time_t);
@@ -53,8 +52,7 @@ __attribute__((__packed__)) {
 					  // 0 is now
 } EVENT;
 
-typedef struct
-__attribute__((__packed__)) {
+typedef struct {
 	EVENT events[MAX_EVENTS];
 	uint8_t registeredEvents;
 	uint8_t nextEvent;

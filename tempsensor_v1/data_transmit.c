@@ -307,8 +307,6 @@ void process_batch() {
 	DIR dir;
 	FIL filr;
 	FRESULT fr;
-	lcd_printl(LINEC, "Transmitting...");
-	lcd_printl(LINEH, "Batch");
 
 	// Cycle through all files using f_findfirst, f_findnext.
 	fr = f_findfirst(&dir, &fili, FOLDER_TEXT, "*." EXTENSION_TEXT);
@@ -322,6 +320,9 @@ void process_batch() {
 		if (fr != FR_OK) {
 			break;
 		}
+
+		lcd_printl(LINEC, "Transmitting...");
+		lcd_printl(LINE2, path);
 
 		if (g_pSysCfg->lastSeek > 0) {
 			f_lseek(&filr, g_pSysCfg->lastSeek);
