@@ -813,12 +813,11 @@ void modem_init() {
 	g_iSignal_gprs = http_post_gprs_connection_status(GPRS);
 	g_iGprs_network_indication = http_post_gprs_connection_status(GSM);
 
-	// Disable echo from modem
-	//uart_tx("ATE0\r\n");
-
 #ifndef _DEBUG
 	modem_getOwnNumber();
 #endif
+
+	http_setup();
 
 	// Check if the network/sim card works
 	modem_isSIM_Operational();

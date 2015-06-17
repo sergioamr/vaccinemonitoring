@@ -100,7 +100,7 @@ uint16_t config_getSIMError(int slot) {
 
 // Returns the current structure containing the info for the current SIM selected
 SIM_CARD_CONFIG *config_getSIM() {
-	uint8_t slot = g_pDevCfg->cfgSIM_slot;
+	int8_t slot = g_pDevCfg->cfgSIM_slot;
 	if (slot<0 || slot>1)
 		g_pDevCfg->cfgSIM_slot=0;
 

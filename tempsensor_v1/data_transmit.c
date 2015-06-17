@@ -21,13 +21,13 @@ char *getSensorTemp(int sensorID) {
 
 void data_send_temperatures_sms() {
 	char data[SMS_MAX_SIZE];
-	int t=0;
+	int t = 0;
 
 	rtc_getlocal(&g_tmCurrTime);
 
 	strcpy(data, SMS_DATA_MSG_TYPE);
 	strcat(data, get_simplified_date_string(&g_tmCurrTime));
-	for (t=0; t<MAX_NUM_SENSORS; t++) {
+	for (t = 0; t < MAX_NUM_SENSORS; t++) {
 		//strcat(data, getSensorTemp(t));
 	}
 
@@ -41,193 +41,193 @@ void data_send_temperatures_sms() {
 void data_upload_sms() {
 
 	// TODO Implement
-/*
-	int iPOSTstatus = 0;
-	char* pcData = NULL;
-	char* pcTmp = NULL;
-	char* pcSrc1 = NULL;
-	char* pcSrc2 = NULL;
-	int iIdx = 0;
-	char sensorId[2] = { 0, 0 };
-	char dataSample[180];
+	/*
+	 int iPOSTstatus = 0;
+	 char* pcData = NULL;
+	 char* pcTmp = NULL;
+	 char* pcSrc1 = NULL;
+	 char* pcSrc2 = NULL;
+	 int iIdx = 0;
+	 char sensorId[2] = { 0, 0 };
+	 char dataSample[180];
 
-	iPOSTstatus = strlen(SampleData);
+	 iPOSTstatus = strlen(SampleData);
 
-	memset(sensorId, 0, sizeof(sensorId));
-	memset(dataSample, 0, sizeof(dataSample));
-	strcat(dataSample, SMS_DATA_MSG_TYPE);
+	 memset(sensorId, 0, sizeof(sensorId));
+	 memset(dataSample, 0, sizeof(dataSample));
+	 strcat(dataSample, SMS_DATA_MSG_TYPE);
 
-	pcSrc1 = strstr(SampleData, "sdt=");	//start of TS
-	pcSrc2 = strstr(pcSrc1, "&");	//end of TS
-	pcTmp = strtok(&pcSrc1[4], "/:");
+	 pcSrc1 = strstr(SampleData, "sdt=");	//start of TS
+	 pcSrc2 = strstr(pcSrc1, "&");	//end of TS
+	 pcTmp = strtok(&pcSrc1[4], "/:");
 
-	if ((pcTmp) && (pcTmp < pcSrc2)) {
-		strcat(dataSample, pcTmp);	//get year
-		pcTmp = strtok(NULL, "/:");
-		if ((pcTmp) && (pcTmp < pcSrc2)) {
-			strcat(dataSample, pcTmp);	//get month
-			pcTmp = strtok(NULL, "/:");
-			if ((pcTmp) && (pcTmp < pcSrc2)) {
-				strcat(dataSample, pcTmp);	//get day
-				strcat(dataSample, ":");
-			}
-		}
+	 if ((pcTmp) && (pcTmp < pcSrc2)) {
+	 strcat(dataSample, pcTmp);	//get year
+	 pcTmp = strtok(NULL, "/:");
+	 if ((pcTmp) && (pcTmp < pcSrc2)) {
+	 strcat(dataSample, pcTmp);	//get month
+	 pcTmp = strtok(NULL, "/:");
+	 if ((pcTmp) && (pcTmp < pcSrc2)) {
+	 strcat(dataSample, pcTmp);	//get day
+	 strcat(dataSample, ":");
+	 }
+	 }
 
-		//fetch time
-		pcTmp = strtok(NULL, "/:");
-		if ((pcTmp) && (pcTmp < pcSrc2)) {
-			strcat(dataSample, pcTmp);	//get hour
-			pcTmp = strtok(NULL, "/:");
-			if ((pcTmp) && (pcTmp < pcSrc2)) {
-				strcat(dataSample, pcTmp);	//get minute
-				pcTmp = strtok(NULL, "&");
-				if ((pcTmp) && (pcTmp < pcSrc2)) {
-					strcat(dataSample, pcTmp);	//get sec
-					strcat(dataSample, ",");
-				}
-			}
-		}
-	}
+	 //fetch time
+	 pcTmp = strtok(NULL, "/:");
+	 if ((pcTmp) && (pcTmp < pcSrc2)) {
+	 strcat(dataSample, pcTmp);	//get hour
+	 pcTmp = strtok(NULL, "/:");
+	 if ((pcTmp) && (pcTmp < pcSrc2)) {
+	 strcat(dataSample, pcTmp);	//get minute
+	 pcTmp = strtok(NULL, "&");
+	 if ((pcTmp) && (pcTmp < pcSrc2)) {
+	 strcat(dataSample, pcTmp);	//get sec
+	 strcat(dataSample, ",");
+	 }
+	 }
+	 }
+	 }
 
-	pcSrc1 = strstr(pcSrc2 + 1, "i=");	//start of interval
-	pcSrc2 = strstr(pcSrc1, "&");	//end of interval
-	pcTmp = strtok(&pcSrc1[2], "&");
-	if ((pcTmp) && (pcTmp < pcSrc2)) {
-		strcat(dataSample, pcTmp);
-		strcat(dataSample, ",");
-	}
+	 pcSrc1 = strstr(pcSrc2 + 1, "i=");	//start of interval
+	 pcSrc2 = strstr(pcSrc1, "&");	//end of interval
+	 pcTmp = strtok(&pcSrc1[2], "&");
+	 if ((pcTmp) && (pcTmp < pcSrc2)) {
+	 strcat(dataSample, pcTmp);
+	 strcat(dataSample, ",");
+	 }
 
-	pcSrc1 = strstr(pcSrc2 + 1, "t=");	//start of temperature
-	pcData = strstr(pcSrc1, "&");	//end of temperature
-	pcSrc2 = strstr(pcSrc1, ",");
-	if ((pcSrc2) && (pcSrc2 < pcData)) {
-		iIdx = 0xA5A5;	//temperature has series values
-	} else {
-		iIdx = 0xDEAD;	//temperature has single value
-	}
+	 pcSrc1 = strstr(pcSrc2 + 1, "t=");	//start of temperature
+	 pcData = strstr(pcSrc1, "&");	//end of temperature
+	 pcSrc2 = strstr(pcSrc1, ",");
+	 if ((pcSrc2) && (pcSrc2 < pcData)) {
+	 iIdx = 0xA5A5;	//temperature has series values
+	 } else {
+	 iIdx = 0xDEAD;	//temperature has single value
+	 }
 
-	//check if temperature values are in series
-	if (iIdx == 0xDEAD) {
-		//pcSrc1 is t=23.1|24.1|25.1|26.1|28.1
-		pcTmp = strtok(&pcSrc1[2], "|&");
-		for (iIdx = 0; (iIdx < MAX_NUM_SENSORS) && (pcTmp); iIdx++) {
-			sensorId[0] = iIdx + 0x30;
-			strcat(dataSample, sensorId);	//add sensor id
-			strcat(dataSample, ",");
+	 //check if temperature values are in series
+	 if (iIdx == 0xDEAD) {
+	 //pcSrc1 is t=23.1|24.1|25.1|26.1|28.1
+	 pcTmp = strtok(&pcSrc1[2], "|&");
+	 for (iIdx = 0; (iIdx < MAX_NUM_SENSORS) && (pcTmp); iIdx++) {
+	 sensorId[0] = iIdx + 0x30;
+	 strcat(dataSample, sensorId);	//add sensor id
+	 strcat(dataSample, ",");
 
-			//encode the temp value
-			memset(&dataSample[0], 0, ENCODED_TEMP_LEN);
-			//check temp is --.- in case of sensor plugged out
-			if (pcTmp[1] != '-') {
-				pcSrc2 = &dataSample[0]; //reuse
-				encode(strtod(pcTmp, NULL), pcSrc2);
-				strcat(dataSample, pcSrc2);	//add encoded temp value
-			} else {
-				strcat(dataSample, "/W");	//add encoded temp value
-			}
-			strcat(dataSample, ",");
+	 //encode the temp value
+	 memset(&dataSample[0], 0, ENCODED_TEMP_LEN);
+	 //check temp is --.- in case of sensor plugged out
+	 if (pcTmp[1] != '-') {
+	 pcSrc2 = &dataSample[0]; //reuse
+	 encode(strtod(pcTmp, NULL), pcSrc2);
+	 strcat(dataSample, pcSrc2);	//add encoded temp value
+	 } else {
+	 strcat(dataSample, "/W");	//add encoded temp value
+	 }
+	 strcat(dataSample, ",");
 
-			pcTmp = strtok(NULL, "|&");
+	 pcTmp = strtok(NULL, "|&");
 
-		}
-	} else {
-		iIdx = 0;
-		pcSrc2 = strstr(pcSrc1, "|");	//end of first sensor
-		if (!pcSrc2)
-			pcSrc2 = pcData;
-		pcTmp = strtok(&pcSrc1[2], ",|&");  //get first temp value
+	 }
+	 } else {
+	 iIdx = 0;
+	 pcSrc2 = strstr(pcSrc1, "|");	//end of first sensor
+	 if (!pcSrc2)
+	 pcSrc2 = pcData;
+	 pcTmp = strtok(&pcSrc1[2], ",|&");  //get first temp value
 
-		while ((pcTmp) && (pcTmp < pcSrc2)) {
-			sensorId[0] = iIdx + 0x30;
-			strcat(dataSample, sensorId);	//add sensor id
-			strcat(dataSample, ",");
+	 while ((pcTmp) && (pcTmp < pcSrc2)) {
+	 sensorId[0] = iIdx + 0x30;
+	 strcat(dataSample, sensorId);	//add sensor id
+	 strcat(dataSample, ",");
 
-			//encode the temp value
-			memset(&dataSample[SMS_ENCODED_LEN], 0, ENCODED_TEMP_LEN);
-			//check temp is --.- in case of sensor plugged out
-			if (pcTmp[1] != '-') {
-				pcSrc1 = &dataSample[SMS_ENCODED_LEN]; //reuse
-				encode(strtod(pcTmp, NULL), pcSrc1);
-				strcat(dataSample, pcSrc1);	//add encoded temp value
-			} else {
-				strcat(dataSample, "/W");	//add encoded temp value
-			}
+	 //encode the temp value
+	 memset(&dataSample[SMS_ENCODED_LEN], 0, ENCODED_TEMP_LEN);
+	 //check temp is --.- in case of sensor plugged out
+	 if (pcTmp[1] != '-') {
+	 pcSrc1 = &dataSample[SMS_ENCODED_LEN]; //reuse
+	 encode(strtod(pcTmp, NULL), pcSrc1);
+	 strcat(dataSample, pcSrc1);	//add encoded temp value
+	 } else {
+	 strcat(dataSample, "/W");	//add encoded temp value
+	 }
 
-			pcTmp = strtok(NULL, ",|&");
-			while ((pcTmp) && (pcTmp < pcSrc2)) {
-				//encode the temp value
-				memset(&dataSample[SMS_ENCODED_LEN], 0, ENCODED_TEMP_LEN);
-				//check temp is --.- in case of sensor plugged out
-				if (pcTmp[1] != '-') {
-					pcSrc1 = &dataSample[SMS_ENCODED_LEN]; //reuse
-					encode(strtod(pcTmp, NULL), pcSrc1);
-					strcat(dataSample, pcSrc1);	//add encoded temp value
-				} else {
-					strcat(dataSample, "/W");	//add encoded temp value
-				}
-				pcTmp = strtok(NULL, ",|&");
+	 pcTmp = strtok(NULL, ",|&");
+	 while ((pcTmp) && (pcTmp < pcSrc2)) {
+	 //encode the temp value
+	 memset(&dataSample[SMS_ENCODED_LEN], 0, ENCODED_TEMP_LEN);
+	 //check temp is --.- in case of sensor plugged out
+	 if (pcTmp[1] != '-') {
+	 pcSrc1 = &dataSample[SMS_ENCODED_LEN]; //reuse
+	 encode(strtod(pcTmp, NULL), pcSrc1);
+	 strcat(dataSample, pcSrc1);	//add encoded temp value
+	 } else {
+	 strcat(dataSample, "/W");	//add encoded temp value
+	 }
+	 pcTmp = strtok(NULL, ",|&");
 
-			}
+	 }
 
-			//check if we can start with next temp series
-			if ((pcTmp) && (pcTmp < pcData)) {
-				strcat(dataSample, ",");
-				iIdx++;	//start with next sensor
-				pcSrc2 = strstr(&pcTmp[strlen(pcTmp) + 1], "|"); //adjust the last postion to next sensor end
-				if (!pcSrc2) {
-					//no more temperature series available
-					pcSrc2 = pcData;
-				}
-			}
+	 //check if we can start with next temp series
+	 if ((pcTmp) && (pcTmp < pcData)) {
+	 strcat(dataSample, ",");
+	 iIdx++;	//start with next sensor
+	 pcSrc2 = strstr(&pcTmp[strlen(pcTmp) + 1], "|"); //adjust the last postion to next sensor end
+	 if (!pcSrc2) {
+	 //no more temperature series available
+	 pcSrc2 = pcData;
+	 }
+	 }
 
-		}
-	}
+	 }
+	 }
 
-	pcSrc1 = pcTmp + strlen(pcTmp) + 1;	//pcTmp is b=yyy
-	//check if battery has series values
-	if (*pcSrc1 != 'p') {
-		pcSrc2 = strstr(pcSrc1, "&");	//end of battery
-		pcTmp = strtok(pcSrc1, "&");	//get all series values except the first
-		if ((pcTmp) && (pcTmp < pcSrc2)) {
-			strcat(dataSample, ",");
-			pcSrc1 = strrchr(pcTmp, ','); //postion to the last battery level  (e.g pcTmp 100 or 100,100,..
-			if (pcSrc1) {
-				strcat(dataSample, pcSrc1 + 1); //past the last comma
-			} else {
-				strcat(dataSample, pcTmp); //no comma
-			}
-			strcat(dataSample, ",");
+	 pcSrc1 = pcTmp + strlen(pcTmp) + 1;	//pcTmp is b=yyy
+	 //check if battery has series values
+	 if (*pcSrc1 != 'p') {
+	 pcSrc2 = strstr(pcSrc1, "&");	//end of battery
+	 pcTmp = strtok(pcSrc1, "&");	//get all series values except the first
+	 if ((pcTmp) && (pcTmp < pcSrc2)) {
+	 strcat(dataSample, ",");
+	 pcSrc1 = strrchr(pcTmp, ','); //postion to the last battery level  (e.g pcTmp 100 or 100,100,..
+	 if (pcSrc1) {
+	 strcat(dataSample, pcSrc1 + 1); //past the last comma
+	 } else {
+	 strcat(dataSample, pcTmp); //no comma
+	 }
+	 strcat(dataSample, ",");
 
-			pcSrc1 = strrchr(pcSrc2 + 1, ','); //postion to the last power plugged state
-			if ((pcSrc1) && (pcSrc1 < &SampleData[iPOSTstatus])) {
-				strcat(dataSample, pcSrc1 + 1);
-			} else {
-				//power plugged does not have series values
-				pcTmp = pcSrc2 + 1;
-				strcat(dataSample, &pcTmp[2]); //pcTmp contains p=yyy
-			}
+	 pcSrc1 = strrchr(pcSrc2 + 1, ','); //postion to the last power plugged state
+	 if ((pcSrc1) && (pcSrc1 < &SampleData[iPOSTstatus])) {
+	 strcat(dataSample, pcSrc1 + 1);
+	 } else {
+	 //power plugged does not have series values
+	 pcTmp = pcSrc2 + 1;
+	 strcat(dataSample, &pcTmp[2]); //pcTmp contains p=yyy
+	 }
 
-		}
+	 }
 
-	} else {
-		//battery does not have series values
-		//strcat(dataSample,",");
-		strcat(dataSample, &pcTmp[2]); //pcTmp contains b=yyy
+	 } else {
+	 //battery does not have series values
+	 //strcat(dataSample,",");
+	 strcat(dataSample, &pcTmp[2]); //pcTmp contains b=yyy
 
-		strcat(dataSample, ",");
-		pcSrc2 = pcTmp + strlen(pcTmp);  //end of battery
-		pcSrc1 = strrchr(pcSrc2 + 1, ','); //postion to the last power plugged state
-		if ((pcSrc1) && (pcSrc1 < &SampleData[iPOSTstatus])) {
-			strcat(dataSample, pcSrc1 + 1);	//last power plugged values is followed by null
-		} else {
-			//power plugged does not have series values
-			pcTmp = pcSrc2 + 1;
-			strcat(dataSample, &pcTmp[2]); //pcTmp contains p=yyy
-		}
+	 strcat(dataSample, ",");
+	 pcSrc2 = pcTmp + strlen(pcTmp);  //end of battery
+	 pcSrc1 = strrchr(pcSrc2 + 1, ','); //postion to the last power plugged state
+	 if ((pcSrc1) && (pcSrc1 < &SampleData[iPOSTstatus])) {
+	 strcat(dataSample, pcSrc1 + 1);	//last power plugged values is followed by null
+	 } else {
+	 //power plugged does not have series values
+	 pcTmp = pcSrc2 + 1;
+	 strcat(dataSample, &pcTmp[2]); //pcTmp contains p=yyy
+	 }
 
-	}
-	sms_send_message(dataSample);
-	*/
+	 }
+	 sms_send_message(dataSample);
+	 */
 }
 
 // 11,20150303:082208,interval,sensorid,DATADATADATAT,sensorid,DATADATADATA,
@@ -242,7 +242,7 @@ void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	struct tm firstDate;
 	char line[80];
-	int lineSize = sizeof(line)/sizeof(char);
+	int lineSize = sizeof(line) / sizeof(char);
 	uint8_t dateLine = 1;
 
 	// Setup connection
@@ -250,7 +250,7 @@ void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 		return;
 	}
 
-	if (http_setup() != UART_SUCCESS) {
+	if (http_enable() != UART_SUCCESS) {
 		// TODO try to send sms
 		http_deactivate();
 		return;
@@ -258,25 +258,25 @@ void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 
 	f_lseek(file, start);
 
-	uint32_t length = end-start;
+	uint32_t length = end - start;
 	http_open_connection(length);
 
 	// check that the transmitted data equals the size
 	while (file->fptr < end) {
-		if(f_gets(line, lineSize, file) != 0) {
+		if (f_gets(line, lineSize, file) != 0) {
 			if (dateLine) {
 				parse_time_from_line(&firstDate, line);
 				dateString = get_date_string(&firstDate, delim1, delim2, 0);
-				sprintf(line, format,
-						g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa",
-						defSID, dateString,
-						itoa_nopadding(g_pDevCfg->stIntervalParam.loggingInterval));
+				sprintf(line, format, g_pDevCfg->cfgIMEI, sim->cfgPhoneNum,
+						"0.1pa", defSID, dateString,
+						itoa_nopadding(
+								g_pDevCfg->stIntervalParam.loggingInterval));
 				dateLine = 0;
 			} else {
 				strcat(line, "|");
 			}
 
-			uart_tx(line);
+			uart_tx_nowait(line);
 		} else {
 			break;
 		}
@@ -290,7 +290,7 @@ void process_batch() {
 	uint32_t seekFrom = g_pSysCfg->lastSeek;
 	char line[80];
 	char path[32];
-	int lineSize = sizeof(line)/sizeof(char);
+	int lineSize = sizeof(line) / sizeof(char);
 
 	//config_setLastCommand(COMMAND_POST);
 
@@ -306,7 +306,7 @@ void process_batch() {
 		return;
 	}
 
-	while(fr == FR_OK) {
+	while (fr == FR_OK) {
 		sprintf(path, "%s/%s", FOLDER_TEXT, fili.fname);
 		fr = f_open(&filr, path, FA_READ | FA_OPEN_ALWAYS);
 		if (fr != FR_OK) {
@@ -317,9 +317,9 @@ void process_batch() {
 			f_lseek(&filr, g_pSysCfg->lastSeek);
 		}
 
-		while(f_gets(line, lineSize, &filr) != 0) {
-			if(filr.fptr == 0 || strstr(line, "$TS") != NULL) {
-				if(canSend) {
+		while (f_gets(line, lineSize, &filr) != 0) {
+			if (filr.fptr == 0 || strstr(line, "$TS") != NULL) {
+				if (canSend) {
 					http_send_batch(&filr, seekFrom, filr.fptr);
 					seekFrom = filr.fptr;
 					canSend = 0;

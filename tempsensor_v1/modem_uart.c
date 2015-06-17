@@ -384,8 +384,6 @@ int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
 	int bytestoread = 0;
 	int iStartIdx = 0;
 	int iEndIdx = 0;
-	uint8_t numberLen = 0;
-	uint8_t iMaxTok = 3;
 
 	iRXCommandProcessed = 0;
 	if (reponseLen > 0)

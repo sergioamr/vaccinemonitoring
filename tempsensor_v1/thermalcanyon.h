@@ -14,7 +14,9 @@
 #include "config.h"
 #include "common.h"
 #include "driverlib.h"
+#include "stdint.h"
 #include "stdlib.h"
+#include "stdio.h"
 #include "string.h"
 #include "time.h"
 #include "i2c.h"
@@ -40,6 +42,7 @@
 #include "time.h"
 #include "state_machine.h"
 #include "main_system.h"
+#include "timer.h"
 
 //------------- FUNCTIONS MOVED FROM MAIN - WAITING CLEANUP -------------------
 

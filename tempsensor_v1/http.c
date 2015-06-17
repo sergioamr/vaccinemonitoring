@@ -73,21 +73,10 @@ void http_data_transfer() {
 }
 */
 
-int8_t http_setup() {
-	int uart_state = UART_FAILED;
+int8_t http_enable() {
 	int attempts = HTTP_COMMAND_ATTEMPTS;
+	int uart_state = UART_FAILED;
 	SIM_CARD_CONFIG *sim = config_getSIM();
-
-	if (sim->cfgAPN[0] == '\0')
-		return UART_FAILED;
-
-	lcd_printf(LINEC, "Testing HTTP %d", config_getSelectedSIM() + 1);
-
-	uart_txf("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN); //APN
-	if (uart_getTransactionState() != UART_SUCCESS)
-		return UART_FAILED;
-
-	lcd_progress_wait(5000);
 
 	// Context Activation - #SGACT
 	// Execution command is used to activate or deactivate either the GSM context
@@ -107,7 +96,25 @@ int8_t http_setup() {
 		}
 
 	} while (uart_state != UART_SUCCESS && --attempts > 0);
+	return uart_state;
+}
 
+int8_t http_setup() {
+	int uart_state = UART_FAILED;
+	SIM_CARD_CONFIG *sim = config_getSIM();
+
+	if (sim->cfgAPN[0] == '\0')
+		return UART_FAILED;
+
+	lcd_printf(LINEC, "HTTP SIM %d", config_getSelectedSIM() + 1);
+
+	uart_txf("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN); //APN
+	if (uart_getTransactionState() != UART_SUCCESS)
+		return UART_FAILED;
+
+	lcd_progress_wait(3000);
+
+	http_enable();
 	// We were not successful trying to activate the HTTP transaction
 	if (uart_state != UART_SUCCESS)
 		return UART_FAILED;
@@ -195,8 +202,10 @@ int http_get_configuration() {
 	sprintf(szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/%s/1/\"\r\n",
 			g_pDevCfg->cfgIMEI);
 	uart_tx_timeout(szTemp, 5000, 1);
-	if (uart_getTransactionState() != UART_SUCCESS)
+	if (uart_getTransactionState() != UART_SUCCESS) {
+		http_deactivate();
 		return UART_FAILED;
+	}
 
 	// CME ERROR: 558 cannot resolve DN ?
 
@@ -218,6 +227,7 @@ int http_get_configuration() {
 		}
 	};
 
+	http_deactivate();
 	return uart_state; // TODO return was missing, is it necessary ?
 }
 
@@ -310,7 +320,7 @@ int http_post_gprs_connection_status(char status) {
 
 int8_t http_post(char* postdata) {
 	char cmd[64];
-
+	http_enable();
 	sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%s,0\r\n", itoa_pad(strlen(postdata)));
 
 	// Wait for prompt
@@ -318,5 +328,7 @@ int8_t http_post(char* postdata) {
 	if (uart_tx_waitForPrompt(cmd, TIMEOUT_HTTPSND_PROMPT)) {
 		uart_tx_timeout(postdata, TIMEOUT_HTTPSND, 1);
 	}
+
+	http_deactivate();
 	return uart_getTransactionState();
 }

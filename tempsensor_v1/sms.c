@@ -8,23 +8,6 @@
 #define SMS_C_
 
 #include "thermalcanyon.h"
-#include "stdint.h"
-#include "stdio.h"
-#include "stringutils.h"
-#include "sms.h"
-#include "modem_uart.h"
-#include "timer.h"
-#include "config.h"
-#include "common.h"
-#include "lcd.h"
-#include "string.h"
-#include "globals.h"
-#include "modem.h"
-#include "stdlib.h"
-#include "battery.h"
-#include "pmm.h"
-#include "fatdata.h"
-#include "events.h"
 
 // Send back data after an SMS request
 void sms_send_data_request(char *number) {

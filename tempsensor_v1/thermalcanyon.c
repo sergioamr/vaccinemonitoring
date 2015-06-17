@@ -126,12 +126,6 @@ void thermal_canyon_loop(void) {
 	lcd_show();
 
 	while (1) {
-
-		if (g_pDevCfg->cfgSIM_slot<0 || g_pDevCfg->cfgSIM_slot>1) {
-			_NOP();
-		}
-
-
 		currentTime = rtc_update_time();
 #ifdef _DEBUG
 		events_debug(rtc_get_second_tick());
