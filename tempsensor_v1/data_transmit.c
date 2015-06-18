@@ -237,7 +237,7 @@ void data_upload_sms() {
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
 void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	char* dateString = NULL;
-	const static char* format = "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%s";
+	const static char* format = "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%s&t=";
 	const static char* defSID = "0|1|2|3|4";
 	const static char* delim = "";
 	SIM_CARD_CONFIG *sim = config_getSIM();
@@ -346,9 +346,7 @@ void process_batch() {
 
 		if(canSend) {
 			http_send_batch(&filr, seekFrom, filr.fptr);
-			seekFrom = 0;
-			canSend = 0;
-			// Found next time stamp - Move to next batch now
+			seekFrom = canSend = 0;
 		}
 
 		if (f_close(&filr) == FR_OK) {
