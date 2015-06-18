@@ -94,14 +94,14 @@ void data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	int uart_state;
 	int retry = 0;
+	char line[80];
+	int lineSize = sizeof(line)/sizeof(char);
 	char* dateString = NULL;
-	const static char* format = "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%s&t=";
+	struct tm firstDate;
+	const static char* format = "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%d&t=";
 	const static char* defSID = "0|1|2|3|4";
 	const static char* delim = "";
 	SIM_CARD_CONFIG *sim = config_getSIM();
-	struct tm firstDate;
-	char line[80];
-	int lineSize = sizeof(line)/sizeof(char);
 
 	// Setup connection
 	if (modem_check_network() != UART_SUCCESS) {
@@ -109,8 +109,8 @@ void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	}
 
 	if (http_enable() != UART_SUCCESS) {
-		// TODO try to send sms
 		http_deactivate();
+		data_upload_sms(file, start, end);
 		return;
 	}
 
@@ -123,7 +123,7 @@ void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 		sprintf(line, format,
 				g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa",
 				defSID, dateString,
-				itoa_nopadding(g_pDevCfg->stIntervalParam.loggingInterval));
+				g_pDevCfg->stIntervalParam.loggingInterval);
 	} else {
 		return;
 	}
