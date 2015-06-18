@@ -92,6 +92,7 @@ void state_setSignalLevel(uint8_t iSignal) {
 void state_check_network() {
 	int res;
 
+	modem_getSignal();
 	if (state_isSignalInRange())
 		res = modem_connect_network(1);
 	else
@@ -114,6 +115,16 @@ void state_check_network() {
 	}
 }
 
+int state_isNetworkRegistered() {
+	if (g_pSysState->network_mode == 0)
+		return 0;
+
+	if (g_pSysState->network_status==NETWORK_STATUS_REGISTERED_HOME_NETWORK
+			|| g_pSysState->network_status==NETWORK_STATUS_REGISTERED_ROAMING)
+		return 1;
+
+	return 0;
+}
 
 /***********************************************************************************************************************/
 /* GENERATE ALARMS */
@@ -198,6 +209,11 @@ void state_clear_alarm_state() {
 /***********************************************************************************************************************/
 /* MODEM & COMMUNICATIONS */
 /***********************************************************************************************************************/
+
+void state_network_status(int net_mode, int net_status) {
+	g_pSysState->network_mode = net_mode;
+	g_pSysState->network_status = net_status;
+}
 
 // Clear all the errors for the network connection.
 void state_network_success(uint8_t sim) {

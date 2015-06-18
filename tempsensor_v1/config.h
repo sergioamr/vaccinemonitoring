@@ -295,6 +295,12 @@ typedef struct {
 	TEMPERATURE temp;
 	SYSTEM_STATUS system;
 
+	int network_mode;
+
+	//NETWORK_STATUS_REGISTERED_HOME_NETWORK
+	//NETWORK_STATUS_REGISTERED_ROAMING
+	int network_status;
+
 	uint8_t network_failures;
 
 } SYSTEM_STATE;

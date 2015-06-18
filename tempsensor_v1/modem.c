@@ -187,6 +187,8 @@ int modem_connect_network(uint8_t attempts) {
 								net_status));
 			}
 
+			state_network_status(net_mode, net_status);
+
 			// If we are looking for a network
 			if ((net_mode == 1 || net_mode == 2)
 					&& (net_status == NETWORK_STATUS_REGISTERED_HOME_NETWORK

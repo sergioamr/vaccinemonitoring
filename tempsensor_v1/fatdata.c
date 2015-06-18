@@ -388,7 +388,7 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 	iSignalLevel = state_getSignalLevel();
 	network_state = state_getNetworkState();
 
-	sprintf(szLog, "%d,\"%s\",%s,%s,%s,%s,%s,%d,%s\r\n",
+	sprintf(szLog, ",\"%d%%\",\"%s\",%s,%s,%s,%s,%s,%d,%s\r\n",
 			(int) iBatteryLevel, getPowerStateString(), temperature_getString(0),
 			temperature_getString(1), temperature_getString(2),
 			temperature_getString(3), temperature_getString(4),

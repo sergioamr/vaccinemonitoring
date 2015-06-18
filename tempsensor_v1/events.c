@@ -370,6 +370,13 @@ void event_network_check(void *event, time_t currentTime) {
 		// Checks several parameters to see if we have to reset the modem, switch sim card, etc.
 	}
 
+	if (state_isNetworkRegistered()) {
+		event_setInterval_by_id(EVT_CHECK_NETWORK, MINUTES_(10));
+ 	} else {
+		// Try to connect in 1 minute
+		event_force_event_by_id(EVT_CHECK_NETWORK, MINUTES_(1));
+ 	}
+
 	event_force_event_by_id(EVT_DISPLAY, 0);
 }
 

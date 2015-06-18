@@ -22,6 +22,7 @@ uint8_t state_getSignalPercentage();
 
 SYSTEM_STATUS *state_getAlarms();
 int state_isSignalInRange();
+int state_isNetworkRegistered();
 void state_setSignalLevel(uint8_t iSignal);
 uint8_t state_getSignalLevel();
 char *state_getNetworkState();
@@ -34,6 +35,7 @@ void state_power_on();
 void state_power_out();
 uint8_t state_isBuzzerOn();
 
+void state_network_status(int net_mode, int net_status);
 void state_network_fail(uint8_t sim, uint16_t error);
 void state_network_success(uint8_t sim);
 
