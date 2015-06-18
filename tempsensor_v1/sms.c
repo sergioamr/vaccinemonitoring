@@ -12,7 +12,7 @@
 // Send back data after an SMS request
 void sms_send_data_request(char *number) {
 	uint32_t iOffset;
-	char data[SMS_MAX_SIZE];
+	char data[MAX_SMS_SIZE_FULL];
 
 	//get temperature values
 	memset(data, 0, MSG_RESPONSE_LEN);
@@ -58,7 +58,7 @@ extern const char AT_MSG_OK[];
 int8_t sms_process_memory_message(int8_t index) {
 	int t = 0, len = 0;
 	char *token;
-	char msg[SMS_MAX_SIZE];
+	char msg[MAX_SMS_SIZE_FULL];
 	char state[16];
 	char ok[8];
 	char phoneNumber[32];
@@ -204,7 +204,7 @@ int8_t sms_process_messages() {
 }
 
 void sms_send_heart_beat() {
-	char msg[SMS_MAX_SIZE];
+	char msg[MAX_SMS_SIZE_FULL];
 
 	char* pcTmp = NULL;
 	SIM_CARD_CONFIG *sim = config_getSIM();

@@ -217,7 +217,6 @@ typedef struct  {
 
 	// Stats to control buffer sizes
 	uint16_t maxSamplebuffer;
-	uint16_t maxATResponse;
 	uint16_t maxRXBuffer;
 	uint16_t maxTXBuffer;
 

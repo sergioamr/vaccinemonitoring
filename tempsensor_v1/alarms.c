@@ -19,7 +19,7 @@
 
 /*************************************************************************************************************/
 void alarm_sensor_sms(uint8_t sensorId, int elapsed) {
-	char msg[SMS_MAX_SIZE];
+	char msg[MAX_SMS_SIZE];
 	sprintf(msg, "Alert Sensor %s at %s degC for %d minutes", SensorName[sensorId],
 			temperature_getString(sensorId), elapsed/60 );
 	strcat(msg, " Take ACTION immediately.");

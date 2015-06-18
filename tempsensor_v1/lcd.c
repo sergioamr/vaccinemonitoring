@@ -100,7 +100,7 @@ void lcd_append_signal_info(char *lcdBuffer) {
 			strcat(lcdBuffer, "G:NO");
 		}
 	} else {
-		strcat(lcdBuffer, "  --  ");
+		strcat(lcdBuffer, " No signal ");
 	}
 }
 
@@ -193,7 +193,7 @@ void lcd_show() {
 	case 8:
 		iCnt = 0xff;
 		strcat(lcdBuffer, "SIM2 ");	//current sim slot is 2
-		if (config_getSelectedSIM() != 0)
+		if (config_getSelectedSIM() != 1)
 			strcat(lcdBuffer, "  --  ");
 		else
 			lcd_append_signal_info(lcdBuffer);

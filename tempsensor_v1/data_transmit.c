@@ -16,7 +16,7 @@ char *getSensorTemp(int sensorID) {
 }
 
 void data_send_temperatures_sms() {
-	char data[SMS_MAX_SIZE];
+	char data[MAX_SMS_SIZE_FULL];
 	int t = 0;
 
 	rtc_getlocal(&g_tmCurrTime);
@@ -39,18 +39,15 @@ void data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 	int lineSize = sizeof(line)/sizeof(char);
 	char* dateString = NULL;
 	struct tm firstDate;
-	const static char* format = "%d,%s,%s,%d,";
-	const static char* delim = "";
-	int smsMaxNoExtra = SMS_MAX_SIZE - 3;
-	char smsMsg[smsMaxNoExtra];
+	char smsMsg[MAX_SMS_SIZE];
 
 	f_lseek(file, start);
 
 	// Must get first line before transmitting to calculate the length properly
 	if (f_gets(line, lineSize, file) != 0) {
 		parse_time_from_line(&firstDate, line);
-		dateString = get_date_string(&firstDate, delim, delim, delim, 0);
-		sprintf(smsMsg, format,
+		dateString = get_date_string(&firstDate, "", "", "", 0);
+		sprintf(smsMsg, "%d,%s,%s,%d,",
 				11, dateString, itoa_nopadding(g_pDevCfg->stIntervalParam.loggingInterval), 5);
 	} else {
 		return;
@@ -62,7 +59,7 @@ void data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 	while (file->fptr < end) {
 		if (f_gets(line, lineSize, file) != 0) {
 			length += strlen(line);
-			if (length >= smsMaxNoExtra) {
+			if (length >= MAX_SMS_SIZE) {
 				// dont send?
 				break;
 				/*
@@ -98,9 +95,7 @@ void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	int lineSize = sizeof(line)/sizeof(char);
 	char* dateString = NULL;
 	struct tm firstDate;
-	const static char* format = "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%d&t=";
-	const static char* defSID = "0|1|2|3|4";
-	const static char* delim = "";
+
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	// Setup connection
@@ -119,10 +114,10 @@ void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	// Must get first line before transmitting to calculate the length properly
 	if (f_gets(line, lineSize, file) != 0) {
 		parse_time_from_line(&firstDate, line);
-		dateString = get_date_string(&firstDate, delim, delim, delim, 0);
-		sprintf(line, format,
+		dateString = get_date_string(&firstDate, "", "", "", 0);
+		sprintf(line, "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%d&t=",
 				g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa",
-				defSID, dateString,
+				"0|1|2|3|4", dateString,
 				g_pDevCfg->stIntervalParam.loggingInterval);
 	} else {
 		return;

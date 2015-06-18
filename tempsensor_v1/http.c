@@ -193,6 +193,8 @@ int http_get_configuration() {
 	return uart_state; // TODO return was missing, is it necessary ?
 }
 
+
+uint8_t iHTTPRespDelayCnt = 0;
 int http_post_sms_status(void) {
 	int l_file_pointer_enabled_sms_status = 0;
 	int isHTTPResponseAvailable = 0;

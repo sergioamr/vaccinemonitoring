@@ -89,7 +89,7 @@ time_t events_getTick() {
 }
 
 void events_send_data(char *phone) {
-	char msg[SMS_MAX_SIZE];
+	char msg[MAX_SMS_SIZE_FULL];
 	EVENT *pEvent;
 	int t;
 	size_t length;

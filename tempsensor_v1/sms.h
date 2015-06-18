@@ -8,8 +8,10 @@
 #ifndef TEMPSENSOR_V1_SMS_H_
 #define TEMPSENSOR_V1_SMS_H_
 
-// + 0 + ctrZ
-#define SMS_MAX_SIZE 160+1+2
+#define MAX_SMS_SIZE 160
+
+// + MODEM EXTRA DATA FOR SENDING + END
+#define MAX_SMS_SIZE_FULL MAX_SMS_SIZE
 
 void sms_send_data_request(char *number);
 int8_t sms_process_msg(char* pSMSmsg);

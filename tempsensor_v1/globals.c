@@ -34,11 +34,6 @@ volatile uint8_t g_iDisplayId = 0;
 // Stores several states of the system
 volatile uint16_t g_iStatus = LOG_TIME_STAMP;
 
-#pragma SET_DATA_SECTION(".aggregate_vars")
-char ATresponse[ATRESP_MAX_LEN];
-
-#pragma SET_DATA_SECTION()
-
 #pragma SET_DATA_SECTION(".helper_vars")
 //put all variables that are written less frequently
 struct tm g_tmCurrTime;
@@ -50,23 +45,6 @@ int32_t iBytesLogged = 0;
 //put all variables that are written less frequently
 uint32_t g_iAlarmStatus = 0;
 double iTemp = 0.0;
-
-//opt
-uint8_t iPostSuccess = 0;
-uint8_t iPostFail = 0;
-int8_t iModemSuccess = -1;
-//uint8_t iHTTPRetryFailed=0;
-//uint8_t iHTTPRetrySucceeded=0;
-uint8_t iHTTPRespDelayCnt = 0;
-
-//moved stack variables to prevent stack overflow
-uint32_t iUploadTimeElapsed = 0;
-uint32_t iSampleTimeElapsed = 0;
-uint32_t iSMSRxPollElapsed = 0;
-uint32_t iLCDShowElapsed = 0;
-uint32_t iMsgRxPollElapsed = 0;
-
-int8_t g_iLastCfgSeq = -1;
 
 char g_iSignal_gprs = 0;
 char g_iGprs_network_indication = 0;

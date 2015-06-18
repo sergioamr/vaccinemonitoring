@@ -139,6 +139,7 @@ SECTIONS
     } PALIGN(0x0400), RUN_END(fram_rx_start) > 0x4400
 
     .cinit            : {}  > FRAM          /* INITIALIZATION TABLES             */
+
     .const            : {}  > FRAM  /* CONSTANT DATA                     */
 
     .text:_isr        : {}  > FRAM          /* CODE ISRs                         */
@@ -169,7 +170,7 @@ SECTIONS
     	events.obj (.xbigdata_vars)
     } > FRAM
 
-    .stack           : {} > RAM (HIGH)           /* SOFTWARE SYSTEM STACK             */
+    .stack           : {} > RAM  (HIGH) /* SOFTWARE SYSTEM STACK             */
 
     .state_machine   : {} > STATE_MACHINE
     .global_vars : {

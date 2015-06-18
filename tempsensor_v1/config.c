@@ -184,7 +184,7 @@ void config_reconfigure() {
 void config_send_configuration(char *number) {
 	TEMP_ALERT_PARAM *alert;
 	BATT_POWER_ALERT_PARAM *power;
-	char msg[SMS_MAX_SIZE];
+	char msg[MAX_SMS_SIZE_FULL];
 	char temp[64];
 	int i;
 
@@ -320,7 +320,7 @@ void config_init() {
 	strcpy(g_pSysCfg->firmwareVersion, "v(" __DATE__ ")");
 
 	g_pSysCfg->maxSamplebuffer = 0;
-	g_pSysCfg->maxATResponse = 0;
+
 	g_pSysCfg->maxRXBuffer = 0;
 	g_pSysCfg->maxTXBuffer = 0;
 
