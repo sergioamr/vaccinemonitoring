@@ -14,6 +14,7 @@ int8_t http_setup();
 void http_deactivate();
 int8_t http_enable();
 int http_get_configuration();
+int http_check_error(int *retry);
 int http_open_connection(int data_length);
 void backend_get_configuration();
 int8_t http_post(char* postdata);

@@ -6,10 +6,6 @@
  */
 
 #include "thermalcanyon.h"
-#include "config.h"
-#include "fatdata.h"
-#include "battery.h"
-#include "stdlib.h"
 
 #define TS_SIZE				21
 #define TS_FIELD_OFFSET		1	//1 - $, 3 - $TS
@@ -236,6 +232,8 @@ void data_upload_sms() {
 // sensorid,dATADATADA,sensorID,DATADATADATADATAT, sensorID,DATADATADATADATAT,batt level,battplugged.
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
 void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
+	int uart_state;
+	int retry = 0;
 	char* dateString = NULL;
 	const static char* format = "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%s&t=";
 	const static char* defSID = "0|1|2|3|4";
@@ -285,6 +283,9 @@ void http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 			} else {
 				// Last line! Wait for OK
 				uart_tx(line);
+				uart_state = uart_getTransactionState();
+				if (uart_state == UART_ERROR)
+					http_check_error(&retry);  // Tries again
 			}
 		} else {
 			break;
