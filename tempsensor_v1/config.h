@@ -33,6 +33,10 @@
 // Thershold when the alarm will sound if there is a power cut (seconds)
 #define THRESHOLD_TIME_POWER_OUT_ALARM 60*60*1
 
+// Path for getting the configuration from the server
+// CONFIGURATION_URL_PATH/IMEI/1/
+#define CONFIGURATION_URL_PATH "/coldtrace/uploads/multi/v3"
+
 #ifdef _DEBUG
 #define NUM_SAMPLES_CAPTURE 10
 #else
@@ -131,11 +135,11 @@ EXTERN int8_t g_iSystemSetup;
 #define TEMP_DATA_LEN		5
 
 // Network signal quality values
-#define NETWORK_DOWN_SS		14
+#define NETWORK_DOWN_SS		14.0
 #define NETWORK_UP_SS		NETWORK_DOWN_SS + 2 //2 points above the network down signal level
-#define NETWORK_MAX_SS		31
+#define NETWORK_MAX_SS		31.0
 
-#define NETWORK_ZERO 10
+#define NETWORK_ZERO 10.0
 
 #define NUM_SIM_CARDS 2
 
@@ -285,8 +289,14 @@ typedef struct {
 	uint8_t buzzerFeedback;
 	SIM_STATE simState[MAX_SMS_NUM];
 
+	uint8_t signal_level;
+	char network_state[32];
+
 	TEMPERATURE temp;
 	SYSTEM_STATUS system;
+
+	uint8_t network_failures;
+
 } SYSTEM_STATE;
 
 typedef struct {

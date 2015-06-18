@@ -314,7 +314,9 @@ void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
 	EVENT *pEvent = (EVENT *) event;
 	sms_process_messages();
 	if (g_pDevCfg->cfgServerConfigReceived == 1) {
+#ifndef _DEBUG
 		event_setInterval(pEvent, MINUTES_(MSG_REFRESH_INTERVAL));
+#endif
 		pEvent->nextEventRun = pEvent->nextEventRun + event_getInterval(pEvent);
 	}
 
@@ -472,6 +474,12 @@ void events_init() {
 	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
 			MINUTES_(LCD_REFRESH_INTERVAL), NULL);
 
+#ifdef _DEBUG
+	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0, &event_subsample_temperature, SECONDS_(5), 0);
+	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 5, &event_save_samples, SECONDS_(5), 0);
+	events_register(EVT_UPLOAD_SAMPLES, "UPLOAD", 0, &event_upload_samples, MINUTES_(10), 0);
+
+#else
 	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0,
 			&event_subsample_temperature, (MINUTES_(SAMPLE_PERIOD)),
 			g_pDevCfg->stIntervalParam.loggingInterval);
@@ -482,6 +490,7 @@ void events_init() {
 
 	events_register(EVT_UPLOAD_SAMPLES, "UPLOAD", 0, &event_upload_samples,
 			MINUTES_(UPLOAD_PERIOD), g_pDevCfg->stIntervalParam.uploadInterval);
+#endif
 
 	events_register(EVT_PERIODIC_REBOOT, "REBOOT", 0, &event_reboot_system,
 			HOURS_(24), g_pDevCfg->stIntervalParam.reboot);

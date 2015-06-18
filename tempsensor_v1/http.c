@@ -13,6 +13,12 @@
 #define HTTP_RESPONSE_RETRY	10
 
 void backend_get_configuration() {
+	http_enable();
+	http_get_configuration();
+	http_deactivate();
+}
+
+void full_backend_get_configuration() {
 
 	config_setLastCommand(COMMAND_HTTP_DATA_TRANSFER);
 	lcd_print("NEXLEAF PING");
@@ -25,53 +31,6 @@ void backend_get_configuration() {
 		http_deactivate();
 	}
 }
-
-/*
-void http_data_transfer() {
-	iSMSRxPollElapsed = iMinuteTick;
-	lcd_printl(LINEC, "Configuring...");
-
-	modem_checkSignal();
-	g_iSignal_gprs = http_post_gprs_connection_status(GPRS);
-
-	iIdx = 0;
-	while (iIdx < MODEM_CHECK_RETRY) {
-		gprs_network_indication = http_post_gprs_connection_status(GSM);
-		if ((gprs_network_indication == 0)
-				|| ((iSignalLevel < NETWORK_DOWN_SS)
-						|| (iSignalLevel > NETWORK_MAX_SS))) {
-			lcd_printl(LINE2, "Signal lost...");
-			g_iStatus |= NETWORK_DOWN;
-			//iOffset = 0;  // Whyy??? whyyy?????
-			modem_init();
-			lcd_printl(LINE2, "Reconnecting...");
-			iIdx++;
-		} else {
-			g_iStatus &= ~NETWORK_DOWN;
-			break;
-		}
-	}
-
-	if (iIdx == MODEM_CHECK_RETRY) {
-		modem_swap_SIM();
-	}
-
-	//sms config reception and processing
-	http_setup();
-	http_get_configuration(ATresponse);
-	if (ATresponse[0] == '$') {
-		if (sms_process_msg(ATresponse)) {
-			//send heartbeat on successful processing of SMS message
-			sms_send_heart_beat();
-		}
-	} else {
-		// no cfg message recevied
-		// check signal strength
-		// iOffset = -1; //reuse to indicate no cfg msg was received // Whyy??? whyyy?????
-	}
-	http_deactivate();
-}
-*/
 
 int8_t http_enable() {
 	int attempts = HTTP_COMMAND_ATTEMPTS;
@@ -122,7 +81,8 @@ int8_t http_setup() {
 	}
 
 	// LONG TIMEOUT
-	uart_txf("AT#HTTPCFG=1,\"%s\",80\r\n", g_pDevCfg->cfgGatewayIP);
+	// Prof id, server addresws, server port, auth type, username, password, ssl_enabled, timeout, cid
+	uart_txf("AT#HTTPCFG=1,\"%s\",80,0\r\n", g_pDevCfg->cfgGatewayIP);
 	if (uart_getTransactionState() != UART_SUCCESS) {
 		lcd_printl(LINE2, "FAILED");
 		return UART_FAILED;
@@ -201,7 +161,7 @@ int http_get_configuration() {
 	// <command>: Numeric parameter indicating the command requested to HTTP server:
 	// 0 GET 1 HEAD 2 DELETE
 
-	sprintf(szTemp, "AT#HTTPQRY=1,0,\"/coldtrace/uploads/multi/v3/%s/1/\"\r\n",
+	sprintf(szTemp, "AT#HTTPQRY=1,0,\"%s/%s/1/\"\r\n", CONFIGURATION_URL_PATH,
 			g_pDevCfg->cfgIMEI);
 	uart_tx_timeout(szTemp, 5000, 1);
 	if (uart_getTransactionState() != UART_SUCCESS) {

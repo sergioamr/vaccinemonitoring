@@ -26,6 +26,8 @@ extern char ESC[2];
 #define NETWORK_STATUS_UNKNOWN	      			  4
 #define NETWORK_STATUS_REGISTERED_ROAMING 		  5
 
+#define NETWORK_ERROR_SIGNAL_FAILURE			  101
+
 #define NETWORK_MODE_2_ENABLED
 #define NETWORK_MODE_1_NOT_REGISTERED_NOT_LOOKING 0
 
@@ -44,7 +46,6 @@ void modem_getExtraInfo();
 void modem_survey_network();
 void modem_check_sim_active();
 int modem_swap_SIM();
-int modem_isSignalInRange(int iSignalLevel);
 int modem_connect_network(uint8_t attempts);
 void modem_pull_time();
 int8_t modem_first_init();

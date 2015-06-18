@@ -51,7 +51,6 @@ int32_t iBytesLogged = 0;
 uint32_t g_iAlarmStatus = 0;
 double iTemp = 0.0;
 
-int8_t g_iSignalLevel = 99;
 //opt
 uint8_t iPostSuccess = 0;
 uint8_t iPostFail = 0;

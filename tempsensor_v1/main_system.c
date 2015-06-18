@@ -210,5 +210,11 @@ int main(void) {
 
 	// Done init, start watchdog
 	watchdog_init();
+	process_batch();
+
+#ifdef _DEBUG
+	sms_send_message_number(LOCAL_TESTING_NUMBER, "Boot completed");
+#endif
+
 	thermal_canyon_loop();
 }

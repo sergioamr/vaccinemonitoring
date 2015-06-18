@@ -27,11 +27,7 @@
  */
 
 #include "thermalcanyon.h"
-#include "data_transmit.h"
-#include "hardware_buttons.h"
-#include "fatdata.h"
-#include "events.h"
-#include "lcd.h"
+#include "state_machine.h"
 
 // Overall state of the device to take decisions upon the state of the modem, storage, alerts, etc.
 
@@ -40,6 +36,26 @@ SYSTEM_STATE g_SystemState;	// system states to control errors, connectivity, re
 #pragma SET_DATA_SECTION()
 
 SYSTEM_STATE *g_pSysState = &g_SystemState;
+
+/*************************************************************************************************************/
+/* General events that will generate responses from the system */
+/*************************************************************************************************************/
+uint8_t state_getSignalPercentage() {
+
+	float local_signal = ((float)(g_pSysState->signal_level - NETWORK_ZERO)*100)/(NETWORK_MAX_SS - NETWORK_ZERO);
+	return local_signal;
+}
+
+// TODO There was a problem in the SD Card, reinit fat
+void state_sd_card_problem(FRESULT fr) {
+	// THERE WAS A PROBLEM
+
+	// SETUP event FAT INIT ATTEMPT
+}
+
+void state_setNetworkStatus(const char *status) {
+	strcpy(g_pSysState->network_state, status);
+}
 
 /***********************************************************************************************************************/
 /* GENERAL */
@@ -52,6 +68,52 @@ void state_init() {
 void buzzer_feedback() {
 	g_pSysState->buzzerFeedback = 10;
 }
+
+uint8_t state_getSignalLevel() {
+	return g_pSysState->signal_level;
+}
+
+char *state_getNetworkState() {
+	return g_pSysState->network_state;
+}
+
+int state_isSignalInRange() {
+	int iSignalLevel = g_pSysState->signal_level;
+	if ((iSignalLevel < NETWORK_DOWN_SS) || (iSignalLevel > NETWORK_MAX_SS)) {
+		return 0;
+	}
+	return 1;
+}
+
+void state_setSignalLevel(uint8_t iSignal) {
+	g_pSysState->signal_level=iSignal;
+}
+
+void state_check_network() {
+	int res;
+
+	if (state_isSignalInRange())
+		res = modem_connect_network(1);
+	else
+		res = UART_FAILED;
+
+	// Something was wrong on the connection, swap SIM card.
+	if (res == UART_FAILED) {
+		if (g_pSysState->network_failures
+				== NETWORK_ATTEMPTS_BEFORE_SWAP_SIM - 1) {
+			log_appendf("[%d] TRY SWAPPING SIM", config_getSelectedSIM());
+			res = modem_swap_SIM();
+			g_pSysState->network_failures = 0;
+		} else {
+			g_pSysState->network_failures++;
+			log_appendf("[%d] NETWORK DOWN %d", config_getSelectedSIM(),
+					g_pSysState->network_failures);
+		}
+	} else {
+		g_pSysState->network_failures = 0;
+	}
+}
+
 
 /***********************************************************************************************************************/
 /* GENERATE ALARMS */
@@ -158,12 +220,12 @@ void state_modem_timeout(uint8_t sim) {
 
 void state_failed_gprs(uint8_t sim) {
 	SIM_STATE *simState = &g_pSysState->simState[sim];
-	simState->failsGSM++;
+	simState->failsGPRS++;
 }
 
 void state_failed_gsm(uint8_t sim) {
 	SIM_STATE *simState = &g_pSysState->simState[sim];
-	simState->failsGPRS++;
+	simState->failsGSM++;
 }
 
 void state_http_transfer(uint8_t sim, uint8_t success) {
@@ -298,4 +360,5 @@ void state_process() {
 	last_check = rtc_get_second_tick();
 
 	state_check_power();
+	state_check_network();
 }

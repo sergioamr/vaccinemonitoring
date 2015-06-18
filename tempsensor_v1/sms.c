@@ -63,6 +63,7 @@ int8_t sms_process_memory_message(int8_t index) {
 	char ok[8];
 	char phoneNumber[32];
 	char *phone;
+	char answer = 0;
 
 	uart_txf("AT+CMGR=%d\r\n", index);
 
@@ -118,11 +119,23 @@ int8_t sms_process_memory_message(int8_t index) {
 	case 'a':
 	case 'A':
 		state_alarm_turnon_buzzer();
+		answer = 1;
 		break;
+	case 'u':
+	case 'U':
+		event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 5);
+		event_force_event_by_id(EVT_SAVE_SAMPLE_TEMP, 10);
+		event_force_event_by_id(EVT_UPLOAD_SAMPLES, 15);
+		answer = 1;
+		break;
+
 	default:
 		config_process_configuration(token);
 		break;
 	}
+
+	if (answer)
+		sms_send_message_number(phone, "ACK");
 
 	return UART_SUCCESS;
 }
@@ -308,19 +321,6 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 
 uint8_t sms_send_message(char* pData) {
 	return sms_send_message_number(NEXLEAF_SMS_GATEWAY, pData);
-}
-
-int sms_recv_message(int8_t iMsgIdx, char* pData) {
-	int ret = -1;
-
-	//uart_tx("AT+CMGL=\"REC UNREAD\"\r\n");
-	//uart_tx("AT+CMGL=\"REC READ\"\r\n");
-	//uart_tx("AT+CMGL=\"ALL\"\r\n");
-
-	uart_txf("AT+CMGR=%d\r\n", iMsgIdx);
-	ret = uart_rx(ATCMD_CMGR, pData);	//copy RX to pData
-
-	return ret;
 }
 
 void delallmsg() {

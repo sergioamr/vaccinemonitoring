@@ -58,6 +58,7 @@ char ESC[2] = { 0x1B, 0 };
  *  <Lac> - Local Area Code for the currently registered on cell
  *  <Ci> - Cell Id for the currently registered on cell
  *
+ *
  *  Note: <Lac> and <Ci> are reported only if <mode>=2 and the mobile is registered on some network cell.
  */
 
@@ -111,12 +112,17 @@ uint8_t modem_isSIM_Operational() {
 
 const char *modem_getNetworkStatusText(int mode, int status) {
 
-	if (mode == 0)
+	if (mode == 0) {
+		state_setNetworkStatus(NETWORK_UNKNOWN_STATUS);
 		return NETWORK_MODE_0;
+	}
 
-	if (status >= 0 && status < 7)
+	if (status >= 0 && status < 7) {
+		state_setNetworkStatus(NETWORK_STATUS[status]);
 		return NETWORK_STATUS[status];
+	}
 
+	state_setNetworkStatus(NETWORK_UNKNOWN_STATUS);
 	return NETWORK_UNKNOWN_STATUS;
 }
 
@@ -170,15 +176,15 @@ int modem_connect_network(uint8_t attempts) {
 #ifdef _DEBUG
 	attempts = 10;
 #endif
-
 	uart_tx("AT+CGREG=2\r\n");
 	do {
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
 
-			if (!g_iRunning || net_status!=1) {
+			if (!g_iRunning || net_status != 1) {
 				lcd_printf(LINEC, "SIM %d status", nsim + 1);
 				lcd_printl(LINEH,
-						(char *) modem_getNetworkStatusText(net_mode, net_status));
+						(char *) modem_getNetworkStatusText(net_mode,
+								net_status));
 			}
 
 			// If we are looking for a network
@@ -262,17 +268,18 @@ void modem_check_uart_error() {
 	if (pToken1 != NULL) { // ERROR FOUND;
 		char *error = (char *) (pToken1 + strlen(AT_ERROR));
 
-		if (g_iUartIgnoreError!=0) {
+		if (g_iUartIgnoreError != 0) {
 			g_iUartIgnoreError--;
-			log_appendf("ERROR: SIM %d cmd[%s]", config_getSelectedSIM(), error);
+			log_appendf("ERROR: SIM %d cmd[%s]", config_getSelectedSIM(),
+					error);
 			errorToken = *(pToken1 - 1);
-	#ifndef _DEBUG
+#ifndef _DEBUG
 			if (errorToken=='S') {
 				lcd_printl(LINEC, "SERVICE ERROR");
 			} else {
 				lcd_printl(LINEC, "MODEM ERROR");
 			}
-	#endif
+#endif
 			lcd_printl(LINEE, error);
 		}
 		modem_setNumericError(errorToken, atoi(error));
@@ -280,8 +287,6 @@ void modem_check_uart_error() {
 
 	lcd_progress_wait(HUMAN_DISPLAY_INFO_DELAY);
 }
-
-static uint8_t network_failures = 0;
 
 // Makes sure that there is a network working
 int8_t modem_check_network() {
@@ -293,26 +298,11 @@ int8_t modem_check_network() {
 	// are actually connected to the network and fine
 
 	iSignal = modem_getSignal();
-	if (modem_isSignalInRange(iSignal))
-		res = modem_connect_network(1);
+	res= uart_getTransactionState();
+	if (res==UART_SUCCESS)
+		state_setSignalLevel(iSignal);
 	else
-		res = UART_FAILED;
-
-	// Something was wrong on the connection, swap SIM card.
-	if (res == UART_FAILED) {
-		if (network_failures == NETWORK_ATTEMPTS_BEFORE_SWAP_SIM - 1) {
-			log_appendf("[%d] TRY SWAPPING SIM", config_getSelectedSIM());
-			res = modem_swap_SIM();
-			network_failures = 0;
-		} else {
-			network_failures++;
-			log_appendf("[%d] NETWORK DOWN %d", config_getSelectedSIM(),
-					network_failures);
-		}
-	} else {
-		network_failures = 0;
-	}
-
+		state_network_fail(config_getSelectedSIM(), NETWORK_ERROR_SIGNAL_FAILURE);
 	return res;
 }
 
@@ -429,15 +419,6 @@ int modem_swap_SIM() {
 	return res;
 }
 
-int modem_isSignalInRange(int iSignalLevel) {
-
-	if ((iSignalLevel < NETWORK_DOWN_SS) || (iSignalLevel > NETWORK_MAX_SS)) {
-		return 0;
-	}
-
-	return 1;
-}
-
 const char COMMAND_RESULT_CSQ[] = "CSQ: ";
 
 int modem_getSignal() {
@@ -453,13 +434,12 @@ int modem_getSignal() {
 	PARSE_FIRSTVALUE(token, &iSignalLevel, ",\n", UART_FAILED);
 
 	//pToken2 = strtok(&pToken1[5], ",");
-	g_iSignalLevel = iSignalLevel;
-	modem_isSignalInRange(iSignalLevel);
-
+	state_setSignalLevel(iSignalLevel);
 	return iSignalLevel;
 }
 
-int8_t modem_parse_string(char *cmd, char *response, char *destination, uint16_t size) {
+int8_t modem_parse_string(char *cmd, char *response, char *destination,
+		uint16_t size) {
 	char *token;
 	int8_t uart_state;
 	config_incLastCmd();
@@ -481,7 +461,8 @@ int8_t modem_parse_string(char *cmd, char *response, char *destination, uint16_t
 
 int8_t modem_getSMSCenter() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
-	return modem_parse_string("AT+CSCA?\r\n", "CSCA: \"", sim->cfgSMSCenter, GW_MAX_LEN+1);
+	return modem_parse_string("AT+CSCA?\r\n", "CSCA: \"", sim->cfgSMSCenter,
+			GW_MAX_LEN + 1);
 	// added for SMS Message center number to be sent in the heart beat
 }
 
@@ -489,7 +470,8 @@ int8_t modem_getOwnNumber() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	int8_t state;
 	modem_ignore_next_errors(1);
-	state = modem_parse_string("AT+CNUM?\r\n", "CNUM: \"", sim->cfgPhoneNum, GW_MAX_LEN+1);
+	state = modem_parse_string("AT+CNUM?\r\n", "CNUM: \"", sim->cfgPhoneNum,
+			GW_MAX_LEN + 1);
 	modem_ignore_next_errors(0);
 	return state;
 }
@@ -498,17 +480,17 @@ uint8_t validateIMEI(char *IMEI) {
 	int t;
 	uint8_t len = strlen(IMEI);
 
-	for (t=0; t<len; t++) {
-		if (IMEI[t]=='\r' || IMEI[t]=='\n') {
-			IMEI[t]=0;
+	for (t = 0; t < len; t++) {
+		if (IMEI[t] == '\r' || IMEI[t] == '\n') {
+			IMEI[t] = 0;
 			break;
 		}
-		if (IMEI[t]<'0' || IMEI[t]>'9')
+		if (IMEI[t] < '0' || IMEI[t] > '9')
 			return 0;
 	}
 
 	len = strlen(IMEI);
-	if (len<IMEI_MIN_LEN)
+	if (len < IMEI_MIN_LEN)
 		return 0;
 
 	return 1;
@@ -516,7 +498,7 @@ uint8_t validateIMEI(char *IMEI) {
 
 void modem_getIMEI() {
 	// added for IMEI number//
-	char IMEI[IMEI_MAX_LEN+1];
+	char IMEI[IMEI_MAX_LEN + 1];
 	char *token = NULL;
 	config_incLastCmd();
 
@@ -527,7 +509,7 @@ void modem_getIMEI() {
 	if (token == NULL)
 		return;
 
-	strncpy(IMEI, (const char *) &RXBuffer[RXHeadIdx+2], IMEI_MAX_LEN);
+	strncpy(IMEI, (const char *) &RXBuffer[RXHeadIdx + 2], IMEI_MAX_LEN);
 	if (!validateIMEI(IMEI)) {
 		return;
 	}
@@ -667,30 +649,6 @@ int modem_parse_time(struct tm* pTime) {
 	return UART_SUCCESS;
 }
 
-/*
-		case ATCMD_CPMS_CURRENT:
-			iMaxTok--;
-		case ATCMD_CPMS_MAX:
-			pToken1 = strstr((const char *) RXBuffer, "CPMS:");
-			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
-				pResponse[0] = '0';
-				pToken1 = strtok(&pToken1[5], ",");
-				while (pToken1 != NULL) {
-					if (iEndIdx < iMaxTok) {
-						pToken2 = pToken1;
-					} else if (iEndIdx == iMaxTok) {
-						numberLen = pToken1 - pToken2;
-						strncpy(pResponse, pToken2, numberLen);
-						pResponse[numberLen] = '\0';
-						return UART_SUCCESS;
-					}
-					pToken1 = strtok(NULL, ",");
-					iEndIdx++;
-				}
-			}
-			break;
-*/
-
 int8_t modem_set_max_messages() {
 	int8_t uart_state;
 	char *token;
@@ -703,10 +661,12 @@ int8_t modem_set_max_messages() {
 		PARSE_FINDSTR_RET(token, "CPMS: \"", UART_FAILED);
 		PARSE_FIRSTSTRING(token, memory, 16, "\"", UART_FAILED);
 		PARSE_NEXTVALUE(token, &storedmessages, ",\n", UART_FAILED);
-		PARSE_NEXTVALUE(token, &config_getSIM()->iMaxMessages, ",\n", UART_FAILED);
+		PARSE_NEXTVALUE(token, &config_getSIM()->iMaxMessages, ",\n",
+				UART_FAILED);
 	}
 
-	_NOP();
+	if (storedmessages != 0)
+		_NOP();
 	return uart_state;
 }
 

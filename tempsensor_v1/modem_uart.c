@@ -37,6 +37,7 @@ volatile static char TransmissionEnd = 0;
 
 volatile int RXTailIdx = 0;
 volatile int RXHeadIdx = 0;
+volatile int g_iWaitForTXEnd = 0;
 
 volatile int8_t g_iUartState = 0;
 volatile int g_iRxCountBytes = 0;
@@ -311,7 +312,11 @@ uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
 }
 
 void uart_tx_nowait(const char *cmd) {
+	g_iWaitForTXEnd = 1;
 	sendCommand(cmd);
+	while(g_iWaitForTXEnd == 1) {
+		delay(5000);
+	}
 }
 
 uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime) {
@@ -380,278 +385,6 @@ uint8_t uart_tx(const char *cmd) {
 	return uart_state;
 }
 
-int uart_rx(int atCMD, char* pResponse) {
-	return uart_rx_cleanBuf(atCMD, pResponse, 0);
-}
-
-// Clears the response buffer if len > 0
-int uart_rx_cleanBuf(int atCMD, char* pResponse, uint16_t reponseLen) {
-	char* pToken1 = NULL;
-	char* pToken2 = NULL;
-	int bytestoread = 0;
-	int iStartIdx = 0;
-	int iEndIdx = 0;
-
-	iRXCommandProcessed = 0;
-	if (reponseLen > 0)
-		memset(pResponse, 0, reponseLen);
-
-	//input check
-	if (pResponse) {
-		switch (atCMD) {
-
-		// Getting the SIM Message Center to send it to the backend in order to get the APN
-
-
-		case ATCMD_HTTPSND:
-			pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ">>>");
-			if (pToken1 != NULL) {
-				//bytestoread = &RXBuffer[RXTailIdx] - pToken1;
-				//if(bytestoread > HTTPSND_RSP_LEN)
-				//{
-				//bytestoread = HTTPSND_RSP_LEN;
-				//}
-				//memcpy(pResponse, pToken1, bytestoread);
-
-				//need to esnure that RXTailIdx is not moving. i.e disable any asynchronous
-				//notification
-				if (((RXTailIdx > RXHeadIdx) && (pToken1 < &RXBuffer[RXTailIdx]))
-						|| (RXTailIdx < RXHeadIdx)) {
-					strcpy(pResponse, ">>>");
-					RXHeadIdx = RXTailIdx;
-					return UART_SUCCESS;
-				}
-			} else if (RXTailIdx < RXHeadIdx) {
-				//rollover
-				pToken1 = strstr((const char *) RXBuffer, ">>>");
-				if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
-					strcpy(pResponse, ">>>");
-					RXHeadIdx = RXTailIdx;
-					return UART_SUCCESS;
-				}
-				//check http post response is splitted
-				else if (((RXBuffer[iRxLen - 2] == '>') && (RXBuffer[iRxLen - 1] == '>')
-						&& (RXBuffer[0] == '>'))
-						|| ((RXBuffer[iRxLen - 1] == '>') && (RXBuffer[0] == '>')
-								&& (RXBuffer[1] == '>'))) {
-					strcpy(pResponse, ">>>");
-					RXHeadIdx = RXTailIdx;
-					return UART_SUCCESS;
-				} else {
-					pResponse[0] = 0;
-				}
-
-			}
-			break;
-
-		case ATCMD_CMGR:
-			//check if this msg is unread
-			iStartIdx = 0;
-			pToken1 = strstr((const char *) RXBuffer, "UNREAD");
-			//pToken1 = strstr(RXBuffer,"READ");
-			//only STATUS and RESET are supported
-			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
-				pToken1 = strstr((const char *) RXBuffer, "STATUS");
-				if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
-					strncpy(pResponse, "1,", 2);
-					iStartIdx = 1;	//indicates that msg is valid
-				} else {
-					pToken1 = strstr((const char *) RXBuffer, "RESET");
-					if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
-						strncpy(pResponse, "2,", 2);
-						iStartIdx = 1; //indicates that msg is valid
-					}
-				}
-			}
-
-			if (iStartIdx) {
-				iEndIdx = 0;
-				pToken1 = strtok((char *) RXBuffer, ",");
-				while (pToken1) {
-#if 0
-					iEndIdx++;
-					if(iEndIdx == 9) //10th field is sender's phone number
-					{
-						break;
-					}
-					else
-					{
-						pToken1 = strtok(NULL,",");
-					}
-#endif
-					pToken2 = strstr(pToken1, "+91");
-					if (pToken2) {
-						break;
-					}
-					pToken1 = strtok(NULL, ",");
-
-				}
-				//check if not null, this token contains the senders phone number
-				if (pToken1) {
-					strncpy(&pResponse[2], pToken1, PHONE_NUM_LEN);
-					return UART_SUCCESS;
-				} else {
-					pResponse[0] = 0; //ingore the message
-				}
-
-			}
-			break;
-
-		case ATCMD_CMGL:
-			//check if this msg is unread
-			pToken1 = strstr((const char *) RXBuffer, "UNREAD");
-			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
-				if (searchtoken("$ST", &pToken1) == 0) {
-					RXHeadIdx = pToken1 - &RXBuffer[0];
-					iStartIdx = RXHeadIdx;
-
-					//memset(Substr,0,sizeof(Substr));
-					//strcpy(Substr,"$EN");
-					if (searchtoken("$EN", &pToken2) == 0) {
-						RXHeadIdx = pToken2 - &RXBuffer[0];
-						iEndIdx = RXHeadIdx;
-
-						if (iEndIdx > iStartIdx) {
-							//no rollover
-							bytestoread = iEndIdx - iStartIdx;
-							if (bytestoread > RX_LEN) {
-								bytestoread = RX_LEN;
-							}
-							memcpy(pResponse, (const char *) &RXBuffer[iStartIdx],
-									bytestoread);
-						} else {
-							//rollover
-							bytestoread = iRxLen - iStartIdx;
-							if (bytestoread > RX_LEN) {
-								bytestoread = RX_LEN;
-							}
-							memcpy(pResponse, (const char *) &RXBuffer[iStartIdx],
-									bytestoread);
-							memcpy(&pResponse[bytestoread], (const char *) RXBuffer,
-									iEndIdx);
-						}
-						return UART_SUCCESS;
-					}
-				}
-			} else {
-				//no start tag found
-				pResponse[0] = 0;
-			}
-			break;
-
-		case ATCMD_CPIN:
-			pToken1 = strstr((const char *) RXBuffer, "OK");
-			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
-			} else {
-				pToken1 = strstr((const char *) RXBuffer, "SIM");
-			}
-
-		case ATCMD_HTTPQRY:
-			pToken1 = strstr((const char *) RXBuffer, "HTTPRING");
-			if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
-				if (searchtoken("$ST", &pToken1) == 0) {
-					RXHeadIdx = pToken1 - &RXBuffer[0];
-					iStartIdx = RXHeadIdx;
-
-					//memset(Substr,0,sizeof(Substr));
-					//strcpy(Substr,"$EN");
-					if (searchtoken("$EN", &pToken2) == 0) {
-						RXHeadIdx = pToken2 - &RXBuffer[0];
-						iEndIdx = RXHeadIdx;
-
-						if (iEndIdx > iStartIdx) {
-							//no rollover
-							bytestoread = iEndIdx - iStartIdx;
-							if (bytestoread > RX_LEN) {
-								bytestoread = RX_LEN;
-							}
-							memcpy(pResponse, (const char *) &RXBuffer[iStartIdx], bytestoread);
-						} else {
-							//rollover
-							bytestoread = iRxLen - iStartIdx;
-							if (bytestoread > RX_LEN) {
-								bytestoread = RX_LEN;
-							}
-							memcpy(pResponse, (const char *)  &RXBuffer[iStartIdx], bytestoread);
-							memcpy(&pResponse[bytestoread], (const char *) RXBuffer, iEndIdx);
-						}
-						return UART_SUCCESS;
-					}
-				}
-			}
-			break;
-		default:
-			break;
-		}
-	}
-	return UART_FAILED;
-}
-
-/*
-int copyRXBuffer(char *dest)
-{
-	uint16_t iEndIdx = RXHeadIdx;
-	if (iEndIdx > iStartIdx) {
-		//no rollover
-		bytestoread = iEndIdx - iStartIdx;
-		if (bytestoread > RX_LEN) {
-			bytestoread = RX_LEN;
-		}
-		memcpy(pResponse, (const char *) &RXBuffer[iStartIdx],
-				bytestoread);
-	} else {
-		//rollover
-		bytestoread = iRxLen - iStartIdx;
-		if (bytestoread > RX_LEN) {
-			bytestoread = RX_LEN;
-		}
-		memcpy(pResponse, (const char *) &RXBuffer[iStartIdx],
-				bytestoread);
-		memcpy(&pResponse[bytestoread], (const char *) RXBuffer,
-				iEndIdx);
-	}
-}
-*/
-
-int searchtoken(char* pToken, char** ppTokenPos) {
-	int ret = -1;
-	char* pToken1 = NULL;
-
-	pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], pToken);
-	if (pToken1 != NULL) {
-		//need to esnure that RXTailIdx is not moving. i.e disable any asynchronous
-		//notification
-		if (((RXTailIdx > RXHeadIdx) && (pToken1 < &RXBuffer[RXTailIdx]))
-				|| (RXTailIdx < RXHeadIdx)) {
-			*ppTokenPos = pToken1;
-			ret = 0;
-		}
-	} else if (RXTailIdx < RXHeadIdx) {
-		//rollover
-		pToken1 = strstr((const char *) RXBuffer, pToken);
-		if ((pToken1 != NULL) && (pToken1 < &RXBuffer[RXTailIdx])) {
-			*ppTokenPos = pToken1;
-			ret = 0;
-		} else {
-		}
-
-	}
-	//check http post response is splitted
-	else if ((RXBuffer[iRxLen - 2] == pToken[0]) && (RXBuffer[iRxLen - 1] == pToken[1])
-			&& (RXBuffer[0] == pToken[2]))
-
-			{
-		*ppTokenPos = (char *) &RXBuffer[iRxLen - 2];
-		ret = 0;
-	} else if ((RXBuffer[iRxLen - 1] == pToken[0]) && (RXBuffer[0] == pToken[1])
-			&& (RXBuffer[1] == pToken[2])) {
-		*ppTokenPos = (char *) &RXBuffer[iRxLen - 1];
-		ret = 0;
-	}
-
-	return ret;
-}
-
 void uart_setHTTPPromptMode() {
 	uart_setCheckMsg(AT_MSG_LONG_PROMPT, AT_ERROR);
 }
@@ -717,6 +450,10 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 		if (TXIdx >= iTxLen) {
 			TXIdx = 0;
 			UCA0IE &= ~UCTXIE; 	// Finished transmision
+			if (g_iWaitForTXEnd == 1) {
+				g_iWaitForTXEnd = 0;
+				__bic_SR_register_on_exit(LPM0_bits);
+			}
 		}
 
 		break;

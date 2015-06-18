@@ -22,14 +22,6 @@ uint8_t sms_send_message(char* pData);
 uint8_t sms_send_message_number(char *szPhoneNumber, char* pData);
 
 //*****************************************************************************
-//! \brief receive sms msg
-//! \param pointer to store the received sms text, if pData[0] is 0 then no msg
-//! 	   is available for reading
-//! \return 0 on success, -1 on failure
-//*****************************************************************************
-int sms_recv_message(int8_t iMsgIdx,char* pData);
-
-//*****************************************************************************
 //! \brief delete the sms msg(s) read and sent successfully
 //! \param none
 //! \return none

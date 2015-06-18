@@ -90,11 +90,37 @@ void lcd_turn_off() {
 	lcd_off();
 }
 
+void lcd_append_signal_info(char *lcdBuffer) {
+	if (state_isSignalInRange()) {
+		strcat(lcdBuffer, itoa_pad(state_getSignalPercentage()));
+		strcat(lcdBuffer, "% ");
+		if (g_iSignal_gprs == 1) {
+			strcat(lcdBuffer, "G:YES");
+		} else {
+			strcat(lcdBuffer, "G:NO");
+		}
+	} else {
+		strcat(lcdBuffer, "  --  ");
+	}
+}
+
+void lcd_setDate(char *lcdBuffer) {
+	rtc_getlocal(&g_tmCurrTime);
+	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_year));
+	strcat(lcdBuffer, "/");
+	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_mon));
+	strcat(lcdBuffer, "/");
+	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_mday));
+	strcat(lcdBuffer, " ");
+
+	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_hour));
+	strcat(lcdBuffer, ":");
+	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_min));
+}
+
 void lcd_show() {
 	int iIdx = 0;
 	int iCnt = 0;
-	//float signal_strength = 0;
-	float local_signal = 0;
 
 	// LCD is off
 	if (g_bLCD_state == 0)
@@ -108,26 +134,16 @@ void lcd_show() {
 		return;
 
 	lastRefresh = rtc_get_second_tick();
-
-	//check if there is a change in display id
-	//if(iLastDisplayId != iItemId) lcd_clear();
 	lcd_clear();
 
 	memset(lcdBuffer, 0, LCD_DISPLAY_LEN);
-
+	lcd_setDate(lcdBuffer);
 	//get local time
-	rtc_getlocal(&g_tmCurrTime);
-	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_year));
-	strcat(lcdBuffer, "/");
-	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_mon));
-	strcat(lcdBuffer, "/");
-	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_mday));
-	strcat(lcdBuffer, " ");
-
-	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_hour));
-	strcat(lcdBuffer, ":");
-	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_min));
 	iIdx = strlen(lcdBuffer); //marker
+
+	if (iItemId>0 && iItemId<=5) {
+		iCnt = iItemId -1;
+	}
 
 	switch (iItemId) {
 	case 0:
@@ -135,17 +151,13 @@ void lcd_show() {
 		strcat(lcdBuffer, "C ");
 		strcat(lcdBuffer, itoa_pad(batt_getlevel()));
 		strcat(lcdBuffer, "% ");
-		if ((g_iSignalLevel >= NETWORK_DOWN_SS)
-				&& (g_iSignalLevel <= NETWORK_MAX_SS)) {
+		if (state_isSignalInRange()) {
 			if (g_iSignal_gprs == 1) {
 				strcat(lcdBuffer, "G");
 			} else {
 				strcat(lcdBuffer, "S");
 			}
-			local_signal = g_iSignalLevel;
-			local_signal = (((local_signal - NETWORK_ZERO)
-					/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
-			strcat(lcdBuffer, itoa_pad(local_signal));
+			strcat(lcdBuffer, itoa_pad(state_getSignalPercentage()));
 			strcat(lcdBuffer, "%");
 		} else {
 			strcat(lcdBuffer, "S --  ");
@@ -153,28 +165,8 @@ void lcd_show() {
 		iCnt = 0xff;
 		break;
 
-	case 1:
-		iCnt = 0;
-		break;
-	case 2:
-		iCnt = 1;
-		break;
-	case 3:
-		iCnt = 2;
-		break;
-	case 4:
-		iCnt = 3;
-		break;
-#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
-	case 5:
-		iCnt = 4;
-		break;
 	case 6:
 		iCnt = 0xff;
-#else
-		case 5: iCnt = 0xff;
-#endif
-
 		strcat(lcdBuffer, itoa_pad(batt_getlevel()));
 		strcat(lcdBuffer, "% ");
 		if (state_getAlarms()->alarms.battery) {
@@ -193,48 +185,18 @@ void lcd_show() {
 	case 7:
 		iCnt = 0xff;
 		strcat(lcdBuffer, "SIM1 ");	//current sim slot is 1
-		if (config_getSelectedSIM() != 0) {
+		if (config_getSelectedSIM() != 0)
 			strcat(lcdBuffer, "  --  ");
-		} else {
-			if ((g_iSignalLevel > NETWORK_DOWN_SS)
-					&& (g_iSignalLevel < NETWORK_MAX_SS)) {
-				local_signal = g_iSignalLevel;
-				local_signal = (((local_signal - NETWORK_ZERO)
-						/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
-				strcat(lcdBuffer, itoa_pad(local_signal));
-				strcat(lcdBuffer, "% ");
-				if (g_iSignal_gprs == 1) {
-					strcat(lcdBuffer, "G:YES");
-				} else {
-					strcat(lcdBuffer, "G:NO");
-				}
-			} else {
-				strcat(lcdBuffer, "  --  ");
-			}
-		}
+		else
+			lcd_append_signal_info(lcdBuffer);
 		break;
 	case 8:
 		iCnt = 0xff;
 		strcat(lcdBuffer, "SIM2 ");	//current sim slot is 2
-		if (config_getSelectedSIM() != 1) {
+		if (config_getSelectedSIM() != 0)
 			strcat(lcdBuffer, "  --  ");
-		} else {
-			if ((g_iSignalLevel > NETWORK_DOWN_SS)
-					&& (g_iSignalLevel < NETWORK_MAX_SS)) {
-				local_signal = g_iSignalLevel;
-				local_signal = (((local_signal - NETWORK_ZERO)
-						/ (NETWORK_MAX_SS - NETWORK_ZERO)) * 100);
-				strcat(lcdBuffer, itoa_pad(local_signal));
-				strcat(lcdBuffer, "% ");
-				if (g_iSignal_gprs == 1) {
-					strcat(lcdBuffer, "G:YES");
-				} else {
-					strcat(lcdBuffer, "G:NO");
-				}
-			} else {
-				strcat(lcdBuffer, "  --  ");
-			}
-		}
+		else
+			lcd_append_signal_info(lcdBuffer);
 		break;
 
 	case 9:
@@ -245,7 +207,6 @@ void lcd_show() {
 	}
 
 	if (iCnt != 0xff) {
-
 		if (g_pSysState->temp.state[iCnt].status!=0) {
 			strcat(lcdBuffer, "ALERT ");
 			strcat(lcdBuffer, SensorName[iCnt]);

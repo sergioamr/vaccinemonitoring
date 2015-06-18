@@ -421,14 +421,16 @@ int config_parse_configuration(char *msg) {
 
 	g_pDevCfg->cfgServerConfigReceived = 1;
 
-	event_setInterval_by_id(EVT_SAVE_SAMPLE_TEMP,
+#ifndef _DEBUG
+	event_setInterval_by_id(EVT_SUBSAMPLE_TEMP,
 			g_pDevCfg->stIntervalParam.loggingInterval*60);
 
-	event_setInterval_by_id(EVT_SUBSAMPLE_TEMP,
+	event_setInterval_by_id(EVT_SAVE_SAMPLE_TEMP,
 			g_pDevCfg->stIntervalParam.loggingInterval*60);
 
 	event_setInterval_by_id(EVT_UPLOAD_SAMPLES,
 			g_pDevCfg->stIntervalParam.uploadInterval*60);
+#endif
 
 	return UART_SUCCESS;
 }

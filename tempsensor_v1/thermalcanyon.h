@@ -43,6 +43,8 @@
 #include "state_machine.h"
 #include "main_system.h"
 #include "timer.h"
+#include "data_transmit.h"
+#include "hardware_buttons.h"
 
 //------------- FUNCTIONS MOVED FROM MAIN - WAITING CLEANUP -------------------
 

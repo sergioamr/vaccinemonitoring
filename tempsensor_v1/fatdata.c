@@ -1,8 +1,5 @@
 #include "thermalcanyon.h"
-#include "stringutils.h"
-#include "events.h"
-#include "alarms.h"
-#include "temperature.h"
+#include "state_machine.h"
 
 extern FRESULT sync_fs( /* FR_OK: successful, FR_DISK_ERR: failed */
 FATFS* fs /* File system object */
@@ -209,7 +206,7 @@ void fat_check_error(FRESULT fr) {
 	if (fr == FR_DISK_ERR || fr == FR_NOT_READY)
 		g_bFatInitialized = false;
 
-	alarm_sd_card_problem(fr);
+	state_sd_card_problem(fr);
 
 	event_LCD_turn_on();
 	lcd_printl(LINEC, "SD CARD FAILURE");
@@ -349,8 +346,10 @@ FRESULT log_appendf(const char *_format, ...) {
 }
 
 const char HEADER_CSV[] =
-		"\"Date of Reading\",\"Battery %\",\"Power Status\",\"Sensor A (Deg. C)\",\"Sensor B (Deg. C)\","
-				"\"Sensor C (Deg. C)\",\"Sensor D (Deg. C)\",\"Sensor E (Deg. C)\"\r\n";
+		"\"Date of Reading\",\"Battery %\",\"Power Status\"," \
+		"\"Sensor A (Deg. C)\",\"Sensor B (Deg. C)\",\"Sensor C (Deg. C)\",\"Sensor D (Deg. C)\",\"Sensor E (Deg. C)\"," \
+		"\"Signal\",\"Network State\"\r\n";
+
 
 FRESULT log_write_header(FIL *fobj, UINT *pBw) {
 	return f_write(fobj, HEADER_CSV, sizeof(HEADER_CSV) - 1, pBw);
@@ -370,11 +369,13 @@ const char *getPowerStateString() {
 }
 
 FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
-	char szLog[64];
+	char szLog[120];
 	UINT bw = 0;
 	char *date;
 	FRESULT fr;
-	int iBatteryLevel;
+	int8_t iBatteryLevel;
+	int8_t iSignalLevel;
+	char *network_state;
 
 	date = get_date_string(&g_tmCurrTime, "-", " ", ":", 1);
 	fr = f_write(fobj, date, strlen(date), &bw);
@@ -384,11 +385,15 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 	*pBw += bw;
 
 	iBatteryLevel = batt_getlevel();
+	iSignalLevel = state_getSignalLevel();
+	network_state = state_getNetworkState();
 
-	sprintf(szLog, ",\"%d%%\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\r\n",
-			iBatteryLevel, getPowerStateString(), temperature_getString(0),
+	sprintf(szLog, "%d,\"%s\",%s,%s,%s,%s,%s,%d,%s\r\n",
+			(int) iBatteryLevel, getPowerStateString(), temperature_getString(0),
 			temperature_getString(1), temperature_getString(2),
-			temperature_getString(3), temperature_getString(4));
+			temperature_getString(3), temperature_getString(4),
+			(int) iSignalLevel, network_state
+	);
 	fr = f_write(fobj, szLog, strlen(szLog), &bw);
 	return fr;
 }

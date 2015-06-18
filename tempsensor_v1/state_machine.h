@@ -16,7 +16,15 @@ extern SYSTEM_STATE *g_pSysState;
 
 void state_clear_alarm_state();
 
+void state_setNetworkStatus(const char *status);
+void state_sd_card_problem(FRESULT fr);
+uint8_t state_getSignalPercentage();
+
 SYSTEM_STATUS *state_getAlarms();
+int state_isSignalInRange();
+void state_setSignalLevel(uint8_t iSignal);
+uint8_t state_getSignalLevel();
+char *state_getNetworkState();
 
 void state_alarm_turnon_buzzer();
 void state_alarm_on(char *alarm_msg) ;
