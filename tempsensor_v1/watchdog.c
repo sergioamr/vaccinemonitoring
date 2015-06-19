@@ -13,6 +13,7 @@ void watchdog_disable() {
 
 void watchdog_init() {
 /*
+
     //Watchdog mode -> reset after expired time
     //WDT is clocked by VLOCLK since ALCK is failed without initialization
     //Set Watchdog Timer timeout 3s - SET BREAKPOINT HERE
@@ -25,6 +26,8 @@ void watchdog_init() {
 }
 
 #pragma vector=WDT_VECTOR
-__interrupt void wdttimer(void) {
+__interrupt void watchdog_timer(void) {
+	_NOP();
+	//WDT_A_resetTimer(WDT_A_BASE);
 }
 

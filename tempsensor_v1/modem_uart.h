@@ -10,9 +10,33 @@
 
 #define TX_LEN   			256
 #define RX_LEN   			1024
-#define TOKEN_LEN			3
 
-#define ATCMD_CPIN          8
+typedef struct {
+	uint16_t iRXTailIdx;
+	uint16_t iRXHeadIdx;
+
+	char bWaitForTXEnd;
+	char bTransmissionEnd;
+
+	int8_t iUartState;
+
+	uint16_t iTXIdx;
+
+	uint8_t iError;
+
+	uint16_t iRxCountBytes;
+	uint16_t iTxCountBytes;
+	uint16_t iTxLen;
+
+	char szOK[32];
+	uint8_t OKIdx;
+	int8_t OKLength;
+
+	char szError[32];
+	uint8_t ErrorIdx;
+	int8_t ErrorLength;
+
+} UART_TRANSFER;
 
 #define UART_SUCCESS 0
 #define UART_ERROR -1
@@ -20,25 +44,13 @@
 #define UART_TIMEOUT 2
 #define UART_INPROCESS 3
 
-#define CCLK_RESP_LEN		28
-#define HTTPSND_RSP_LEN		20
-#define HTTPRCV_RSP_LEN		sizeof(RXBuffer)
-#define CGSN_OFFSET			4
-#define CGSN_LEN			15
-
-#define XOFF				0x13
-#define XON					0x11
-
 #include <msp430.h>
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-extern volatile int RXTailIdx;
-extern volatile int RXHeadIdx;
-extern size_t iRxLen;
-extern volatile char RXBuffer[RX_LEN];
+const char *uart_getRXHead();
 
 void uart_setOKMode();
 
@@ -66,7 +78,6 @@ void uart_setRingBuffer();
 
 void uart_setDefaultIntervalDivider();
 void uart_setDelayIntervalDivider(uint8_t divider);
-
 
 //*****************************************************************************
 //! \brief Transmit to UART

@@ -283,9 +283,9 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	if (uart_tx_waitForPrompt(szCmd, TIMEOUT_CMGS_PROMPT)) {
 		uart_tx_timeout(pData, TIMEOUT_CMGS, 1);
 
-		token = strstr((const char *) &RXBuffer[RXHeadIdx], "ERROR");
+		token = strstr(uart_getRXHead(), "ERROR");
 		if (token == NULL) {
-			token = strstr((const char *) &RXBuffer[RXHeadIdx], "+CMGS:");
+			token = strstr(uart_getRXHead(), "+CMGS:");
 			msgNumber = atoi(token + 6);
 			if (msgNumber != 0)
 				res = UART_SUCCESS;

@@ -282,6 +282,17 @@ typedef union
 } SYSTEM_STATUS;
 
 typedef struct {
+	char network_state[32];
+
+	int network_presentation_mode;
+	//NETWORK_STATUS_REGISTERED_HOME_NETWORK
+	//NETWORK_STATUS_REGISTERED_ROAMING
+	int network_status;
+
+	uint8_t network_failures;
+} NETWORK_SERVICE;
+
+typedef struct {
 	char alarm_message[32];
 	uint8_t battery_level;
 	time_t time_powerOutage;
@@ -289,19 +300,13 @@ typedef struct {
 	SIM_STATE simState[MAX_SMS_NUM];
 
 	uint8_t signal_level;
-	char network_state[32];
 
 	TEMPERATURE temp;
 	SYSTEM_STATUS system;
 
+	// GSM or GPRS
 	int network_mode;
-
-	//NETWORK_STATUS_REGISTERED_HOME_NETWORK
-	//NETWORK_STATUS_REGISTERED_ROAMING
-	int network_status;
-
-	uint8_t network_failures;
-
+	NETWORK_SERVICE net_service[2];
 } SYSTEM_STATE;
 
 typedef struct {

@@ -21,9 +21,6 @@ int8_t http_post(char* postdata);
 int16_t formatfield(char* pcSrc, char* fieldstr, int lastoffset,
 		char* seperator, int8_t iFlagVal, char* pcExtSrc, int8_t iFieldSize);
 
-int http_post_gprs_connection_status(char status);
-int http_post_sms_status(void);
-
 extern const char HTTP_INCOMING_DATA[];
 
 #endif /* TEMPSENSOR_V1_HTTP_H_ */

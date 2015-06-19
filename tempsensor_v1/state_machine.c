@@ -41,9 +41,7 @@ SYSTEM_STATE *g_pSysState = &g_SystemState;
 /* General events that will generate responses from the system */
 /*************************************************************************************************************/
 uint8_t state_getSignalPercentage() {
-
-	float local_signal = ((float)(g_pSysState->signal_level - NETWORK_ZERO)*100)/(NETWORK_MAX_SS - NETWORK_ZERO);
-	return local_signal;
+	return ((float)(g_pSysState->signal_level - NETWORK_ZERO)*100)/(NETWORK_MAX_SS - NETWORK_ZERO);
 }
 
 // TODO There was a problem in the SD Card, reinit fat
@@ -53,29 +51,31 @@ void state_sd_card_problem(FRESULT fr) {
 	// SETUP event FAT INIT ATTEMPT
 }
 
+/***********************************************************************************************************************/
+/* NETWORK STATE AND STATUS */
+/***********************************************************************************************************************/
+
+NETWORK_SERVICE inline *state_getCurrentService() {
+	if (g_pSysState->network_mode<0 || g_pSysState->network_mode>1)
+		g_pSysState->network_mode=0;
+
+	return &g_pSysState->net_service[g_pSysState->network_mode];
+}
+
+char inline *state_getNetworkState() {
+	NETWORK_SERVICE *service = state_getCurrentService();
+	return service->network_state;
+}
+
 void state_setNetworkStatus(const char *status) {
-	strcpy(g_pSysState->network_state, status);
-}
-
-/***********************************************************************************************************************/
-/* GENERAL */
-/***********************************************************************************************************************/
-
-void state_init() {
-	memset(g_pSysState, 0, sizeof(SYSTEM_STATE));
-}
-
-void buzzer_feedback() {
-	g_pSysState->buzzerFeedback = 10;
+	NETWORK_SERVICE *service = state_getCurrentService();
+	strcpy(service->network_state, status);
 }
 
 uint8_t state_getSignalLevel() {
 	return g_pSysState->signal_level;
 }
 
-char *state_getNetworkState() {
-	return g_pSysState->network_state;
-}
 
 int state_isSignalInRange() {
 	int iSignalLevel = g_pSysState->signal_level;
@@ -91,6 +91,8 @@ void state_setSignalLevel(uint8_t iSignal) {
 
 void state_check_network() {
 	int res;
+	uint8_t *failures;
+	int service=modem_getNetworkService();
 
 	modem_getSignal();
 	if (state_isSignalInRange())
@@ -98,32 +100,45 @@ void state_check_network() {
 	else
 		res = UART_FAILED;
 
+
+	failures = &g_pSysState->net_service[service].network_failures;
+
 	// Something was wrong on the connection, swap SIM card.
 	if (res == UART_FAILED) {
-		if (g_pSysState->network_failures
-				== NETWORK_ATTEMPTS_BEFORE_SWAP_SIM - 1) {
+		if (*failures == NETWORK_ATTEMPTS_BEFORE_SWAP_SIM - 1) {
 			log_appendf("[%d] TRY SWAPPING SIM", config_getSelectedSIM());
 			res = modem_swap_SIM();
-			g_pSysState->network_failures = 0;
+			*failures = 0;
 		} else {
-			g_pSysState->network_failures++;
-			log_appendf("[%d] NETWORK DOWN %d", config_getSelectedSIM(),
-					g_pSysState->network_failures);
+			*failures++;
+			log_appendf("[%d] NETWORK DOWN %d", config_getSelectedSIM(), *failures);
 		}
 	} else {
-		g_pSysState->network_failures = 0;
+		*failures = 0;
 	}
 }
 
 int state_isNetworkRegistered() {
-	if (g_pSysState->network_mode == 0)
-		return 0;
+	NETWORK_SERVICE *service = state_getCurrentService();
 
-	if (g_pSysState->network_status==NETWORK_STATUS_REGISTERED_HOME_NETWORK
-			|| g_pSysState->network_status==NETWORK_STATUS_REGISTERED_ROAMING)
+	if (service->network_status==NETWORK_STATUS_REGISTERED_HOME_NETWORK
+		|| service->network_status==NETWORK_STATUS_REGISTERED_ROAMING)
 		return 1;
 
 	return 0;
+}
+
+/***********************************************************************************************************************/
+/* GENERAL */
+/***********************************************************************************************************************/
+
+void state_init() {
+	memset(g_pSysState, 0, sizeof(SYSTEM_STATE));
+	g_pSysState->network_mode = NETWORK_NOT_SELECTED;
+}
+
+void buzzer_feedback() {
+	g_pSysState->buzzerFeedback = 10;
 }
 
 /***********************************************************************************************************************/
@@ -210,9 +225,10 @@ void state_clear_alarm_state() {
 /* MODEM & COMMUNICATIONS */
 /***********************************************************************************************************************/
 
-void state_network_status(int net_mode, int net_status) {
-	g_pSysState->network_mode = net_mode;
-	g_pSysState->network_status = net_status;
+void state_network_status(int presentation_mode, int net_status) {
+	NETWORK_SERVICE *service = state_getCurrentService();
+	service->network_presentation_mode = presentation_mode;
+	service->network_status = net_status;
 }
 
 // Clear all the errors for the network connection.
@@ -220,8 +236,12 @@ void state_network_success(uint8_t sim) {
 	SIM_STATE *simState = &g_pSysState->simState[sim];
 
 	// Eveything is fine
-	simState->failsGPRS = 0;
-	simState->failsGSM = 0;
+	if (g_pSysState->network_mode==NETWORK_GSM)
+		simState->failsGSM = 0;
+
+	if (g_pSysState->network_mode==NETWORK_GPRS)
+		simState->failsGPRS = 0;
+
 	simState->modemErrors = 0;
 }
 

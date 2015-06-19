@@ -27,7 +27,7 @@ extern struct tm g_tmCurrTime;
 extern int8_t g_iSignalLevel;
 
 extern char g_iSignal_gprs;
-extern char g_iGprs_network_indication;
+extern char g_iSignal_gsm;
 
 extern struct tm g_tmCurrTime;
 extern struct tm g_lastSampleTime;

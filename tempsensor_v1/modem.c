@@ -67,6 +67,7 @@ const char * const NETWORK_STATUS[6] = { "initializing", "connected",
 		"searching net", "reg denied", "unknown state", "roaming net" };
 const char NETWORK_MODE_2[] = "Registered";
 const char NETWORK_UNKNOWN_STATUS[] = "Unknown";
+const char * const NETWORK_SERVICE_TEXT[2] = { "GSM", "GPRS" };
 
 /*
  CME ERROR: 10	SIM not inserted
@@ -126,13 +127,12 @@ const char *modem_getNetworkStatusText(int mode, int status) {
 	return NETWORK_UNKNOWN_STATUS;
 }
 
-const char COMMAND_RESULT_CGREG[] = "+CGREG: ";
-
 int modem_getNetworkStatus(int *mode, int *status) {
 
 	char *pToken1 = NULL;
 	int uart_state = 0;
 	int verbose;
+	char command_result[16];
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
@@ -142,14 +142,16 @@ int modem_getNetworkStatus(int *mode, int *status) {
 	verbose = lcd_getVerboseMode();
 	lcd_disable_verbose();
 
-	uart_tx("AT+CGREG?\r\n");
+	sprintf(command_result, "+%s: ", modem_getNetworkServiceCommand());
+
+	uart_txf("AT+%s?\r\n", modem_getNetworkServiceCommand());
 
 	lcd_setVerboseMode(verbose);
 
 	uart_state = uart_getTransactionState();
 	if (uart_state == UART_SUCCESS) {
 
-		PARSE_FINDSTR_RET(pToken1, COMMAND_RESULT_CGREG, UART_FAILED);
+		PARSE_FINDSTR_RET(pToken1, command_result, UART_FAILED);
 
 		PARSE_FIRSTVALUE(pToken1, mode, ",\n", UART_FAILED);
 		PARSE_NEXTVALUE(pToken1, status, ",\n", UART_FAILED);
@@ -161,6 +163,45 @@ int modem_getNetworkStatus(int *mode, int *status) {
 		return UART_SUCCESS;
 	}
 	return UART_FAILED;
+}
+
+/**********************************************************************************************************************/
+/* Network cellular service */
+/**********************************************************************************************************************/
+
+char NETWORK_GPRS_COMMAND[] = "CGREG";
+char NETWORK_GSM_COMMAND[] = "CREG";
+
+const char inline *modem_getNetworkServiceCommand() {
+	if (g_pSysState->network_mode == NETWORK_GPRS)
+		return NETWORK_GPRS_COMMAND;
+
+	return NETWORK_GSM_COMMAND;
+}
+
+const char inline *modem_getNetworkServiceText() {
+	switch (g_pSysState->network_mode) {
+		case NETWORK_GSM:
+			return NETWORK_SERVICE_TEXT[NETWORK_GSM];
+		case NETWORK_GPRS:
+			return NETWORK_SERVICE_TEXT[NETWORK_GPRS];
+	}
+
+	return NETWORK_UNKNOWN_STATUS;
+}
+
+int modem_getNetworkService() {
+	if (g_pSysState->network_mode<0 || g_pSysState->network_mode>1)
+		return NETWORK_GSM;
+
+	return g_pSysState->network_mode;
+}
+
+void modem_setNetworkService(int service) {
+	if (g_pSysState->network_mode != service) {
+		g_pSysState->network_mode = service;
+		modem_connect_network(NETWORK_CONNECTION_ATTEMPTS);
+	}
 }
 
 int modem_connect_network(uint8_t attempts) {
@@ -176,12 +217,12 @@ int modem_connect_network(uint8_t attempts) {
 #ifdef _DEBUG
 	attempts = 10;
 #endif
-	uart_tx("AT+CGREG=2\r\n");
+	uart_txf("AT+%s=2\r\n", modem_getNetworkServiceCommand());
 	do {
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
 
 			if (!g_iRunning || net_status != 1) {
-				lcd_printf(LINEC, "SIM %d status", nsim + 1);
+				lcd_printf(LINEC, "SIM %d NET %s", nsim + 1, modem_getNetworkServiceText());
 				lcd_printl(LINEH,
 						(char *) modem_getNetworkStatusText(net_mode,
 								net_status));
@@ -197,7 +238,7 @@ int modem_connect_network(uint8_t attempts) {
 				state_network_success(nsim);
 
 				// We tested more than once, lets show a nice we are connected message
-				if (tests > 0)
+				if (tests > 2)
 					delay(HUMAN_DISPLAY_INFO_DELAY);
 				return UART_SUCCESS;
 			} else {
@@ -215,7 +256,7 @@ int modem_connect_network(uint8_t attempts) {
 ;
 
 int modem_disableNetworkRegistration() {
-	return uart_tx("AT+CGREG=0\r\n");
+	return uart_txf("AT+%s=0\r\n", modem_getNetworkServiceCommand());
 }
 
 // Not used if we activate the error handling
@@ -265,8 +306,7 @@ void modem_check_uart_error() {
 	if (uart_state != UART_ERROR)
 		return;
 
-	pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx],
-			(const char *) AT_ERROR);
+	pToken1 = strstr(uart_getRXHead(), (const char *) AT_ERROR);
 	if (pToken1 != NULL) { // ERROR FOUND;
 		char *error = (char *) (pToken1 + strlen(AT_ERROR));
 
@@ -300,11 +340,12 @@ int8_t modem_check_network() {
 	// are actually connected to the network and fine
 
 	iSignal = modem_getSignal();
-	res= uart_getTransactionState();
-	if (res==UART_SUCCESS)
+	res = uart_getTransactionState();
+	if (res == UART_SUCCESS)
 		state_setSignalLevel(iSignal);
 	else
-		state_network_fail(config_getSelectedSIM(), NETWORK_ERROR_SIGNAL_FAILURE);
+		state_network_fail(config_getSelectedSIM(),
+		NETWORK_ERROR_SIGNAL_FAILURE);
 	return res;
 }
 
@@ -464,7 +505,7 @@ int8_t modem_parse_string(char *cmd, char *response, char *destination,
 int8_t modem_getSMSCenter() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	return modem_parse_string("AT+CSCA?\r\n", "CSCA: \"", sim->cfgSMSCenter,
-			GW_MAX_LEN + 1);
+	GW_MAX_LEN + 1);
 	// added for SMS Message center number to be sent in the heart beat
 }
 
@@ -473,7 +514,7 @@ int8_t modem_getOwnNumber() {
 	int8_t state;
 	modem_ignore_next_errors(1);
 	state = modem_parse_string("AT+CNUM?\r\n", "CNUM: \"", sim->cfgPhoneNum,
-			GW_MAX_LEN + 1);
+	GW_MAX_LEN + 1);
 	modem_ignore_next_errors(0);
 	return state;
 }
@@ -507,11 +548,11 @@ void modem_getIMEI() {
 	uart_tx("AT+CGSN\r\n");
 	memset(IMEI, 0, sizeof(IMEI));
 
-	token = strstr((const char *) RXBuffer, "OK");
+	token = strstr(uart_getRXHead(), "OK");
 	if (token == NULL)
 		return;
 
-	strncpy(IMEI, (const char *) &RXBuffer[RXHeadIdx + 2], IMEI_MAX_LEN);
+	strncpy(IMEI, uart_getRXHead() + 2, IMEI_MAX_LEN);
 	if (!validateIMEI(IMEI)) {
 		return;
 	}
@@ -587,14 +628,13 @@ void modem_survey_network() {
 				delay(NETWORK_WAITING_TIME);
 			} else {
 
-				pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], "ERROR");
+				pToken1 = strstr(uart_getRXHead(), "ERROR");
 				if (pToken1 != NULL) {
 					uart_state = UART_ERROR;
 					lcd_printl(LINE2, "FAILED");
 					delay(1000);
 				} else {
-					pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx],
-							"mcc:");
+					pToken1 = strstr(uart_getRXHead(), "mcc:");
 					if (pToken1 != NULL)
 						sim->iCfgMCC = atoi(pToken1 + 5);
 
@@ -754,8 +794,10 @@ void modem_init() {
 	// After autoband it could take up to 90 seconds for the bands trial and error.
 	// So we have to wait for the modem to be ready.
 
+	modem_setNetworkService(NETWORK_GSM);
+
 	// Wait until connnection and registration is successful. (Just try NETWORK_CONNECTION_ATTEMPTS) network could be definitly down or not available.
-	modem_connect_network(NETWORK_CONNECTION_ATTEMPTS);
+	modem_setNetworkService(NETWORK_GPRS);
 
 	uart_tx("AT#NITZ=1\r\n");   // #NITZ - Network Timezone
 
@@ -789,11 +831,6 @@ void modem_init() {
 
 	// Have to call twice to guarantee a genuine result
 	modem_getSignal();
-
-	lcd_print("Checking GPRS");
-	/// added for gprs connection..//
-	g_iSignal_gprs = http_post_gprs_connection_status(GPRS);
-	g_iGprs_network_indication = http_post_gprs_connection_status(GSM);
 
 #ifndef _DEBUG
 	modem_getOwnNumber();

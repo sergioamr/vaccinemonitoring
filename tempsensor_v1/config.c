@@ -441,5 +441,5 @@ int config_process_configuration() {
 	log_append_("configuration processing");
 // FINDSTR uses RXBuffer - There is no need to initialize the data to parse.
 	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
-	return config_parse_configuration((char *) &RXBuffer[RXHeadIdx]);
+	return config_parse_configuration((char *) uart_getRXHead());
 }

@@ -47,7 +47,8 @@ uint32_t g_iAlarmStatus = 0;
 double iTemp = 0.0;
 
 char g_iSignal_gprs = 0;
-char g_iGprs_network_indication = 0;
+char g_iSignal_gsm = 0;
+
 char file_pointer_enabled_gprs_status = 0; // for gprs condtition enabling.../// need to be tested..//
 
 #pragma SET_DATA_SECTION()

@@ -33,6 +33,7 @@
 #include "main_system.h"
 #include "alarms.h"
 #include "state_machine.h"
+#include "wdt_a.h"
 
 void thermal_handle_system_button() {
 	if (!g_iRunning)
@@ -141,5 +142,6 @@ void thermal_canyon_loop(void) {
 		// If a hardware button is pressed it will resume CPU
 		sleep_or_alarm();
 		hardware_actions();
+
 	}
 }

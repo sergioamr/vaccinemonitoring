@@ -32,6 +32,19 @@ extern char ESC[2];
 #define NETWORK_MODE_1_NOT_REGISTERED_NOT_LOOKING 0
 
 /*********************************************************************************/
+/* NETWORK SERVICE    														     */
+/*********************************************************************************/
+
+// Not yet initialized
+#define NETWORK_NOT_SELECTED -1
+
+// Global System for Mobile Communications (2G)
+#define NETWORK_GSM 0
+
+// General packet radio service
+#define NETWORK_GPRS 1
+
+/*********************************************************************************/
 /* MODEM FUNCTIONALITY														     */
 /*********************************************************************************/
 
@@ -46,13 +59,15 @@ void modem_getExtraInfo();
 void modem_survey_network();
 void modem_check_sim_active();
 int modem_swap_SIM();
+const char *modem_getNetworkServiceCommand();
+int modem_getNetworkService();
+void modem_setNetworkService(int service);
 int modem_connect_network(uint8_t attempts);
 void modem_pull_time();
 int8_t modem_first_init();
 int8_t modem_check_network();
 int8_t modem_getSMSCenter();
 int8_t modem_set_max_messages();
-int modem_connect_network(uint8_t attempts);
 
 void modem_setNumericError(char errorToken, int16_t errorCode);
 uint16_t modem_parse_error(const char *error);
@@ -68,7 +83,7 @@ void modem_ignore_next_errors(int errors);
 #define PARSE_FINDSTR_BUFFER_RET(token, buffer, sz, error) token=strstr((const char *) buffer, sz); \
 	if(token==NULL) return error; else token+=strlen(sz)-1;
 
-#define PARSE_FINDSTR_RET(token, sz, error) token=strstr((const char *) &RXBuffer[RXHeadIdx], sz); \
+#define PARSE_FINDSTR_RET(token, sz, error) token=strstr((const char *) uart_getRXHead(), sz); \
 	if(token==NULL) return error; else token+=strlen(sz)-1;
 
 #define PARSE_FIRSTVALUE(token, var, delimiter, error) token = strtok(token, delimiter); \
