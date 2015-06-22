@@ -400,6 +400,9 @@ void state_check_power() {
 
 	// Check the power down time to generate an alert
 
+	if (g_pDevCfg->stBattPowerAlertParam.minutesPower==0)
+		return;
+
 	if (elapsed > (g_pDevCfg->stBattPowerAlertParam.minutesPower) * 60) {
 		state_alarm_on("POWER OUT");
 	}

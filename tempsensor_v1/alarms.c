@@ -20,8 +20,9 @@
 /*************************************************************************************************************/
 void alarm_sensor_sms(uint8_t sensorId, int elapsed) {
 	char msg[MAX_SMS_SIZE];
-	sprintf(msg, "Alert Sensor %s at %s degC for %d minutes", SensorName[sensorId],
-			temperature_getString(sensorId), elapsed/60 );
+	sprintf(msg, "Alert Sensor %s at %s degC for %d minutes",
+			SensorName[sensorId], temperature_getString(sensorId),
+			elapsed / 60);
 	strcat(msg, " Take ACTION immediately.");
 	sms_send_message(msg);
 }
@@ -33,6 +34,7 @@ SENSOR_STATUS *getAlarmsSensor(int id) {
 
 void alarm_test_sensor(int id) {
 	char msg[32];
+	char tmp[6];
 	USE_TEMPERATURE
 	SENSOR_STATUS *s = getAlarmsSensor(id);
 	TEMPERATURE_SENSOR *sensor = &tem->sensors[id];
@@ -60,33 +62,30 @@ void alarm_test_sensor(int id) {
 		return;
 	}
 
+	if (s->alarms.alarm)
+		return;
+
 	if (tem->alarm_time == 0)
 		tem->alarm_time = events_getTick();
 	else
 		elapsed = events_getTick() - tem->alarm_time;
 
-	lcd_printf(LINEC, "Sensor \"%s\" %s", SensorName[id],
-			getFloatNumber2Text(temperature, msg));
+	//lcd_printf(LINEC, "Sensor \"%s\" %s", SensorName[id], getFloatNumber2Text(temperature, msg));
 	if (temperature < cold) {
-		if (!s->alarms.lowAlarm) {
-			if (elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsCold) {
-				sprintf(msg, "%s too cold", SensorName[id]);
-				s->alarms.lowAlarm = true;
-				goto alarm_error;
-			} else {
-				lcd_printf(LINEE, "Below limit %s", getFloatNumber2Text(hot, msg));
-			}
+		if (!s->alarms.lowAlarm
+				&& elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsCold) {
+			sprintf(msg, "%s Below limit %s ", SensorName[id],
+					getFloatNumber2Text(cold, tmp));
+			s->alarms.lowAlarm = true;
+			goto alarm_error;
 		}
 		return;
 	} else if (temperature > hot) {
-		if (!s->alarms.highAlarm) {
-			if (elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsHot) {
-				sprintf(msg, "%s too hot", SensorName[id]);
-				s->alarms.highAlarm = true;
-				goto alarm_error;
-			}
-
-			lcd_printf(LINEE, "Above limit %s", getFloatNumber2Text(hot, msg));
+		if (!s->alarms.highAlarm && elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsHot) {
+			sprintf(msg, "%s Above limit %s ", SensorName[id],
+					getFloatNumber2Text(hot, tmp));
+			s->alarms.highAlarm = true;
+			goto alarm_error;
 		}
 		return;
 	}
