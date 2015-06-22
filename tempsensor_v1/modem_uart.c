@@ -22,7 +22,7 @@
 
 // AT Messages returns to check.
 const char AT_MSG_OK[] = { 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
-const char AT_MSG_PROMPT[] = { 0x0D, 0x0A, '>', 0 };// Used for SMS message sending
+const char AT_MSG_PROMPT[] = { 0x0D, 0x0A, '>', 0 }; // Used for SMS message sending
 const char AT_MSG_LONG_PROMPT[] = { 0x0D, 0x0A, '>', '>', '>', 0 }; // Used for http post transactions
 const char AT_MSG_HTTPRING[] = "#HTTPRING: ";
 const char AT_CME_ERROR[] = "+CME ERROR:";
@@ -61,7 +61,7 @@ void uart_setCheckMsg(const char *szOK, const char *szError) {
 		uart.OKLength = -1;
 
 	// Wait for a return after OK
-	uart.bRXWaitForReturn=0;
+	uart.bRXWaitForReturn = 0;
 }
 
 // We define the exit condition for the wait for ready function
@@ -169,8 +169,11 @@ const char *uart_getRXHead() {
 
 // Reset all buffers, headers, and counters for transmission
 void uart_reset_headers() {
-
+#ifdef _DEBUG
 	memset((char *) RXBuffer, 0, sizeof(RXBuffer));
+#else
+	RXBuffer[0]=0;
+#endif
 
 	uart.iTXIdx = 0;
 	uart.iRXHeadIdx = uart.iRXTailIdx = 0;
@@ -203,7 +206,11 @@ void sendCommand(const char *cmd) {
 	}
 
 	if (cmd != TXBuffer) {
+#ifdef _DEBUG
 		memset((char *) TXBuffer, 0, sizeof(TXBuffer));
+#else
+		TXBuffer[0]=0;
+#endif
 		memcpy((char *) TXBuffer, cmd, uart.iTxLen);
 	}
 
@@ -261,7 +268,8 @@ uint8_t iModemErrors = 0;
 char modem_lastCommand[16];
 
 // Try a command until success with timeout and number of attempts to be made at running it
-uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout, uint8_t attempts) {
+uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
+		uint8_t attempts) {
 	char *cmd = modem_lastCommand;
 
 	int len = strlen(cmdInput);
@@ -270,9 +278,9 @@ uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout, uint8_t attempts
 	}
 
 	strncpy(modem_lastCommand, cmdInput, 16);
-	if (len<16) {
-		if (cmd[len-1]!='\n') {
-			strcat(cmd,"\r\n");
+	if (len < 16) {
+		if (cmd[len - 1] != '\n') {
+			strcat(cmd, "\r\n");
 			_NOP();
 		} else {
 			_NOP();
@@ -382,22 +390,22 @@ uint8_t uart_tx(const char *cmd) {
 
 void uart_setHTTPPromptMode() {
 	uart_setCheckMsg(AT_MSG_LONG_PROMPT, AT_ERROR);
-	uart.bRXWaitForReturn=0;
+	uart.bRXWaitForReturn = 0;
 }
 
 void uart_setHTTPDataMode() {
 	uart_setCheckMsg(AT_MSG_HTTPRING, AT_ERROR);
-	uart.bRXWaitForReturn=1;
+	uart.bRXWaitForReturn = 1;
 }
 
 void uart_setSMSPromptMode() {
 	uart_setCheckMsg(AT_MSG_PROMPT, AT_CMS_ERROR);
-	uart.bRXWaitForReturn=0;
+	uart.bRXWaitForReturn = 0;
 }
 
 void uart_setOKMode() {
 	uart_setCheckMsg(AT_MSG_OK, AT_ERROR);
-	uart.bRXWaitForReturn=0;
+	uart.bRXWaitForReturn = 0;
 }
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
