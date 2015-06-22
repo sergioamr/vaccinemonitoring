@@ -193,7 +193,7 @@ void state_alarm_on(char *alarm_msg) {
 	}
 
 	s->alarms.globalAlarm = STATE_ON;
-	s->alarms.buzzer = STATE_ON;
+	state_alarm_turnon_buzzer();
 
 #ifdef _DEBUG
 	sms_send_message_number(LOCAL_TESTING_NUMBER, alarm_msg);
@@ -203,7 +203,6 @@ void state_alarm_on(char *alarm_msg) {
 
 	elapsed = events_getTick() - count;
 	if (elapsed > 30) {
-
 		lcd_turn_off();
 		delay(500);
 		lcd_turn_on();
@@ -213,7 +212,7 @@ void state_alarm_on(char *alarm_msg) {
 					sizeof(g_pSysState->alarm_message));
 			lcd_turn_on();
 			lcd_printl(LINEC, "ALARM!");
-			lcd_printf(LINE2, " %s ", alarm_msg);
+			lcd_printf(LINEH, "*** %s ***", alarm_msg);
 		}
 		count = events_getTick();
 	}

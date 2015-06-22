@@ -51,7 +51,8 @@ char* get_YMD_String(struct tm* timeData) {
 }
 
 char* get_date_string(struct tm* timeData, const char* dateSeperator,
-		const char* dateTimeSeperator, const char* timeSeparator, uint8_t includeTZ) {
+		const char* dateTimeSeperator, const char* timeSeparator,
+		uint8_t includeTZ) {
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 	static char g_szDateString[24]; // "YYYY-MM-DD HH:MM:SS IST"
@@ -266,6 +267,41 @@ FRESULT fat_init_drive() {
 	return fr;
 }
 
+FRESULT fat_save_config(char *text) {
+	FIL fobj;
+	FRESULT fr;
+	size_t len;
+	int bw = 0;
+
+	if (!g_bFatInitialized)
+		return FR_NOT_READY;
+
+	if (text == NULL)
+		return FR_OK;
+
+	len = strlen(text);
+	if (len == 0)
+		return FR_OK;
+
+	fr = f_open(&fobj, CONFIG_FILE_PATH,
+	FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
+	if (fr != FR_OK) {
+		fat_check_error(fr);
+		return fr;
+	}
+
+	fr = f_write(&fobj, text, len, (UINT *) &bw);
+	if (fr != FR_OK || bw != len) {
+		lcd_print("Failed writing SD");
+		f_close(&fobj);
+		return fr;
+	}
+
+	fr = f_write(&fobj, text, len, (UINT *) &bw);
+	f_sync(&fobj);
+	return f_close(&fobj);
+}
+
 FRESULT log_append_(char *text) {
 	FIL fobj;
 	int t = 0;
@@ -361,10 +397,9 @@ FRESULT log_appendf(const char *_format, ...) {
 }
 
 const char HEADER_CSV[] =
-		"\"Date of Reading\",\"Battery %\",\"Power Status\"," \
-		"\"Sensor A (Deg. C)\",\"Sensor B (Deg. C)\",\"Sensor C (Deg. C)\",\"Sensor D (Deg. C)\",\"Sensor E (Deg. C)\"," \
-		"\"Signal\",\"Network State\"\r\n";
-
+		"\"Date of Reading\",\"Battery %\",\"Power Status\","
+				"\"Sensor A (Deg. C)\",\"Sensor B (Deg. C)\",\"Sensor C (Deg. C)\",\"Sensor D (Deg. C)\",\"Sensor E (Deg. C)\","
+				"\"Signal\",\"Network State\"\r\n";
 
 FRESULT log_write_header(FIL *fobj, UINT *pBw) {
 	return f_write(fobj, HEADER_CSV, sizeof(HEADER_CSV) - 1, pBw);
@@ -400,15 +435,14 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 	*pBw += bw;
 
 	iBatteryLevel = batt_getlevel();
-	iSignalLevel = state_getSignalLevel();
+	iSignalLevel = state_getSignalPercentage();
 	network_state = state_getNetworkState();
 
 	sprintf(szLog, ",\"%d%%\",\"%s\",%s,%s,%s,%s,%s,%d,%s\r\n",
-			(int) iBatteryLevel, getPowerStateString(), temperature_getString(0),
-			temperature_getString(1), temperature_getString(2),
-			temperature_getString(3), temperature_getString(4),
-			(int) iSignalLevel, network_state
-	);
+			(int) iBatteryLevel, getPowerStateString(),
+			temperature_getString(0), temperature_getString(1),
+			temperature_getString(2), temperature_getString(3),
+			temperature_getString(4), (int) iSignalLevel, network_state);
 	fr = f_write(fobj, szLog, strlen(szLog), &bw);
 	return fr;
 }

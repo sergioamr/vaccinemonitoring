@@ -361,6 +361,8 @@ int config_parse_configuration(char *msg) {
 	lcd_printf(LINEC, "Parsing");
 	lcd_printl(LINEH, "Configuration"); // Show the firmware version
 
+	fat_save_config(msg);
+
 	PARSE_FINDSTR_BUFFER_RET(token, msg, "$ST2,", UART_FAILED);
 
 // Return success if no configuration has changed
