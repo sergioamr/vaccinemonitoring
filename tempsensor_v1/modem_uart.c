@@ -444,8 +444,10 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 			uart.iError++;
 		}
 
-		if (uart.bTransmissionEnd)
+		if (uart.bTransmissionEnd) {
+			RXBuffer[uart.iRXTailIdx] = 0;
 			__bic_SR_register_on_exit(LPM0_bits); // Resume execution
+		}
 
 		break;
 
