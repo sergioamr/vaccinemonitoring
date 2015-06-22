@@ -446,7 +446,7 @@ int config_parse_configuration(char *msg) {
 			pAlertParams->threshCold, pAlertParams->maxSecondsHot,
 			pAlertParams->threshHot);
 
-	lcd_printf(LINE2, "%d,%d,%d,%d", g_pDevCfg->cfgSelectedSIM_slot,
+	lcd_printf(LINEH, "%d,%d,%d,%d", g_pDevCfg->cfgSelectedSIM_slot,
 			g_pDevCfg->stIntervalParam.uploadInterval,
 			g_pDevCfg->stIntervalParam.loggingInterval,
 			g_pDevCfg->stBattPowerAlertParam.minutesPower);

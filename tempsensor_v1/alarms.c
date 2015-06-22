@@ -57,6 +57,7 @@ void alarm_test_sensor(int id) {
 		if (s->alarms.alarm) {
 			s->status = STATUS_NO_ALARM;
 			tem->alarm_time = 0;
+			g_pSysState->system.alarms.button_buzzer_override = false;
 			log_appendf("Alarm %d recovered ", id);
 		}
 		return;
@@ -81,7 +82,8 @@ void alarm_test_sensor(int id) {
 		}
 		return;
 	} else if (temperature > hot) {
-		if (!s->alarms.highAlarm && elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsHot) {
+		if (!s->alarms.highAlarm
+				&& elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsHot) {
 			sprintf(msg, "%s Above limit %s ", SensorName[id],
 					getFloatNumber2Text(hot, tmp));
 			s->alarms.highAlarm = true;

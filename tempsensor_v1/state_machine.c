@@ -170,6 +170,11 @@ void state_reset_sensor_alarm(int id) {
 	}
 }
 
+void state_alarm_force_turnoff_buzzer() {
+	SYSTEM_STATUS *s = state_getAlarms();
+	s->alarms.button_buzzer_override = true;
+}
+
 void state_alarm_turnoff_buzzer() {
 	SYSTEM_STATUS *s = state_getAlarms();
 	s->alarms.buzzer = STATE_OFF;
@@ -323,6 +328,10 @@ void state_battery_level(uint8_t battery_level) {
 
 uint8_t state_isBuzzerOn() {
 	SYSTEM_STATUS *s = state_getAlarms();
+
+	// Manual override by the button
+	if (g_pSysState->system.alarms.button_buzzer_override == true)
+		return false;
 
 	if (g_iStatus & BUZZER_ON)
 		return true;

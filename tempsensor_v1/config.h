@@ -273,7 +273,7 @@ typedef union
 		unsigned char SD_cardFailure : 1;
 		unsigned char buzzer : 1;
 		unsigned char power : 1;
-		unsigned char bit5 : 1;
+		unsigned char button_buzzer_override : 1;
 		unsigned char battery : 1;
 		unsigned char bit7 : 1;
 		unsigned char bit8 : 1;

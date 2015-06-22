@@ -11,7 +11,7 @@
 
 extern void buzzer_feedback();
 
-void state_alarm_turnoff_buzzer();
+void state_alarm_force_turnoff_buzzer();
 void thermal_handle_system_button();
 // Interrupt services
 
@@ -67,7 +67,7 @@ void hardware_actions() {
 			lcd_on = 1;
 		break;
 		case HWD_BUZZER_OFF:
-			state_alarm_turnoff_buzzer();
+			state_alarm_force_turnoff_buzzer();
 			g_iSystemSetup = 0;
 		case HWD_TURN_SCREEN:
 			lcd_on = 1;
