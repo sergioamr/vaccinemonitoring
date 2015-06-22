@@ -8,8 +8,10 @@
 #include "thermalcanyon.h"
 #include "buzzer.h"
 
-#define TS_SIZE				21
-#define TS_FIELD_OFFSET		1	//1 - $, 3 - $TS
+#define TS_SIZE					21
+#define TS_FIELD_OFFSET			1	//1 - $, 3 - $TS
+#define TRANS_FAILED		 	-1
+#define TRANS_SUCCESS			0
 
 char *getSensorTemp(int sensorID) {
 	static char sensorData[4];
@@ -35,9 +37,9 @@ uint8_t data_send_temperatures_sms() {
 	return sms_send_message(data);
 }
 
-uint8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
+int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 	char line[80];
-	int lineSize = sizeof(line)/sizeof(char);
+	int lineSize = sizeof(line) / sizeof(char);
 	char* dateString = NULL;
 	struct tm firstDate;
 	char smsMsg[MAX_SMS_SIZE];
@@ -51,7 +53,7 @@ uint8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 		sprintf(smsMsg, "%d,%s,%s,%d,", 11, dateString,
 				itoa_nopadding(g_pDevCfg->stIntervalParam.loggingInterval), 5);
 	} else {
-		return UART_SUCCESS;
+		return TRANS_FAILED;
 	}
 
 	uint8_t length = strlen(smsMsg);
@@ -60,54 +62,44 @@ uint8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 	while (file->fptr < end) {
 		if (f_gets(line, lineSize, file) != 0) {
 			length += strlen(line);
-			if (length >= MAX_SMS_SIZE) {
-				// dont send?
-				break;
-				/*
-				 length = length - smsMaxNoExtra;
-				 line[smsMaxNoExtra - length] = '\0';
-				 */
+			if (length > MAX_SMS_SIZE) {
+				// Send what we can!
+				break; // TODO break up dates and send seperate SMS texts.
 			}
 
 			if (file->fptr != end) {
 				replace_character(line, '\n', ',');
-				strcat(smsMsg, line);
-			} else {
-				// Last line! Wait for OK
-				strcat(smsMsg, line);
 			}
+
+			encode_string(line, smsMsg, ",");
 		} else {
-			break;
+			return TRANS_FAILED;
 		}
 	}
 
-	return sms_send_message(smsMsg);
+	if (sms_send_message(smsMsg) != UART_SUCCESS) {
+		modem_swap_SIM();
+		if (sms_send_message(smsMsg) != UART_SUCCESS) {
+			return TRANS_FAILED;
+		}
+	}
+
+	return TRANS_SUCCESS;
 }
-
-
 
 // 11,20150303:082208,interval,sensorid,DATADATADATAT,sensorid,DATADATADATA,
 // sensorid,dATADATADA,sensorID,DATADATADATADATAT, sensorID,DATADATADATADATAT,batt level,battplugged.
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
-uint8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
+int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	int uart_state;
+	char line[160];
 	int retry = 0;
-	char line[80];
 	int lineSize = sizeof(line)/sizeof(char);
+
 	char* dateString = NULL;
 	struct tm firstDate;
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
-
-	// Setup connection
-	if (modem_check_network() != UART_SUCCESS) {
-		return UART_FAILED;
-	}
-
-	if (http_enable() != UART_SUCCESS) {
-		http_deactivate();
-		return data_upload_sms(file, start, end);
-	}
 
 	f_lseek(file, start);
 
@@ -115,11 +107,11 @@ uint8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	if (f_gets(line, lineSize, file) != 0) {
 		parse_time_from_line(&firstDate, line);
 		dateString = get_date_string(&firstDate, "", "", "", 0);
-		sprintf(line, "IMEI=%s&ph=%s&v=%s&sid=%s&sdt=%s&i=%d&t=",
-				g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa", "0|1|2|3|4",
-				dateString, g_pDevCfg->stIntervalParam.loggingInterval);
+		sprintf(line, "IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=",
+				g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa", dateString,
+				g_pDevCfg->stIntervalParam.loggingInterval);
 	} else {
-		return UART_SUCCESS;
+		return TRANS_FAILED;
 	}
 
 	uint32_t length = strlen(line) + (end - file->fptr);
@@ -148,22 +140,22 @@ uint8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 				}
 			}
 		} else {
-			break;
+			return TRANS_FAILED;
 		}
 	}
 
-	return http_deactivate();
+	http_deactivate();
+
+	return TRANS_SUCCESS;
 }
 
 void process_batch() {
-	uint8_t canSend = 0;
+	uint8_t canSend = 0, transmissionMethod = 0;
 	uint32_t seekFrom = g_pSysCfg->lastSeek, seekTo = g_pSysCfg->lastSeek;
 	char line[80];
 	char path[32];
 	char do_not_process_batch = false;
 	int lineSize = sizeof(line) / sizeof(char);
-
-	//config_setLastCommand(COMMAND_POST);
 
 	FILINFO fili;
 	DIR dir;
@@ -171,6 +163,28 @@ void process_batch() {
 	FRESULT fr;
 
 	log_disable();
+
+	// Setup connection
+	if (modem_check_network() != UART_SUCCESS) {
+		//swap Sim
+		modem_swap_SIM();
+		if (modem_check_network() != UART_SUCCESS) {
+			// neither GSM or GPRS will work
+			lcd_printl(LINEC, "Can't Complete");
+			lcd_printl(LINE2, "No Signal...");
+			return;
+		}
+	}
+
+	// XXX SWAP BACK WHEN FINSIHED TESTING
+	if (http_enable() != UART_SUCCESS) {
+		modem_swap_SIM();
+		if (modem_check_network() != UART_SUCCESS && http_enable() != UART_SUCCESS) {
+			http_deactivate();
+			// TODO: SMS fixes
+			transmissionMethod = 0; // change to 1 for sms
+		}
+	}
 
 	// Cycle through all files using f_findfirst, f_findnext.
 	fr = f_findfirst(&dir, &fili, FOLDER_TEXT, "*." EXTENSION_TEXT);
@@ -185,7 +199,6 @@ void process_batch() {
 	g_pSysState->safeboot.disable.data_transmit = 1;
 
 	while (fr == FR_OK) {
-		buzzer_feedback_simple();
 		sprintf(path, "%s/%s", FOLDER_TEXT, fili.fname);
 		fr = f_open(&filr, path, FA_READ | FA_OPEN_ALWAYS);
 		if (fr != FR_OK) {
@@ -202,13 +215,18 @@ void process_batch() {
 		while (f_gets(line, lineSize, &filr) != 0) {
 			if (filr.fptr == 0 || strstr(line, "$TS") != NULL) {
 				if (canSend) {
-					if (http_send_batch(&filr, seekFrom, seekTo) == UART_FAILED)
-						return;
-					seekFrom = seekTo = filr.fptr;
 					canSend = 0;
+					if (transmissionMethod == 1) {
+						if (data_upload_sms(&filr, seekFrom, seekTo) == TRANS_FAILED) {
+							break;
+						}
+					} else {
+						if (http_send_batch(&filr, seekFrom, seekTo) == TRANS_FAILED) {
+							break;
+						}
+					}
+					seekFrom = seekTo = filr.fptr;
 					// Found next time stamp - Move to next batch now
-				} else {
-					// TODO: what if it broke not on a date (rollback?)
 				}
 			} else {
 				canSend = 1;
@@ -216,29 +234,35 @@ void process_batch() {
 			}
 		}
 
-		if (canSend) {
-			delay(5000);
-			if (http_send_batch(&filr, seekFrom, filr.fptr) == UART_FAILED)
-				return;
-
+		if(canSend) {
+			if (transmissionMethod == 1) {
+				if (data_upload_sms(&filr, seekFrom, seekTo) == TRANS_FAILED) {
+					break;
+				}
+			} else {
+				if (http_send_batch(&filr, seekFrom, seekTo) == TRANS_FAILED) {
+					break;
+				}
+			}
 			seekFrom = canSend = 0;
 		}
 
-		if (f_close(&filr) == FR_OK) {
-			// TODO If EOF was not reached and error occured do not delete file or reset lastSeek
-			fr = f_unlink(path); // Delete the file
-			delay(1000);
+		if (seekTo >= filr.fsize) {
 			g_pSysCfg->lastSeek = 0;
-			g_iStatus |= LOG_TIME_STAMP;
 		} else {
-			break; // Something broke, run away and try again later
-			// TODO should really try to delete file again?
+			g_pSysCfg->lastSeek = filr.fptr;
 		}
 
-		config_setLastCommand(COMMAND_POST+30);
+		if (f_close(&filr) == FR_OK) {
+			if (g_pSysCfg->lastSeek == 0) {
+				fr = f_unlink(path); // Delete the file
+			}
+		} else {
+			break; // This would only happen on corruption - In which case need to redo fat_init?
+		}
+
 		fr = f_findnext(&dir, &fili);
 		if (strlen(fili.fname) == 0) {
-			_NOP();
 			break;
 		}
 	}
@@ -246,5 +270,6 @@ void process_batch() {
 	lcd_printl(LINEC, "Transmission");
 	lcd_printl(LINE2, "Completed");
 	g_pSysState->safeboot.disable.data_transmit = 0;
+	g_iStatus |= LOG_TIME_STAMP; // Uploads may take a long time and might require offset to be reset
 	log_enable();
 }

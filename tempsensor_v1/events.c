@@ -15,10 +15,6 @@
 #include "alarms.h"
 #include "timer.h"
 
-#define SECONDS_(s) (s)
-#define MINUTES_(m) (m*60L)
-#define HOURS_(h)   (h*60L*60L)
-
 #pragma SET_DATA_SECTION(".xbigdata_vars")
 EVENT_MANAGER g_sEvents;
 #pragma SET_DATA_SECTION()

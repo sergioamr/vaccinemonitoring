@@ -192,7 +192,7 @@ void config_send_configuration(char *number) {
 	for (i = 0; i < MAX_NUM_SENSORS; i++) {
 		alert = &g_pDevCfg->stTempAlertParams[i];
 		sprintf(temp, "%s(mC %d mH %d tC %d tH %d)\r\n", SensorName[i],
-				(int) alert->maxTimeCold, (int) alert->maxTimeHot,
+				(int) alert->maxSecondsCold, (int) alert->maxSecondsHot,
 				(int) alert->threshCold, (int) alert->threshHot);
 		strcat(msg, temp);
 	}
@@ -221,8 +221,8 @@ int config_default_configuration() {
 	for (i = 0; i < MAX_NUM_SENSORS; i++) {
 		alert = &g_pDevCfg->stTempAlertParams[i];
 
-		alert->maxTimeCold = ALARM_LOW_TEMP_PERIOD;
-		alert->maxTimeHot = ALARM_HIGH_TEMP_PERIOD;
+		alert->maxSecondsCold = ALARM_LOW_TEMP_PERIOD;
+		alert->maxSecondsHot = ALARM_HIGH_TEMP_PERIOD;
 
 		alert->threshCold = LOW_TEMP_THRESHOLD;
 		alert->threshHot = HIGH_TEMP_THRESHOLD;
@@ -372,10 +372,13 @@ int config_parse_configuration(char *msg) {
 // Temperature configuration for each sensor
 	while (i < MAX_NUM_SENSORS) {
 		pAlertParams = &g_pDevCfg->stTempAlertParams[i];
-		PARSE_NEXTVALUE(token, &pAlertParams->maxTimeCold, delimiter,
+		PARSE_NEXTVALUE(token, &pAlertParams->maxSecondsCold, delimiter,
 				UART_FAILED);
+		pAlertParams->maxSecondsCold*=60; // We work in seconds internally
 		PARSE_NEXTVALUE(token, &pAlertParams->threshCold, delimiter, UART_FAILED);
-		PARSE_NEXTVALUE(token, &pAlertParams->maxTimeHot, delimiter, UART_FAILED);
+
+		PARSE_NEXTVALUE(token, &pAlertParams->maxSecondsHot, delimiter, UART_FAILED);
+		pAlertParams->maxSecondsHot*=60; // We work in seconds internally
 		PARSE_NEXTVALUE(token, &pAlertParams->threshHot, delimiter, UART_FAILED);
 		i++;
 	}
@@ -437,8 +440,8 @@ int config_parse_configuration(char *msg) {
 			MINUTES_(pInterval->uploadInterval));
 
 	pAlertParams = &g_pDevCfg->stTempAlertParams[0];
-	lcd_printf(LINEC, "%d,%d,%d,%d", pAlertParams->maxTimeCold,
-			pAlertParams->threshCold, pAlertParams->maxTimeHot,
+	lcd_printf(LINEC, "%d,%d,%d,%d", pAlertParams->maxSecondsCold,
+			pAlertParams->threshCold, pAlertParams->maxSecondsHot,
 			pAlertParams->threshHot);
 
 	lcd_printf(LINE2, "%d,%d,%d,%d", g_pDevCfg->cfgSelectedSIM_slot,

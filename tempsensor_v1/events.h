@@ -8,6 +8,10 @@
 #ifndef EVENTS_H_
 #define EVENTS_H_
 
+#define SECONDS_(s) (s)
+#define MINUTES_(m) (m*60L)
+#define HOURS_(h)   (h*60L*60L)
+
 // EVENTS
 extern int g_iRunning;
 extern uint8_t iMainSleep;
