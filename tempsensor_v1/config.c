@@ -84,6 +84,7 @@ void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
 	strncpy(sim->simLastError, error, sizeof(sim->simLastError) - 1);
 	sim->simErrorState = errorID;
 	sim->simErrorToken = errorToken;
+	state_sim_failure(sim);
 
 	event_LCD_turn_on();
 }
@@ -101,16 +102,15 @@ uint16_t config_getSIMError(int slot) {
 // Returns the current structure containing the info for the current SIM selected
 SIM_CARD_CONFIG *config_getSIM() {
 	int8_t slot = g_pDevCfg->cfgSIM_slot;
-	if (slot<0 || slot>1)
-		g_pDevCfg->cfgSIM_slot=0;
+	if (slot < 0 || slot > 1)
+		g_pDevCfg->cfgSIM_slot = 0;
 
 	return &g_pDevCfg->SIM[slot];
 }
 
 uint8_t config_getSelectedSIM() {
-	if (g_pDevCfg->cfgSIM_slot<0 ||
-		g_pDevCfg->cfgSIM_slot>1)
-		g_pDevCfg->cfgSIM_slot=0;
+	if (g_pDevCfg->cfgSIM_slot < 0 || g_pDevCfg->cfgSIM_slot > 1)
+		g_pDevCfg->cfgSIM_slot = 0;
 
 	return g_pDevCfg->cfgSIM_slot;
 }
@@ -188,12 +188,12 @@ void config_send_configuration(char *number) {
 	char temp[64];
 	int i;
 
-	msg[0]=0;
+	msg[0] = 0;
 	for (i = 0; i < MAX_NUM_SENSORS; i++) {
 		alert = &g_pDevCfg->stTempAlertParams[i];
 		sprintf(temp, "%s(mC %d mH %d tC %d tH %d)\r\n", SensorName[i],
-				(int) alert->maxTimeCold, (int) alert->maxTimeHot, (int) alert->threshCold,
-				(int) alert->threshHot);
+				(int) alert->maxTimeCold, (int) alert->maxTimeHot,
+				(int) alert->threshCold, (int) alert->threshHot);
 		strcat(msg, temp);
 	}
 	sms_send_message_number(number, msg);
@@ -351,50 +351,56 @@ int config_parse_configuration(char *msg) {
 	char *delimiter = ",";
 	int tempValue = 0;
 	int iCnt = 0;
+	int i = 0;
+	TEMP_ALERT_PARAM *pAlertParams;
+	BATT_POWER_ALERT_PARAM *pBattPower;
+	INTERVAL_PARAM *pInterval;
+
 	SIM_CARD_CONFIG *sim = config_getSIM();
+
+	lcd_printf(LINEC, "Parsing");
+	lcd_printl(LINEH, "Configuration"); // Show the firmware version
 
 	PARSE_FINDSTR_BUFFER_RET(token, msg, "$ST2,", UART_FAILED);
 
 // Return success if no configuration has changed
-	PARSE_FIRSTVALUECOMPARE(token, g_pDevCfg->cfgSyncId, UART_SUCCESS,
-			UART_FAILED);
-	int i = 0;
+	PARSE_FIRSTVALUE(token, &tempValue, UART_SUCCESS, UART_FAILED);
+
+	if (tempValue != 0 && tempValue == g_pDevCfg->cfgSyncId)
+		return UART_SUCCESS;
 
 // Temperature configuration for each sensor
 	while (i < MAX_NUM_SENSORS) {
-		PARSE_NEXTVALUE(token, &g_pDevCfg->stTempAlertParams[i].maxTimeCold,
-				delimiter, UART_FAILED);
-		PARSE_NEXTVALUE(token, &g_pDevCfg->stTempAlertParams[i].threshCold,
-				delimiter, UART_FAILED);
-		PARSE_NEXTVALUE(token, &g_pDevCfg->stTempAlertParams[i].maxTimeHot,
-				delimiter, UART_FAILED);
-		PARSE_NEXTVALUE(token, &g_pDevCfg->stTempAlertParams[i].threshHot,
-				delimiter, UART_FAILED);
+		pAlertParams = &g_pDevCfg->stTempAlertParams[i];
+		PARSE_NEXTVALUE(token, &pAlertParams->maxTimeCold, delimiter,
+				UART_FAILED);
+		PARSE_NEXTVALUE(token, &pAlertParams->threshCold, delimiter, UART_FAILED);
+		PARSE_NEXTVALUE(token, &pAlertParams->maxTimeHot, delimiter, UART_FAILED);
+		PARSE_NEXTVALUE(token, &pAlertParams->threshHot, delimiter, UART_FAILED);
 		i++;
 	}
 
 // Battery config info.
-	PARSE_NEXTVALUE(token, &g_pDevCfg->stBattPowerAlertParam.minutesPower,
-			delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &g_pDevCfg->stBattPowerAlertParam.enablePowerAlert,
-			delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &g_pDevCfg->stBattPowerAlertParam.minutesBattThresh,
-			delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &g_pDevCfg->stBattPowerAlertParam.battThreshold,
-			delimiter, UART_FAILED);
+	pBattPower = &g_pDevCfg->stBattPowerAlertParam;
+	PARSE_NEXTVALUE(token, &pBattPower->minutesPower, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &pBattPower->enablePowerAlert, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &pBattPower->minutesBattThresh, delimiter,
+			UART_FAILED);
+
+	PARSE_NEXTVALUE(token, &pBattPower->battThreshold, delimiter, UART_FAILED);
 
 // SIM info
-	PARSE_SKIP(token, delimiter, UART_FAILED); // $ST1
+	//PARSE_FINDSTR_BUFFER_RET(token, msg, "$ST1,", UART_FAILED);
+
 	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewaySMS[0], strlen(token),
 			delimiter, UART_FAILED); // GATEWAY NUM
 	PARSE_NEXTVALUE(token, &sim->cfgUploadMode, delimiter, UART_FAILED); // NETWORK TYPE E.G. GPRS
 	PARSE_NEXTSTRING(token, &sim->cfgAPN[0], strlen(token), delimiter,
 			UART_FAILED); //APN
 
-	PARSE_NEXTVALUE(token, &g_pDevCfg->stIntervalParam.uploadInterval,
-			delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &g_pDevCfg->stIntervalParam.loggingInterval,
-			delimiter, UART_FAILED);
+	pInterval = &g_pDevCfg->stIntervalParam;
+	PARSE_NEXTVALUE(token, &pInterval->uploadInterval, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &pInterval->loggingInterval, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); // Reset alert
 	if (tempValue > 0) {
 		state_clear_alarm_state();
@@ -408,11 +414,11 @@ int config_parse_configuration(char *msg) {
 	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); ////
 
 	tempValue--;
-	if (tempValue<0 || tempValue>=2)
-		tempValue=0;
+	if (tempValue < 0 || tempValue >= 2)
+		tempValue = 0;
 
 	if (g_pDevCfg->cfgSIM_slot != tempValue) {
-		g_pDevCfg->cfgSelectedSIM_slot=tempValue;
+		g_pDevCfg->cfgSelectedSIM_slot = tempValue;
 	}
 
 	PARSE_SKIP(token, delimiter, UART_FAILED); // $EN
@@ -421,16 +427,24 @@ int config_parse_configuration(char *msg) {
 
 	g_pDevCfg->cfgServerConfigReceived = 1;
 
-#ifndef _DEBUG
 	event_setInterval_by_id(EVT_SUBSAMPLE_TEMP,
-			g_pDevCfg->stIntervalParam.loggingInterval*60);
+			MINUTES_(pInterval->loggingInterval));
 
 	event_setInterval_by_id(EVT_SAVE_SAMPLE_TEMP,
-			g_pDevCfg->stIntervalParam.loggingInterval*60);
+			MINUTES_(pInterval->loggingInterval));
 
 	event_setInterval_by_id(EVT_UPLOAD_SAMPLES,
-			g_pDevCfg->stIntervalParam.uploadInterval*60);
-#endif
+			MINUTES_(pInterval->uploadInterval));
+
+	pAlertParams = &g_pDevCfg->stTempAlertParams[0];
+	lcd_printf(LINEC, "%d,%d,%d,%d", pAlertParams->maxTimeCold,
+			pAlertParams->threshCold, pAlertParams->maxTimeHot,
+			pAlertParams->threshHot);
+
+	lcd_printf(LINE2, "%d,%d,%d,%d", g_pDevCfg->cfgSelectedSIM_slot,
+			g_pDevCfg->stIntervalParam.uploadInterval,
+			g_pDevCfg->stIntervalParam.loggingInterval,
+			g_pDevCfg->stBattPowerAlertParam.minutesPower);
 
 	return UART_SUCCESS;
 }

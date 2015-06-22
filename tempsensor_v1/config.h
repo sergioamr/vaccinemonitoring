@@ -167,8 +167,8 @@ typedef struct {
 typedef struct {
 	float threshCold;
 	float threshHot;
-	uint32_t maxTimeCold;
-	uint32_t maxTimeHot;
+	uint32_t maxSecondsCold;
+	uint32_t maxSecondsHot;
 } TEMP_ALERT_PARAM;
 
 typedef struct {
@@ -312,7 +312,7 @@ typedef struct {
 	char alarm_message[32];
 	uint8_t battery_level;
 	time_t time_powerOutage;
-	uint8_t buzzerFeedback;
+	uint32_t buzzerFeedback;
 	SIM_STATE simState[MAX_SMS_NUM];
 
 	uint8_t signal_level;

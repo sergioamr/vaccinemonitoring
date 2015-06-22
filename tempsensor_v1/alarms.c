@@ -68,7 +68,7 @@ void alarm_test_sensor(int id) {
 	lcd_printf(LINEC, "Sensor \"%s\" %s", SensorName[id],
 			getFloatNumber2Text(temperature, msg));
 	if (temperature < cold) {
-		if (elapsed > g_pDevCfg->stTempAlertParams[id].maxTimeCold) {
+		if (elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsCold) {
 			sprintf(msg, "%s too cold", SensorName[id]);
 			s->alarms.lowAlarm = true;
 			goto alarm_error;
@@ -77,7 +77,7 @@ void alarm_test_sensor(int id) {
 		lcd_printf(LINEE, "Below limit %s", getFloatNumber2Text(hot, msg));
 		return;
 	} else if (temperature > hot) {
-		if (elapsed > g_pDevCfg->stTempAlertParams[id].maxTimeHot) {
+		if (elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsHot) {
 			sprintf(msg, "%s too hot", SensorName[id]);
 			s->alarms.highAlarm = true;
 			goto alarm_error;
