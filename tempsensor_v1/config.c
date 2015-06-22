@@ -449,13 +449,14 @@ int config_parse_configuration(char *msg) {
 
 	pAlertParams = &g_pDevCfg->stTempAlertParams[0];
 
+	num2[4]=num1[4]=0;
 	getFloatNumber2Text(pAlertParams->threshCold, num1);
 	getFloatNumber2Text(pAlertParams->threshHot, num2);
 
-	lcd_printf(LINEC, "c%d %s h%d %s", pAlertParams->maxSecondsCold / 60, num1,
-			pAlertParams->maxSecondsHot / 60, num2);
+	lcd_printf(LINEC, "C%d %s H%d %s", (int) pAlertParams->maxSecondsCold / 60, &num1[0],
+			(int) pAlertParams->maxSecondsHot / 60, &num2[0]);
 
-	lcd_printf(LINEH, "%d,%d,%d,%d", g_pDevCfg->cfgSelectedSIM_slot,
+	lcd_printf(LINEH, "SIM%d UP%d LG%d PW%d", g_pDevCfg->cfgSelectedSIM_slot+1,
 			g_pDevCfg->stIntervalParam.uploadInterval,
 			g_pDevCfg->stIntervalParam.loggingInterval,
 			g_pDevCfg->stBattPowerAlertParam.minutesPower);
