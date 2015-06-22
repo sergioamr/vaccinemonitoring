@@ -348,7 +348,8 @@ void config_update_system_time() {
 
 int config_parse_configuration(char *msg) {
 	char *token;
-	char *delimiter = ",";
+	char command[5]="$EN";
+	char delimiter[2] = ",";
 	int tempValue = 0;
 	int iCnt = 0;
 	int i = 0;
@@ -365,10 +366,9 @@ int config_parse_configuration(char *msg) {
 
 	PARSE_FINDSTR_BUFFER_RET(token, msg, "$ST2,", UART_FAILED);
 
-// Return success if no configuration has changed
-	PARSE_FIRSTVALUE(token, &tempValue, UART_SUCCESS, UART_FAILED);
-
-	if (tempValue != 0 && tempValue == g_pDevCfg->cfgSyncId)
+	// Return success if no configuration has changed
+	PARSE_FIRSTVALUE(token, &tempValue, delimiter, UART_FAILED);
+	if (g_pDevCfg->cfgServerConfigReceived && g_pDevCfg->cfgSyncId == 0)
 		return UART_SUCCESS;
 
 // Temperature configuration for each sensor
@@ -387,6 +387,7 @@ int config_parse_configuration(char *msg) {
 
 // Battery config info.
 	pBattPower = &g_pDevCfg->stBattPowerAlertParam;
+
 	PARSE_NEXTVALUE(token, &pBattPower->minutesPower, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &pBattPower->enablePowerAlert, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &pBattPower->minutesBattThresh, delimiter,
@@ -395,7 +396,9 @@ int config_parse_configuration(char *msg) {
 	PARSE_NEXTVALUE(token, &pBattPower->battThreshold, delimiter, UART_FAILED);
 
 // SIM info
-	//PARSE_FINDSTR_BUFFER_RET(token, msg, "$ST1,", UART_FAILED);
+	PARSE_NEXTSTRING(token, command, sizeof(command), delimiter, UART_FAILED); // $ST1,
+	if (strncmp(command, "$ST1", 4))
+		return UART_FAILED;
 
 	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewaySMS[0], strlen(token),
 			delimiter, UART_FAILED); // GATEWAY NUM
@@ -426,7 +429,9 @@ int config_parse_configuration(char *msg) {
 		g_pDevCfg->cfgSelectedSIM_slot = tempValue;
 	}
 
-	PARSE_SKIP(token, delimiter, UART_FAILED); // $EN
+	PARSE_NEXTSTRING(token, command, sizeof(command), ", \n", UART_FAILED); // $EN
+	if (strncmp(command, "$EN", 3))
+		return UART_FAILED;
 
 	log_append_("configuration success");
 
@@ -443,8 +448,8 @@ int config_parse_configuration(char *msg) {
 
 	pAlertParams = &g_pDevCfg->stTempAlertParams[0];
 	lcd_printf(LINEC, "%d,%d,%d,%d", pAlertParams->maxSecondsCold,
-			pAlertParams->threshCold, pAlertParams->maxSecondsHot,
-			pAlertParams->threshHot);
+			(int) pAlertParams->threshCold, pAlertParams->maxSecondsHot,
+			(int) pAlertParams->threshHot);
 
 	lcd_printf(LINEH, "%d,%d,%d,%d", g_pDevCfg->cfgSelectedSIM_slot,
 			g_pDevCfg->stIntervalParam.uploadInterval,
