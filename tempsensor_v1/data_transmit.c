@@ -261,7 +261,6 @@ void process_batch() {
 			break; // This would only happen on corruption - In which case need to redo fat_init?
 		}
 
-		config_setLastCommand(COMMAND_POST+30);
 		fr = f_findnext(&dir, &fili);
 		if (strlen(fili.fname) == 0) {
 			break;
