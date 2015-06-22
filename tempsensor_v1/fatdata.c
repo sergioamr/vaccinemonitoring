@@ -502,11 +502,8 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 		strcat(szLog, itoa_pad(g_tmCurrTime.tm_year));
 		strcat(szLog, itoa_pad(g_tmCurrTime.tm_mon));
 		strcat(szLog, itoa_pad(g_tmCurrTime.tm_mday));
-		strcat(szLog, ":");
 		strcat(szLog, itoa_pad(g_tmCurrTime.tm_hour));
-		strcat(szLog, ":");
 		strcat(szLog, itoa_pad(g_tmCurrTime.tm_min));
-		strcat(szLog, ":");
 		strcat(szLog, itoa_pad(g_tmCurrTime.tm_sec));
 		strcat(szLog, ",");
 		strcat(szLog, "R");
@@ -531,12 +528,12 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 	//log sample period, battery level, power plugged, temperature values
 	memset(szLog, 0, sizeof(szLog));
 #if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
-	sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,D%s,E%s\n", itoa_pad(iBatteryLevel),
+	sprintf(szLog, "%s,%d,%s,%s,%s,%s,%s\n", itoa_pad(iBatteryLevel),
 			!(P4IN & BIT4), temperature_getString(0), temperature_getString(1),
 			temperature_getString(2), temperature_getString(3),
 			temperature_getString(4));
 #else
-	sprintf(szLog, "F%s,P%d,A%s,B%s,C%s,D%s\n",
+	sprintf(szLog, "%s,%d,%s,%s,%s,%s\n",
 			itoa_pad(g_iBatteryLevel), !(P4IN & BIT4), Temperature[0],
 			Temperature[1], Temperature[2], Temperature[3]);
 #endif

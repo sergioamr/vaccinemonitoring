@@ -6,7 +6,7 @@
 #define TIMER_PERIOD 511
 #define DUTY_CYCLE  350
 
-#include "timer_B.h"
+#include "timer_b.h"
 // 4Khz will be the loudest sound (accourding to documentation)
 
 void buzzer_start() {

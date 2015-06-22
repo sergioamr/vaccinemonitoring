@@ -8,8 +8,8 @@
 #ifndef DATA_TRANSMIT_H_
 #define DATA_TRANSMIT_H_
 
-int data_transmit(uint8_t *pSampleCnt);
-void data_uploadsms();
+int8_t data_transmit(uint8_t *pSampleCnt);
+int8_t data_upload_sms();
 void process_batch();
 
 #endif /* DATA_TRANSMIT_H_ */

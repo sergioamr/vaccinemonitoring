@@ -11,6 +11,7 @@
 #include <msp430.h>
 #include "stdint.h"
 
+#include "buzzer.h"
 #include "config.h"
 #include "common.h"
 #include "driverlib.h"
@@ -27,6 +28,7 @@
 #include "ff.h"
 #include "diskio.h"
 #include "signal.h"
+#include "encode.h"
 #include "MMC.h"
 #include "pmm.h"
 #include "lcd.h"
@@ -56,6 +58,5 @@ time_t rtc_update_time();
 time_t rtc_get_second_tick();
 void thermal_low_battery_hibernate();
 uint32_t rtc_get_minute_tick();
-void encode(double input_val, char output_chars[]); // Encode function from encode.c
 
 #endif /* TEMPSENSOR_V1_THERMALCANYON_H_ */
