@@ -348,7 +348,9 @@ void config_update_system_time() {
 
 int config_parse_configuration(char *msg) {
 	char *token;
-	char command[5]="$EN";
+	char command[5] = "$EN";
+	char num1[5];
+	char num2[5];
 	char delimiter[2] = ",";
 	int tempValue = 0;
 	int iCnt = 0;
@@ -376,11 +378,13 @@ int config_parse_configuration(char *msg) {
 		pAlertParams = &g_pDevCfg->stTempAlertParams[i];
 		PARSE_NEXTVALUE(token, &pAlertParams->maxSecondsCold, delimiter,
 				UART_FAILED);
-		pAlertParams->maxSecondsCold*=60; // We work in seconds internally
-		PARSE_NEXTVALUE(token, &pAlertParams->threshCold, delimiter, UART_FAILED);
+		pAlertParams->maxSecondsCold *= 60; // We work in seconds internally
+		PARSE_NEXTVALUE(token, &pAlertParams->threshCold, delimiter,
+				UART_FAILED);
 
-		PARSE_NEXTVALUE(token, &pAlertParams->maxSecondsHot, delimiter, UART_FAILED);
-		pAlertParams->maxSecondsHot*=60; // We work in seconds internally
+		PARSE_NEXTVALUE(token, &pAlertParams->maxSecondsHot, delimiter,
+				UART_FAILED);
+		pAlertParams->maxSecondsHot *= 60; // We work in seconds internally
 		PARSE_NEXTVALUE(token, &pAlertParams->threshHot, delimiter, UART_FAILED);
 		i++;
 	}
@@ -389,7 +393,8 @@ int config_parse_configuration(char *msg) {
 	pBattPower = &g_pDevCfg->stBattPowerAlertParam;
 
 	PARSE_NEXTVALUE(token, &pBattPower->minutesPower, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &pBattPower->enablePowerAlert, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &pBattPower->enablePowerAlert, delimiter,
+			UART_FAILED);
 	PARSE_NEXTVALUE(token, &pBattPower->minutesBattThresh, delimiter,
 			UART_FAILED);
 
@@ -420,14 +425,10 @@ int config_parse_configuration(char *msg) {
 
 	// Value from the server comes 1 or 2. We use 0 to 1 format.
 	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); ////
-
-	tempValue--;
-	if (tempValue < 0 || tempValue >= 2)
+	if (tempValue < 0 || tempValue > 1)
 		tempValue = 0;
 
-	if (g_pDevCfg->cfgSIM_slot != tempValue) {
-		g_pDevCfg->cfgSelectedSIM_slot = tempValue;
-	}
+	g_pDevCfg->cfgSelectedSIM_slot = tempValue;
 
 	PARSE_NEXTSTRING(token, command, sizeof(command), ", \n", UART_FAILED); // $EN
 	if (strncmp(command, "$EN", 3))
@@ -447,9 +448,12 @@ int config_parse_configuration(char *msg) {
 			MINUTES_(pInterval->uploadInterval));
 
 	pAlertParams = &g_pDevCfg->stTempAlertParams[0];
-	lcd_printf(LINEC, "%d,%d,%d,%d", pAlertParams->maxSecondsCold,
-			(int) pAlertParams->threshCold, pAlertParams->maxSecondsHot,
-			(int) pAlertParams->threshHot);
+
+	getFloatNumber2Text(pAlertParams->threshCold, num1);
+	getFloatNumber2Text(pAlertParams->threshHot, num2);
+
+	lcd_printf(LINEC, "c%d %s h%d %s", pAlertParams->maxSecondsCold / 60, num1,
+			pAlertParams->maxSecondsHot / 60, num2);
 
 	lcd_printf(LINEH, "%d,%d,%d,%d", g_pDevCfg->cfgSelectedSIM_slot,
 			g_pDevCfg->stIntervalParam.uploadInterval,
