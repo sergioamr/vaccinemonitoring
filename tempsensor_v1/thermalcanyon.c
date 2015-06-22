@@ -91,35 +91,6 @@ void thermal_low_battery_hibernate() {
 	}
 }
 
-void thermal_buzzer_sound(void) {
-	int iIdx = 10;	//TODO fine-tune for 5 to 10 secs
-	while ((iIdx--)) {
-		P3OUT |= BIT4;
-		delayus(1);
-		P3OUT &= ~BIT4;
-		delayus(1);
-	}
-}
-
-void sleep_or_alarm() {
-
-	if (g_pSysState->buzzerFeedback > 0) {
-		thermal_buzzer_sound();
-		g_pSysState->buzzerFeedback--;
-		return;
-	}
-
-	if (g_iStatus & BUZZER_ON || state_isBuzzerOn()) {
-#ifndef BUZZER_DISABLED
-		thermal_buzzer_sound();
-#endif
-		return;
-	}
-
-	// Sleeps the CPU, it wakes up for events triggered by interruptions.
-	event_main_sleep();
-}
-
 void thermal_canyon_loop(void) {
 	time_t currentTime = 0;
 
@@ -140,8 +111,7 @@ void thermal_canyon_loop(void) {
 
 		// Wait here behind the interruption to check for a change on display.
 		// If a hardware button is pressed it will resume CPU
-		sleep_or_alarm();
+		event_main_sleep();
 		hardware_actions();
-
 	}
 }

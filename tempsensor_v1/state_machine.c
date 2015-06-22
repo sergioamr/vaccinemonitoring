@@ -52,6 +52,15 @@ void state_sd_card_problem(FRESULT fr) {
 	// SETUP event FAT INIT ATTEMPT
 }
 
+void state_sim_failure(SIM_CARD_CONFIG *sim) {
+
+	// Failed to register to network
+	if (sim->simErrorState == 555 ) {
+		// Total failure in the card,
+		_NOP();
+	}
+}
+
 /***********************************************************************************************************************/
 /* NETWORK STATE AND STATUS */
 /***********************************************************************************************************************/
@@ -138,6 +147,13 @@ void state_init() {
 	g_pSysState->network_mode = NETWORK_NOT_SELECTED;
 }
 
+uint8_t state_isGPRS() {
+	if (modem_getNetworkService()==NETWORK_GPRS)
+		return true;
+
+	return false;
+}
+
 /***********************************************************************************************************************/
 /* GENERATE ALARMS */
 /***********************************************************************************************************************/
@@ -161,8 +177,8 @@ void state_alarm_turnoff_buzzer() {
 }
 
 void state_alarm_turnon_buzzer() {
-	SYSTEM_STATUS *s = state_getAlarms();
 	buzzer_start();
+	SYSTEM_STATUS *s = state_getAlarms();
 	s->alarms.buzzer = STATE_ON;
 }
 
@@ -187,9 +203,12 @@ void state_alarm_on(char *alarm_msg) {
 
 	elapsed = events_getTick() - count;
 	if (elapsed > 30) {
+
+		lcd_turn_off();
+		delay(500);
+		lcd_turn_on();
+
 		if (g_bLCD_state == 1) {
-			lcd_turn_off();
-		} else {
 			strncpy(g_pSysState->alarm_message, alarm_msg,
 					sizeof(g_pSysState->alarm_message));
 			lcd_turn_on();
@@ -305,6 +324,10 @@ void state_battery_level(uint8_t battery_level) {
 
 uint8_t state_isBuzzerOn() {
 	SYSTEM_STATUS *s = state_getAlarms();
+
+	if (g_iStatus & BUZZER_ON)
+		return true;
+
 	return s->alarms.buzzer;
 }
 

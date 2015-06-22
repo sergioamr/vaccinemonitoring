@@ -21,9 +21,8 @@ void lcd_setupIO() {
 	PJOUT &= ~BIT7;							// Backlight disable
 }
 
-char lcdBuffer[32];
-
 void lcd_init() {
+	char lcdBuffer[16];
 
 	lcd_turn_on();
 
@@ -59,25 +58,27 @@ void lcd_init() {
 }
 
 void lcd_clear() {
-	lcdBuffer[0] = 0x01;
-	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
+	uint8_t lcdBuffer;
+	lcdBuffer = 0x01;
+	i2c_write(0x3e, 0, 1, (uint8_t *) &lcdBuffer);
 }
 
 void lcd_on() {
-	lcdBuffer[0] = 0x0C;
-	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
+	uint8_t lcdBuffer;
+	lcdBuffer = 0x0C;
+	i2c_write(0x3e, 0, 1, (uint8_t *) &lcdBuffer);
 	g_bLCD_state = 1;
 }
 
 void lcd_off() {
-	lcdBuffer[0] = 0x08;
-	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
+	uint8_t lcdBuffer = 0x08;
+	i2c_write(0x3e, 0, 1, (uint8_t *) &lcdBuffer);
 	g_bLCD_state = 0;
 }
 
 void lcd_setaddr(int8_t addr) {
-	lcdBuffer[0] = addr | 0x80;
-	i2c_write(0x3e, 0, 1, (uint8_t *) lcdBuffer);
+	uint8_t lcdBuffer = addr | 0x80;
+	i2c_write(0x3e, 0, 1, (uint8_t *) &lcdBuffer);
 }
 
 void lcd_turn_on() {
@@ -94,7 +95,7 @@ void lcd_append_signal_info(char *lcdBuffer) {
 	if (state_isSignalInRange()) {
 		strcat(lcdBuffer, itoa_pad(state_getSignalPercentage()));
 		strcat(lcdBuffer, "% ");
-		if (g_iSignal_gprs == 1) {
+		if (state_isGPRS() == 1) {
 			strcat(lcdBuffer, "G:YES");
 		} else {
 			strcat(lcdBuffer, "G:NO");
@@ -104,21 +105,23 @@ void lcd_append_signal_info(char *lcdBuffer) {
 	}
 }
 
-void lcd_setDate(char *lcdBuffer) {
-	rtc_getlocal(&g_tmCurrTime);
-	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_year));
-	strcat(lcdBuffer, "/");
-	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_mon));
-	strcat(lcdBuffer, "/");
-	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_mday));
-	strcat(lcdBuffer, " ");
+void lcd_setDate(char *buffer) {
 
-	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_hour));
-	strcat(lcdBuffer, ":");
-	strcat(lcdBuffer, itoa_pad(g_tmCurrTime.tm_min));
+	rtc_getlocal(&g_tmCurrTime);
+	strcat(buffer, itoa_pad(g_tmCurrTime.tm_year));
+	strcat(buffer, "/");
+	strcat(buffer, itoa_pad(g_tmCurrTime.tm_mon));
+	strcat(buffer, "/");
+	strcat(buffer, itoa_pad(g_tmCurrTime.tm_mday));
+	strcat(buffer, " ");
+
+	strcat(buffer, itoa_pad(g_tmCurrTime.tm_hour));
+	strcat(buffer, ":");
+	strcat(buffer, itoa_pad(g_tmCurrTime.tm_min));
 }
 
 void lcd_show() {
+	char lcdBuffer[32];
 	int iIdx = 0;
 	int iCnt = 0;
 
@@ -350,7 +353,9 @@ void lcd_print_boot(const char* pcData, int line) {
 		return;
 
 #ifdef _DEBUG
-	lcd_clear();
+	if (line==1)
+		lcd_clear();
+
 	lcd_printl(line, pcData);
 #else
 	lcd_print_progress();

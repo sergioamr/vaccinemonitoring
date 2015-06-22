@@ -135,7 +135,6 @@ uint8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 			if (file->fptr != end) {
 				replace_character(line, '\n', '|');
 				uart_tx_nowait(line);
-				//delay(1000);
 				lcd_print_progress();
 			} else {
 				// Last line! Wait for OK
