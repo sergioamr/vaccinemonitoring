@@ -172,7 +172,9 @@ void state_reset_sensor_alarm(int id) {
 
 void state_alarm_force_turnoff_buzzer() {
 	SYSTEM_STATUS *s = state_getAlarms();
-	s->alarms.button_buzzer_override = true;
+
+	if (s->alarms.globalAlarm == STATE_ON && s->alarms.buzzer == STATE_ON)
+		s->alarms.button_buzzer_override = true;
 }
 
 void state_alarm_turnoff_buzzer() {
