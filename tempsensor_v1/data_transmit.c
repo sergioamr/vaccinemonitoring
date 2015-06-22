@@ -18,6 +18,31 @@ char *getSensorTemp(int sensorID) {
 	return sensorData;
 }
 
+uint8_t select_transmission_method() {
+	if (modem_check_network() != UART_SUCCESS) {
+		modem_swap_SIM();
+		if (modem_check_network() != UART_SUCCESS) {
+			// neither GSM or GPRS will work
+			lcd_printl(LINEC, "Can't Complete");
+			lcd_printl(LINE2, "No Signal...");
+			return 2;
+		}
+	}
+
+	if (http_enable() != UART_SUCCESS) {
+		modem_swap_SIM();
+		if (modem_check_network() != UART_SUCCESS &&
+				http_enable() != UART_SUCCESS) {
+			http_deactivate();
+			return 1; // change to 1 for sms
+		}
+	}
+
+	return 0;
+}
+
+
+
 uint8_t data_send_temperatures_sms() {
 	char data[MAX_SMS_SIZE_FULL];
 	int t = 0;
@@ -136,15 +161,13 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 				uart_state = uart_getTransactionState();
 				if (uart_state == UART_ERROR) {
 					http_check_error(&retry);
-					return UART_FAILED;
+					return TRANS_FAILED;
 				}
 			}
 		} else {
 			return TRANS_FAILED;
 		}
 	}
-
-	http_deactivate();
 
 	return TRANS_SUCCESS;
 }
@@ -164,26 +187,9 @@ void process_batch() {
 
 	log_disable();
 
-	// Setup connection
-	if (modem_check_network() != UART_SUCCESS) {
-		//swap Sim
-		modem_swap_SIM();
-		if (modem_check_network() != UART_SUCCESS) {
-			// neither GSM or GPRS will work
-			lcd_printl(LINEC, "Can't Complete");
-			lcd_printl(LINE2, "No Signal...");
-			return;
-		}
-	}
-
-	// XXX SWAP BACK WHEN FINSIHED TESTING
-	if (http_enable() != UART_SUCCESS) {
-		modem_swap_SIM();
-		if (modem_check_network() != UART_SUCCESS && http_enable() != UART_SUCCESS) {
-			http_deactivate();
-			// TODO: SMS fixes
-			transmissionMethod = 0; // change to 1 for sms
-		}
+	transmissionMethod = select_transmission_method();
+	if (transmissionMethod > 1) {
+		return;
 	}
 
 	// Cycle through all files using f_findfirst, f_findnext.
@@ -267,6 +273,8 @@ void process_batch() {
 		}
 	}
 
+	if (transmissionMethod == 1)
+	http_deactivate();
 	lcd_printl(LINEC, "Transmission");
 	lcd_printl(LINE2, "Completed");
 	g_pSysState->safeboot.disable.data_transmit = 0;
