@@ -281,6 +281,22 @@ typedef union
   unsigned char status;
 } SYSTEM_STATUS;
 
+//  Commands to ignore if there was a problem on last boot
+typedef union
+{
+	struct {
+		unsigned char sms_process_messages : 1; // Clear SMS
+		unsigned char data_transmit : 1;		// Delete old files since are crashing the software (corruption?)
+		unsigned char bit3 : 1;
+		unsigned char bit4 : 1;
+		unsigned char bit5 : 1;
+		unsigned char bit6 : 1;
+		unsigned char bit7 : 1;
+		unsigned char bit8 : 1;
+	} disable;
+  unsigned char status;
+} SAFEBOOT_STATUS;
+
 typedef struct {
 	char network_state[32];
 
@@ -307,6 +323,8 @@ typedef struct {
 	// GSM or GPRS
 	int network_mode;
 	NETWORK_SERVICE net_service[2];
+
+	SAFEBOOT_STATUS safeboot;
 } SYSTEM_STATE;
 
 typedef struct {

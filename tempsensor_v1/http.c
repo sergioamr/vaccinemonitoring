@@ -32,7 +32,7 @@ void full_backend_get_configuration() {
 	}
 }
 
-int8_t http_enable() {
+uint8_t http_enable() {
 	int attempts = HTTP_COMMAND_ATTEMPTS;
 	int uart_state = UART_FAILED;
 	SIM_CARD_CONFIG *sim = config_getSIM();
@@ -92,9 +92,9 @@ int8_t http_setup() {
 	return UART_SUCCESS;
 }
 
-void http_deactivate() {
+uint8_t http_deactivate() {
 	// LONG TIMEOUT
-	uart_tx("AT#SGACT=1,0\r\n");	//deactivate GPRS context
+	return uart_tx("AT#SGACT=1,0\r\n");	//deactivate GPRS context
 }
 
 const char HTTP_INCOMING_DATA[] = { 0x0D, 0x0A, '<', '<', '<', 0 };

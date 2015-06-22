@@ -8,8 +8,8 @@
 #ifndef TEMPSENSOR_V1_UART_H_
 #define TEMPSENSOR_V1_UART_H_
 
-#define TX_LEN   			256
-#define RX_LEN   			1024
+#define TX_LEN   			1024
+#define RX_LEN   			2048
 
 typedef struct {
 	uint16_t iRXTailIdx;
@@ -19,6 +19,7 @@ typedef struct {
 	char bTransmissionEnd;
 
 	int8_t iUartState;
+	uint8_t bRXWaitForReturn;
 
 	uint16_t iTXIdx;
 
@@ -57,6 +58,7 @@ void uart_setOKMode();
 void uart_setupIO_clock(); // Initializes the speed and the bauds of the UCA0
 void uart_setHTTPPromptMode();
 void uart_setSMSPromptMode();
+void uart_setHTTPDataMode();
 
 //*****************************************************************************
 // Set tail and head to 0 for easy parsing.

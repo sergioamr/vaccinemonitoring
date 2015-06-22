@@ -24,6 +24,7 @@
 const char AT_MSG_OK[] = { 0x0D, 0x0A, 'O', 'K', 0x0D, 0x0A, 0 };
 const char AT_MSG_PROMPT[] = { 0x0D, 0x0A, '>', 0 };// Used for SMS message sending
 const char AT_MSG_LONG_PROMPT[] = { 0x0D, 0x0A, '>', '>', '>', 0 }; // Used for http post transactions
+const char AT_MSG_HTTPRING[] = "#HTTPRING: ";
 const char AT_CME_ERROR[] = "+CME ERROR:";
 const char AT_CMS_ERROR[] = "+CMS ERROR:"; // Sim error
 const char AT_ERROR[] = " ERROR:";
@@ -58,6 +59,9 @@ void uart_setCheckMsg(const char *szOK, const char *szError) {
 		strcpy((char *) uart.szOK, szOK);
 	} else
 		uart.OKLength = -1;
+
+	// Wait for a return after OK
+	uart.bRXWaitForReturn=0;
 }
 
 // We define the exit condition for the wait for ready function
@@ -98,16 +102,27 @@ inline void uart_checkOK() {
 	if (uart.OKLength == -1)
 		return;
 
+	if (uart.bRXWaitForReturn && uart.iUartState == UART_SUCCESS) {
+		if (UCA0RXBUF == 0x0A)
+			uart.bTransmissionEnd = 1;
+		return;
+	}
+
 	if (UCA0RXBUF != uart.szOK[++uart.OKIdx]) {
 		uart.OKIdx = 0;
 		return;
 	}
 
+	// Wait for carriage return
 	if (uart.OKIdx == uart.OKLength) {
-		uart.bTransmissionEnd = 1;
+		if (!uart.bRXWaitForReturn)
+			uart.bTransmissionEnd = 1;
+		else
+			_NOP();
 		uart.iUartState = UART_SUCCESS;
 		uart.OKIdx = 0;
 	}
+
 }
 
 void uart_setupIO() {
@@ -221,7 +236,7 @@ int waitForReady(uint32_t timeoutTimeMs) {
 	while (count > 0) {
 		delay(delayTime);
 		if (uart.bTransmissionEnd == 1) {
-			delay(30);  // Documentation specifies 30 ms delay between commands
+			delay(100);  // Documentation specifies 30 ms delay between commands
 			return UART_SUCCESS; // There was a transaction, you have to check the state of the uart transaction to check if it was successful
 		}
 		count--;
@@ -246,12 +261,24 @@ uint8_t iModemErrors = 0;
 char modem_lastCommand[16];
 
 // Try a command until success with timeout and number of attempts to be made at running it
-uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts) {
+uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout, uint8_t attempts) {
+	char *cmd = modem_lastCommand;
 
+	int len = strlen(cmdInput);
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_print_progress();
 	}
-	strncpy(modem_lastCommand, cmd, 16);
+
+	strncpy(modem_lastCommand, cmdInput, 16);
+	if (len<16) {
+		if (cmd[len-1]!='\n') {
+			strcat(cmd,"\r\n");
+			_NOP();
+		} else {
+			_NOP();
+		}
+	} else
+		cmd = (char *) cmdInput;
 
 	while (attempts > 0) {
 		sendCommand(cmd);
@@ -355,14 +382,22 @@ uint8_t uart_tx(const char *cmd) {
 
 void uart_setHTTPPromptMode() {
 	uart_setCheckMsg(AT_MSG_LONG_PROMPT, AT_ERROR);
+	uart.bRXWaitForReturn=0;
+}
+
+void uart_setHTTPDataMode() {
+	uart_setCheckMsg(AT_MSG_HTTPRING, AT_ERROR);
+	uart.bRXWaitForReturn=1;
 }
 
 void uart_setSMSPromptMode() {
 	uart_setCheckMsg(AT_MSG_PROMPT, AT_CMS_ERROR);
+	uart.bRXWaitForReturn=0;
 }
 
 void uart_setOKMode() {
 	uart_setCheckMsg(AT_MSG_OK, AT_ERROR);
+	uart.bRXWaitForReturn=0;
 }
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)

@@ -23,6 +23,9 @@ FRESULT log_append_(char *text);
 FRESULT log_appendf(const char *_format, ...);
 FRESULT log_sample_web_format(UINT* tbw);
 
+void log_disable();
+void log_enable();
+
 #define FOLDER_LOG  "/LOG"
 
 // Web format data

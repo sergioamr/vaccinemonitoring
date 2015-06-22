@@ -11,6 +11,7 @@ char g_szFatFileName[64];
 #pragma SET_DATA_SECTION()
 
 char g_bFatInitialized = false;
+char g_bLogDisabled = false;
 
 const char * const FR_ERRORS[20] = { "OK", "DISK_ERR", "INT_ERR", "NOT_READY",
 		"NO_FILE", "NO_PATH", "INVALID_NAME", "DENIED", "EXIST",
@@ -273,6 +274,9 @@ FRESULT log_append_(char *text) {
 	char szLog[32];
 	FRESULT fr;
 
+	if (g_bLogDisabled)
+		return FR_NOT_READY;
+
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
 
@@ -330,12 +334,23 @@ FRESULT log_append_(char *text) {
 	return f_close(&fobj);
 }
 
+void log_disable() {
+	g_bLogDisabled = true;
+}
+
+void log_enable() {
+	g_bLogDisabled = true;
+}
+
 FRESULT log_appendf(const char *_format, ...) {
 	char szTemp[180];
 
 	va_list _ap;
 	char *fptr = (char *) _format;
 	char *out_end = szTemp;
+
+	if (g_bLogDisabled)
+		return FR_NOT_READY;
 
 	va_start(_ap, _format);
 	__TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs);
