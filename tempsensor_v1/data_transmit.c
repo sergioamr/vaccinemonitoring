@@ -171,6 +171,7 @@ void process_batch() {
 	}
 
 	while (fr == FR_OK) {
+		buzzer_feedback_simple();
 		sprintf(path, "%s/%s", FOLDER_TEXT, fili.fname);
 		fr = f_open(&filr, path, FA_READ | FA_OPEN_ALWAYS);
 		if (fr != FR_OK) {

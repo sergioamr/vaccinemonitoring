@@ -28,6 +28,7 @@
 
 #include "thermalcanyon.h"
 #include "state_machine.h"
+#include "buzzer.h"
 
 // Overall state of the device to take decisions upon the state of the modem, storage, alerts, etc.
 
@@ -137,10 +138,6 @@ void state_init() {
 	g_pSysState->network_mode = NETWORK_NOT_SELECTED;
 }
 
-void buzzer_feedback() {
-	g_pSysState->buzzerFeedback = 10;
-}
-
 /***********************************************************************************************************************/
 /* GENERATE ALARMS */
 /***********************************************************************************************************************/
@@ -165,6 +162,7 @@ void state_alarm_turnoff_buzzer() {
 
 void state_alarm_turnon_buzzer() {
 	SYSTEM_STATUS *s = state_getAlarms();
+	buzzer_start();
 	s->alarms.buzzer = STATE_ON;
 }
 
