@@ -16,6 +16,7 @@ char* get_date_string(struct tm* timeData, const char *dateSeperator,
 		const char *dateTimeSeperator, const char *timeSeparator, uint8_t includeTZ);
 char* get_simplified_date_string(struct tm* timeData);
 void parse_time_from_line(struct tm* timeToConstruct, char* formattedLine);
+void offset_timestamp(struct tm* dateToOffset, int intervalMultiplier);
 int date_within_interval(struct tm* timeToCompare, struct tm* baseTime, int interval);
 FRESULT fat_init_drive();
 FRESULT fat_save_config(char *text);

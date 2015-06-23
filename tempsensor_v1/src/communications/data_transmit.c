@@ -65,51 +65,68 @@ uint8_t data_send_temperatures_sms() {
 }
 
 int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
-	char line[80];
+	char line[80], encodedLine[40];
 	int lineSize = sizeof(line) / sizeof(char);
 	char* dateString = NULL;
 	struct tm firstDate;
 	char smsMsg[MAX_SMS_SIZE];
+	uint8_t splitSend = 0;
+	uint16_t linesParsed = 0;
+	uint8_t length = strlen(smsMsg);
 
 	f_lseek(file, start);
 
-	// Must get first line before transmitting to calculate the length properly
-	if (f_gets(line, lineSize, file) != 0) {
-		parse_time_from_line(&firstDate, line);
-		dateString = get_date_string(&firstDate, "", "", "", 0);
-		sprintf(smsMsg, "%d,%s,%s,%d,", 11, dateString,
-				itoa_nopadding(g_pDevCfg->sIntervalsMins.sampling), 5);
-	} else {
-		return TRANS_FAILED;
-	}
-
-	uint8_t length = strlen(smsMsg);
-
-	// check that the transmitted data equals the size to send
-	while (file->fptr < end) {
-		if (f_gets(line, lineSize, file) != 0) {
-			length += strlen(line);
-			if (length > MAX_SMS_SIZE) {
-				// Send what we can!
-				break; // TODO break up dates and send seperate SMS texts.
+	do {
+		if (splitSend == 1) {
+			offset_timestamp(&firstDate, linesParsed);
+			dateString = get_date_string(&firstDate, "", "", "", 0);
+			sprintf(smsMsg, "%d,%s,%d,%d,", 11, dateString,
+					g_pDevCfg->sIntervalsMins.sampling, 5);
+			strcat(smsMsg, encodedLine);
+			linesParsed = splitSend = 0;
+		} else if (file->fptr == start) {
+			// Must get first line before transmitting to calculate the length properly
+			if (f_gets(line, lineSize, file) != 0) {
+				parse_time_from_line(&firstDate, line);
+				dateString = get_date_string(&firstDate, "", "", "", 0);
+				sprintf(smsMsg, "%d,%s,%d,%d,", 11, dateString,
+						g_pDevCfg->sIntervalsMins.sampling, 5);
+			} else {
+				return TRANS_FAILED;
 			}
-
-			if (file->fptr != end) {
-				replace_character(line, '\n', ',');
-			}
-
-			encode_string(line, smsMsg, ",");
 		} else {
-			return TRANS_FAILED;
+			break; //done
 		}
-	}
 
-	if (sms_send_message(smsMsg) != UART_SUCCESS) {
-		modem_swap_SIM();
-		if (sms_send_message(smsMsg) != UART_SUCCESS) {
-			return TRANS_FAILED;
+		length = strlen(smsMsg);
+
+		// check that the transmitted data equals the size to send
+		while (file->fptr < end) {
+			if (f_gets(line, lineSize, file) != 0) {
+				linesParsed++;
+				//replace_character(line, '\n', '\0');
+
+				encode_string(line, encodedLine, ",");
+
+				length += strlen(encodedLine);
+				if (length > MAX_SMS_SIZE) {
+					splitSend = 1;
+					break;
+				} else {
+					strcat(smsMsg, encodedLine);
+				}
+			} else {
+				return TRANS_FAILED;
+			}
 		}
-	}
+
+		if (sms_send_message(smsMsg) != UART_SUCCESS) {
+			modem_swap_SIM();
+			if (sms_send_message(smsMsg) != UART_SUCCESS) {
+				return TRANS_FAILED;
+			}
+		}
+	} while (splitSend == 1);
 
 	return TRANS_SUCCESS;
 }
