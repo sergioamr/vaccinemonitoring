@@ -5,8 +5,8 @@
  *      Author: rajeevnx
  */
 
-#ifndef TIMER_H_
-#define TIMER_H_
+#ifndef TEMPSENSOR_V1_TIMER_H_
+#define TEMPSENSOR_V1_TIMER_H_
 
 #include <msp430.h>
 
@@ -24,7 +24,7 @@ extern "C"
 //! \return after the expiry of specified time
 //
 //*****************************************************************************
-extern void delay(int time);
+extern void delay(uint32_t time);
 
 //*****************************************************************************
 //
@@ -41,4 +41,4 @@ extern void delayus(int time);
 }
 #endif
 
-#endif /* TIMER_H_ */
+#endif /* TEMPSENSOR_V1_TIMER_H_ */

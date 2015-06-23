@@ -60,6 +60,7 @@ DSTATUS disk_initialize (
 		MMC_OTHER_ERROR
 		MMC_TIMEOUT_ERROR
 		*/
+	return stat;
 }
 
 
@@ -75,7 +76,6 @@ DRESULT disk_read (
 	UINT count		/* Number of sectors to read */
 )
 {
-	DRESULT res;
 	int result = RES_PARERR;
 	int iIdx   = 0;
 
@@ -94,7 +94,7 @@ DRESULT disk_read (
 	}
 
 
-	return result;
+	return stat;
 }
 
 DRESULT disk_read_ex (
@@ -104,9 +104,8 @@ DRESULT disk_read_ex (
 	UINT count		/* Bytes to read */
 )
 {
-	DRESULT res;
 	int result = RES_PARERR;
-	int iIdx   = 0;
+	//int iIdx   = 0;
 
 	//for(iIdx = 0; ((iIdx < count) && (stat == RES_OK)); iIdx++)
 	{
@@ -123,7 +122,7 @@ DRESULT disk_read_ex (
 	}
 
 
-	return result;
+	return stat;
 }
 
 
@@ -139,7 +138,6 @@ DRESULT disk_write (
 	UINT count			/* Number of sectors to write */
 )
 {
-	DRESULT res;
 	int result = RES_PARERR;
 	int iIdx   = 0;
 
@@ -158,7 +156,7 @@ DRESULT disk_write (
 	}
 
 
-	return result;
+	return stat;
 
 }
 #endif
@@ -175,25 +173,23 @@ DRESULT disk_ioctl (
 	void *buff		/* Buffer to send/receive control data */
 )
 {
-	DRESULT res;
-	int result;
-
 	switch (cmd)
 	{
 	case CTRL_SYNC:
-		res = RES_OK; //as write is Write-around cache
+		stat = RES_OK; //as write is Write-around cache
 		break;
 	case GET_SECTOR_COUNT :	/* Get number of sectors on the disk (WORD) */
 		*(DWORD*)buff = SECTOR_COUNT;	//ZZZZ use the mmcReadCardSize
-		res = RES_OK;
+		stat = RES_OK;
 		break;
 	case GET_BLOCK_SIZE:
 		*(DWORD*)buff = SECTOR_SIZE;
-		res = RES_OK;
+		stat = RES_OK;
 		break;
 	default:
-		res = RES_PARERR;
+		stat = RES_PARERR;
 		break;
 	}
+	return stat;
 }
 #endif

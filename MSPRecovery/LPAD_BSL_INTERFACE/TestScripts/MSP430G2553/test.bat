@@ -1,0 +1,1 @@
+..\Exe\BSL_Scripter.exe CMDS.txt

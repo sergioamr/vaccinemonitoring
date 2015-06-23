@@ -5,8 +5,8 @@
  *      Author: rajeevnx
  */
 
-#ifndef I2C_H_
-#define I2C_H_
+#ifndef TEMPSENSOR_V1_I2C_H_
+#define TEMPSENSOR_V1_I2C_H_
 
 #include <msp430.h>
 
@@ -59,4 +59,4 @@ extern void i2c_write(uint8_t ucSlaveAddr, uint8_t ucCmd, uint8_t ucLen, uint8_t
 }
 #endif
 
-#endif /* I2C_H_ */
+#endif /* TEMPSENSOR_V1_I2C_H_ */

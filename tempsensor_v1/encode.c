@@ -1,27 +1,22 @@
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "encode.h"
 
-
-
-void encode(double input_val, char output_chars[]) {
-
+void encode(float input_val, char output_chars[]) {
   char SIX_BIT_ENCODER[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/";
 
   char ENCODED_STR_MAX[] = "V/";
   char ENCODED_STR_MIN[] = "/X";
-  char ENCODED_STR_NAN[] = "/W";
+  //char ENCODED_STR_NAN[] = "/W";
   
-  int LOWER6_BITMASK = 0x3f;
-  int HIGHER2_BITMASK = 0xc0;
-  int SIGNBITMASK = 0x800;
+  //int LOWER6_BITMASK = 0x3f;
+  //int HIGHER2_BITMASK = 0xc0;
+  //int SIGNBITMASK = 0x800;
   int SIGN_BIT = 0x20;
   int WHOLE_PART_LOW2_MASK = 0x3;
   int WHOLE_PART_HIGH5_MASK = 0x7c;
   int MASK_6BITS = 0x3f;
-
 
   if (input_val > 127.0) {
     output_chars[0] = ENCODED_STR_MAX[0];
@@ -60,37 +55,20 @@ void encode(double input_val, char output_chars[]) {
     output_chars[0] = SIX_BIT_ENCODER[low_byte];
     output_chars[1] = SIX_BIT_ENCODER[high_byte];
   }
-
-
 }
 
-#if 0
-int main(int argc, char **argv) {
-  
-  double input_val = atof(argv[1]);
+void encode_string(char* inputString, char* outputString, char* delimiter) {
+	char *pEnd;
+	char *token;
+	char encoded[2];
+	float result;
+	token = strtok(inputString, delimiter);
 
-  char output_chars[2] = {0, 0};
-  
-  encode(input_val, output_chars);
-
-  printf("%c%c %s\n", output_chars[0], output_chars[1], argv[1]);
-
-  return 0;
+	while (token != NULL) {
+		result = strtod(token, &pEnd);
+		encode(result, encoded);
+		strcat(outputString, encoded);
+		token = strtok(NULL, delimiter);
+	}
 }
-#endif
 
-
-/*
-int main(int argc, char **argv) {
-
-  for (float i = -126.0; i < 126.0; i = i + 0.01) {
-    char output_chars[2] = {0, 0};
-  
-    encode(i, output_chars);
-    
-    printf("%c%c %0.2f\n", output_chars[0], output_chars[1], i);
-
-  }
-
-}
-*/

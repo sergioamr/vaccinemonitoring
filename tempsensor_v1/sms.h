@@ -5,47 +5,35 @@
  *      Author: rajeevnx
  */
 
-#ifndef SMS_H_
-#define SMS_H_
+#ifndef TEMPSENSOR_V1_SMS_H_
+#define TEMPSENSOR_V1_SMS_H_
 
-#ifdef SMS_C_
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
+#define MAX_SMS_SIZE 160
 
+// + MODEM EXTRA DATA FOR SENDING + END
+#define MAX_SMS_SIZE_FULL MAX_SMS_SIZE
+
+void sms_send_data_request(char *number);
+int8_t sms_process_msg(char* pSMSmsg);
 //*****************************************************************************
-//
 //! \brief send sms msg
-//!
 //! \param pointer to sms text contents
-//!
-//! \return none
-//
+//! \return UART_SUCCESS or UART_ERROR
 //*****************************************************************************
-EXTERN void sendmsg(char* pData);
+uint8_t sms_send_message(char* pData);
+uint8_t sms_send_message_number(char *szPhoneNumber, char* pData);
 
 //*****************************************************************************
-//
-//! \brief receive sms msg
-//!
-//! \param pointer to store the received sms text, if pData[0] is 0 then no msg
-//! 	   is available for reading
-//!
-//! \return 0 on success, -1 on failure
-//
-//*****************************************************************************
-EXTERN int recvmsg(int8_t iMsgIdx,char* pData);
-
-//*****************************************************************************
-//
 //! \brief delete the sms msg(s) read and sent successfully
-//!
 //! \param none
-//!
 //! \return none
-//
 //*****************************************************************************
-EXTERN void delreadmsg();
+void delreadmsg();
 
-#endif /* SMS_H_ */
+void delallmsg();
+void delmsg(int8_t iMsgIdx, char* pData);
+
+void sms_send_heart_beat();
+int8_t sms_process_messages();
+
+#endif /* TEMPSENSOR_V1_SMS_H_ */

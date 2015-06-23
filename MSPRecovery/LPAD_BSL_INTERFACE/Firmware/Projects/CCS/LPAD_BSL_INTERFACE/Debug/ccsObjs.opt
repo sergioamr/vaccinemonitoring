@@ -1,0 +1,1 @@
+"./lpad_bsl_int_G2553.obj" "../lnk_msp430g2553.cmd" -l"libc.a" 

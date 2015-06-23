@@ -8,7 +8,7 @@
 / Functions and Buffer Configurations
 /---------------------------------------------------------------------------*/
 
-#define	_FS_TINY		1
+#define	_FS_TINY		0
 /* This option switches tiny buffer configuration. (0:Normal or 1:Tiny)
 /  At the tiny configuration, size of the file object (FIL) is reduced _MAX_SS
 /  bytes. Instead of private sector buffer eliminated from the file object,
@@ -42,7 +42,7 @@
 /  2: Enable with LF-CRLF conversion. */
 
 
-#define _USE_FIND		0
+#define _USE_FIND		1
 /* This option switches filtered directory read feature and related functions,
 /  f_findfirst() and f_findnext(). (0:Disable or 1:Enable) */
 

@@ -44,11 +44,11 @@
 /* -heap   0x0100                                   HEAP AREA SIZE            */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
-/* Version: 1.159                                                             */
+/* Version: 1.139                                                             */
 /*----------------------------------------------------------------------------*/
 
 /****************************************************************************/
-/* Specify the system memory map                                            */
+/* SPECIFY THE SYSTEM MEMORY MAP                                            */
 /****************************************************************************/
 
 MEMORY
@@ -56,13 +56,13 @@ MEMORY
     SFR                     : origin = 0x0000, length = 0x0010
     PERIPHERALS_8BIT        : origin = 0x0010, length = 0x00F0
     PERIPHERALS_16BIT       : origin = 0x0100, length = 0x0100
-    RAM                     : origin = 0x1C00, length = 0x0800
-    INFOA                   : origin = 0x1980, length = 0x0080
-    INFOB                   : origin = 0x1900, length = 0x0080
-    INFOC                   : origin = 0x1880, length = 0x0080
-    INFOD                   : origin = 0x1800, length = 0x0080
+    RAM                     : origin = 0x1C00, length = 0x0800, fill = 0xA3A4
+    STATE_MACHINE           : origin = 0x1900, length = 0x0100
+    CALIBRATION             : origin = 0x1880, length = 0x0080
+    HELPERS                 : origin = 0x1800, length = 0x0080
     FRAM                    : origin = 0x4400, length = 0xBB80
-    FRAM2                   : origin = 0x10000,length = 0x4000
+    FRAM2                   : origin = 0x10000,length = 0x3E00
+    PERMANENT_AREA          : origin = 0x13E00,length = 0x0200, fill = 0x0000
     JTAGSIGNATURE           : origin = 0xFF80, length = 0x0004, fill = 0xFFFF
     BSLSIGNATURE            : origin = 0xFF84, length = 0x0004, fill = 0xFFFF
     IPESIGNATURE            : origin = 0xFF88, length = 0x0008, fill = 0xFFFF
@@ -125,35 +125,25 @@ MEMORY
 }
 
 /****************************************************************************/
-/* Specify the sections allocation into memory                              */
+/* SPECIFY THE SECTIONS ALLOCATION INTO MEMORY                              */
 /****************************************************************************/
 
 SECTIONS
 {
     GROUP(READ_WRITE_MEMORY)
     {
-       .TI.persistent : {}                  /* For #pragma persistent            */
-       .cio           : {}                  /* C I/O Buffer                      */
-       .sysmem        : {}                  /* Dynamic memory allocation area    */
+       .TI.persistent : {}                  /* For #pragma PERSISTENT            */
+       .cio           : {}                  /* C I/O BUFFER                      */
+       .sysmem        : {}                  /* DYNAMIC MEMORY ALLOCATION AREA    */
+       .ConfigurationArea : {}
     } PALIGN(0x0400), RUN_END(fram_rx_start) > 0x4400
 
-    .cinit            : {}  > FRAM          /* Initialization tables             */
-    .pinit            : {}  > FRAM          /* C++ Constructor tables            */
-    .init_array       : {}  > FRAM          /* C++ Constructor tables            */
-    .mspabi.exidx     : {}  > FRAM          /* C++ Constructor tables            */
-    .mspabi.extab     : {}  > FRAM          /* C++ Constructor tables            */
-#ifndef __LARGE_DATA_MODEL__
-    .const            : {} >> FRAM          /* Constant data                     */
-#else
-    .const            : {} >> FRAM | FRAM2  /* Constant data                     */
-#endif
+    .cinit            : {}  > FRAM          /* INITIALIZATION TABLES             */
 
-    .text:_isr        : {}  > FRAM          /* Code ISRs                         */
-#ifndef __LARGE_DATA_MODEL__
-    .text             : {} >> FRAM          /* Code                              */
-#else
-    .text             : {} >> FRAM2 | FRAM  /* Code                              */
-#endif
+    .const            : {}  > FRAM  /* CONSTANT DATA                     */
+
+    .text:_isr        : {}  > FRAM          /* CODE ISRs                         */
+    .text             : {} >> FRAM2 | FRAM  /* CODE                              */
 
     GROUP(IPENCAPSULATED_MEMORY)
     {
@@ -162,26 +152,39 @@ SECTIONS
        .ipe:_isr      : {}                  /* IPE ISRs                       */
     } PALIGN(0x0400), RUN_START(fram_ipe_start) RUN_END(fram_ipe_end) > FRAM
 
-    .jtagsignature : {} > JTAGSIGNATURE     /* JTAG Signature                    */
-    .bslsignature  : {} > BSLSIGNATURE      /* BSL Signature                     */
+    .jtagsignature : {} > JTAGSIGNATURE     /* JTAG SIGNATURE                    */
+    .bslsignature  : {} > BSLSIGNATURE      /* BSL SIGNATURE                     */
 
     GROUP(SIGNATURE_SHAREDMEMORY)
     {
-       .ipesignature   : {}                 /* IPE Signature                     */
-       .jtagpassword   : {}                 /* JTAG Password                     */
+       .ipesignature   : {}                 /* IPE SIGNATURE                     */
+       .jtagpassword   : {}                 /* JTAG PASSWORD                     */
     } > IPESIGNATURE
 
-    .bss        : {} > RAM                  /* Global & static vars              */
-    .data       : {} > RAM                  /* Global & static vars              */
-    .TI.noinit  : {} > RAM                  /* For #pragma noinit                */
-    .stack      : {} > RAM (HIGH)           /* Software system stack             */
+    .bss        : {} > RAM                  /* GLOBAL & STATIC VARS              */
+    .data       : {} > RAM                  /* GLOBAL & STATIC VARS              */
+    .TI.noinit  : {} > FRAM                  /* For #pragma NOINIT                */
+    .xusersect  : 							/* user data section                */
+    {
+    	*(.aggregate_vars)
+    	events.obj (.xbigdata_vars)
+    } > FRAM
 
-    .infoA     : {} > INFOA              /* MSP430 INFO FRAM  Memory segments */
-    .infoB     : {} > INFOB
-    .infoC     : {} > INFOC
-    .infoD     : {} > INFOD
+    .stack           : {} > RAM  (HIGH) /* SOFTWARE SYSTEM STACK             */
 
-    /* MSP430 Interrupt vectors          */
+    .state_machine   : {} > STATE_MACHINE
+    .global_vars : {
+    	*(.calibration_globals)
+    } > CALIBRATION type=NOINIT
+    .helpers     : {
+    	*(.helper_vars)
+    } > HELPERS
+
+    .PermanentArea : {
+   		 *(.ConfigurationArea)
+    } >> PERMANENT_AREA type=NOINIT            /* MSP430 INFO FRAM  MEMORY SEGMENTS */
+
+    /* MSP430 INTERRUPT VECTORS          */
     .int00       : {}               > INT00
     .int01       : {}               > INT01
     .int02       : {}               > INT02
@@ -237,11 +240,11 @@ SECTIONS
     COMP_E       : { * ( .int52 ) } > INT52 type = VECT_INIT
     UNMI         : { * ( .int53 ) } > INT53 type = VECT_INIT
     SYSNMI       : { * ( .int54 ) } > INT54 type = VECT_INIT
-    .reset       : {}               > RESET  /* MSP430 Reset vector         */ 
+    .reset       : {}               > RESET  /* MSP430 RESET VECTOR         */ 
 }
 
 /****************************************************************************/
-/* MPU/IPE Specific memory segment definitons                               */
+/* MPU/IPE SPECIFIC MEMORY SEGMENT DEFINITONS                               */
 /****************************************************************************/
 
 #ifdef _IPE_ENABLE
@@ -250,22 +253,14 @@ SECTIONS
    #define IPE_MPUIPPUC 0x0020
 
    // Evaluate settings for the control setting of IP Encapsulation
-   #if defined(_IPE_ASSERTPUC1)
-        #if defined(_IPE_LOCK ) && (_IPE_ASSERTPUC1 == 0x08))
-         fram_ipe_enable_value = (IPE_MPUIPENA | IPE_MPUIPPUC |IPE_MPUIPLOCK);
-        #elif defined(_IPE_LOCK )
-         fram_ipe_enable_value = (IPE_MPUIPENA | IPE_MPUIPLOCK);
-      #elif (_IPE_ASSERTPUC1 == 0x08)
-         fram_ipe_enable_value = (IPE_MPUIPENA | IPE_MPUIPPUC);
-      #else
-         fram_ipe_enable_value = (IPE_MPUIPENA);
-      #endif
+   #if defined(_IPE_LOCK ) && (defined(_IPE_ASSERTPUC1) && (_IPE_ASSERTPUC1 == 0x08))
+      fram_ipe_enable_value = (IPE_MPUIPENA | IPE_MPUIPPUC | IPE_MPUIPLOCK);
+   #elif defined(_IPE_LOCK )
+      fram_ipe_enable_value = (IPE_MPUIPENA | IPE_MPUIPLOCK);
+   #elif (defined(_IPE_ASSERTPUC1) && (_IPE_ASSERTPUC1 == 0x08))
+      fram_ipe_enable_value = (IPE_MPUIPENA | IPE_MPUIPPUC);
    #else
-      #if defined(_IPE_LOCK )
-         fram_ipe_enable_value = (IPE_MPUIPENA | IPE_MPUIPLOCK);
-      #else
-         fram_ipe_enable_value = (IPE_MPUIPENA);
-      #endif
+      fram_ipe_enable_value = (IPE_MPUIPENA);
    #endif
 
    // Segment definitions
@@ -314,7 +309,7 @@ SECTIONS
 #endif
 
 /****************************************************************************/
-/* Include peripherals memory map                                           */
+/* INCLUDE PERIPHERALS MEMORY MAP                                           */
 /****************************************************************************/
 
 -l msp430fr5969.cmd

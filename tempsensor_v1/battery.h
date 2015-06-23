@@ -5,8 +5,8 @@
  *      Author: rajeevnx
  */
 
-#ifndef BATTERY_H_
-#define BATTERY_H_
+#ifndef TEMPSENSOR_V1_BATTERY_H_
+#define TEMPSENSOR_V1_BATTERY_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -36,27 +36,22 @@ extern "C"
 #define BATT_TAPER_VOLT_2			0x5E
 #define BATT_FULLCHRGCAP			0x0E
 
-
 //*****************************************************************************
-//
 //! \brief Initialize Battery fuel guage.
-//!
 //! \param speed
-//!
 //! \return None
-//
 //*****************************************************************************
-extern void batt_init();
+void batt_init();
 
 //*****************************************************************************
-//
 //! \brief Get the battery remaining capacity
-//!
-//!
 //! \return battery remaining capacity in percentage
-//
 //*****************************************************************************
-extern int8_t batt_getlevel();
+uint8_t batt_getlevel();
+
+// Checks level, displays a message with the result
+uint8_t batt_check_level();
+int8_t batt_isPlugged();
 
 #ifdef __cplusplus
 }
@@ -64,4 +59,4 @@ extern int8_t batt_getlevel();
 
 
 
-#endif /* BATTERY_H_ */
+#endif /* TEMPSENSOR_V1_BATTERY_H_ */

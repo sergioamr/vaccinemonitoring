@@ -158,6 +158,7 @@ void SysCtl_setJTAGOutgoingMessage32Bit(uint32_t outgoingMessage)
     HWREG16(SYS_BASE + OFS_SYSJMBO0) = (outgoingMessage);
     HWREG16(SYS_BASE + OFS_SYSJMBO1) = (outgoingMessage >> 16);
 }
+
 #endif
 #endif
 //*****************************************************************************

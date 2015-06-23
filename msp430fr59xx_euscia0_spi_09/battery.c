@@ -10,7 +10,11 @@
 #include "i2c.h"
 #include "timer.h"
 
+#ifdef _DEBUG
+#define  TRANS_DELAY 		10
+#else
 #define  TRANS_DELAY 		100
+#endif
 
 #ifndef BATTERY_DISABLED
 
@@ -107,9 +111,7 @@ void batt_init()
 	data = 0x00;
 	i2c_write(SLAVE_ADDR_BATTERY, BATT_CONTROL_2, 1, &data);
 	delay(TRANS_DELAY);
-
 }
-
 
 int8_t batt_getlevel()
 {

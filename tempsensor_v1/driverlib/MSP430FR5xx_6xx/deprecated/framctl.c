@@ -52,6 +52,7 @@
 
 #include <assert.h>
 
+/*
 void FRAMCtl_write8(uint16_t baseAddress,
     uint8_t *dataPtr,
     uint8_t *framPtr,
@@ -104,6 +105,7 @@ void FRAMCtl_memoryFill32 (uint16_t baseAddress,
     }
 }
 
+*/
 void FRAMCtl_enableInterrupt (uint16_t baseAddress,
     uint8_t interruptMask)
 {
