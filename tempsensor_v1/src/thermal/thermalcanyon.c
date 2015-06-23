@@ -36,6 +36,7 @@
 #include "wdt_a.h"
 
 void thermal_handle_system_button() {
+/*
 	if (!g_iRunning)
 		return;
 
@@ -59,7 +60,7 @@ void thermal_handle_system_button() {
 		config_reconfigure();
 		return;
 	}
-
+*/
 }
 
 void thermal_low_battery_message() {
