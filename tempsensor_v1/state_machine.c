@@ -143,8 +143,12 @@ int state_isNetworkRegistered() {
 /***********************************************************************************************************************/
 
 void state_init() {
+	SYSTEM_STATUS *s;
+
 	memset(g_pSysState, 0, sizeof(SYSTEM_STATE));
+	s = state_getAlarms();
 	g_pSysState->network_mode = NETWORK_NOT_SELECTED;
+	s->alarms.buzzer_disabled = BUZZER_DISABLE;
 }
 
 uint8_t state_isGPRS() {
@@ -194,7 +198,9 @@ void state_alarm_turnoff_buzzer() {
 void state_alarm_turnon_buzzer() {
 	buzzer_start();
 	SYSTEM_STATUS *s = state_getAlarms();
-	s->alarms.buzzer = STATE_ON;
+
+	if (!s->alarms.buzzer_disabled)
+		s->alarms.buzzer = STATE_ON;
 }
 
 void state_alarm_on(char *alarm_msg) {

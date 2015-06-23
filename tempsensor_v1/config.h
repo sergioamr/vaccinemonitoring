@@ -98,6 +98,13 @@
 //Temperature cut off
 #define TEMP_CUTOFF				-800		//-80 deg C
 
+// 1 will disable the buzzer when there is an Alarm
+// Buzzer will still work on button feedback
+#define BUZZER_DISABLE 1
+
+// Disable buttons sounds
+#define BUZZER_DISABLE_FEEDBACK 0
+
 /**************************************************************************************************************************/
 /* END FACTORY CONFIGURATION 																							  */
 /**************************************************************************************************************************/
@@ -302,9 +309,9 @@ typedef union {
 		unsigned char SD_cardFailure :1;
 		unsigned char buzzer :1;
 		unsigned char power :1;
+		unsigned char buzzer_disabled :1;
 		unsigned char button_buzzer_override :1;
 		unsigned char battery :1;
-		unsigned char bit7 :1;
 		unsigned char bit8 :1;
 	} alarms;
 	unsigned char status;
