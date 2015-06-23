@@ -311,7 +311,7 @@ void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
 	sms_process_messages();
 	if (g_pDevCfg->cfgServerConfigReceived == 1) {
 #ifndef _DEBUG
-		event_setInterval(pEvent, MINUTES_(MSG_REFRESH_INTERVAL));
+		event_setInterval(pEvent, MINUTES_(PERIOD_SMS_CHECK));
 #endif
 		pEvent->nextEventRun = pEvent->nextEventRun + event_getInterval(pEvent);
 	}
@@ -452,59 +452,48 @@ void events_init() {
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
 
 #ifdef _DEBUG
-	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(30),
+	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(PERIOD_SMS_TEST),
 	NULL);
 #endif
 	events_register(EVT_BATTERY_CHECK, "BATTERY", 0, &events_check_battery,
-	MINUTES_(2) + SECONDS_(30), NULL);
+			MINUTES_(PERIOD_BATTERY_CHECK), NULL);
 
-	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time, HOURS_(12),
-	NULL);
+	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time,
+			MINUTES_(PERIOD_PULLTIME), NULL);
 
 	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, &event_network_check,
-			MINUTES_(2), NULL);
+			MINUTES_(PERIOD_NETWORK_CHECK), NULL);
 
 	// Check every 30 seconds until we get the configuration message from server;
 	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs,
-			MINUTES_(SMS_CHECK_PERIOD), g_pDevCfg->stIntervalParam.smsCheckPeriod);
+			MINUTES_(PERIOD_SMS_CHECK), g_pDevCfg->stIntervalParam.smsCheckPeriod);
 
-	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off, MINUTES_(10),
-	NULL);
+	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off,
+			MINUTES_(PERIOD_LCD_OFF), NULL);
 
 	events_register(EVT_ALARMS_CHECK, "ALARMS", 1, &events_health_check,
-			MINUTES_(2), NULL);
+			MINUTES_(PERIOD_ALARMS_CHECK), NULL);
 
 	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
-			MINUTES_(LCD_REFRESH_INTERVAL), NULL);
+			MINUTES_(PERIOD_LCD_REFRESH), NULL);
 
-#ifdef _DEBUG
-	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0, &event_subsample_temperature, SECONDS_(5), 0);
-	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 5, &event_save_samples, SECONDS_(5), 0);
-	events_register(EVT_UPLOAD_SAMPLES, "UPLOAD", 0, &event_upload_samples, MINUTES_(10), 0);
-
-#else
-	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0,
-			&event_subsample_temperature, (MINUTES_(SAMPLE_PERIOD)),
-			g_pDevCfg->stIntervalParam.loggingInterval);
+	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0, &event_subsample_temperature,
+			MINUTES_(PERIOD_SAMPLING),
+			g_pDevCfg->stIntervalParam.samplingInterval);
 
 	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 30, &event_save_samples,
-			MINUTES_(SAMPLE_PERIOD),
-			g_pDevCfg->stIntervalParam.loggingInterval);
+			MINUTES_(PERIOD_SAMPLING),
+			g_pDevCfg->stIntervalParam.samplingInterval);
 
 	events_register(EVT_UPLOAD_SAMPLES, "UPLOAD", 0, &event_upload_samples,
-			MINUTES_(UPLOAD_PERIOD), g_pDevCfg->stIntervalParam.uploadInterval);
-#endif
+			MINUTES_(PERIOD_UPLOAD),
+			g_pDevCfg->stIntervalParam.uploadInterval);
 
 	events_register(EVT_PERIODIC_REBOOT, "REBOOT", 0, &event_reboot_system,
-			HOURS_(24), g_pDevCfg->stIntervalParam.reboot);
+			HOURS_(PERIOD_REBOOT), g_pDevCfg->stIntervalParam.systemReboot);
 
-#ifndef _DEBUG
 	events_register(EVT_CONFIGURATION, "CONFIG", 30, &event_fetch_configuration,
-			MINUTES_(30), g_pDevCfg->stIntervalParam.configuration_fetch);
-#else
-	events_register(EVT_CONFIGURATION, "CONFIG", 30, &event_fetch_configuration,
-			MINUTES_(2), g_pDevCfg->stIntervalParam.configuration_fetch);
-#endif
+			MINUTES_(PERIOD_CONFIGURATION_FETCH), g_pDevCfg->stIntervalParam.configurationFetch);
 
 	events_sync();
 }

@@ -92,6 +92,8 @@ void uart_tx_nowait(const char *cmd);
 uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime);
 uint8_t uart_txf(const char *_format, ...);
 
+extern char modem_lastCommand[16];
+
 #ifdef __cplusplus
 }
 #endif

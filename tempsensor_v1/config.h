@@ -105,23 +105,33 @@ EXTERN int8_t g_iSystemSetup;
 
 //Sampling configuration
 #ifndef _DEBUG
-#define SAMPLE_PERIOD			5		//in minutes
-#define UPLOAD_PERIOD			20		//in minutes
-#define REBOOT_PERIOD 			24*60   //in minutes
-#define CONFIGURATION_FETCH_PERIOD 1
-#define SMS_CHECK_PERIOD   	    15		//poll interval in minutes for sms msg TODO change back
-#define LCD_REFRESH_INTERVAL	1
-#define MSG_REFRESH_INTERVAL	5
+#define PERIOD_SAMPLING			5		//in minutes
+#define PERIOD_UPLOAD			20		//in minutes
+#define PERIOD_REBOOT 			24*60   //in minutes
+#define PERIOD_LCD_OFF			5
+#define PERIOD_ALARMS_CHECK	    3
+#define PERIOD_CONFIGURATION_FETCH 1
+#define PERIOD_SMS_CHECK   	    16		//poll interval in minutes for sms msg TODO change back
+#define PERIOD_NETWORK_CHECK	10
+#define PERIOD_LCD_REFRESH		1
+#define PERIOD_PULLTIME			12*60	// 12 hours
+#define PERIOD_BATTERY_CHECK 	15
 #define SAMPLE_COUNT			10
 #else
-#define SAMPLE_PERIOD			5		//in minutes
-#define UPLOAD_PERIOD			20		//in minutes
-#define REBOOT_PERIOD 			24*60   //in minutes
-#define CONFIGURATION_FETCH_PERIOD 60
-#define SMS_CHECK_PERIOD   	    15		//poll interval in minutes for sms msg TODO change back
-#define LCD_REFRESH_INTERVAL	1
-#define MSG_REFRESH_INTERVAL	5
+#define PERIOD_SAMPLING			5		//in minutes
+#define PERIOD_UPLOAD			20		//in minutes
+#define PERIOD_REBOOT 			24*60   //in minutes
+#define PERIOD_LCD_OFF			10
+#define PERIOD_ALARMS_CHECK	    3
+#define PERIOD_CONFIGURATION_FETCH 60
+#define PERIOD_SMS_CHECK   	    7		//poll interval in minutes for sms msg TODO change back
+#define PERIOD_NETWORK_CHECK	4
+#define PERIOD_LCD_REFRESH		1
+#define PERIOD_PULLTIME			45
+#define PERIOD_BATTERY_CHECK 	10
 #define SAMPLE_COUNT			5
+
+#define PERIOD_SMS_TEST			30
 #endif
 
 //Alert configuration
@@ -191,9 +201,9 @@ typedef struct {
 
 typedef struct {
 	uint16_t uploadInterval;
-	uint16_t loggingInterval;
-	uint16_t reboot;
-	uint16_t configuration_fetch;
+	uint16_t samplingInterval;
+	uint16_t systemReboot;
+	uint16_t configurationFetch;
 	uint16_t smsCheckPeriod;
 } INTERVAL_PARAM;
 
