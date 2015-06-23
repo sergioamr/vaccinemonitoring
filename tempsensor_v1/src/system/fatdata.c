@@ -65,7 +65,7 @@ char* get_date_string(struct tm* timeData, const char* dateSeperator,
 		strcpy(g_szDateString, itoa_nopadding(timeData->tm_year));
 
 	strcat(g_szDateString, dateSeperator);
-	strcat(g_szDateString, itoa_pad(timeData->tm_mon + 1));
+	strcat(g_szDateString, itoa_pad(timeData->tm_mon));
 	strcat(g_szDateString, dateSeperator);
 	strcat(g_szDateString, itoa_pad(timeData->tm_mday));
 	strcat(g_szDateString, dateTimeSeperator);
