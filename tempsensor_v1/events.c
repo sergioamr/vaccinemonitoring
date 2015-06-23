@@ -116,7 +116,7 @@ void events_send_data(char *phone) {
 
 void event_sanity_check(EVENT *pEvent, time_t currentTime) {
 
-	time_t maxRunTime = currentTime + pEvent->startTime
+	time_t maxRunTime = currentTime + pEvent->offset_secs
 			+ event_getInterval(pEvent);
 
 	if (pEvent->nextEventRun <= maxRunTime)
@@ -164,7 +164,10 @@ void events_find_next_event(time_t currentTime) {
 }
 
 // The interval can be dynamic
-void events_register(EVENT_IDS id, char *name, time_t startTime,
+// We offset the events to allow events to not run simultaneously.
+// For example: Subsampling always have to ocurr before Sampling and saving.
+
+void events_register(EVENT_IDS id, char *name, time_t offset_time_secs,
 		void (*functionCall)(void *, time_t), time_t intervalDefault,
 		time_t interval) {
 	EVENT *pEvent;
@@ -180,25 +183,25 @@ void events_register(EVENT_IDS id, char *name, time_t startTime,
 	pEvent->id = id;
 	strncpy(pEvent->name, name, sizeof(pEvent->name));
 
-	pEvent->intervalDefault = intervalDefault;
-	pEvent->interval = MINUTES_(interval);
+	pEvent->intervalDefault = intervalDefault-offset_time_secs;
+	pEvent->interval = MINUTES_(interval)-offset_time_secs;
 
 	pEvent->lastEventRun = 0;
 	pEvent->nextEventRun = 0;
-	pEvent->startTime = startTime;
+	pEvent->offset_secs = offset_time_secs;
 	pEvent->callback = functionCall;
 	g_sEvents.registeredEvents++;
 	event_init(pEvent, 0);
 }
 
 void event_init(EVENT *pEvent, time_t currentTime) {
-	pEvent->nextEventRun = currentTime + pEvent->startTime
+	pEvent->nextEventRun = currentTime + pEvent->offset_secs
 			+ event_getInterval(pEvent);
 }
 
 void event_next(EVENT *pEvent, time_t currentTime) {
 	pEvent->lastEventRun = pEvent->nextEventRun;
-	pEvent->nextEventRun = currentTime + event_getInterval(pEvent);
+	pEvent->nextEventRun = currentTime + event_getInterval(pEvent) + pEvent->offset_secs;
 }
 
 void events_sync() {
@@ -355,6 +358,7 @@ void event_save_samples(void *event, time_t currentTime) {
 }
 
 void event_subsample_temperature(void *event, time_t currentTime) {
+	lcd_print_progress();
 	temperature_subsamples(NUM_SAMPLES_CAPTURE);
 	temperature_single_capture();
 }
@@ -481,7 +485,8 @@ void events_init() {
 			MINUTES_(PERIOD_SAMPLING),
 			g_pDevCfg->sIntervalsMins.sampling);
 
-	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 30, &event_save_samples,
+	// Offset the save N seconds from the subsample taking
+	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 15, &event_save_samples,
 			MINUTES_(PERIOD_SAMPLING),
 			g_pDevCfg->sIntervalsMins.sampling);
 
