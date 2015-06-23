@@ -98,6 +98,13 @@
 //Temperature cut off
 #define TEMP_CUTOFF				-800		//-80 deg C
 
+// 1 will disable the buzzer when there is an Alarm
+// Buzzer will still work on button feedback
+#define BUZZER_DISABLE 1
+
+// Disable buttons sounds
+#define BUZZER_DISABLE_FEEDBACK 0
+
 /**************************************************************************************************************************/
 /* END FACTORY CONFIGURATION 																							  */
 /**************************************************************************************************************************/
@@ -204,11 +211,11 @@ typedef struct {
 } BATT_POWER_ALERT_PARAM;
 
 typedef struct {
-	uint16_t uploadInterval;
-	uint16_t samplingInterval;
+	uint16_t upload;
+	uint16_t sampling;
 	uint16_t systemReboot;
 	uint16_t configurationFetch;
-	uint16_t smsCheckPeriod;
+	uint16_t smsCheck;
 } INTERVAL_PARAM;
 
 typedef struct {
@@ -221,7 +228,7 @@ typedef struct {
 
 	TEMP_ALERT_PARAM stTempAlertParams[SYSTEM_NUM_SENSORS];
 	BATT_POWER_ALERT_PARAM stBattPowerAlertParam;
-	INTERVAL_PARAM stIntervalParam;
+	INTERVAL_PARAM sIntervalsMins;
 
 	char cfgIMEI[IMEI_MAX_LEN + 1];
 	char cfgGatewayIP[MAX_IP_SIZE];
@@ -302,9 +309,9 @@ typedef union {
 		unsigned char SD_cardFailure :1;
 		unsigned char buzzer :1;
 		unsigned char power :1;
+		unsigned char buzzer_disabled :1;
 		unsigned char button_buzzer_override :1;
 		unsigned char battery :1;
-		unsigned char bit7 :1;
 		unsigned char bit8 :1;
 	} alarms;
 	unsigned char status;

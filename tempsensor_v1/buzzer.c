@@ -28,13 +28,17 @@ void buzzer_start() {
 }
 
 void buzzer_feedback() {
+#if (BUZZER_DISABLE_FEEDBACK != 1)
 	g_pSysState->buzzerFeedback = 50;
 	buzzer_start();
+#endif
 }
 
 void buzzer_feedback_simple() {
+#if (BUZZER_DISABLE_FEEDBACK != 1)
 	g_pSysState->buzzerFeedback = 10;
 	buzzer_start();
+#endif
 }
 
 // Timer1_A0 interrupt service routine

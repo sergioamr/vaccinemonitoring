@@ -116,7 +116,7 @@ void events_send_data(char *phone) {
 
 void event_sanity_check(EVENT *pEvent, time_t currentTime) {
 
-	time_t maxRunTime = currentTime + pEvent->startTime
+	time_t maxRunTime = currentTime + pEvent->offset_secs
 			+ event_getInterval(pEvent);
 
 	if (pEvent->nextEventRun <= maxRunTime)
@@ -164,7 +164,10 @@ void events_find_next_event(time_t currentTime) {
 }
 
 // The interval can be dynamic
-void events_register(EVENT_IDS id, char *name, time_t startTime,
+// We offset the events to allow events to not run simultaneously.
+// For example: Subsampling always have to ocurr before Sampling and saving.
+
+void events_register(EVENT_IDS id, char *name, time_t offset_time_secs,
 		void (*functionCall)(void *, time_t), time_t intervalDefault,
 		time_t interval) {
 	EVENT *pEvent;
@@ -180,25 +183,35 @@ void events_register(EVENT_IDS id, char *name, time_t startTime,
 	pEvent->id = id;
 	strncpy(pEvent->name, name, sizeof(pEvent->name));
 
-	pEvent->intervalDefault = intervalDefault;
-	pEvent->interval = MINUTES_(interval);
+	if (intervalDefault!=0)
+		pEvent->intervalDefault = intervalDefault-offset_time_secs;
+	else
+		pEvent->intervalDefault = 0;
+
+	if (interval!=0)
+		pEvent->interval = MINUTES_(interval)-offset_time_secs;
+	else
+		pEvent->interval = 0;
+
+	if (pEvent->interval<0)
+		pEvent->interval = 0;
 
 	pEvent->lastEventRun = 0;
 	pEvent->nextEventRun = 0;
-	pEvent->startTime = startTime;
+	pEvent->offset_secs = offset_time_secs;
 	pEvent->callback = functionCall;
 	g_sEvents.registeredEvents++;
 	event_init(pEvent, 0);
 }
 
 void event_init(EVENT *pEvent, time_t currentTime) {
-	pEvent->nextEventRun = currentTime + pEvent->startTime
+	pEvent->nextEventRun = currentTime + pEvent->offset_secs
 			+ event_getInterval(pEvent);
 }
 
 void event_next(EVENT *pEvent, time_t currentTime) {
 	pEvent->lastEventRun = pEvent->nextEventRun;
-	pEvent->nextEventRun = currentTime + event_getInterval(pEvent);
+	pEvent->nextEventRun = currentTime + event_getInterval(pEvent) + pEvent->offset_secs;
 }
 
 void events_sync() {
@@ -355,6 +368,7 @@ void event_save_samples(void *event, time_t currentTime) {
 }
 
 void event_subsample_temperature(void *event, time_t currentTime) {
+	lcd_print_progress();
 	temperature_subsamples(NUM_SAMPLES_CAPTURE);
 	temperature_single_capture();
 }
@@ -466,7 +480,7 @@ void events_init() {
 
 	// Check every 30 seconds until we get the configuration message from server;
 	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs,
-			MINUTES_(PERIOD_SMS_CHECK), g_pDevCfg->stIntervalParam.smsCheckPeriod);
+			MINUTES_(PERIOD_SMS_CHECK), g_pDevCfg->sIntervalsMins.smsCheck);
 
 	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off,
 			MINUTES_(PERIOD_LCD_OFF), NULL);
@@ -479,21 +493,22 @@ void events_init() {
 
 	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0, &event_subsample_temperature,
 			MINUTES_(PERIOD_SAMPLING),
-			g_pDevCfg->stIntervalParam.samplingInterval);
+			g_pDevCfg->sIntervalsMins.sampling);
 
-	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 30, &event_save_samples,
+	// Offset the save N seconds from the subsample taking
+	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 15, &event_save_samples,
 			MINUTES_(PERIOD_SAMPLING),
-			g_pDevCfg->stIntervalParam.samplingInterval);
+			g_pDevCfg->sIntervalsMins.sampling);
 
 	events_register(EVT_UPLOAD_SAMPLES, "UPLOAD", 0, &event_upload_samples,
 			MINUTES_(PERIOD_UPLOAD),
-			g_pDevCfg->stIntervalParam.uploadInterval);
+			g_pDevCfg->sIntervalsMins.upload);
 
 	events_register(EVT_PERIODIC_REBOOT, "REBOOT", 0, &event_reboot_system,
-			HOURS_(PERIOD_REBOOT), g_pDevCfg->stIntervalParam.systemReboot);
+			MINUTES_(PERIOD_REBOOT), g_pDevCfg->sIntervalsMins.systemReboot);
 
 	events_register(EVT_CONFIGURATION, "CONFIG", 30, &event_fetch_configuration,
-			MINUTES_(PERIOD_CONFIGURATION_FETCH), g_pDevCfg->stIntervalParam.configurationFetch);
+			MINUTES_(PERIOD_CONFIGURATION_FETCH), g_pDevCfg->sIntervalsMins.configurationFetch);
 
 	events_sync();
 }

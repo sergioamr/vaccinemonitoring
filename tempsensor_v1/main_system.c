@@ -196,7 +196,7 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 /****************************************************************************/
 
 int main(void) {
-	memset((void*) (&__STACK_END - &__STACK_SIZE), 0xa5, (size_t) __STACK_SIZE);
+	memset((void*) (&__STACK_END - &__STACK_SIZE), 0x00, (size_t) __STACK_SIZE);
 	// Disable for init since we are not going to be able to respond to it.
 	watchdog_disable();
 
@@ -206,7 +206,7 @@ int main(void) {
 	events_init();
 
 	state_process();
-	sms_process_messages(0);
+	sms_process_messages();
 
 	// Done init, start watchdog
 	watchdog_init();
