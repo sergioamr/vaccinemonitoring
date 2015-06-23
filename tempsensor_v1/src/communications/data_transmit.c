@@ -19,6 +19,8 @@ char *getSensorTemp(int sensorID) {
 }
 
 uint8_t select_transmission_method() {
+	// TODO Save last tranmission method and properly change
+	// SMS sending to attempt SMS on both SIMs
 	if (modem_check_network() != UART_SUCCESS) {
 		modem_swap_SIM();
 		if (modem_check_network() != UART_SUCCESS) {
@@ -30,9 +32,11 @@ uint8_t select_transmission_method() {
 	}
 
 	if (http_enable() != UART_SUCCESS) {
+		// Here try SMS via SIM 1
 		modem_swap_SIM();
-		if (modem_check_network() != UART_SUCCESS &&
+		if (modem_check_network() == UART_SUCCESS &&
 				http_enable() != UART_SUCCESS) {
+			// Try SMS via SIM 2
 			http_deactivate();
 			return 1; // change to 1 for sms
 		}
@@ -40,8 +44,6 @@ uint8_t select_transmission_method() {
 
 	return 0;
 }
-
-
 
 uint8_t data_send_temperatures_sms() {
 	char data[MAX_SMS_SIZE_FULL];
@@ -52,7 +54,7 @@ uint8_t data_send_temperatures_sms() {
 	strcpy(data, SMS_DATA_MSG_TYPE);
 	strcat(data, get_simplified_date_string(&g_tmCurrTime));
 	for (t = 0; t < SYSTEM_NUM_SENSORS; t++) {
-		//strcat(data, getSensorTemp(t));
+		strcat(data, getSensorTemp(t));
 	}
 
 	strcat(data, ",");
@@ -273,8 +275,9 @@ void process_batch() {
 		}
 	}
 
-	if (transmissionMethod == 1)
-	http_deactivate();
+	if (transmissionMethod == 1) {
+		http_deactivate();
+	}
 	lcd_printl(LINEC, "Transmission");
 	lcd_printl(LINE2, "Completed");
 	g_pSysState->safeboot.disable.data_transmit = 0;
