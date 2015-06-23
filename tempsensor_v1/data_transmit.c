@@ -51,7 +51,7 @@ uint8_t data_send_temperatures_sms() {
 
 	strcpy(data, SMS_DATA_MSG_TYPE);
 	strcat(data, get_simplified_date_string(&g_tmCurrTime));
-	for (t = 0; t < MAX_NUM_SENSORS; t++) {
+	for (t = 0; t < SYSTEM_NUM_SENSORS; t++) {
 		//strcat(data, getSensorTemp(t));
 	}
 
@@ -76,7 +76,7 @@ int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 		parse_time_from_line(&firstDate, line);
 		dateString = get_date_string(&firstDate, "", "", "", 0);
 		sprintf(smsMsg, "%d,%s,%s,%d,", 11, dateString,
-				itoa_nopadding(g_pDevCfg->stIntervalParam.loggingInterval), 5);
+				itoa_nopadding(g_pDevCfg->stIntervalParam.samplingInterval), 5);
 	} else {
 		return TRANS_FAILED;
 	}
@@ -134,7 +134,7 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 		dateString = get_date_string(&firstDate, "", "", "", 0);
 		sprintf(line, "IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=",
 				g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa", dateString,
-				g_pDevCfg->stIntervalParam.loggingInterval);
+				g_pDevCfg->stIntervalParam.samplingInterval);
 	} else {
 		return TRANS_FAILED;
 	}

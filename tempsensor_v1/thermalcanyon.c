@@ -107,7 +107,6 @@ void thermal_canyon_loop(void) {
 #endif
 		// Checks all the events that we have and runs the right one.
 		events_run(currentTime);
-		state_process();
 
 		// Wait here behind the interruption to check for a change on display.
 		// If a hardware button is pressed it will resume CPU

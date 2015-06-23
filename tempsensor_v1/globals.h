@@ -21,7 +21,7 @@ extern SYSTEM_STATE *g_pSysState;
 extern uint32_t g_iAlarmStatus;
 extern volatile uint8_t g_iDisplayId;
 
-extern const char SensorName[MAX_NUM_SENSORS][NAME_LEN];
+extern const char SensorName[SYSTEM_NUM_SENSORS][NAME_LEN];
 extern struct tm g_tmCurrTime;
 
 extern int8_t g_iSignalLevel;

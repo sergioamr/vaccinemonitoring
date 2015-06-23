@@ -213,7 +213,7 @@ int main(void) {
 	process_batch();
 
 #ifdef _DEBUG
-	sms_send_message_number(LOCAL_TESTING_NUMBER, "Boot completed");
+	sms_send_message_number(REPORT_PHONE_NUMBER, "Boot completed");
 #endif
 
 	thermal_canyon_loop();

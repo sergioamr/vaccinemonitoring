@@ -189,27 +189,41 @@ void config_send_configuration(char *number) {
 	int i;
 
 	msg[0] = 0;
-	for (i = 0; i < MAX_NUM_SENSORS; i++) {
+	for (i = 0; i < SYSTEM_NUM_SENSORS; i++) {
 		alert = &g_pDevCfg->stTempAlertParams[i];
-		sprintf(temp, "%s(mC %d mH %d tC %d tH %d)\r\n", SensorName[i],
-				(int) alert->maxSecondsCold, (int) alert->maxSecondsHot,
+		sprintf(temp, "%s(C%dm H%dm tC %d tH %d)\r\n", SensorName[i],
+				(int) alert->maxSecondsCold/60, (int) alert->maxSecondsHot/60,
 				(int) alert->threshCold, (int) alert->threshHot);
 		strcat(msg, temp);
 	}
 	sms_send_message_number(number, msg);
 
 	power = &g_pDevCfg->stBattPowerAlertParam;
-	sprintf(msg, "Power Active %d(time %d) \r\nBatt (time %d thres %d)\r\n",
+	sprintf(msg, "Power Active %d(%d mins) \r\nBatt (%d mins thres %d)",
 			power->enablePowerAlert, (int) power->minutesPower,
 			(int) power->minutesBattThresh, (int) power->battThreshold);
-
 	sms_send_message_number(number, msg);
 
-	sprintf(msg, "Interval log %d upl %d reb %d cfg %d\r\n",
-			(int) g_pDevCfg->stIntervalParam.loggingInterval,
-			(int) g_pDevCfg->stIntervalParam.uploadInterval,
-			(int) g_pDevCfg->stIntervalParam.reboot,
-			(int) g_pDevCfg->stIntervalParam.configuration_fetch);
+	sprintf(msg, "Interval Sampling %d\r\nUpload %d\r\nReboot\r\n%d Config %d",
+			(int) g_pDevCfg->stIntervalParam.samplingInterval/60,
+			(int) g_pDevCfg->stIntervalParam.uploadInterval/60,
+			(int) g_pDevCfg->stIntervalParam.systemReboot/60,
+			(int) g_pDevCfg->stIntervalParam.configurationFetch/60);
+	sms_send_message_number(number, msg);
+
+	sprintf(msg, "Interval Sampling %d\r\nUpload %d\r\nReboot\r\n%d Config %d",
+			(int) g_pDevCfg->stIntervalParam.samplingInterval/60,
+			(int) g_pDevCfg->stIntervalParam.uploadInterval/60,
+			(int) g_pDevCfg->stIntervalParam.systemReboot/60,
+			(int) g_pDevCfg->stIntervalParam.configurationFetch/60);
+	sms_send_message_number(number, msg);
+
+	sprintf(msg, "Gateway [%s]\r\n" \
+				 "SIM 1 APN [%s]\r\n" \
+			     "SIM 2 APN [%s]\r\n",
+			g_pDevCfg->cfgGatewaySMS,
+			g_pDevCfg->SIM[0].cfgAPN,
+			g_pDevCfg->SIM[1].cfgAPN);
 
 	sms_send_message_number(number, msg);
 }
@@ -218,7 +232,7 @@ int config_default_configuration() {
 	int i = 0;
 	TEMP_ALERT_PARAM *alert;
 	BATT_POWER_ALERT_PARAM *power;
-	for (i = 0; i < MAX_NUM_SENSORS; i++) {
+	for (i = 0; i < SYSTEM_NUM_SENSORS; i++) {
 		alert = &g_pDevCfg->stTempAlertParams[i];
 
 		alert->maxSecondsCold = ALARM_LOW_TEMP_PERIOD;
@@ -235,16 +249,19 @@ int config_default_configuration() {
 	power->battThreshold = BATTERY_HIBERNATE_THRESHOLD;
 
 // TODO: default values for own number & sms center?
-	g_pDevCfg->stIntervalParam.loggingInterval = SAMPLE_PERIOD;
-	g_pDevCfg->stIntervalParam.uploadInterval = UPLOAD_PERIOD;
-	g_pDevCfg->stIntervalParam.reboot = REBOOT_PERIOD;
-	g_pDevCfg->stIntervalParam.configuration_fetch = CONFIGURATION_FETCH_PERIOD;
+	g_pDevCfg->stIntervalParam.samplingInterval = PERIOD_SAMPLING;
+	g_pDevCfg->stIntervalParam.uploadInterval = PERIOD_UPLOAD;
+	g_pDevCfg->stIntervalParam.systemReboot = PERIOD_REBOOT;
+	g_pDevCfg->stIntervalParam.configurationFetch = PERIOD_CONFIGURATION_FETCH;
+	g_pDevCfg->stIntervalParam.smsCheckPeriod = PERIOD_SMS_CHECK;
+
+	g_pDevCfg->cfgSMS_Alerts = ALERTS_SMS;
 
 #ifdef _DEBUG
-	uint16_t c = g_pDevCfg->stIntervalParam.loggingInterval;
+	uint16_t c = g_pDevCfg->stIntervalParam.samplingInterval;
 	uint16_t value1 = c;
 
-	uint16_t *p = &g_pDevCfg->stIntervalParam.loggingInterval;
+	uint16_t *p = &g_pDevCfg->stIntervalParam.samplingInterval;
 	uint16_t value2 = *p;
 
 	if (value1 != value2)
@@ -349,8 +366,6 @@ void config_update_system_time() {
 int config_parse_configuration(char *msg) {
 	char *token;
 	char command[5] = "$EN";
-	char num1[5];
-	char num2[5];
 	char delimiter[2] = ",";
 	int tempValue = 0;
 	int iCnt = 0;
@@ -374,7 +389,7 @@ int config_parse_configuration(char *msg) {
 		return UART_SUCCESS;
 
 // Temperature configuration for each sensor
-	while (i < MAX_NUM_SENSORS) {
+	while (i < SYSTEM_NUM_SENSORS) {
 		pAlertParams = &g_pDevCfg->stTempAlertParams[i];
 		PARSE_NEXTVALUE(token, &pAlertParams->maxSecondsCold, delimiter,
 				UART_FAILED);
@@ -413,11 +428,11 @@ int config_parse_configuration(char *msg) {
 
 	pInterval = &g_pDevCfg->stIntervalParam;
 	PARSE_NEXTVALUE(token, &pInterval->uploadInterval, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &pInterval->loggingInterval, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &pInterval->samplingInterval, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); // Reset alert
 	if (tempValue > 0) {
 		state_clear_alarm_state();
-		for (iCnt = 0; iCnt < MAX_NUM_SENSORS; iCnt++) {
+		for (iCnt = 0; iCnt < SYSTEM_NUM_SENSORS; iCnt++) {
 			//reset the alarm
 			state_reset_sensor_alarm(iCnt);
 		}
@@ -439,27 +454,15 @@ int config_parse_configuration(char *msg) {
 	g_pDevCfg->cfgServerConfigReceived = 1;
 
 	event_setInterval_by_id(EVT_SUBSAMPLE_TEMP,
-			MINUTES_(pInterval->loggingInterval));
+			MINUTES_(pInterval->samplingInterval));
 
 	event_setInterval_by_id(EVT_SAVE_SAMPLE_TEMP,
-			MINUTES_(pInterval->loggingInterval));
+			MINUTES_(pInterval->samplingInterval));
 
 	event_setInterval_by_id(EVT_UPLOAD_SAMPLES,
 			MINUTES_(pInterval->uploadInterval));
 
-	pAlertParams = &g_pDevCfg->stTempAlertParams[0];
-
-	num2[4]=num1[4]=0;
-	getFloatNumber2Text(pAlertParams->threshCold, num1);
-	getFloatNumber2Text(pAlertParams->threshHot, num2);
-
-	lcd_printf(LINEC, "C%d %s H%d %s", (int) pAlertParams->maxSecondsCold / 60, &num1[0],
-			(int) pAlertParams->maxSecondsHot / 60, &num2[0]);
-
-	lcd_printf(LINEH, "SIM%d UP%d LG%d PW%d", g_pDevCfg->cfgSelectedSIM_slot+1,
-			g_pDevCfg->stIntervalParam.uploadInterval,
-			g_pDevCfg->stIntervalParam.loggingInterval,
-			g_pDevCfg->stBattPowerAlertParam.minutesPower);
+	lcd_display_config();
 
 	return UART_SUCCESS;
 }

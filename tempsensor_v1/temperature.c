@@ -21,7 +21,7 @@ void ADC_setupIO() {
 	P1SELC |= BIT2;                           // Enable A/D channel A2
 #ifdef SEQUENCE
 	P1SELC |= BIT3 | BIT4 | BIT5;          // Enable A/D channel A3-A5
-#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
+#if defined(SYSTEM_NUM_SENSORS) && SYSTEM_NUM_SENSORS == 5
 	P4SELC |= BIT2;          				// Enable A/D channel A10
 #endif
 #endif
@@ -41,7 +41,7 @@ void ADC_setupIO() {
 #ifdef SEQUENCE
 	ADC12MCTL3 = ADC12VRSEL_4 | ADC12INCH_3; // Vr+ = VeREF+ (ext) and Vr-=AVss, 12bit resolution, channel 3
 	ADC12MCTL4 = ADC12VRSEL_4 | ADC12INCH_4; // Vr+ = VeREF+ (ext) and Vr-=AVss, 12bit resolution, channel 4
-#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
+#if defined(SYSTEM_NUM_SENSORS) && SYSTEM_NUM_SENSORS == 5
 	ADC12MCTL5 = ADC12VRSEL_4 | ADC12INCH_5; // Vr+ = VeREF+ (ext) and Vr-=AVss,12bit resolution,channel 5,EOS
 	ADC12MCTL6 = ADC12VRSEL_4 | ADC12INCH_10 | ADC12EOS; // Vr+ = VeREF+ (ext) and Vr-=AVss,12bit resolution,channel 5,EOS
 #else
@@ -52,7 +52,7 @@ void ADC_setupIO() {
 #endif
 
 	//ADC interrupt logic
-#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
+#if defined(SYSTEM_NUM_SENSORS) && SYSTEM_NUM_SENSORS == 5
 	ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5 | ADC12IE6; // Enable ADC conv complete interrupt
 #else
 			ADC12IER0 |= ADC12IE2 | ADC12IE3 | ADC12IE4 | ADC12IE5; // Enable ADC conv complete interrupt
@@ -97,7 +97,7 @@ void temperature_trigger_init() {
 	tem->iSamplesRead = 0;
 
 	//initialze ADCvar
-	for (c = 0; c < MAX_NUM_SENSORS; c++) {
+	for (c = 0; c < SYSTEM_NUM_SENSORS; c++) {
 		sensor_get(c)->iADC = 0;
 		sensor_get(c)->iSamplesRead = 0;
 	}
@@ -159,7 +159,7 @@ void temperature_analog_to_digital_conversion() {
 		return;
 
 	// convert the current sensor ADC value to temperature
-	for (iIdx = 0; iIdx < MAX_NUM_SENSORS; iIdx++)
+	for (iIdx = 0; iIdx < SYSTEM_NUM_SENSORS; iIdx++)
 		temperature_subsampling_calculate(iIdx);
 }
 
@@ -177,7 +177,7 @@ void temperature_trigger_capture() {
 	USE_TEMPERATURE
 
 	// SUBSAMPLING TOO CLOSE FOR THE TRIGGER TO WORK
-	if (tem->iCapturing > 0 && tem->iCapturing <= MAX_NUM_SENSORS)
+	if (tem->iCapturing > 0 && tem->iCapturing <= SYSTEM_NUM_SENSORS)
 		return;
 
 	// Turn on ADC conversion
@@ -261,7 +261,7 @@ void __attribute__ ((interrupt(ADC12_VECTOR))) ADC12_ISR (void)
 	}
 
 	tem->iCapturing++;
-	if (tem->iCapturing == MAX_NUM_SENSORS + 1) {
+	if (tem->iCapturing == SYSTEM_NUM_SENSORS + 1) {
 		tem->iSamplesRead++;
 		tem->iCapturing = 0;
 		// Instantly run this event after the capture is finished

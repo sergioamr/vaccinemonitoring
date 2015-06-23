@@ -15,6 +15,10 @@ extern "C"
 {
 #endif
 
+//I2C configuration
+#define   I2C_TX_LEN			32
+#define   I2C_RX_LEN			32
+
 #define MAX_I2CRX_RETRY  10
 //*****************************************************************************
 //

@@ -561,15 +561,11 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 
 	//log sample period, battery level, power plugged, temperature values
 	memset(szLog, 0, sizeof(szLog));
-#if defined(MAX_NUM_SENSORS) && MAX_NUM_SENSORS == 5
+#if defined(SYSTEM_NUM_SENSORS) && SYSTEM_NUM_SENSORS == 5
 	sprintf(szLog, "%s,%d,%s,%s,%s,%s,%s\n", itoa_pad(iBatteryLevel),
 			!(P4IN & BIT4), temperature_getString(0), temperature_getString(1),
 			temperature_getString(2), temperature_getString(3),
 			temperature_getString(4));
-#else
-	sprintf(szLog, "%s,%d,%s,%s,%s,%s\n",
-			itoa_pad(g_iBatteryLevel), !(P4IN & BIT4), Temperature[0],
-			Temperature[1], Temperature[2], Temperature[3]);
 #endif
 
 	fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);

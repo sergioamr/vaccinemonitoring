@@ -21,7 +21,7 @@
 /* Legacy names */
 /*****************************************************************************************************/
 
-const char SensorName[MAX_NUM_SENSORS][NAME_LEN] = { "A", "B", "C", "D", "E" };
+const char SensorName[SYSTEM_NUM_SENSORS][NAME_LEN] = { "A", "B", "C", "D", "E" };
 
 /*****************************************************************************************************/
 /* Variables to revisit */
@@ -53,4 +53,4 @@ char file_pointer_enabled_gprs_status = 0; // for gprs condtition enabling...///
 
 #pragma SET_DATA_SECTION()
 
-char Temperature[MAX_NUM_SENSORS][TEMP_DATA_LEN + 1];
+char Temperature[SYSTEM_NUM_SENSORS][TEMP_DATA_LEN + 1];

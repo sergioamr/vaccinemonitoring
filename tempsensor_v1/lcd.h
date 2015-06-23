@@ -8,6 +8,8 @@
 #ifndef TEMPSENSOR_V1_LCD_H_
 #define TEMPSENSOR_V1_LCD_H_
 
+#define   SLAVE_ADDR_DISPLAY	0x38
+
 //LCD lines
 #define LINE1					1
 #define LINE2					2
@@ -47,6 +49,7 @@ void lcd_setupIO();
 void lcd_reset();
 void lcd_blenable();
 void lcd_init();
+void lcd_display_config();
 void lcd_on();
 void lcd_off();
 void lcd_clear();

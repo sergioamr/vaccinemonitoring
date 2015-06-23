@@ -13,6 +13,8 @@ extern "C"
 {
 #endif
 
+#define   SLAVE_ADDR_BATTERY	0x55
+
 #define BATT_CONTROL_1				0x00
 #define BATT_CONTROL_2				0x01
 #define BATT_FLAGS					0x06

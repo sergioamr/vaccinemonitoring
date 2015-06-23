@@ -11,7 +11,8 @@
 
 extern void buzzer_feedback();
 
-void state_alarm_force_turnoff_buzzer();
+void state_alarm_disable_buzzer_override();
+void state_alarm_enable_buzzer_override();
 void thermal_handle_system_button();
 // Interrupt services
 
@@ -39,7 +40,7 @@ void hardware_enable_buttons() {
 typedef enum {
 	HWD_NOTHING = 0,
 	HWD_POWER_CHANGE,
-	HWD_BUZZER_OFF,
+	HWD_BUZZER_FEEDBACK,
 	HWD_TURN_SCREEN,
 	HWD_THERMAL_SYSTEM,
 
@@ -48,10 +49,12 @@ typedef enum {
 HARDWARE_ACTIONS g_iHardware_actions = HWD_NOTHING;
 
 void hardware_actions() {
+	SYSTEM_STATUS *s;
 	uint8_t lcd_on = false;
 	if (g_iHardware_actions==HWD_NOTHING)
 		return;
 
+	// TODO Change into flags to run several actions at the same time
 	switch (g_iHardware_actions) {
 		case HWD_POWER_CHANGE:
 			if (POWER_ON)
@@ -65,9 +68,14 @@ void hardware_actions() {
 		case HWD_THERMAL_SYSTEM:
 			thermal_handle_system_button();
 			lcd_on = 1;
-		break;
-		case HWD_BUZZER_OFF:
-			state_alarm_force_turnoff_buzzer();
+
+		case HWD_BUZZER_FEEDBACK:
+			s = state_getAlarms();
+			if (s->alarms.button_buzzer_override) {
+				lcd_printf(LINE1, "BUZZER OFF");
+			} else {
+				lcd_printf(LINE1, "BUZZER ON");
+			}
 			g_iSystemSetup = 0;
 		case HWD_TURN_SCREEN:
 			lcd_on = 1;
@@ -76,7 +84,7 @@ void hardware_actions() {
 
 	if (lcd_on) {
 		event_LCD_turn_on();
-		event_force_event_by_id(EVT_DISPLAY, 1);
+		event_force_event_by_id(EVT_DISPLAY, 0);
 	}
 
 	event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 0);
@@ -103,12 +111,12 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 	case P2IV_P2IFG1:
 		break;
 	case P2IV_P2IFG2:
-		//P3OUT &= ~BIT4;                           // buzzer off
 		SYSTEM_RUNNING_CHECK
 #ifdef _DEBUG
 		g_iDebug = !g_iDebug;
 #endif
 		g_iHardware_actions = HWD_TURN_SCREEN;
+		state_alarm_enable_buzzer_override();
     	// Resume execution if the device is in deep sleep mode
 		WAKEUP_MAIN
 		break;
@@ -135,6 +143,7 @@ void __attribute__ ((interrupt(PORT3_VECTOR))) Port_3 (void)
 		SYSTEM_RUNNING_CHECK
 		g_iSystemSetup ++;
 		g_iHardware_actions = HWD_THERMAL_SYSTEM;
+		state_alarm_disable_buzzer_override();
     	// Resume execution if the device is in deep sleep mode
 		WAKEUP_MAIN
 		break;
