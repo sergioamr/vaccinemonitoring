@@ -371,7 +371,7 @@ void lcd_display_config() {
 	getFloatNumber2Text(pAlertParams->threshCold, num1);
 	getFloatNumber2Text(pAlertParams->threshHot, num2);
 
-	lcd_printf(LINEC, "A C%d %s H%d %s", (int) pAlertParams->maxSecondsCold / 60, &num1[0],
+	lcd_printf(LINEC, "C%d %s H%d %s", (int) pAlertParams->maxSecondsCold / 60, &num1[0],
 			(int) pAlertParams->maxSecondsHot / 60, &num2[0]);
 
 	lcd_printf(LINEH, "S%d U%d L%d P%d", g_pDevCfg->cfgSelectedSIM_slot+1,

@@ -103,12 +103,12 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 	case P2IV_P2IFG1:
 		break;
 	case P2IV_P2IFG2:
-		//P3OUT &= ~BIT4;                           // buzzer off
 		SYSTEM_RUNNING_CHECK
 #ifdef _DEBUG
 		g_iDebug = !g_iDebug;
 #endif
 		g_iHardware_actions = HWD_TURN_SCREEN;
+		state_alarm_force_turnoff_buzzer();
     	// Resume execution if the device is in deep sleep mode
 		WAKEUP_MAIN
 		break;
