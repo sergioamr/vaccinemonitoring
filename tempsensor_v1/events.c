@@ -183,8 +183,18 @@ void events_register(EVENT_IDS id, char *name, time_t offset_time_secs,
 	pEvent->id = id;
 	strncpy(pEvent->name, name, sizeof(pEvent->name));
 
-	pEvent->intervalDefault = intervalDefault-offset_time_secs;
-	pEvent->interval = MINUTES_(interval)-offset_time_secs;
+	if (intervalDefault!=0)
+		pEvent->intervalDefault = intervalDefault-offset_time_secs;
+	else
+		pEvent->intervalDefault = 0;
+
+	if (interval!=0)
+		pEvent->interval = MINUTES_(interval)-offset_time_secs;
+	else
+		pEvent->interval = 0;
+
+	if (pEvent->interval<0)
+		pEvent->interval = 0;
 
 	pEvent->lastEventRun = 0;
 	pEvent->nextEventRun = 0;
