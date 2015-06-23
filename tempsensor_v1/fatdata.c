@@ -455,7 +455,9 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
 
+#ifdef _DEBUG
 	lcd_print("Saving sample");
+#endif
 
 	rtc_getlocal(&g_tmCurrTime);
 	char* fn = get_current_fileName(&g_tmCurrTime, FOLDER_DATA, EXTENSION_DATA);
@@ -483,7 +485,11 @@ FRESULT log_sample_web_format(UINT *tbw) {
 
 	if (fr == FR_OK) {
 		f_sync(&fobj);
+
+#ifdef _DEBUG
 		lcd_printf(LINE2, "OK %d bytes", *tbw);
+#endif
+
 		f_sync(&fobj);
 	} else {
 		fat_check_error(fr);
