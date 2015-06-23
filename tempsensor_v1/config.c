@@ -364,8 +364,6 @@ void config_update_system_time() {
 int config_parse_configuration(char *msg) {
 	char *token;
 	char command[5] = "$EN";
-	char num1[5];
-	char num2[5];
 	char delimiter[2] = ",";
 	int tempValue = 0;
 	int iCnt = 0;
@@ -462,19 +460,7 @@ int config_parse_configuration(char *msg) {
 	event_setInterval_by_id(EVT_UPLOAD_SAMPLES,
 			MINUTES_(pInterval->uploadInterval));
 
-	pAlertParams = &g_pDevCfg->stTempAlertParams[0];
-
-	num2[4]=num1[4]=0;
-	getFloatNumber2Text(pAlertParams->threshCold, num1);
-	getFloatNumber2Text(pAlertParams->threshHot, num2);
-
-	lcd_printf(LINEC, "C%d %s H%d %s", (int) pAlertParams->maxSecondsCold / 60, &num1[0],
-			(int) pAlertParams->maxSecondsHot / 60, &num2[0]);
-
-	lcd_printf(LINEH, "S%d U%d L%d P%d", g_pDevCfg->cfgSelectedSIM_slot+1,
-			g_pDevCfg->stIntervalParam.uploadInterval,
-			g_pDevCfg->stIntervalParam.samplingInterval,
-			g_pDevCfg->stBattPowerAlertParam.minutesPower);
+	lcd_display_config();
 
 	return UART_SUCCESS;
 }

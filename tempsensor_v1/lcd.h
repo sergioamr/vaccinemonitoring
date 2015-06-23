@@ -47,6 +47,7 @@ void lcd_setupIO();
 void lcd_reset();
 void lcd_blenable();
 void lcd_init();
+void lcd_display_config();
 void lcd_on();
 void lcd_off();
 void lcd_clear();

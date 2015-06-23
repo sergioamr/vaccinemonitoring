@@ -203,7 +203,7 @@ void lcd_show() {
 		break;
 
 	case 9:
-		lcd_printf(LINEC, "ALARM CONFIG TODO");
+		lcd_display_config();
 		return;
 	default:
 		break;
@@ -360,4 +360,22 @@ void lcd_print_boot(const char* pcData, int line) {
 #else
 	lcd_print_progress();
 #endif
+}
+
+void lcd_display_config() {
+	TEMP_ALERT_PARAM *pAlertParams = &g_pDevCfg->stTempAlertParams[0];
+	char num1[5];
+	char num2[5];
+
+	num2[4]=num1[4]=0;
+	getFloatNumber2Text(pAlertParams->threshCold, num1);
+	getFloatNumber2Text(pAlertParams->threshHot, num2);
+
+	lcd_printf(LINEC, "A C%d %s H%d %s", (int) pAlertParams->maxSecondsCold / 60, &num1[0],
+			(int) pAlertParams->maxSecondsHot / 60, &num2[0]);
+
+	lcd_printf(LINEH, "S%d U%d L%d P%d", g_pDevCfg->cfgSelectedSIM_slot+1,
+			g_pDevCfg->stIntervalParam.uploadInterval,
+			g_pDevCfg->stIntervalParam.samplingInterval,
+			g_pDevCfg->stBattPowerAlertParam.minutesPower);
 }
