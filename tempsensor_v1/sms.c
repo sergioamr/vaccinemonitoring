@@ -97,6 +97,7 @@ int8_t sms_process_memory_message(int8_t index) {
 	case '1':
 		sms_send_data_request(phone); // Send the phone without the \"
 		break;
+	case 'R':
 	case '2':
 		sms_send_message_number(phone, "Rebooting...");
 		delallmsg();
@@ -109,23 +110,19 @@ int8_t sms_process_memory_message(int8_t index) {
 		//reset the board by issuing a SW BOR
 		system_reboot("NET_COMMAND");
 	case 'E':
-	case 'e':
 		events_send_data(phone);
 		break;
-	case 'c':
 	case 'C':
 		config_send_configuration(phone);
 		break;
-	case 'a':
-	case 'A':
-		state_alarm_turnon_buzzer();
-		answer = 1;
-		break;
-	case 'u':
 	case 'U':
 		event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 5);
 		event_force_event_by_id(EVT_SAVE_SAMPLE_TEMP, 10);
 		event_force_event_by_id(EVT_UPLOAD_SAMPLES, 15);
+		answer = 1;
+		break;
+	case 'A':
+		state_alarm_on("SMS_TRIGGER");
 		answer = 1;
 		break;
 
@@ -161,7 +158,7 @@ int8_t sms_process_messages() {
 	memset(SM_ME, 0, sizeof(SM_ME));
 
 	lcd_printf(LINEC, "Fetching SMSs");
-	lcd_printf(LINE2, "SIM %d ", config_getSelectedSIM()+1);
+	lcd_printf(LINE2, "SIM %d ", config_getSelectedSIM() + 1);
 
 	//check if messages are available
 	uart_tx("AT+CPMS?\r\n");
