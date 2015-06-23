@@ -382,7 +382,7 @@ int8_t modem_first_init() {
 		uart_tx_timeout("AT\r\n", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
 		lcd_enable_verbose();
 
-		uint8_t nsims = NUM_SIM_CARDS;
+		uint8_t nsims = SYSTEM_NUM_SIM_CARDS;
 
 #ifdef _DEBUG
 		nsims = 1;
@@ -410,7 +410,7 @@ int8_t modem_first_init() {
 		// One or more of the sims had a catastrofic failure on init, set the device
 		switch (iSIM_Error) {
 		case 1:
-			for (t = 0; t < NUM_SIM_CARDS; t++)
+			for (t = 0; t < SYSTEM_NUM_SIM_CARDS; t++)
 				if (config_getSIMError(t) == NO_ERROR) {
 					if (config_getSelectedSIM() != t) {
 						g_pDevCfg->cfgSIM_slot = t;
@@ -719,7 +719,7 @@ int8_t modem_set_max_messages() {
 void modem_pull_time() {
 	int i;
 	int res = UART_FAILED;
-	for (i = 0; i < MAX_TIME_ATTEMPTS; i++) {
+	for (i = 0; i < NETWORK_PULLTIME_ATTEMPTS; i++) {
 		res = uart_tx("AT+CCLK?\r\n");
 		if (res == UART_SUCCESS)
 			res = modem_parse_time(&g_tmCurrTime);

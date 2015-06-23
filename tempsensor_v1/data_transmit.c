@@ -51,7 +51,7 @@ uint8_t data_send_temperatures_sms() {
 
 	strcpy(data, SMS_DATA_MSG_TYPE);
 	strcat(data, get_simplified_date_string(&g_tmCurrTime));
-	for (t = 0; t < MAX_NUM_SENSORS; t++) {
+	for (t = 0; t < SYSTEM_NUM_SENSORS; t++) {
 		//strcat(data, getSensorTemp(t));
 	}
 

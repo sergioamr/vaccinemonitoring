@@ -8,6 +8,8 @@
 #ifndef TEMPSENSOR_V1_LCD_H_
 #define TEMPSENSOR_V1_LCD_H_
 
+#define   SLAVE_ADDR_DISPLAY	0x38
+
 //LCD lines
 #define LINE1					1
 #define LINE2					2

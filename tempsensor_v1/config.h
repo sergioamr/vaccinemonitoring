@@ -19,12 +19,18 @@
 /**************************************************************************************************************************/
 
 #define NEXLEAF_SMS_GATEWAY       "00447482787262"
+
+#ifndef _DEBUG
+#define REPORT_PHONE_NUMBER 	   NEXLEAF_SMS_GATEWAY
+#endif
+
 #define NEXLEAF_DEFAULT_SERVER_IP "54.241.2.213"
 #define NEXLEAF_DEFAULT_APN 	  "giffgaff.com"
 
-#define NETWORK_ATTEMPTS_BEFORE_SWAP_SIM 3
+// SMS alerts, it will send an SMS to the local testing number
+#define ALERTS_SMS 1
 
-#define LOCAL_TESTING_NUMBER "07977345678"
+#define NETWORK_ATTEMPTS_BEFORE_SWAP_SIM 3
 
 // Threshold in percentage in which the device will enter deep hibernate mode
 #define BATTERY_HIBERNATE_THRESHOLD 10
@@ -37,71 +43,8 @@
 // CONFIGURATION_URL_PATH/IMEI/1/
 #define CONFIGURATION_URL_PATH "/coldtrace/uploads/multi/v3"
 
-#ifdef _DEBUG
+// Number of subsamples to capture per sample
 #define NUM_SAMPLES_CAPTURE 10
-#else
-#define NUM_SAMPLES_CAPTURE 10
-#endif
-
-/**************************************************************************************************************************/
-/* END FACTORY CONFIGURATION 																							  */
-/**************************************************************************************************************************/
-
-#ifdef _DEBUG
-#define MAIN_SLEEP_TIME 20000
-#define MAIN_LCD_OFF_SLEEP_TIME 10000
-#else
-#define MAIN_SLEEP_TIME 1000
-#define MAIN_LCD_OFF_SLEEP_TIME 30000
-#endif
-
-// Poll times trying to connect to the network.
-// After autoband it could take up to 90 seconds for the bands trial and error.
-// So we have to wait for the modem to be ready.
-
-#ifdef _DEBUG
-#define HTTP_COMMAND_ATTEMPTS 10
-#define NETWORK_CONNECTION_ATTEMPTS 20
-#define NETWORK_CONNECTION_DELAY 1000
-#else
-#define HTTP_COMMAND_ATTEMPTS 40
-#define NETWORK_CONNECTION_ATTEMPTS 10
-#define NETWORK_CONNECTION_DELAY 5000
-#endif
-
-#define MAX_NUM_CONTINOUS_SAMPLES 10
-
-// Setup mode in which we are at the moment
-// Triggered by the Switch 3 button
-EXTERN int8_t g_iSystemSetup;
-
-//Temperature cut off
-#define TEMP_CUTOFF				-800		//-80 deg C
-#define MODEM_CHECK_RETRY 	3
-#define MAX_TIME_ATTEMPTS 3
-
-//I2C configuration
-#define   I2C_TX_LEN			32
-#define   I2C_RX_LEN			32
-#define   SLAVE_ADDR_DISPLAY	0x38
-#define   SLAVE_ADDR_BATTERY	0x55
-
-//Battery configuration
-#if BAT_VER == 1
-#define   BATTERY_CAPACITY 		650			//650 mAh
-#define   DESIGN_ENERGY			2405
-#define   TERMINAL_VOLTAGE		3400
-#define   TAPER_RATE			403
-#else
-#define   BATTERY_CAPACITY 		750			//750 mAh
-#define   DESIGN_ENERGY			2850
-#define   TERMINAL_VOLTAGE		3400
-#define   TAPER_RATE			370
-#define   TAPER_VOLT			4100
-#endif
-
-//Number of sensors
-#define MAX_NUM_SENSORS			5
 
 //Sampling configuration
 #ifndef _DEBUG
@@ -117,21 +60,6 @@ EXTERN int8_t g_iSystemSetup;
 #define PERIOD_PULLTIME			12*60	// 12 hours
 #define PERIOD_BATTERY_CHECK 	15
 #define SAMPLE_COUNT			10
-#else
-#define PERIOD_SAMPLING			5		//in minutes
-#define PERIOD_UPLOAD			20		//in minutes
-#define PERIOD_REBOOT 			24*60   //in minutes
-#define PERIOD_LCD_OFF			10
-#define PERIOD_ALARMS_CHECK	    3
-#define PERIOD_CONFIGURATION_FETCH 60
-#define PERIOD_SMS_CHECK   	    7		//poll interval in minutes for sms msg TODO change back
-#define PERIOD_NETWORK_CHECK	4
-#define PERIOD_LCD_REFRESH		1
-#define PERIOD_PULLTIME			45
-#define PERIOD_BATTERY_CHECK 	10
-#define SAMPLE_COUNT			5
-
-#define PERIOD_SMS_TEST			30
 #endif
 
 //Alert configuration
@@ -146,14 +74,19 @@ EXTERN int8_t g_iSystemSetup;
 #define MIN_CNF_TEMP_THRESHOLD  1
 #define MAX_CNF_TEMP_THRESHOLD	1440
 
-//Display contants
-#define LCD_DISPLAY_LEN			32
-#define LCD_INIT_PARAM_SIZE		9
-#define LCD_LINE_LEN			16
-#define DEF_IMEI  "IMEI_UNKNOWN"
-
-// Used to store the sensors data
-#define TEMP_DATA_LEN		5
+//Battery configuration
+#if BAT_VER == 1
+#define   BATTERY_CAPACITY 		650			//650 mAh
+#define   DESIGN_ENERGY			2405
+#define   TERMINAL_VOLTAGE		3400
+#define   TAPER_RATE			403
+#else
+#define   BATTERY_CAPACITY 		750			//750 mAh
+#define   DESIGN_ENERGY			2850
+#define   TERMINAL_VOLTAGE		3400
+#define   TAPER_RATE			370
+#define   TAPER_VOLT			4100
+#endif
 
 // Network signal quality values
 #define NETWORK_DOWN_SS		14.0
@@ -162,8 +95,79 @@ EXTERN int8_t g_iSystemSetup;
 
 #define NETWORK_ZERO 10.0
 
-#define NUM_SIM_CARDS 2
+//Temperature cut off
+#define TEMP_CUTOFF				-800		//-80 deg C
 
+/**************************************************************************************************************************/
+/* END FACTORY CONFIGURATION 																							  */
+/**************************************************************************************************************************/
+
+//Number of sensors
+#define SYSTEM_NUM_SENSORS		5
+#define SYSTEM_NUM_SIM_CARDS 	2
+
+/**************************************************************************************************************************/
+/* NETWORK AND TIMEOUTS		  																						      */
+/**************************************************************************************************************************/
+
+#ifndef _DEBUG
+#define MAIN_SLEEP_TIME 1000
+#define MAIN_LCD_OFF_SLEEP_TIME 30000
+#endif
+
+// Poll times trying to connect to the network.
+// After autoband it could take up to 90 seconds for the bands trial and error.
+// So we have to wait for the modem to be ready.
+
+#ifndef _DEBUG
+#define HTTP_COMMAND_ATTEMPTS 40
+#define NETWORK_CONNECTION_ATTEMPTS 10
+#define NETWORK_CONNECTION_DELAY 5000
+#endif
+
+#define MODEM_CHECK_RETRY 	3
+#define NETWORK_PULLTIME_ATTEMPTS 3
+
+/**************************************************************************************************************************/
+/* DEVELOPMENT CONFIGURATION																							  */
+/**************************************************************************************************************************/
+
+#ifdef _DEBUG
+#define REPORT_PHONE_NUMBER "07977345678"
+#define ALERTS_SMS 1
+
+#define MAIN_SLEEP_TIME 20000
+#define MAIN_LCD_OFF_SLEEP_TIME 10000
+
+#define PERIOD_SAMPLING			5		//in minutes
+#define PERIOD_UPLOAD			20		//in minutes
+#define PERIOD_REBOOT 			24*60   //in minutes
+#define PERIOD_LCD_OFF			10
+#define PERIOD_ALARMS_CHECK	    3
+#define PERIOD_CONFIGURATION_FETCH 60
+#define PERIOD_SMS_CHECK   	    7		//poll interval in minutes for sms msg TODO change back
+#define PERIOD_NETWORK_CHECK	4
+#define PERIOD_LCD_REFRESH		1
+#define PERIOD_PULLTIME			45
+#define PERIOD_BATTERY_CHECK 	10
+#define SAMPLE_COUNT			5
+
+#define PERIOD_SMS_TEST			30
+
+#define HTTP_COMMAND_ATTEMPTS 10
+#define NETWORK_CONNECTION_ATTEMPTS 20
+#define NETWORK_CONNECTION_DELAY 1000
+#endif
+
+//Display contants
+#define LCD_DISPLAY_LEN			32
+#define LCD_INIT_PARAM_SIZE		9
+#define LCD_LINE_LEN			16
+#define DEF_IMEI  "IMEI_UNKNOWN"
+
+/*****************************************************************************************************************/
+/* Main structures for the application */
+/*****************************************************************************************************************/
 typedef struct {
 	char cfgSMSCenter[GW_MAX_LEN + 1]; // Service Message Center number
 	char cfgPhoneNum[GW_MAX_LEN + 1];
@@ -215,7 +219,7 @@ typedef struct {
 
 	int8_t cfgServerConfigReceived; // The server sent us a configuration package
 
-	TEMP_ALERT_PARAM stTempAlertParams[MAX_NUM_SENSORS];
+	TEMP_ALERT_PARAM stTempAlertParams[SYSTEM_NUM_SENSORS];
 	BATT_POWER_ALERT_PARAM stBattPowerAlertParam;
 	INTERVAL_PARAM stIntervalParam;
 
@@ -223,12 +227,14 @@ typedef struct {
 	char cfgGatewayIP[MAX_IP_SIZE];
 	char cfgGatewaySMS[GW_MAX_LEN + 1];
 
-	SIM_CARD_CONFIG SIM[NUM_SIM_CARDS];
+	SIM_CARD_CONFIG SIM[SYSTEM_NUM_SIM_CARDS];
 	struct tm lastSystemTime;
+
+	int8_t cfgSMS_Alerts;
 
 } CONFIG_DEVICE;
 
-typedef struct  {
+typedef struct {
 	uint8_t memoryInitialized;
 	uint32_t numberRuns;
 	uint32_t numberConfigurationRuns;
@@ -254,20 +260,22 @@ typedef struct {
 
 #define STATUS_NO_ALARM 0
 
-typedef union
-{
+typedef union {
 	struct {
-		unsigned char alarm : 1;	   // Alarm is on
-		unsigned char lowAlarm : 1;    // Temperature below minimum
-		unsigned char highAlarm : 1;   // Temperature above maximum
-		unsigned char disconnected : 1;// Sensor not connected
-		unsigned char bit5 : 1;
-		unsigned char bit6 : 1;
-		unsigned char bit7 : 1;
-		unsigned char bit8 : 1;
+		unsigned char alarm :1;	   // Alarm is on
+		unsigned char lowAlarm :1;    // Temperature below minimum
+		unsigned char highAlarm :1;   // Temperature above maximum
+		unsigned char disconnected :1;   // Sensor not connected
+		unsigned char bit5 :1;
+		unsigned char bit6 :1;
+		unsigned char bit7 :1;
+		unsigned char bit8 :1;
 	} alarms;
-  unsigned char status;
+	unsigned char status;
 } SENSOR_STATUS;
+
+// Used to store the sensors data
+#define TEMP_DATA_LEN		5
 
 typedef struct {
 	char name[2];
@@ -284,39 +292,37 @@ typedef struct {
 	uint16_t iSamplesRead;
 
 	time_t alarm_time;	// When was the alarm triggered
-	SENSOR_STATUS state[MAX_NUM_SENSORS];
-	TEMPERATURE_SENSOR sensors[MAX_NUM_SENSORS];
+	SENSOR_STATUS state[SYSTEM_NUM_SENSORS];
+	TEMPERATURE_SENSOR sensors[SYSTEM_NUM_SENSORS];
 } TEMPERATURE;
 
-typedef union
-{
+typedef union {
 	struct {
-		unsigned char globalAlarm : 1;
-		unsigned char SD_cardFailure : 1;
-		unsigned char buzzer : 1;
-		unsigned char power : 1;
-		unsigned char button_buzzer_override : 1;
-		unsigned char battery : 1;
-		unsigned char bit7 : 1;
-		unsigned char bit8 : 1;
+		unsigned char globalAlarm :1;
+		unsigned char SD_cardFailure :1;
+		unsigned char buzzer :1;
+		unsigned char power :1;
+		unsigned char button_buzzer_override :1;
+		unsigned char battery :1;
+		unsigned char bit7 :1;
+		unsigned char bit8 :1;
 	} alarms;
-  unsigned char status;
+	unsigned char status;
 } SYSTEM_STATUS;
 
 //  Commands to ignore if there was a problem on last boot
-typedef union
-{
+typedef union {
 	struct {
-		unsigned char sms_process_messages : 1; // Clear SMS
-		unsigned char data_transmit : 1;		// Delete old files since are crashing the software (corruption?)
-		unsigned char bit3 : 1;
-		unsigned char bit4 : 1;
-		unsigned char bit5 : 1;
-		unsigned char bit6 : 1;
-		unsigned char bit7 : 1;
-		unsigned char bit8 : 1;
+		unsigned char sms_process_messages :1; // Clear SMS
+		unsigned char data_transmit :1;	// Delete old files since are crashing the software (corruption?)
+		unsigned char bit3 :1;
+		unsigned char bit4 :1;
+		unsigned char bit5 :1;
+		unsigned char bit6 :1;
+		unsigned char bit7 :1;
+		unsigned char bit8 :1;
 	} disable;
-  unsigned char status;
+	unsigned char status;
 } SAFEBOOT_STATUS;
 
 typedef struct {
@@ -351,8 +357,12 @@ typedef struct {
 
 typedef struct {
 	int32_t dwLastSeek;
-	double calibration[MAX_NUM_SENSORS][2];
+	double calibration[SYSTEM_NUM_SENSORS][2];
 } CONFIG_CALIBRATION;
+
+/*****************************************************************************************************************/
+/* Configuration functions */
+/*****************************************************************************************************************/
 
 // Returns the current structure containing the info for the current SIM selected
 SIM_CARD_CONFIG *config_getSIM();
@@ -361,7 +371,8 @@ SIM_CARD_CONFIG *config_getSIM();
 uint8_t config_getSelectedSIM();
 
 // Store the error of the SIM in memory to be displayed
-void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken,	uint16_t errorID, const char *error);
+void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
+		const char *error);
 
 extern uint16_t config_getSIMError(int slot);
 extern void config_reset_error(SIM_CARD_CONFIG *sim);
@@ -410,5 +421,9 @@ void config_update_system_time();
 
 uint32_t config_get_boot_midnight_difference();
 uint8_t check_address_empty(uint8_t mem);
+
+// Setup mode in which we are at the moment
+// Triggered by the Switch 3 button
+extern int8_t g_iSystemSetup;
 
 #endif /* TEMPSENSOR_V1_CONFIG_H_ */

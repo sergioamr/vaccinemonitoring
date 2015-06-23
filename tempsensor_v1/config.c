@@ -189,7 +189,7 @@ void config_send_configuration(char *number) {
 	int i;
 
 	msg[0] = 0;
-	for (i = 0; i < MAX_NUM_SENSORS; i++) {
+	for (i = 0; i < SYSTEM_NUM_SENSORS; i++) {
 		alert = &g_pDevCfg->stTempAlertParams[i];
 		sprintf(temp, "%s(C%dm H%dm tC %d tH %d)\r\n", SensorName[i],
 				(int) alert->maxSecondsCold/60, (int) alert->maxSecondsHot/60,
@@ -232,7 +232,7 @@ int config_default_configuration() {
 	int i = 0;
 	TEMP_ALERT_PARAM *alert;
 	BATT_POWER_ALERT_PARAM *power;
-	for (i = 0; i < MAX_NUM_SENSORS; i++) {
+	for (i = 0; i < SYSTEM_NUM_SENSORS; i++) {
 		alert = &g_pDevCfg->stTempAlertParams[i];
 
 		alert->maxSecondsCold = ALARM_LOW_TEMP_PERIOD;
@@ -254,6 +254,8 @@ int config_default_configuration() {
 	g_pDevCfg->stIntervalParam.systemReboot = PERIOD_REBOOT;
 	g_pDevCfg->stIntervalParam.configurationFetch = PERIOD_CONFIGURATION_FETCH;
 	g_pDevCfg->stIntervalParam.smsCheckPeriod = PERIOD_SMS_CHECK;
+
+	g_pDevCfg->cfgSMS_Alerts = ALERTS_SMS;
 
 #ifdef _DEBUG
 	uint16_t c = g_pDevCfg->stIntervalParam.samplingInterval;
@@ -387,7 +389,7 @@ int config_parse_configuration(char *msg) {
 		return UART_SUCCESS;
 
 // Temperature configuration for each sensor
-	while (i < MAX_NUM_SENSORS) {
+	while (i < SYSTEM_NUM_SENSORS) {
 		pAlertParams = &g_pDevCfg->stTempAlertParams[i];
 		PARSE_NEXTVALUE(token, &pAlertParams->maxSecondsCold, delimiter,
 				UART_FAILED);
@@ -430,7 +432,7 @@ int config_parse_configuration(char *msg) {
 	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); // Reset alert
 	if (tempValue > 0) {
 		state_clear_alarm_state();
-		for (iCnt = 0; iCnt < MAX_NUM_SENSORS; iCnt++) {
+		for (iCnt = 0; iCnt < SYSTEM_NUM_SENSORS; iCnt++) {
 			//reset the alarm
 			state_reset_sensor_alarm(iCnt);
 		}

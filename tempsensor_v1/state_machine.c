@@ -165,7 +165,7 @@ SYSTEM_STATUS *state_getAlarms() {
 void state_reset_sensor_alarm(int id) {
 	int t;
 
-	for (t = 0; t < MAX_NUM_SENSORS; t++) {
+	for (t = 0; t < SYSTEM_NUM_SENSORS; t++) {
 		g_pSysState->temp.state[t].status = 0;
 	}
 }
@@ -211,7 +211,7 @@ void state_alarm_on(char *alarm_msg) {
 	state_alarm_turnon_buzzer();
 
 #ifdef _DEBUG
-	sms_send_message_number(LOCAL_TESTING_NUMBER, alarm_msg);
+	sms_send_message_number(REPORT_PHONE_NUMBER, alarm_msg);
 #endif
 
 	display_alarm:
@@ -246,7 +246,7 @@ void state_clear_alarm_state() {
 
 #ifdef _DEBUG
 	strcat(g_pSysState->alarm_message, " cleared");
-	sms_send_message_number(LOCAL_TESTING_NUMBER, g_pSysState->alarm_message);
+	sms_send_message_number(REPORT_PHONE_NUMBER, g_pSysState->alarm_message);
 #endif
 
 	s->alarms.buzzer = STATE_OFF;

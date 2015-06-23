@@ -19,7 +19,7 @@ void sms_send_data_request(char *number) {
 	rtc_update_time();
 	strcat(data, get_simplified_date_string(&g_tmCurrTime));
 	strcat(data, " ");
-	for (iOffset = 0; iOffset < MAX_NUM_SENSORS; iOffset++) {
+	for (iOffset = 0; iOffset < SYSTEM_NUM_SENSORS; iOffset++) {
 		strcat(data, SensorName[iOffset]);
 		strcat(data, "=");
 		strcat(data, temperature_getString(iOffset));
@@ -223,7 +223,7 @@ void sms_send_heart_beat() {
 	strcat(msg, ",");
 	strcat(msg, sim->cfgSMSCenter);
 	strcat(msg, ",");
-	for (i = 0; i < MAX_NUM_SENSORS; i++) {
+	for (i = 0; i < SYSTEM_NUM_SENSORS; i++) {
 		if (temperature_getString(i)[0] == '-') {
 			strcat(msg, "0,");
 		} else {
