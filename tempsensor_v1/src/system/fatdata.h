@@ -10,6 +10,8 @@
 
 extern FATFS FatFs;
 
+extern char g_bFatInitialized;
+
 char* get_YMD_String(struct tm* timeData);
 char* get_current_fileName(struct tm* timeData, const char *folder, const char *ext);
 char* get_date_string(struct tm* timeData, const char *dateSeperator,
@@ -28,6 +30,7 @@ void log_disable();
 void log_enable();
 
 #define FOLDER_LOG  "/LOG"
+#define FOLDER_SYS  ""
 
 // Web format data
 #define EXTENSION_DATA "CSV"
@@ -38,7 +41,8 @@ void log_enable();
 #define FOLDER_TEXT "/TXT"
 
 #define LOG_FILE_PATH FOLDER_LOG "/system.log"
-#define CONFIG_FILE_PATH FOLDER_LOG "/config.txt"
+#define CONFIG_INI_FILE FOLDER_SYS "/thermal.ini"
+#define CONFIG_LOG_FILE_PATH FOLDER_LOG "/config.log"
 #define LOG_FILE_UNKNOWN FOLDER_DATA "/unknown.csv"
 
 #endif /* TEMPSENSOR_V1_FATDATA_H_ */

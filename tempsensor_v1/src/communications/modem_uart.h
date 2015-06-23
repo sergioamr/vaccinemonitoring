@@ -8,8 +8,8 @@
 #ifndef TEMPSENSOR_V1_UART_H_
 #define TEMPSENSOR_V1_UART_H_
 
-#define TX_LEN   			1024
-#define RX_LEN   			2048
+#define TX_LEN   			256
+#define RX_LEN   			1024
 
 typedef struct {
 	uint16_t iRXTailIdx;

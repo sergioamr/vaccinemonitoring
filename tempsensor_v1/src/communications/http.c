@@ -137,7 +137,7 @@ int http_check_error(int *retry) {
 int http_open_connection(int data_length) {
 	char cmd[80];
 	// Test post URL
-	sprintf(cmd, "AT#HTTPSND=1,0,\"%s\",%d,0\r\n", DATA_UPLOAD_URL_PATH, data_length);
+	sprintf(cmd, "AT#HTTPSND=1,0,\"%s\",%d,0\r\n", g_pDevCfg->cfgUpload_URL, data_length);
 
 	// Wait for prompt
 	uart_setHTTPPromptMode();
@@ -160,7 +160,7 @@ int http_get_configuration() {
 	// <command>: Numeric parameter indicating the command requested to HTTP server:
 	// 0 GET 1 HEAD 2 DELETE
 
-	sprintf(szTemp, "AT#HTTPQRY=1,0,\"%s/%s/1/\"\r\n", CONFIGURATION_URL_PATH,
+	sprintf(szTemp, "AT#HTTPQRY=1,0,\"%s/%s/1/\"\r\n", g_pDevCfg->cfgConfig_URL,
 			g_pDevCfg->cfgIMEI);
 	uart_tx_timeout(szTemp, 5000, 1);
 	if (uart_getTransactionState() != UART_SUCCESS) {

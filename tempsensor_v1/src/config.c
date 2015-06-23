@@ -6,6 +6,9 @@
  */
 #define CONFIG_C_
 
+// Reads the configuration from a file in disk
+#define USE_MININI
+
 //#define RUN_CALIBRATION
 
 #include "thermalcanyon.h"
@@ -16,6 +19,13 @@
 #include "time.h"
 #include "events.h"
 #include "state_machine.h"
+#include "ff.h"
+#include "fatdata.h"
+
+#ifdef USE_MININI
+#include "minIni.h"
+FRESULT config_read_ini_file();
+#endif
 
 // Setup mode in which we are at the moment
 // Triggered by the Switch 3 button
@@ -226,38 +236,7 @@ void config_send_configuration(char *number) {
 	sms_send_message_number(number, msg);
 }
 
-int config_default_configuration() {
-	int i = 0;
-	TEMP_ALERT_PARAM *alert;
-	BATT_POWER_ALERT_PARAM *power;
-	for (i = 0; i < SYSTEM_NUM_SENSORS; i++) {
-		alert = &g_pDevCfg->stTempAlertParams[i];
-
-		alert->maxSecondsCold = ALARM_LOW_TEMP_PERIOD;
-		alert->maxSecondsHot = ALARM_HIGH_TEMP_PERIOD;
-
-		alert->threshCold = LOW_TEMP_THRESHOLD;
-		alert->threshHot = HIGH_TEMP_THRESHOLD;
-	}
-
-	power = &g_pDevCfg->stBattPowerAlertParam;
-	power->enablePowerAlert = POWER_ENABLE_ALERT;
-	power->minutesBattThresh = ALARM_BATTERY_PERIOD;
-	power->minutesPower = ALARM_POWER_PERIOD;
-	power->battThreshold = BATTERY_HIBERNATE_THRESHOLD;
-
-// TODO: default values for own number & sms center?
-	g_pDevCfg->sIntervalsMins.sampling = PERIOD_SAMPLING;
-	g_pDevCfg->sIntervalsMins.upload = PERIOD_UPLOAD;
-	g_pDevCfg->sIntervalsMins.systemReboot = PERIOD_REBOOT;
-	g_pDevCfg->sIntervalsMins.configurationFetch = PERIOD_CONFIGURATION_FETCH;
-	g_pDevCfg->sIntervalsMins.smsCheck = PERIOD_SMS_CHECK;
-
-	g_pDevCfg->cfgSMS_Alerts = ALERTS_SMS;
-
-// Battery and power alarms
-	return 1;
-}
+extern int main_test();
 
 void config_init() {
 
@@ -299,9 +278,11 @@ void config_init() {
 
 	strcpy(g_pDevCfg->cfgGatewayIP, NEXLEAF_DEFAULT_SERVER_IP); // HTTP server nextleaf
 	strcpy(g_pDevCfg->cfgGatewaySMS, NEXLEAF_SMS_GATEWAY); // Gateway to nextleaf
+	strcpy(g_pDevCfg->cfgConfig_URL, CONFIGURATION_URL_PATH);
+	strcpy(g_pDevCfg->cfgUpload_URL, DATA_UPLOAD_URL_PATH);
 
-	config_setSIMError(&g_pDevCfg->SIM[0], '+', NO_ERROR, "***FIRST SIM***");
-	config_setSIMError(&g_pDevCfg->SIM[1], '+', NO_ERROR, "**SECOND  SIM**");
+	config_setSIMError(&g_pDevCfg->SIM[0], '+', NO_ERROR, "*1 NOERROR*");
+	config_setSIMError(&g_pDevCfg->SIM[1], '+', NO_ERROR, "*2 NOERROR*");
 
 	strcpy(g_pDevCfg->SIM[0].cfgAPN, NEXLEAF_DEFAULT_APN);
 	strcpy(g_pDevCfg->SIM[1].cfgAPN, NEXLEAF_DEFAULT_APN);
@@ -328,6 +309,9 @@ void config_init() {
 	g_pSysCfg->maxTXBuffer = 0;
 
 	config_default_configuration();
+#ifdef USE_MININI
+	config_read_ini_file();
+#endif
 
 	lcd_printf(LINEC, "CONFIG MODE");
 	lcd_printl(LINEH, g_pSysCfg->firmwareVersion); // Show the firmware version
@@ -460,4 +444,64 @@ int config_process_configuration() {
 // FINDSTR uses RXBuffer - There is no need to initialize the data to parse.
 	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
 	return config_parse_configuration((char *) uart_getRXHead());
+}
+
+#ifdef USE_MININI
+FRESULT config_read_ini_file() {
+	FRESULT fr;
+	FILINFO fno;
+	long n;
+
+	if (!g_bFatInitialized)
+		return FR_NOT_READY;
+
+	fr = f_stat(CONFIG_INI_FILE, &fno);
+	if (fr == FR_NO_FILE) {
+		return fr;
+	}
+
+	n = ini_gets("SERVER", "GatewaySMS", NEXLEAF_SMS_GATEWAY, g_pDevCfg->cfgGatewaySMS, sizearray(g_pDevCfg->cfgGatewaySMS), CONFIG_INI_FILE);
+	n = ini_gets("SERVER", "GatewayIP", NEXLEAF_DEFAULT_SERVER_IP, g_pDevCfg->cfgGatewayIP, sizearray(g_pDevCfg->cfgGatewayIP), CONFIG_INI_FILE);
+	n = ini_gets("SERVER", "Config_URL", CONFIGURATION_URL_PATH, g_pDevCfg->cfgConfig_URL, sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
+	n = ini_gets("SERVER", "Upload_URL", DATA_UPLOAD_URL_PATH, g_pDevCfg->cfgUpload_URL, sizearray(g_pDevCfg->cfgUpload_URL), CONFIG_INI_FILE);
+
+	n = ini_gets("SIM1", "APN", NEXLEAF_DEFAULT_APN, g_pDevCfg->SIM[0].cfgAPN, sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
+	n = ini_gets("SIM2", "APN", NEXLEAF_DEFAULT_APN, g_pDevCfg->SIM[1].cfgAPN, sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
+
+	_NOP();
+	return FR_OK;
+}
+#endif
+
+int config_default_configuration() {
+	int i = 0;
+	TEMP_ALERT_PARAM *alert;
+	BATT_POWER_ALERT_PARAM *power;
+	for (i = 0; i < SYSTEM_NUM_SENSORS; i++) {
+		alert = &g_pDevCfg->stTempAlertParams[i];
+
+		alert->maxSecondsCold = ALARM_LOW_TEMP_PERIOD;
+		alert->maxSecondsHot = ALARM_HIGH_TEMP_PERIOD;
+
+		alert->threshCold = LOW_TEMP_THRESHOLD;
+		alert->threshHot = HIGH_TEMP_THRESHOLD;
+	}
+
+	power = &g_pDevCfg->stBattPowerAlertParam;
+	power->enablePowerAlert = POWER_ENABLE_ALERT;
+	power->minutesBattThresh = ALARM_BATTERY_PERIOD;
+	power->minutesPower = ALARM_POWER_PERIOD;
+	power->battThreshold = BATTERY_HIBERNATE_THRESHOLD;
+
+// TODO: default values for own number & sms center?
+	g_pDevCfg->sIntervalsMins.sampling = PERIOD_SAMPLING;
+	g_pDevCfg->sIntervalsMins.upload = PERIOD_UPLOAD;
+	g_pDevCfg->sIntervalsMins.systemReboot = PERIOD_REBOOT;
+	g_pDevCfg->sIntervalsMins.configurationFetch = PERIOD_CONFIGURATION_FETCH;
+	g_pDevCfg->sIntervalsMins.smsCheck = PERIOD_SMS_CHECK;
+
+	g_pDevCfg->cfgSMS_Alerts = ALERTS_SMS;
+
+// Battery and power alarms
+	return 1;
 }

@@ -283,7 +283,7 @@ FRESULT fat_save_config(char *text) {
 	if (len == 0)
 		return FR_OK;
 
-	fr = f_open(&fobj, CONFIG_FILE_PATH,
+	fr = f_open(&fobj, CONFIG_LOG_FILE_PATH,
 	FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
 	if (fr != FR_OK) {
 		fat_check_error(fr);

@@ -135,6 +135,8 @@ void system_boot() {
 
 	hardware_enable_buttons();
 	lcd_init();
+	fat_init_drive();
+
 	config_init(); // Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
 	config_setLastCommand(COMMAND_BOOT);
 
@@ -146,8 +148,6 @@ void system_boot() {
 #else
 	lcd_printl(LINE2, "(db)" __TIME__);
 #endif
-
-	fat_init_drive();
 
 	// Initial trigger of temperature capture. Just get one sample
 	temperature_subsamples(1);

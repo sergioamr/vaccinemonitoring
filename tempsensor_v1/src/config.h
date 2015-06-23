@@ -41,8 +41,8 @@
 
 // Path for getting the configuration from the server
 // CONFIGURATION_URL_PATH/IMEI/1/
-#define CONFIGURATION_URL_PATH "/coldtrace/uploads/multi/v3"
-#define DATA_UPLOAD_URL_PATH "/coldtrace/intel/upload/"
+#define CONFIGURATION_URL_PATH "" // "/coldtrace/uploads/multi/v3"
+#define DATA_UPLOAD_URL_PATH "" // "/coldtrace/intel/upload/"
 
 // Number of subsamples to capture per sample
 #define NUM_SAMPLES_CAPTURE 10
@@ -196,6 +196,7 @@ typedef struct {
 
 // 255.255.255.255
 #define MAX_IP_SIZE 3*4+3+1
+#define MAX_URL_PATH 40
 
 typedef struct {
 	float threshCold;
@@ -234,6 +235,8 @@ typedef struct {
 	char cfgIMEI[IMEI_MAX_LEN + 1];
 	char cfgGatewayIP[MAX_IP_SIZE];
 	char cfgGatewaySMS[GW_MAX_LEN + 1];
+	char cfgConfig_URL[MAX_URL_PATH];
+	char cfgUpload_URL[MAX_URL_PATH];
 
 	SIM_CARD_CONFIG SIM[SYSTEM_NUM_SIM_CARDS];
 	struct tm lastSystemTime;
@@ -385,8 +388,9 @@ void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
 extern uint16_t config_getSIMError(int slot);
 extern void config_reset_error(SIM_CARD_CONFIG *sim);
 extern uint16_t config_getSimLastError(char *charToken);
-
+int config_default_configuration();
 int config_process_configuration();
+
 int config_parse_configuration(char *msg);
 
 // Flags the sim as not working
