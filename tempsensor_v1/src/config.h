@@ -42,6 +42,7 @@
 // Path for getting the configuration from the server
 // CONFIGURATION_URL_PATH/IMEI/1/
 #define CONFIGURATION_URL_PATH "/coldtrace/uploads/multi/v3"
+#define DATA_UPLOAD_URL_PATH "/coldtrace/intel/upload/"
 
 // Number of subsamples to capture per sample
 #define NUM_SAMPLES_CAPTURE 10
