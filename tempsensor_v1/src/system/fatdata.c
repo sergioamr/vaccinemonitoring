@@ -65,7 +65,7 @@ char* get_date_string(struct tm* timeData, const char* dateSeperator,
 		strcpy(g_szDateString, itoa_nopadding(timeData->tm_year));
 
 	strcat(g_szDateString, dateSeperator);
-	strcat(g_szDateString, itoa_pad(timeData->tm_mon + 1));
+	strcat(g_szDateString, itoa_pad(timeData->tm_mon));
 	strcat(g_szDateString, dateSeperator);
 	strcat(g_szDateString, itoa_pad(timeData->tm_mday));
 	strcat(g_szDateString, dateTimeSeperator);
@@ -110,10 +110,8 @@ char* get_simplified_date_string(struct tm* timeData) {
 void parse_time_from_line(struct tm* timeToConstruct, char* formattedLine) {
 	char dateAttribute[5];
 	char* token = NULL;
-	int timeIndex = 0;
 
 	token = strtok(formattedLine, ",");
-	token = strtok(token, ":");
 
 	if (token != NULL) {
 		strncpy(dateAttribute, &token[4], 4);
@@ -127,29 +125,35 @@ void parse_time_from_line(struct tm* timeToConstruct, char* formattedLine) {
 		strncpy(dateAttribute, &token[10], 2);
 		dateAttribute[2] = 0;
 		timeToConstruct->tm_mday = atoi(&dateAttribute[0]);
+
+		strncpy(dateAttribute, &token[12], 2);
+		dateAttribute[2] = 0;
+		timeToConstruct->tm_hour = atoi(&dateAttribute[0]);
+
+		strncpy(dateAttribute, &token[14], 2);
+		dateAttribute[2] = 0;
+		timeToConstruct->tm_min = atoi(&dateAttribute[0]);
+
+		strncpy(dateAttribute, &token[16], 2);
+		dateAttribute[2] = 0;
+		timeToConstruct->tm_sec = atoi(&dateAttribute[0]);
 	}
+}
 
-	token = strtok(NULL, ":");
-	while (token != NULL) {
-		switch (timeIndex) {
-		case 0:
-			timeToConstruct->tm_hour = atoi(token);
-			break;
-		case 1:
-			timeToConstruct->tm_min = atoi(token);
-			break;
-		case 2:
-			timeToConstruct->tm_sec = atoi(token);
+void offset_timestamp(struct tm* dateToOffset, int intervalMultiplier) {
+	int timeVal;
+
+	if (dateToOffset == NULL) return;
+
+	timeVal = dateToOffset->tm_min + (intervalMultiplier * g_pDevCfg->sIntervalsMins.sampling);
+	if (timeVal >= 60) {
+		while (timeVal >= 60) {
+			timeVal -= 60;
+			dateToOffset->tm_min = timeVal;
+			dateToOffset->tm_hour += 1;
 		}
-
-		if (timeIndex == 1) {
-			// Needs to be tested
-			token = strtok(NULL, ",");
-		} else {
-			token = strtok(NULL, ":");
-		}
-
-		timeIndex++;
+	} else {
+		dateToOffset->tm_min = timeVal;
 	}
 }
 
