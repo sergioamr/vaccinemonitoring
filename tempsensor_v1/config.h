@@ -48,7 +48,7 @@
 /**************************************************************************************************************************/
 
 #ifdef _DEBUG
-#define MAIN_SLEEP_TIME 1000
+#define MAIN_SLEEP_TIME 20000
 #define MAIN_LCD_OFF_SLEEP_TIME 10000
 #else
 #define MAIN_SLEEP_TIME 1000
@@ -109,11 +109,11 @@ EXTERN int8_t g_iSystemSetup;
 #define PERIOD_UPLOAD			20		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
 #define PERIOD_LCD_OFF			5
-#define PERIOD_ALARMS_CHECK	    3
-#define PERIOD_CONFIGURATION_FETCH 1
+#define PERIOD_ALARMS_CHECK	    5
+#define PERIOD_CONFIGURATION_FETCH 5
 #define PERIOD_SMS_CHECK   	    16		//poll interval in minutes for sms msg TODO change back
 #define PERIOD_NETWORK_CHECK	10
-#define PERIOD_LCD_REFRESH		1
+#define PERIOD_LCD_REFRESH		5
 #define PERIOD_PULLTIME			12*60	// 12 hours
 #define PERIOD_BATTERY_CHECK 	15
 #define SAMPLE_COUNT			10

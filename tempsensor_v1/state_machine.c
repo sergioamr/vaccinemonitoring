@@ -170,7 +170,12 @@ void state_reset_sensor_alarm(int id) {
 	}
 }
 
-void state_alarm_force_turnoff_buzzer() {
+void state_alarm_disable_buzzer_override() {
+	SYSTEM_STATUS *s = state_getAlarms();
+	s->alarms.button_buzzer_override = false;
+}
+
+void state_alarm_enable_buzzer_override() {
 	SYSTEM_STATUS *s = state_getAlarms();
 
 	// Should we also check if the alarm is on?
