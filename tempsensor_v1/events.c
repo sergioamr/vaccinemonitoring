@@ -466,7 +466,7 @@ void events_init() {
 
 	// Check every 30 seconds until we get the configuration message from server;
 	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs,
-			MINUTES_(PERIOD_SMS_CHECK), g_pDevCfg->stIntervalParam.smsCheckPeriod);
+			MINUTES_(PERIOD_SMS_CHECK), g_pDevCfg->sIntervalsMins.smsCheck);
 
 	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off,
 			MINUTES_(PERIOD_LCD_OFF), NULL);
@@ -479,21 +479,21 @@ void events_init() {
 
 	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0, &event_subsample_temperature,
 			MINUTES_(PERIOD_SAMPLING),
-			g_pDevCfg->stIntervalParam.samplingInterval);
+			g_pDevCfg->sIntervalsMins.sampling);
 
 	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 30, &event_save_samples,
 			MINUTES_(PERIOD_SAMPLING),
-			g_pDevCfg->stIntervalParam.samplingInterval);
+			g_pDevCfg->sIntervalsMins.sampling);
 
 	events_register(EVT_UPLOAD_SAMPLES, "UPLOAD", 0, &event_upload_samples,
 			MINUTES_(PERIOD_UPLOAD),
-			g_pDevCfg->stIntervalParam.uploadInterval);
+			g_pDevCfg->sIntervalsMins.upload);
 
 	events_register(EVT_PERIODIC_REBOOT, "REBOOT", 0, &event_reboot_system,
-			HOURS_(PERIOD_REBOOT), g_pDevCfg->stIntervalParam.systemReboot);
+			MINUTES_(PERIOD_REBOOT), g_pDevCfg->sIntervalsMins.systemReboot);
 
 	events_register(EVT_CONFIGURATION, "CONFIG", 30, &event_fetch_configuration,
-			MINUTES_(PERIOD_CONFIGURATION_FETCH), g_pDevCfg->stIntervalParam.configurationFetch);
+			MINUTES_(PERIOD_CONFIGURATION_FETCH), g_pDevCfg->sIntervalsMins.configurationFetch);
 
 	events_sync();
 }

@@ -199,23 +199,15 @@ void config_send_configuration(char *number) {
 	sms_send_message_number(number, msg);
 
 	power = &g_pDevCfg->stBattPowerAlertParam;
-	sprintf(msg, "Power Active %d(%d mins) \r\nBatt (%d mins thres %d)",
+	sprintf(msg, "Power Active %d(%d mins) \r\nBatt (%d mins thres %d)\r\n" \
+			"Interval Sampling %d\r\nUpload %d\r\nReboot %d \r\nConfig %d",
 			power->enablePowerAlert, (int) power->minutesPower,
-			(int) power->minutesBattThresh, (int) power->battThreshold);
-	sms_send_message_number(number, msg);
+			(int) power->minutesBattThresh, (int) power->battThreshold,
 
-	sprintf(msg, "Interval Sampling %d\r\nUpload %d\r\nReboot\r\n%d Config %d",
-			(int) g_pDevCfg->stIntervalParam.samplingInterval/60,
-			(int) g_pDevCfg->stIntervalParam.uploadInterval/60,
-			(int) g_pDevCfg->stIntervalParam.systemReboot/60,
-			(int) g_pDevCfg->stIntervalParam.configurationFetch/60);
-	sms_send_message_number(number, msg);
-
-	sprintf(msg, "Interval Sampling %d\r\nUpload %d\r\nReboot\r\n%d Config %d",
-			(int) g_pDevCfg->stIntervalParam.samplingInterval/60,
-			(int) g_pDevCfg->stIntervalParam.uploadInterval/60,
-			(int) g_pDevCfg->stIntervalParam.systemReboot/60,
-			(int) g_pDevCfg->stIntervalParam.configurationFetch/60);
+			(int) g_pDevCfg->sIntervalsMins.sampling,
+			(int) g_pDevCfg->sIntervalsMins.upload,
+			(int) g_pDevCfg->sIntervalsMins.systemReboot,
+			(int) g_pDevCfg->sIntervalsMins.configurationFetch);
 	sms_send_message_number(number, msg);
 
 	sprintf(msg, "Gateway [%s]\r\n" \
@@ -249,25 +241,13 @@ int config_default_configuration() {
 	power->battThreshold = BATTERY_HIBERNATE_THRESHOLD;
 
 // TODO: default values for own number & sms center?
-	g_pDevCfg->stIntervalParam.samplingInterval = PERIOD_SAMPLING;
-	g_pDevCfg->stIntervalParam.uploadInterval = PERIOD_UPLOAD;
-	g_pDevCfg->stIntervalParam.systemReboot = PERIOD_REBOOT;
-	g_pDevCfg->stIntervalParam.configurationFetch = PERIOD_CONFIGURATION_FETCH;
-	g_pDevCfg->stIntervalParam.smsCheckPeriod = PERIOD_SMS_CHECK;
+	g_pDevCfg->sIntervalsMins.sampling = PERIOD_SAMPLING;
+	g_pDevCfg->sIntervalsMins.upload = PERIOD_UPLOAD;
+	g_pDevCfg->sIntervalsMins.systemReboot = PERIOD_REBOOT;
+	g_pDevCfg->sIntervalsMins.configurationFetch = PERIOD_CONFIGURATION_FETCH;
+	g_pDevCfg->sIntervalsMins.smsCheck = PERIOD_SMS_CHECK;
 
 	g_pDevCfg->cfgSMS_Alerts = ALERTS_SMS;
-
-#ifdef _DEBUG
-	uint16_t c = g_pDevCfg->stIntervalParam.samplingInterval;
-	uint16_t value1 = c;
-
-	uint16_t *p = &g_pDevCfg->stIntervalParam.samplingInterval;
-	uint16_t value2 = *p;
-
-	if (value1 != value2)
-		_NOP();
-
-#endif
 
 // Battery and power alarms
 	return 1;
@@ -426,9 +406,9 @@ int config_parse_configuration(char *msg) {
 	PARSE_NEXTSTRING(token, &sim->cfgAPN[0], strlen(token), delimiter,
 			UART_FAILED); //APN
 
-	pInterval = &g_pDevCfg->stIntervalParam;
-	PARSE_NEXTVALUE(token, &pInterval->uploadInterval, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &pInterval->samplingInterval, delimiter, UART_FAILED);
+	pInterval = &g_pDevCfg->sIntervalsMins;
+	PARSE_NEXTVALUE(token, &pInterval->upload, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &pInterval->sampling, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); // Reset alert
 	if (tempValue > 0) {
 		state_clear_alarm_state();
@@ -454,13 +434,13 @@ int config_parse_configuration(char *msg) {
 	g_pDevCfg->cfgServerConfigReceived = 1;
 
 	event_setInterval_by_id(EVT_SUBSAMPLE_TEMP,
-			MINUTES_(pInterval->samplingInterval));
+			MINUTES_(pInterval->sampling));
 
 	event_setInterval_by_id(EVT_SAVE_SAMPLE_TEMP,
-			MINUTES_(pInterval->samplingInterval));
+			MINUTES_(pInterval->sampling));
 
 	event_setInterval_by_id(EVT_UPLOAD_SAMPLES,
-			MINUTES_(pInterval->uploadInterval));
+			MINUTES_(pInterval->upload));
 
 	lcd_display_config();
 

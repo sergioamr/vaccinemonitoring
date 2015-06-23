@@ -204,11 +204,11 @@ typedef struct {
 } BATT_POWER_ALERT_PARAM;
 
 typedef struct {
-	uint16_t uploadInterval;
-	uint16_t samplingInterval;
+	uint16_t upload;
+	uint16_t sampling;
 	uint16_t systemReboot;
 	uint16_t configurationFetch;
-	uint16_t smsCheckPeriod;
+	uint16_t smsCheck;
 } INTERVAL_PARAM;
 
 typedef struct {
@@ -221,7 +221,7 @@ typedef struct {
 
 	TEMP_ALERT_PARAM stTempAlertParams[SYSTEM_NUM_SENSORS];
 	BATT_POWER_ALERT_PARAM stBattPowerAlertParam;
-	INTERVAL_PARAM stIntervalParam;
+	INTERVAL_PARAM sIntervalsMins;
 
 	char cfgIMEI[IMEI_MAX_LEN + 1];
 	char cfgGatewayIP[MAX_IP_SIZE];

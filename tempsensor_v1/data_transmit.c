@@ -76,7 +76,7 @@ int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 		parse_time_from_line(&firstDate, line);
 		dateString = get_date_string(&firstDate, "", "", "", 0);
 		sprintf(smsMsg, "%d,%s,%s,%d,", 11, dateString,
-				itoa_nopadding(g_pDevCfg->stIntervalParam.samplingInterval), 5);
+				itoa_nopadding(g_pDevCfg->sIntervalsMins.sampling), 5);
 	} else {
 		return TRANS_FAILED;
 	}
@@ -134,7 +134,7 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 		dateString = get_date_string(&firstDate, "", "", "", 0);
 		sprintf(line, "IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=",
 				g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa", dateString,
-				g_pDevCfg->stIntervalParam.samplingInterval);
+				g_pDevCfg->sIntervalsMins.sampling);
 	} else {
 		return TRANS_FAILED;
 	}
