@@ -279,7 +279,12 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	if (config_getSimLastError(&token) == errorCode)
 		return;
 
-	sprintf(szCode, "ERROR %d", errorCode);
+	if (errorCode==4) {
+		strcpy(szCode, "Not supported");
+	} else {
+		sprintf(szCode, "ERROR %d", errorCode);
+	}
+
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	config_setSIMError(sim, errorToken, errorCode, szCode);
 

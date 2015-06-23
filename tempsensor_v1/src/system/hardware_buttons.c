@@ -87,8 +87,7 @@ void hardware_actions() {
 		event_force_event_by_id(EVT_DISPLAY, 0);
 	}
 
-	event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 0);
-
+	//event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 0);
 	buzzer_feedback();
 	g_iHardware_actions=HWD_NOTHING;
 }
