@@ -239,6 +239,7 @@ int config_default_configuration() {
 	g_pDevCfg->stIntervalParam.uploadInterval = UPLOAD_PERIOD;
 	g_pDevCfg->stIntervalParam.reboot = REBOOT_PERIOD;
 	g_pDevCfg->stIntervalParam.configuration_fetch = CONFIGURATION_FETCH_PERIOD;
+	g_pDevCfg->stIntervalParam.smsCheckPeriod = SMS_CHECK_PERIOD;
 
 #ifdef _DEBUG
 	uint16_t c = g_pDevCfg->stIntervalParam.loggingInterval;
@@ -456,7 +457,7 @@ int config_parse_configuration(char *msg) {
 	lcd_printf(LINEC, "C%d %s H%d %s", (int) pAlertParams->maxSecondsCold / 60, &num1[0],
 			(int) pAlertParams->maxSecondsHot / 60, &num2[0]);
 
-	lcd_printf(LINEH, "SIM%d UP%d LG%d PW%d", g_pDevCfg->cfgSelectedSIM_slot+1,
+	lcd_printf(LINEH, "S%d U%d L%d P%d", g_pDevCfg->cfgSelectedSIM_slot+1,
 			g_pDevCfg->stIntervalParam.uploadInterval,
 			g_pDevCfg->stIntervalParam.loggingInterval,
 			g_pDevCfg->stBattPowerAlertParam.minutesPower);

@@ -466,7 +466,7 @@ void events_init() {
 
 	// Check every 30 seconds until we get the configuration message from server;
 	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs,
-			MINUTES_(3), NULL);
+			MINUTES_(SMS_CHECK_PERIOD), g_pDevCfg->stIntervalParam.smsCheckPeriod);
 
 	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off, MINUTES_(10),
 	NULL);
@@ -498,8 +498,13 @@ void events_init() {
 	events_register(EVT_PERIODIC_REBOOT, "REBOOT", 0, &event_reboot_system,
 			HOURS_(24), g_pDevCfg->stIntervalParam.reboot);
 
+#ifndef _DEBUG
 	events_register(EVT_CONFIGURATION, "CONFIG", 30, &event_fetch_configuration,
 			MINUTES_(30), g_pDevCfg->stIntervalParam.configuration_fetch);
+#else
+	events_register(EVT_CONFIGURATION, "CONFIG", 30, &event_fetch_configuration,
+			MINUTES_(2), g_pDevCfg->stIntervalParam.configuration_fetch);
+#endif
 
 	events_sync();
 }

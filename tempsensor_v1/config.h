@@ -104,14 +104,25 @@ EXTERN int8_t g_iSystemSetup;
 #define MAX_NUM_SENSORS			5
 
 //Sampling configuration
-#define SAMPLE_PERIOD			1		//in minutes
-#define UPLOAD_PERIOD			2		//in minutes
+#ifndef _DEBUG
+#define SAMPLE_PERIOD			5		//in minutes
+#define UPLOAD_PERIOD			20		//in minutes
 #define REBOOT_PERIOD 			24*60   //in minutes
-#define CONFIGURATION_FETCH_PERIOD 30
-#define SMS_RX_POLL_INTERVAL	3		//poll interval in minutes for sms msg TODO change back
+#define CONFIGURATION_FETCH_PERIOD 1
+#define SMS_CHECK_PERIOD   	    15		//poll interval in minutes for sms msg TODO change back
 #define LCD_REFRESH_INTERVAL	1
 #define MSG_REFRESH_INTERVAL	5
-#define SAMPLE_COUNT			100
+#define SAMPLE_COUNT			10
+#else
+#define SAMPLE_PERIOD			5		//in minutes
+#define UPLOAD_PERIOD			20		//in minutes
+#define REBOOT_PERIOD 			24*60   //in minutes
+#define CONFIGURATION_FETCH_PERIOD 60
+#define SMS_CHECK_PERIOD   	    15		//poll interval in minutes for sms msg TODO change back
+#define LCD_REFRESH_INTERVAL	1
+#define MSG_REFRESH_INTERVAL	5
+#define SAMPLE_COUNT			5
+#endif
 
 //Alert configuration
 #define LOW_TEMP_THRESHOLD		2		//deg celsius
@@ -183,6 +194,7 @@ typedef struct {
 	uint16_t loggingInterval;
 	uint16_t reboot;
 	uint16_t configuration_fetch;
+	uint16_t smsCheckPeriod;
 } INTERVAL_PARAM;
 
 typedef struct {

@@ -274,6 +274,7 @@ uint16_t modem_parse_error(const char *error) {
 
 void modem_setNumericError(char errorToken, int16_t errorCode) {
 	char szCode[16];
+	char szToken[2];
 	char token;
 	if (config_getSimLastError(&token) == errorCode)
 		return;
@@ -285,7 +286,10 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	// Check the error codes to figure out if the SIM is still functional
 	modem_isSIM_Operational();
 
-	log_appendf("SIM %d CM%c ERROR %d", config_getSelectedSIM() + 1, errorToken,
+	szToken[0]=errorToken;  // Minimal SPRINTF support
+	szToken[1]=0;
+
+	log_appendf("SIM %d CMD[%s] CM%s ERROR %d", config_getSelectedSIM() + 1, &modem_lastCommand[0], szToken,
 			errorCode);
 
 	return;
@@ -312,7 +316,7 @@ void modem_check_uart_error() {
 
 		if (g_iUartIgnoreError != 0) {
 			g_iUartIgnoreError--;
-			log_appendf("ERROR: SIM %d cmd[%s]", config_getSelectedSIM(),
+			log_appendf("ERROR: SIM %d CMD[%s] ERROR %s", config_getSelectedSIM(), &modem_lastCommand[0],
 					error);
 			errorToken = *(pToken1 - 1);
 #ifndef _DEBUG
