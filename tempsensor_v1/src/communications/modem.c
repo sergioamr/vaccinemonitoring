@@ -672,7 +672,9 @@ const char COMMAND_RESULT_CCLK[] = "+CCLK: \"";
 int modem_parse_time(struct tm* pTime) {
 	struct tm tmTime;
 	char* pToken1 = NULL;
-	char* delimiter = "/,:-\"";
+	char* delimiter = "/,:-\"+";
+	int timeZoneOffset = 0;
+	uint8_t negateTz = 0;
 
 	if (!pTime)
 		return UART_FAILED;
@@ -680,7 +682,7 @@ int modem_parse_time(struct tm* pTime) {
 	PARSE_FINDSTR_RET(pToken1, COMMAND_RESULT_CCLK, UART_FAILED);
 
 	memset(&tmTime, 0, sizeof(tmTime));
-	//string format "yy/MM/dd,hh:mm:ss:zz"
+	//string format "yy/MM/dd,hh:mm:ss+-zz"
 	PARSE_FIRSTVALUE(pToken1, &tmTime.tm_year, delimiter, UART_FAILED);
 	tmTime.tm_year += 2000;
 
@@ -689,6 +691,14 @@ int modem_parse_time(struct tm* pTime) {
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_hour, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_min, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_sec, delimiter, UART_FAILED);
+	if (strchr(pToken1, '-') == NULL) negateTz = 1;
+	PARSE_NEXTVALUE(pToken1, &timeZoneOffset, delimiter, UART_FAILED);
+
+	if(negateTz == 1) {
+		_tz.timezone = 0 - ((timeZoneOffset >> 2) * 3600);
+	} else {
+		_tz.timezone = (timeZoneOffset >> 2) * 3600;
+	}
 
 	if (tmTime.tm_year < 2015 || tmTime.tm_year > 2200)
 		return UART_FAILED;
@@ -805,7 +815,7 @@ void modem_init() {
 	// Wait until connnection and registration is successful. (Just try NETWORK_CONNECTION_ATTEMPTS) network could be definitly down or not available.
 	modem_setNetworkService(NETWORK_GPRS);
 
-	uart_tx("AT#NITZ=1\r\n");   // #NITZ - Network Timezone
+	uart_tx("AT#NITZ=15,1\r\n");   // #NITZ - Network Timezone
 
 	uart_tx("AT+CTZU=1\r\n"); //  4 - software bi-directional with filtering (XON/XOFF)
 	uart_tx("AT&K4\r\n");		// [Flow Control - &K]

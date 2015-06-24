@@ -204,7 +204,6 @@ int main(void) {
 	system_boot();
 
 	events_init();
-
 	state_process();
 	sms_process_messages();
 

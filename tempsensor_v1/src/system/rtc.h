@@ -38,7 +38,7 @@ void rtc_init(struct tm* pTime);
 //! \return none
 //
 //*****************************************************************************
-void  rtc_get(struct tm* pTime);
+void rtc_get(struct tm* pTime, struct tm* tempDate);
 
 //*****************************************************************************
 //
