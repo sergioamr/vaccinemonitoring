@@ -448,6 +448,10 @@ int config_process_configuration() {
 	return config_parse_configuration((char *) uart_getRXHead());
 }
 
+#define SECTION_SERVER "SERVER"
+#define SECTION_INTERVALS "INTERVALS"
+#define SECTION_LOGS "LOGS"
+
 #ifdef USE_MININI
 FRESULT config_read_ini_file() {
 	FRESULT fr;
@@ -469,34 +473,34 @@ FRESULT config_read_ini_file() {
 		return FR_NO_FILE;
 
 	cfg = &g_pDevCfg->cfg;
-	cfg->logs.system_log = ini_getbool("LOGS", "SystemLog", 0, CONFIG_INI_FILE);
-	cfg->logs.web_csv = ini_getbool("LOGS", "WebCSV", 0, CONFIG_INI_FILE);
-	cfg->logs.server_config = ini_getbool("LOGS", "ServerConfig", 0, CONFIG_INI_FILE);
-	cfg->logs.modem_transactions = ini_getbool("LOGS", "Modem", 0, CONFIG_INI_FILE);
-	cfg->logs.sms_alerts = ini_getbool("LOGS", "SMS_Alerts", 0, CONFIG_INI_FILE);
-	cfg->logs.sms_reports = ini_getbool("LOGS", "SMS_Reports", 0, CONFIG_INI_FILE);
+	cfg->logs.system_log = ini_getbool(SECTION_LOGS, "SystemLog", 0, CONFIG_INI_FILE);
+	cfg->logs.web_csv = ini_getbool(SECTION_LOGS, "WebCSV", 0, CONFIG_INI_FILE);
+	cfg->logs.server_config = ini_getbool(SECTION_LOGS, "ServerConfig", 0, CONFIG_INI_FILE);
+	cfg->logs.modem_transactions = ini_getbool(SECTION_LOGS, "Modem", 0, CONFIG_INI_FILE);
+	cfg->logs.sms_alerts = ini_getbool(SECTION_LOGS, "SMS_Alerts", 0, CONFIG_INI_FILE);
+	cfg->logs.sms_reports = ini_getbool(SECTION_LOGS, "SMS_Reports", 0, CONFIG_INI_FILE);
 
-	n = ini_gets("SERVER", "GatewaySMS", NEXLEAF_SMS_GATEWAY, g_pDevCfg->cfgGatewaySMS, sizearray(g_pDevCfg->cfgGatewaySMS), CONFIG_INI_FILE);
-	n = ini_gets("SERVER", "ReportSMS", REPORT_PHONE_NUMBER, g_pDevCfg->cfgReportSMS, sizearray(g_pDevCfg->cfgReportSMS), CONFIG_INI_FILE);
+	n = ini_gets(SECTION_SERVER, "GatewaySMS", NEXLEAF_SMS_GATEWAY, g_pDevCfg->cfgGatewaySMS, sizearray(g_pDevCfg->cfgGatewaySMS), CONFIG_INI_FILE);
+	n = ini_gets(SECTION_SERVER, "ReportSMS", REPORT_PHONE_NUMBER, g_pDevCfg->cfgReportSMS, sizearray(g_pDevCfg->cfgReportSMS), CONFIG_INI_FILE);
 
-	n = ini_gets("SERVER", "GatewayIP", NEXLEAF_DEFAULT_SERVER_IP, g_pDevCfg->cfgGatewayIP, sizearray(g_pDevCfg->cfgGatewayIP), CONFIG_INI_FILE);
-	n = ini_gets("SERVER", "Config_URL", CONFIGURATION_URL_PATH, g_pDevCfg->cfgConfig_URL, sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
-	n = ini_gets("SERVER", "Upload_URL", DATA_UPLOAD_URL_PATH, g_pDevCfg->cfgUpload_URL, sizearray(g_pDevCfg->cfgUpload_URL), CONFIG_INI_FILE);
+	n = ini_gets(SECTION_SERVER, "GatewayIP", NEXLEAF_DEFAULT_SERVER_IP, g_pDevCfg->cfgGatewayIP, sizearray(g_pDevCfg->cfgGatewayIP), CONFIG_INI_FILE);
+	n = ini_gets(SECTION_SERVER, "Config_URL", CONFIGURATION_URL_PATH, g_pDevCfg->cfgConfig_URL, sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
+	n = ini_gets(SECTION_SERVER, "Upload_URL", DATA_UPLOAD_URL_PATH, g_pDevCfg->cfgUpload_URL, sizearray(g_pDevCfg->cfgUpload_URL), CONFIG_INI_FILE);
 
 	n = ini_gets("SIM1", "APN", NEXLEAF_DEFAULT_APN, g_pDevCfg->SIM[0].cfgAPN, sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
 	n = ini_gets("SIM2", "APN", NEXLEAF_DEFAULT_APN, g_pDevCfg->SIM[1].cfgAPN, sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
 
 	intervals = &g_pDevCfg->sIntervalsMins;
-	intervals->sampling = ini_getl("INTERVALS", "Sampling", PERIOD_SAMPLING, CONFIG_INI_FILE);
-	intervals->upload = ini_getl("INTERVALS", "Upload", PERIOD_UPLOAD, CONFIG_INI_FILE); ;
-	intervals->systemReboot  = ini_getl("INTERVALS", "Reboot", PERIOD_REBOOT, CONFIG_INI_FILE);
-	intervals->configurationFetch = ini_getl("INTERVALS", "Configuration", PERIOD_CONFIGURATION_FETCH, CONFIG_INI_FILE);
-	intervals->smsCheck = ini_getl("INTERVALS", "SMS_Check", PERIOD_SMS_CHECK, CONFIG_INI_FILE);
-	intervals->networkCheck = ini_getl("INTERVALS", "Network_Check", PERIOD_NETWORK_CHECK, CONFIG_INI_FILE);
-	intervals->lcdOff = ini_getl("INTERVALS", "LCD_off", PERIOD_LCD_OFF, CONFIG_INI_FILE);
-	intervals->alarmsCheck = ini_getl("INTERVALS", "Alarms", PERIOD_ALARMS_CHECK, CONFIG_INI_FILE);
-	intervals->modemPullTime = ini_getl("INTERVALS", "ModemPullTime", PERIOD_PULLTIME, CONFIG_INI_FILE);
-	intervals->batteryCheck = ini_getl("INTERVALS", "BatteryCheck", PERIOD_BATTERY_CHECK, CONFIG_INI_FILE);
+	intervals->sampling = ini_getl(SECTION_INTERVALS, "Sampling", PERIOD_SAMPLING, CONFIG_INI_FILE);
+	intervals->upload = ini_getl(SECTION_INTERVALS, "Upload", PERIOD_UPLOAD, CONFIG_INI_FILE); ;
+	intervals->systemReboot  = ini_getl(SECTION_INTERVALS, "Reboot", PERIOD_REBOOT, CONFIG_INI_FILE);
+	intervals->configurationFetch = ini_getl(SECTION_INTERVALS, "Configuration", PERIOD_CONFIGURATION_FETCH, CONFIG_INI_FILE);
+	intervals->smsCheck = ini_getl(SECTION_INTERVALS, "SMS_Check", PERIOD_SMS_CHECK, CONFIG_INI_FILE);
+	intervals->networkCheck = ini_getl(SECTION_INTERVALS, "Network_Check", PERIOD_NETWORK_CHECK, CONFIG_INI_FILE);
+	intervals->lcdOff = ini_getl(SECTION_INTERVALS, "LCD_off", PERIOD_LCD_OFF, CONFIG_INI_FILE);
+	intervals->alarmsCheck = ini_getl(SECTION_INTERVALS, "Alarms", PERIOD_ALARMS_CHECK, CONFIG_INI_FILE);
+	intervals->modemPullTime = ini_getl(SECTION_INTERVALS, "ModemPullTime", PERIOD_PULLTIME, CONFIG_INI_FILE);
+	intervals->batteryCheck = ini_getl(SECTION_INTERVALS, "BatteryCheck", PERIOD_BATTERY_CHECK, CONFIG_INI_FILE);
 
 #ifndef _DEBUG
 	fr = f_rename(CONFIG_INI_FILE, "thermal.old");

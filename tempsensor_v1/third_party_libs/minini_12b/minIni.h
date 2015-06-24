@@ -19,8 +19,8 @@
 #ifndef MININI_H
 #define MININI_H
 
-//#define INI_READONLY
-#define INI_REAL float
+#define INI_READONLY
+//#define INI_REAL float
 #define INI_NOBROWSE
 
 #if !defined sizearray
