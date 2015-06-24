@@ -50,8 +50,7 @@ typedef struct {
 	void (*callback)(void *, time_t);
 	time_t nextEventRun;
 	time_t lastEventRun;
-	time_t intervalDefault;    // Interval between events in minutes
-	time_t interval;		   // Interval pointer
+	time_t interval_secs;    // Interval between events in minutes
 	time_t offset_secs; // Minute of the current day to start this event
 					  // 0 is now
 } EVENT;
@@ -65,9 +64,10 @@ typedef struct {
 
 extern EVENT_MANAGER g_sEvents;
 
+time_t event_getIntervalMinutes(EVENT *pEvent);
 time_t events_getTick();
 void event_main_sleep();
-void event_setInterval_by_id(EVENT_IDS id, time_t time);
+void event_setInterval_by_id_secs(EVENT_IDS id, time_t time_seconds);
 void events_send_data(char *phone);
 void events_debug();
 void events_find_next_event();

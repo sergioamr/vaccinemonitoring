@@ -144,25 +144,25 @@
 #define REPORT_PHONE_NUMBER "07977345678"
 #define ALERTS_SMS 1
 
-#define MAIN_SLEEP_TIME 20000
+#define MAIN_SLEEP_TIME 100
 #define MAIN_LCD_OFF_SLEEP_TIME 10000
 
-#define PERIOD_SAMPLING			5		//in minutes
-#define PERIOD_UPLOAD			20		//in minutes
+#define PERIOD_SAMPLING			1		//in minutes
+#define PERIOD_UPLOAD			3		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
 #define PERIOD_LCD_OFF			10
-#define PERIOD_ALARMS_CHECK	    3
-#define PERIOD_CONFIGURATION_FETCH 60
-#define PERIOD_SMS_CHECK   	    7		//poll interval in minutes for sms msg TODO change back
-#define PERIOD_NETWORK_CHECK	4
+#define PERIOD_ALARMS_CHECK	    2
+#define PERIOD_CONFIGURATION_FETCH 5
+#define PERIOD_SMS_CHECK   	    3		//poll interval in minutes for sms msg TODO change back
+#define PERIOD_NETWORK_CHECK	2
 #define PERIOD_LCD_REFRESH		1
-#define PERIOD_PULLTIME			45
-#define PERIOD_BATTERY_CHECK 	10
+#define PERIOD_PULLTIME			2
+#define PERIOD_BATTERY_CHECK 	2
 #define SAMPLE_COUNT			5
 
 #define PERIOD_SMS_TEST			30
 
-#define HTTP_COMMAND_ATTEMPTS 10
+#define HTTP_COMMAND_ATTEMPTS 2
 #define NETWORK_CONNECTION_ATTEMPTS 20
 #define NETWORK_CONNECTION_DELAY 1000
 #endif

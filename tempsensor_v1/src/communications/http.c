@@ -43,12 +43,18 @@ uint8_t http_enable() {
 	//  1..5 - numeric parameter which specifies a particular PDP context definition
 	//  1 - activate the context
 
+	sim->simErrorState = 0;
 	do {
 		uart_tx("AT#SGACT=1,1\r\n");
 		// CME ERROR: 555 Activation failed
 		// CME ERROR: 133 Requested service option not subscribed
 		uart_state = uart_getTransactionState();
+
 		if (uart_state != UART_SUCCESS) {
+			if (sim->simErrorState!=0) {
+				state_failed_gprs(sim);
+				return UART_FAILED;
+			}
 			delay(1000);
 		} else {
 			config_reset_error(sim);

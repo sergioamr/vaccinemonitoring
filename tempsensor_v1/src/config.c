@@ -423,13 +423,13 @@ int config_parse_configuration(char *msg) {
 
 	g_pDevCfg->cfgServerConfigReceived = 1;
 
-	event_setInterval_by_id(EVT_SUBSAMPLE_TEMP,
+	event_setInterval_by_id_secs(EVT_SUBSAMPLE_TEMP,
 			MINUTES_(pInterval->sampling));
 
-	event_setInterval_by_id(EVT_SAVE_SAMPLE_TEMP,
+	event_setInterval_by_id_secs(EVT_SAVE_SAMPLE_TEMP,
 			MINUTES_(pInterval->sampling));
 
-	event_setInterval_by_id(EVT_UPLOAD_SAMPLES,
+	event_setInterval_by_id_secs(EVT_UPLOAD_SAMPLES,
 			MINUTES_(pInterval->upload));
 
 	lcd_display_config();

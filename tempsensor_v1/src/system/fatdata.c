@@ -516,7 +516,7 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 	char* fn = get_current_fileName(&g_tmCurrTime, FOLDER_TEXT, EXTENSION_TEXT);
 
 	evt = events_find(EVT_SAVE_SAMPLE_TEMP);
-	iSamplePeriod = evt->interval / 60; // Time is in seconds, we need it in minutes
+	iSamplePeriod = event_getIntervalMinutes(evt);
 
 	fr = f_open(&fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
 	if (fr == FR_OK) {

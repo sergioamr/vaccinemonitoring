@@ -214,9 +214,6 @@ int modem_connect_network(uint8_t attempts) {
 	// enable network registration and location information unsolicited result code;
 	// if there is a change of the network cell. +CGREG: <stat>[,<lac>,<ci>]
 
-#ifdef _DEBUG
-	attempts = 10;
-#endif
 	uart_txf("AT+%s=2\r\n", modem_getNetworkServiceCommand());
 	do {
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
@@ -318,12 +315,12 @@ void modem_check_uart_error() {
 	pToken1 = strstr(uart_getRXHead(), (const char *) AT_ERROR);
 	if (pToken1 != NULL) { // ERROR FOUND;
 		char *error = (char *) (pToken1 + strlen(AT_ERROR));
+		errorToken = *(pToken1 - 1);
 
 		if (g_iUartIgnoreError != 0) {
 			g_iUartIgnoreError--;
 			log_appendf("ERROR: SIM %d CMD[%s] ERROR %s", config_getSelectedSIM(), &modem_lastCommand[0],
 					error);
-			errorToken = *(pToken1 - 1);
 #ifndef _DEBUG
 			if (errorToken=='S') {
 				lcd_printl(LINEC, "SERVICE ERROR");

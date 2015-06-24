@@ -121,7 +121,7 @@ void lcd_setDate(char *buffer) {
 }
 
 void lcd_show() {
-	char lcdBuffer[32];
+	char lcdBuffer[LCD_DISPLAY_LEN+1];
 	int iIdx = 0;
 	int iCnt = 0;
 
@@ -129,6 +129,7 @@ void lcd_show() {
 	if (g_bLCD_state == 0)
 		return;
 
+	memset(lcdBuffer, 0, sizeof(lcdBuffer));
 	int8_t iItemId = g_iDisplayId;
 
 	static time_t lastRefresh = 0;
