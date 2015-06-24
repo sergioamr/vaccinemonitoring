@@ -18,31 +18,64 @@ char *getSensorTemp(int sensorID) {
 	return sensorData;
 }
 
-uint8_t select_transmission_method() {
-	// TODO Save last tranmission method and properly change
-	// SMS sending to attempt SMS on both SIMs
+void run_failover_sequence() {
 	if (modem_check_network() != UART_SUCCESS) {
 		modem_swap_SIM();
 		if (modem_check_network() != UART_SUCCESS) {
 			// neither GSM or GPRS will work
 			lcd_printl(LINEC, "Can't Complete");
 			lcd_printl(LINE2, "No Signal...");
-			return 2;
+			g_pSysCfg->lastTransMethod = NONE;
 		}
 	}
 
 	if (http_enable() != UART_SUCCESS) {
-		// Here try SMS via SIM 1
 		modem_swap_SIM();
 		if (modem_check_network() == UART_SUCCESS &&
 				http_enable() != UART_SUCCESS) {
-			// Try SMS via SIM 2
 			http_deactivate();
-			return 1; // change to 1 for sms
+			if (g_pDevCfg->cfgSIM_slot == 0) {
+				g_pSysCfg->lastTransMethod = SMS_SIM1;
+			} else {
+				g_pSysCfg->lastTransMethod = SMS_SIM2;
+			}
+		}
+	} else {
+		if (g_pDevCfg->cfgSIM_slot == 0) {
+			g_pSysCfg->lastTransMethod = HTTP_SIM1;
+		} else {
+			g_pSysCfg->lastTransMethod = HTTP_SIM2;
 		}
 	}
+}
 
-	return 0;
+void select_transmission_method() {
+	switch (g_pSysCfg->lastTransMethod) {
+	case HTTP_SIM1:
+		if (g_pDevCfg->cfgSelectedSIM_slot == 0) {
+			modem_swap_SIM();
+		}
+		break;
+	case HTTP_SIM2:
+		if (g_pDevCfg->cfgSelectedSIM_slot == 1) {
+			modem_swap_SIM();
+		}
+		break;
+	case SMS_SIM2:
+		if (g_pDevCfg->cfgSelectedSIM_slot == 1) {
+			modem_swap_SIM();
+		}
+		break;
+	case SMS_SIM1:
+		if (g_pDevCfg->cfgSelectedSIM_slot == 0) {
+			modem_swap_SIM();
+		}
+		break;
+	case NONE:
+	default:
+		run_failover_sequence();
+		break;
+	}
 }
 
 uint8_t data_send_temperatures_sms() {
@@ -192,7 +225,7 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 }
 
 void process_batch() {
-	uint8_t canSend = 0, transmissionMethod = 0;
+	uint8_t canSend = 0;
 	uint32_t seekFrom = g_pSysCfg->lastSeek, seekTo = g_pSysCfg->lastSeek;
 	char line[80];
 	char path[32];
@@ -206,8 +239,8 @@ void process_batch() {
 
 	log_disable();
 
-	transmissionMethod = select_transmission_method();
-	if (transmissionMethod > 1) {
+	select_transmission_method();
+	if (g_pSysCfg->lastTransMethod == NONE) {
 		return;
 	}
 
@@ -241,7 +274,8 @@ void process_batch() {
 			if (filr.fptr == 0 || strstr(line, "$TS") != NULL) {
 				if (canSend) {
 					canSend = 0;
-					if (transmissionMethod == 1) {
+					if (g_pSysCfg->lastTransMethod == SMS_SIM1 ||
+							g_pSysCfg->lastTransMethod == SMS_SIM2) {
 						if (data_upload_sms(&filr, seekFrom, seekTo) == TRANS_FAILED) {
 							break;
 						}
@@ -260,7 +294,8 @@ void process_batch() {
 		}
 
 		if(canSend) {
-			if (transmissionMethod == 1) {
+			if (g_pSysCfg->lastTransMethod == SMS_SIM1 ||
+					g_pSysCfg->lastTransMethod == SMS_SIM2) {
 				if (data_upload_sms(&filr, seekFrom, seekTo) == TRANS_FAILED) {
 					break;
 				}
@@ -292,7 +327,8 @@ void process_batch() {
 		}
 	}
 
-	if (transmissionMethod == 1) {
+	if (g_pSysCfg->lastTransMethod == HTTP_SIM1 ||
+			g_pSysCfg->lastTransMethod == HTTP_SIM2) {
 		http_deactivate();
 	}
 	lcd_printl(LINEC, "Transmission");

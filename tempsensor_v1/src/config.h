@@ -275,7 +275,7 @@ typedef struct {
 	uint32_t numberConfigurationRuns;
 	uint32_t lastSeek;
 	uint8_t calibrationFinished;
-	char firmwareVersion[16];
+	TRANSMISSION_TYPE lastTransMethod;
 	uint16_t configStructureSize; // Size to check if there are changes on this structure
 
 	// Stats to control buffer sizes
