@@ -310,7 +310,10 @@ void events_run() {
 /*******************************************************************************************************/
 
 void event_sms_test(void *event, time_t currentTime) {
-	sms_send_data_request(REPORT_PHONE_NUMBER);
+	if (!g_pDevCfg->cfg.logs.sms_reports)
+		return;
+
+		sms_send_data_request(REPORT_PHONE_NUMBER);
 }
 
 void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {

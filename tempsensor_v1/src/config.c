@@ -472,6 +472,7 @@ FRESULT config_read_ini_file() {
 	cfg->logs.server_config = ini_getbool("LOGS", "ServerConfig", 0, CONFIG_INI_FILE);
 	cfg->logs.modem_transactions = ini_getbool("LOGS", "Modem", 0, CONFIG_INI_FILE);
 	cfg->logs.sms_alerts = ini_getbool("LOGS", "SMS_Alerts", 0, CONFIG_INI_FILE);
+	cfg->logs.sms_reports = ini_getbool("LOGS", "SMS_Reports", 0, CONFIG_INI_FILE);
 
 	n = ini_gets("SERVER", "GatewaySMS", NEXLEAF_SMS_GATEWAY, g_pDevCfg->cfgGatewaySMS, sizearray(g_pDevCfg->cfgGatewaySMS), CONFIG_INI_FILE);
 	n = ini_gets("SERVER", "GatewayIP", NEXLEAF_DEFAULT_SERVER_IP, g_pDevCfg->cfgGatewayIP, sizearray(g_pDevCfg->cfgGatewayIP), CONFIG_INI_FILE);

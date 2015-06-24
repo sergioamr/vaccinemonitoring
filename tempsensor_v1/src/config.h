@@ -232,7 +232,7 @@ typedef union {
 		unsigned char server_config :1;
 		unsigned char modem_transactions :1;
 		unsigned char sms_alerts :1;
-		unsigned char bit6 :1;
+		unsigned char sms_reports :1;
 		unsigned char bit7 :1;
 		unsigned char bit8 :1;
 	} logs;

@@ -217,7 +217,8 @@ void state_alarm_on(char *alarm_msg) {
 	state_alarm_turnon_buzzer();
 
 #ifdef _DEBUG
-	sms_send_message_number(REPORT_PHONE_NUMBER, alarm_msg);
+	if (g_pDevCfg->cfg.logs.sms_reports)
+		sms_send_message_number(REPORT_PHONE_NUMBER, alarm_msg);
 #endif
 
 	display_alarm:
@@ -251,8 +252,10 @@ void state_clear_alarm_state() {
 		return;
 
 #ifdef _DEBUG
-	strcat(g_pSysState->alarm_message, " cleared");
-	sms_send_message_number(REPORT_PHONE_NUMBER, g_pSysState->alarm_message);
+	if (g_pDevCfg->cfg.logs.sms_reports) {
+		strcat(g_pSysState->alarm_message, " cleared");
+		sms_send_message_number(REPORT_PHONE_NUMBER, g_pSysState->alarm_message);
+	}
 #endif
 
 	s->alarms.buzzer = STATE_OFF;

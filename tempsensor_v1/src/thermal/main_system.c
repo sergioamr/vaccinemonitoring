@@ -213,7 +213,8 @@ int main(void) {
 	process_batch();
 
 #ifdef _DEBUG
-	sms_send_message_number(REPORT_PHONE_NUMBER, "Boot completed");
+	if (g_pDevCfg->cfg.logs.sms_reports)
+		sms_send_message_number(REPORT_PHONE_NUMBER, "Boot completed");
 #endif
 
 	thermal_canyon_loop();
