@@ -277,6 +277,9 @@ FRESULT fat_save_config(char *text) {
 	size_t len;
 	int bw = 0;
 
+	if (!g_pDevCfg->cfg.logs.server_config)
+		return FR_OK;
+
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
 
@@ -292,6 +295,11 @@ FRESULT fat_save_config(char *text) {
 	if (fr != FR_OK) {
 		fat_check_error(fr);
 		return fr;
+	}
+
+	if (fobj.fsize) {
+		//append to the file
+		f_lseek(&fobj, fobj.fsize);
 	}
 
 	fr = f_write(&fobj, text, len, (UINT *) &bw);
@@ -313,6 +321,9 @@ FRESULT log_append_(char *text) {
 	int bw = 0;
 	char szLog[32];
 	FRESULT fr;
+
+	if (!g_pDevCfg->cfg.logs.system_log)
+		return FR_OK;
 
 	if (g_bLogDisabled)
 		return FR_NOT_READY;
@@ -455,6 +466,9 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	FIL fobj;
 	UINT bw = 0;	//bytes written
 	FRESULT fr;
+
+	if (!g_pDevCfg->cfg.logs.web_csv)
+		return FR_OK;
 
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
