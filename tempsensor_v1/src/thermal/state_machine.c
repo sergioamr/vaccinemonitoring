@@ -53,15 +53,12 @@ uint8_t state_getSignalPercentage() {
 
 // There was a problem in the SD Card, reinit fat
 void state_SD_card_problem(FRESULT fr, const char *szError) {
-	char msg[80];
 	if (fr != FR_OK) {
-		sprintf(msg, "%s SD card error [%s]", g_pDevCfg->cfgIMEI, szError);
 		// Activate try again later for the SD card to be re mounted.
 		g_pSysState->system.alarms.sdcard = 1;
 
 		// Disable fat access while there is an error.
 		g_bFatInitialized = false;
-		alarm_SD_card_failure(msg);
 	}
 }
 
@@ -70,8 +67,16 @@ void state_SD_card_OK() {
 }
 
 void state_check_SD_card() {
+	char msg[80];
 	if (g_pSysState->system.alarms.sdcard) {
 		fat_init_drive();
+
+		if (g_bFatInitialized==false) {
+			if (g_szLastSD_CardError!=NULL) {
+				sprintf(msg, "%s SD card error [%s]", g_pDevCfg->cfgIMEI, g_szLastSD_CardError);
+				alarm_SD_card_failure(msg);
+			}
+		}
 	}
 }
 

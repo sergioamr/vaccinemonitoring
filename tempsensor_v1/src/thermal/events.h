@@ -46,7 +46,7 @@ typedef enum {
 
 typedef struct {
 	EVENT_IDS id;
-	char name[16];
+	char name[8];
 	void (*callback)(void *, time_t);
 	time_t nextEventRun;
 	time_t lastEventRun;

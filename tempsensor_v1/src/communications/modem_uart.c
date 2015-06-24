@@ -50,14 +50,14 @@ void uart_setCheckMsg(const char *szOK, const char *szError) {
 	if (szError != NULL) {
 		uart.ErrorIdx = 0;
 		uart.ErrorLength = strlen(szError) - 1; // We don't check for 0 terminated string
-		strcpy((char *) uart.szError, szError);
+		strncpy((char *) uart.szError, szError, sizeof(uart.szError));
 	} else
 		uart.ErrorLength = -1;
 
 	if (szOK != NULL) {
 		uart.OKIdx = 0;
 		uart.OKLength = strlen(szOK) - 1; // We don't check for 0 terminated string
-		strcpy((char *) uart.szOK, szOK);
+		strncpy((char *) uart.szOK, szOK, sizeof(uart.szOK));
 	} else
 		uart.OKLength = -1;
 

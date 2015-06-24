@@ -11,6 +11,7 @@
 extern FATFS FatFs;
 
 extern char g_bFatInitialized;
+extern const char *g_szLastSD_CardError;
 
 char* get_YMD_String(struct tm* timeData);
 char* get_current_fileName(struct tm* timeData, const char *folder, const char *ext);

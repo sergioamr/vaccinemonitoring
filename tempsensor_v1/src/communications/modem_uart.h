@@ -9,7 +9,7 @@
 #define TEMPSENSOR_V1_UART_H_
 
 #define TX_LEN   			256
-#define RX_LEN   			1024
+#define RX_LEN   			512
 
 typedef struct {
 	int8_t iActive;
@@ -31,11 +31,11 @@ typedef struct {
 	uint16_t iTxCountBytes;
 	uint16_t iTxLen;
 
-	char szOK[32];
+	char szOK[16];
 	uint8_t OKIdx;
 	int8_t OKLength;
 
-	char szError[32];
+	char szError[16];
 	uint8_t ErrorIdx;
 	int8_t ErrorLength;
 

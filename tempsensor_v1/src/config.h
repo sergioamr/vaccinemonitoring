@@ -25,7 +25,7 @@
 #endif
 
 #define NEXLEAF_DEFAULT_SERVER_IP "54.241.2.213"
-#define NEXLEAF_DEFAULT_APN 	  "giffgaff.com"
+#define NEXLEAF_DEFAULT_APN 	  " "
 
 // SMS alerts, it will send an SMS to the local testing number
 #define ALERTS_SMS 1
@@ -41,8 +41,8 @@
 
 // Path for getting the configuration from the server
 // CONFIGURATION_URL_PATH/IMEI/1/
-#define CONFIGURATION_URL_PATH "" // "/coldtrace/uploads/multi/v3"
-#define DATA_UPLOAD_URL_PATH "" // "/coldtrace/intel/upload/"
+#define CONFIGURATION_URL_PATH " " // "/coldtrace/uploads/multi/v3"
+#define DATA_UPLOAD_URL_PATH " " // "/coldtrace/intel/upload/"
 
 // Number of subsamples to capture per sample
 #define NUM_SAMPLES_CAPTURE 10

@@ -13,6 +13,8 @@ char g_szFatFileName[64];
 char g_bFatInitialized = false;
 char g_bLogDisabled = false;
 
+const char *g_szLastSD_CardError = NULL;
+
 const char * const FR_ERRORS[20] = { "OK", "DISK_ERR", "INT_ERR", "NOT_READY",
 		"NO_FILE", "NO_PATH", "INVALID_NAME", "DENIED", "EXIST",
 		"INVALID_OBJECT", "WRITE_PROTECTED", "INVALID_DRIVE", "NOT_ENABLED",
@@ -212,6 +214,7 @@ void fat_check_error(FRESULT fr) {
 	if (fr == FR_DISK_ERR || fr == FR_NOT_READY)
 		g_bFatInitialized = false;
 
+	g_szLastSD_CardError = FR_ERRORS[fr];
 	state_SD_card_problem(fr, FR_ERRORS[fr]);
 
 	event_LCD_turn_on();
@@ -247,6 +250,7 @@ FRESULT fat_init_drive() {
 	FRESULT fr;
 	FILINFO fno;
 
+	g_szLastSD_CardError = NULL;
 	/* Register work area to the default drive */
 	fr = f_mount(&FatFs, "", 0);
 	fat_check_error(fr);

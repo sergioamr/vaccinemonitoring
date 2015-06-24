@@ -296,6 +296,9 @@ void events_run() {
 
 	pEvent = &g_sEvents.events[nextEvent];
 	while (currentTime >= pEvent->nextEventRun && pEvent != NULL) {
+		if (g_iDebug)
+			buzzer_feedback_value(5);
+
 		event_run_now(pEvent);
 		nextEvent = g_sEvents.nextEvent;
 		pEvent = &g_sEvents.events[nextEvent];
