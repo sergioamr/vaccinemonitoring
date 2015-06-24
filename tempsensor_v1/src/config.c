@@ -421,7 +421,7 @@ int config_parse_configuration(char *msg) {
 	if (strncmp(command, "$EN", 3))
 		return UART_FAILED;
 
-	log_append_("configuration success");
+	log_append_("Config Success");
 
 	g_pDevCfg->cfgServerConfigReceived = 1;
 
