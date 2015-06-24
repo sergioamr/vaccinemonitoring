@@ -214,7 +214,7 @@ int main(void) {
 
 #ifdef _DEBUG
 	if (g_pDevCfg->cfg.logs.sms_reports)
-		sms_send_message_number(REPORT_PHONE_NUMBER, "Boot completed");
+		sms_send_message_number(g_pDevCfg->cfgReportSMS, "Boot completed");
 #endif
 
 	thermal_canyon_loop();

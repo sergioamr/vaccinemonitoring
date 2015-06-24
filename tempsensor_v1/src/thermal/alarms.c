@@ -26,7 +26,7 @@ void alarm_sms_battery_level() {
 	strcpy(msg, "LOW Battery: ColdTrace has now ");
 	strcat(msg, itoa_pad(batt_getlevel()));
 	strcat(msg, "battery left. Charge your device immediately.");
-	sms_send_message_number(REPORT_PHONE_NUMBER, msg);
+	sms_send_message_number(g_pDevCfg->cfgReportSMS, msg);
 }
 
 void alarm_sms_sensor(uint8_t sensorId, int elapsed) {
@@ -38,14 +38,14 @@ void alarm_sms_sensor(uint8_t sensorId, int elapsed) {
 			SensorName[sensorId], temperature_getString(sensorId),
 			elapsed / 60);
 	strcat(msg, " Take ACTION immediately.");
-	sms_send_message_number(REPORT_PHONE_NUMBER, msg);
+	sms_send_message_number(g_pDevCfg->cfgReportSMS, msg);
 }
 
 void alarm_sms_power_outage() {
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
 			return;
 
-	sms_send_message_number(REPORT_PHONE_NUMBER, "Power Outage: ATTENTION! \r\n"
+	sms_send_message_number(g_pDevCfg->cfgReportSMS, "Power Outage: ATTENTION! \r\n"
 			"Power is out in your clinic. \r\n"
 			"Monitor the fridge temperature closely.");
 }

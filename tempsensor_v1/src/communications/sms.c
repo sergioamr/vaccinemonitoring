@@ -13,6 +13,8 @@
 void sms_send_data_request(char *number) {
 	uint32_t iOffset;
 	char data[MAX_SMS_SIZE_FULL];
+	if (number==NULL || strlen(number)==0)
+		return;
 
 	//get temperature values
 	memset(data, 0, MSG_RESPONSE_LEN);
@@ -257,6 +259,12 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	int verbose = g_iLCDVerbose;
 	int phonecode = 129;
 	char *token;
+
+	if (szPhoneNumber==NULL || strlen(szPhoneNumber)==0)
+		return UART_SUCCESS;
+
+	if (pData==NULL || strlen(pData)==0)
+		return UART_SUCCESS;
 
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_clear();

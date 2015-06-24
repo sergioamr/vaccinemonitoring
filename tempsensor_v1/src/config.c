@@ -276,6 +276,8 @@ void config_init() {
 	g_pDevCfg->cfgSIM_slot = 0;
 	g_pDevCfg->cfgSelectedSIM_slot = 0;
 
+	strcpy(g_pDevCfg->cfgReportSMS, REPORT_PHONE_NUMBER); // HTTP server nextleaf
+
 	strcpy(g_pDevCfg->cfgGatewayIP, NEXLEAF_DEFAULT_SERVER_IP); // HTTP server nextleaf
 	strcpy(g_pDevCfg->cfgGatewaySMS, NEXLEAF_SMS_GATEWAY); // Gateway to nextleaf
 	strcpy(g_pDevCfg->cfgConfig_URL, CONFIGURATION_URL_PATH);
@@ -475,6 +477,8 @@ FRESULT config_read_ini_file() {
 	cfg->logs.sms_reports = ini_getbool("LOGS", "SMS_Reports", 0, CONFIG_INI_FILE);
 
 	n = ini_gets("SERVER", "GatewaySMS", NEXLEAF_SMS_GATEWAY, g_pDevCfg->cfgGatewaySMS, sizearray(g_pDevCfg->cfgGatewaySMS), CONFIG_INI_FILE);
+	n = ini_gets("SERVER", "ReportSMS", REPORT_PHONE_NUMBER, g_pDevCfg->cfgReportSMS, sizearray(g_pDevCfg->cfgReportSMS), CONFIG_INI_FILE);
+
 	n = ini_gets("SERVER", "GatewayIP", NEXLEAF_DEFAULT_SERVER_IP, g_pDevCfg->cfgGatewayIP, sizearray(g_pDevCfg->cfgGatewayIP), CONFIG_INI_FILE);
 	n = ini_gets("SERVER", "Config_URL", CONFIGURATION_URL_PATH, g_pDevCfg->cfgConfig_URL, sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
 	n = ini_gets("SERVER", "Upload_URL", DATA_UPLOAD_URL_PATH, g_pDevCfg->cfgUpload_URL, sizearray(g_pDevCfg->cfgUpload_URL), CONFIG_INI_FILE);

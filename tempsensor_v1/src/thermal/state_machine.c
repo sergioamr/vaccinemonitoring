@@ -218,7 +218,7 @@ void state_alarm_on(char *alarm_msg) {
 
 #ifdef _DEBUG
 	if (g_pDevCfg->cfg.logs.sms_reports)
-		sms_send_message_number(REPORT_PHONE_NUMBER, alarm_msg);
+		sms_send_message_number(g_pDevCfg->cfgReportSMS, alarm_msg);
 #endif
 
 	display_alarm:
@@ -254,7 +254,7 @@ void state_clear_alarm_state() {
 #ifdef _DEBUG
 	if (g_pDevCfg->cfg.logs.sms_reports) {
 		strcat(g_pSysState->alarm_message, " cleared");
-		sms_send_message_number(REPORT_PHONE_NUMBER, g_pSysState->alarm_message);
+		sms_send_message_number(g_pDevCfg->cfgReportSMS, g_pSysState->alarm_message);
 	}
 #endif
 

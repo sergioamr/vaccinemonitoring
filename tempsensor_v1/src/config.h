@@ -141,7 +141,7 @@
 /**************************************************************************************************************************/
 
 #ifdef _DEBUG
-#define REPORT_PHONE_NUMBER "07977345678"
+#define REPORT_PHONE_NUMBER ""
 #define ALERTS_SMS 1
 
 #define MAIN_SLEEP_TIME 100
@@ -258,6 +258,9 @@ typedef struct {
 	char cfgGatewaySMS[GW_MAX_LEN + 1];
 	char cfgConfig_URL[MAX_URL_PATH];
 	char cfgUpload_URL[MAX_URL_PATH];
+
+	// User that can get messages from the alarms
+	char cfgReportSMS[GW_MAX_LEN + 1];
 
 	SIM_CARD_CONFIG SIM[SYSTEM_NUM_SIM_CARDS];
 	struct tm lastSystemTime;
