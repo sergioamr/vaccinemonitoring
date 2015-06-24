@@ -340,7 +340,7 @@ typedef union {
 		unsigned char buzzer_disabled :1;
 		unsigned char button_buzzer_override :1;
 		unsigned char battery :1;
-		unsigned char bit8 :1;
+		unsigned char sdcard :1;
 	} alarms;
 	unsigned char status;
 } SYSTEM_STATUS;

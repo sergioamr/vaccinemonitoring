@@ -212,7 +212,7 @@ void fat_check_error(FRESULT fr) {
 	if (fr == FR_DISK_ERR || fr == FR_NOT_READY)
 		g_bFatInitialized = false;
 
-	state_sd_card_problem(fr);
+	state_SD_card_problem(fr, FR_ERRORS[fr]);
 
 	event_LCD_turn_on();
 	lcd_printl(LINEC, "SD CARD FAILURE");
@@ -264,6 +264,7 @@ FRESULT fat_init_drive() {
 
 	// Fat is ready
 	g_bFatInitialized = true;
+	state_SD_card_OK();
 
 	fr = log_append_("");
 	fr = log_append_("*****************************************************");

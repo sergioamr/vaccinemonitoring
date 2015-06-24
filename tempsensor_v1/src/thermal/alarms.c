@@ -50,6 +50,13 @@ void alarm_sms_power_outage() {
 			"Monitor the fridge temperature closely.");
 }
 
+void alarm_SD_card_failure(char *msg) {
+	if (!g_pDevCfg->cfg.logs.sms_alerts)
+			return;
+
+	sms_send_message_number(g_pDevCfg->cfgReportSMS, msg);
+}
+
 SENSOR_STATUS *getAlarmsSensor(int id) {
 	USE_TEMPERATURE
 	return &tem->state[id];

@@ -365,13 +365,13 @@ int config_parse_configuration(char *msg) {
 		pAlertParams = &g_pDevCfg->stTempAlertParams[i];
 		PARSE_NEXTVALUE(token, &pAlertParams->maxSecondsCold, delimiter,
 				UART_FAILED);
-		pAlertParams->maxSecondsCold *= 60; // We work in seconds internally
+		pAlertParams->maxSecondsCold = MINUTES_(pAlertParams->maxSecondsCold); // We work in seconds internally
 		PARSE_NEXTVALUE(token, &pAlertParams->threshCold, delimiter,
 				UART_FAILED);
 
 		PARSE_NEXTVALUE(token, &pAlertParams->maxSecondsHot, delimiter,
 				UART_FAILED);
-		pAlertParams->maxSecondsHot *= 60; // We work in seconds internally
+		pAlertParams->maxSecondsHot = MINUTES_(pAlertParams->maxSecondsHot); // We work in seconds internally
 		PARSE_NEXTVALUE(token, &pAlertParams->threshHot, delimiter, UART_FAILED);
 		i++;
 	}
@@ -513,8 +513,8 @@ int config_default_configuration() {
 	for (i = 0; i < SYSTEM_NUM_SENSORS; i++) {
 		alert = &g_pDevCfg->stTempAlertParams[i];
 
-		alert->maxSecondsCold = ALARM_LOW_TEMP_PERIOD;
-		alert->maxSecondsHot = ALARM_HIGH_TEMP_PERIOD;
+		alert->maxSecondsCold = MINUTES_(ALARM_LOW_TEMP_PERIOD);
+		alert->maxSecondsHot = MINUTES_(ALARM_HIGH_TEMP_PERIOD);
 
 		alert->threshCold = LOW_TEMP_THRESHOLD;
 		alert->threshHot = HIGH_TEMP_THRESHOLD;
