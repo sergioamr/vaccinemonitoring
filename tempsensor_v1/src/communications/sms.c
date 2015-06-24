@@ -17,7 +17,7 @@ void sms_send_data_request(char *number) {
 		return;
 
 	//get temperature values
-	memset(data, 0, MSG_RESPONSE_LEN);
+	memset(data, 0, MAX_SMS_SIZE_FULL);
 	rtc_update_time();
 	strcat(data, get_simplified_date_string(&g_tmCurrTime));
 	strcat(data, " ");
