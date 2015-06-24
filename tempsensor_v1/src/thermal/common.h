@@ -64,7 +64,7 @@ extern "C"
 #define IMEI_MIN_LEN		 15
 #define GW_MAX_LEN			 15
 #define APN_MAX_LEN     	 20
-#define ERROR_MAX_LEN   	 17
+#define ERROR_MAX_LEN   	 8
 #define MCC_MAX_LEN     	 3
 #define MNC_MAX_LEN     	 2
 #define UPLOAD_MODE_LEN 	 4
@@ -85,6 +85,14 @@ extern "C"
  */
 
 #define MAX_DISPLAY_ID		10
+
+typedef enum {
+	NONE = 0,
+	HTTP_SIM1,
+	HTTP_SIM2,
+	SMS_SIM1,
+	SMS_SIM2
+} TRANSMISSION_TYPE;
 
 //iStatus contants
 #define MODEM_POWERED_ON 	0x0001

@@ -88,25 +88,6 @@ void rtc_init(struct tm* pTime) {
 	RTC_B_startClock(RTC_B_BASE);
 }
 
-void rtc_get(struct tm* pTime) {
-	g_rtcCalendarTime = RTC_B_getCalendarTime(RTC_B_BASE);
-
-	if (!pTime)
-		return;
-
-	pTime->tm_sec = g_rtcCalendarTime.Seconds;
-	pTime->tm_min = g_rtcCalendarTime.Minutes;
-	pTime->tm_hour = g_rtcCalendarTime.Hours;
-	pTime->tm_wday = g_rtcCalendarTime.DayOfWeek;
-	pTime->tm_mon = g_rtcCalendarTime.Month;
-	pTime->tm_mday = g_rtcCalendarTime.DayOfMonth;
-	pTime->tm_year = g_rtcCalendarTime.Year;
-	//convert to utc
-	converttoUTC(pTime);
-	//return mktime(pTime);
-
-}
-
 void rtc_getlocal(struct tm* pTime) {
 	g_rtcCalendarTime = RTC_B_getCalendarTime(RTC_B_BASE);
 
@@ -120,6 +101,18 @@ void rtc_getlocal(struct tm* pTime) {
 	pTime->tm_mon = g_rtcCalendarTime.Month;
 	pTime->tm_mday = g_rtcCalendarTime.DayOfMonth;
 	pTime->tm_year = g_rtcCalendarTime.Year;
+}
+
+void rtc_get(struct tm* pTime, struct tm* tempDate) {
+	rtc_getlocal(pTime);
+	time_t timeSec = 0;
+
+	memcpy(tempDate, pTime, sizeof(struct tm));
+	tempDate->tm_year -= 1900;
+	tempDate->tm_mon -= 1;
+
+	timeSec = mktime(tempDate);
+	memcpy(tempDate, gmtime(&timeSec), sizeof(struct tm));
 }
 
 #define ROLLBACK    	0x01
@@ -186,7 +179,6 @@ void converttoUTC(struct tm* pTime) {
 	multiply16(pTime->tm_hour, 3600, &tmpsecs);
 	timeinsecs -= tmpsecs;
 	pTime->tm_min = timeinsecs / 60;
-
 }
 
 void multiply16(int16_t op1, int16_t op2, uint32_t* pResult) {

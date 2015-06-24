@@ -4,5 +4,6 @@
 void buzzer_start();
 void buzzer_feedback();
 void buzzer_feedback_simple();
+void buzzer_feedback_value(uint16_t value);
 
 #endif /* BUZZER_H_ */

@@ -12,6 +12,8 @@
 extern "C" {
 #endif
 
+void alarm_SD_card_failure(char *msg);
+
 //*****************************************************************************
 //! \brief Check for threshold, trigger buzzer and SMS on alarm condition.
 //! \param none

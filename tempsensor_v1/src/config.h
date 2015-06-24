@@ -25,7 +25,7 @@
 #endif
 
 #define NEXLEAF_DEFAULT_SERVER_IP "54.241.2.213"
-#define NEXLEAF_DEFAULT_APN 	  "giffgaff.com"
+#define NEXLEAF_DEFAULT_APN 	  " "
 
 // SMS alerts, it will send an SMS to the local testing number
 #define ALERTS_SMS 1
@@ -41,8 +41,8 @@
 
 // Path for getting the configuration from the server
 // CONFIGURATION_URL_PATH/IMEI/1/
-#define CONFIGURATION_URL_PATH "/coldtrace/uploads/multi/v3"
-#define DATA_UPLOAD_URL_PATH "/coldtrace/intel/upload/"
+#define CONFIGURATION_URL_PATH " " // "/coldtrace/uploads/multi/v3"
+#define DATA_UPLOAD_URL_PATH " " // "/coldtrace/intel/upload/"
 
 // Number of subsamples to capture per sample
 #define NUM_SAMPLES_CAPTURE 10
@@ -101,7 +101,7 @@
 
 // 1 will disable the buzzer when there is an Alarm
 // Buzzer will still work on button feedback
-#define BUZZER_DISABLE 1
+#define BUZZER_DISABLE 0
 
 // Disable buttons sounds
 #define BUZZER_DISABLE_FEEDBACK 0
@@ -141,28 +141,28 @@
 /**************************************************************************************************************************/
 
 #ifdef _DEBUG
-#define REPORT_PHONE_NUMBER "07977345678"
+#define REPORT_PHONE_NUMBER ""
 #define ALERTS_SMS 1
 
-#define MAIN_SLEEP_TIME 20000
+#define MAIN_SLEEP_TIME 100
 #define MAIN_LCD_OFF_SLEEP_TIME 10000
 
-#define PERIOD_SAMPLING			5		//in minutes
-#define PERIOD_UPLOAD			20		//in minutes
+#define PERIOD_SAMPLING			1		//in minutes
+#define PERIOD_UPLOAD			3		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
 #define PERIOD_LCD_OFF			10
-#define PERIOD_ALARMS_CHECK	    3
-#define PERIOD_CONFIGURATION_FETCH 60
-#define PERIOD_SMS_CHECK   	    7		//poll interval in minutes for sms msg TODO change back
-#define PERIOD_NETWORK_CHECK	4
+#define PERIOD_ALARMS_CHECK	    2
+#define PERIOD_CONFIGURATION_FETCH 5
+#define PERIOD_SMS_CHECK   	    3		//poll interval in minutes for sms msg TODO change back
+#define PERIOD_NETWORK_CHECK	2
 #define PERIOD_LCD_REFRESH		1
-#define PERIOD_PULLTIME			45
-#define PERIOD_BATTERY_CHECK 	10
+#define PERIOD_PULLTIME			2
+#define PERIOD_BATTERY_CHECK 	2
 #define SAMPLE_COUNT			5
 
 #define PERIOD_SMS_TEST			30
 
-#define HTTP_COMMAND_ATTEMPTS 10
+#define HTTP_COMMAND_ATTEMPTS 2
 #define NETWORK_CONNECTION_ATTEMPTS 20
 #define NETWORK_CONNECTION_DELAY 1000
 #endif
@@ -196,6 +196,7 @@ typedef struct {
 
 // 255.255.255.255
 #define MAX_IP_SIZE 3*4+3+1
+#define MAX_URL_PATH 40
 
 typedef struct {
 	float threshCold;
@@ -217,9 +218,30 @@ typedef struct {
 	uint16_t systemReboot;
 	uint16_t configurationFetch;
 	uint16_t smsCheck;
+	uint16_t networkCheck;
+	uint16_t lcdOff;
+	uint16_t alarmsCheck;
+	uint16_t modemPullTime;
+	uint16_t batteryCheck;
 } INTERVAL_PARAM;
 
+typedef union {
+	struct {
+		unsigned char system_log :1;
+		unsigned char web_csv :1;
+		unsigned char server_config :1;
+		unsigned char modem_transactions :1;
+		unsigned char sms_alerts :1;
+		unsigned char sms_reports :1;
+		unsigned char bit7 :1;
+		unsigned char bit8 :1;
+	} logs;
+	unsigned char status;
+} LOGGING_COMPONENTS;
+
 typedef struct {
+	char cfgVersion[8];
+
 	int8_t cfgSIM_slot;
 	int8_t cfgSelectedSIM_slot;
 
@@ -234,11 +256,16 @@ typedef struct {
 	char cfgIMEI[IMEI_MAX_LEN + 1];
 	char cfgGatewayIP[MAX_IP_SIZE];
 	char cfgGatewaySMS[GW_MAX_LEN + 1];
+	char cfgConfig_URL[MAX_URL_PATH];
+	char cfgUpload_URL[MAX_URL_PATH];
+
+	// User that can get messages from the alarms
+	char cfgReportSMS[GW_MAX_LEN + 1];
 
 	SIM_CARD_CONFIG SIM[SYSTEM_NUM_SIM_CARDS];
 	struct tm lastSystemTime;
 
-	int8_t cfgSMS_Alerts;
+	LOGGING_COMPONENTS cfg;
 
 } CONFIG_DEVICE;
 
@@ -248,6 +275,7 @@ typedef struct {
 	uint32_t numberConfigurationRuns;
 	uint32_t lastSeek;
 	uint8_t calibrationFinished;
+	TRANSMISSION_TYPE lastTransMethod;
 	char firmwareVersion[17];
 	uint16_t configStructureSize; // Size to check if there are changes on this structure
 
@@ -313,7 +341,7 @@ typedef union {
 		unsigned char buzzer_disabled :1;
 		unsigned char button_buzzer_override :1;
 		unsigned char battery :1;
-		unsigned char bit8 :1;
+		unsigned char sdcard :1;
 	} alarms;
 	unsigned char status;
 } SYSTEM_STATUS;
@@ -334,7 +362,7 @@ typedef union {
 } SAFEBOOT_STATUS;
 
 typedef struct {
-	char network_state[32];
+	char network_state[18];
 
 	int network_presentation_mode;
 	//NETWORK_STATUS_REGISTERED_HOME_NETWORK
@@ -385,8 +413,9 @@ void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
 extern uint16_t config_getSIMError(int slot);
 extern void config_reset_error(SIM_CARD_CONFIG *sim);
 extern uint16_t config_getSimLastError(char *charToken);
-
+int config_default_configuration();
 int config_process_configuration();
+
 int config_parse_configuration(char *msg);
 
 // Flags the sim as not working

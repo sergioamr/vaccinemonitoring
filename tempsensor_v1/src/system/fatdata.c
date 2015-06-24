@@ -13,6 +13,8 @@ char g_szFatFileName[64];
 char g_bFatInitialized = false;
 char g_bLogDisabled = false;
 
+const char *g_szLastSD_CardError = NULL;
+
 const char * const FR_ERRORS[20] = { "OK", "DISK_ERR", "INT_ERR", "NOT_READY",
 		"NO_FILE", "NO_PATH", "INVALID_NAME", "DENIED", "EXIST",
 		"INVALID_OBJECT", "WRITE_PROTECTED", "INVALID_DRIVE", "NOT_ENABLED",
@@ -65,7 +67,7 @@ char* get_date_string(struct tm* timeData, const char* dateSeperator,
 		strcpy(g_szDateString, itoa_nopadding(timeData->tm_year));
 
 	strcat(g_szDateString, dateSeperator);
-	strcat(g_szDateString, itoa_pad(timeData->tm_mon + 1));
+	strcat(g_szDateString, itoa_pad(timeData->tm_mon));
 	strcat(g_szDateString, dateSeperator);
 	strcat(g_szDateString, itoa_pad(timeData->tm_mday));
 	strcat(g_szDateString, dateTimeSeperator);
@@ -110,10 +112,8 @@ char* get_simplified_date_string(struct tm* timeData) {
 void parse_time_from_line(struct tm* timeToConstruct, char* formattedLine) {
 	char dateAttribute[5];
 	char* token = NULL;
-	int timeIndex = 0;
 
 	token = strtok(formattedLine, ",");
-	token = strtok(token, ":");
 
 	if (token != NULL) {
 		strncpy(dateAttribute, &token[4], 4);
@@ -127,29 +127,35 @@ void parse_time_from_line(struct tm* timeToConstruct, char* formattedLine) {
 		strncpy(dateAttribute, &token[10], 2);
 		dateAttribute[2] = 0;
 		timeToConstruct->tm_mday = atoi(&dateAttribute[0]);
+
+		strncpy(dateAttribute, &token[12], 2);
+		dateAttribute[2] = 0;
+		timeToConstruct->tm_hour = atoi(&dateAttribute[0]);
+
+		strncpy(dateAttribute, &token[14], 2);
+		dateAttribute[2] = 0;
+		timeToConstruct->tm_min = atoi(&dateAttribute[0]);
+
+		strncpy(dateAttribute, &token[16], 2);
+		dateAttribute[2] = 0;
+		timeToConstruct->tm_sec = atoi(&dateAttribute[0]);
 	}
+}
 
-	token = strtok(NULL, ":");
-	while (token != NULL) {
-		switch (timeIndex) {
-		case 0:
-			timeToConstruct->tm_hour = atoi(token);
-			break;
-		case 1:
-			timeToConstruct->tm_min = atoi(token);
-			break;
-		case 2:
-			timeToConstruct->tm_sec = atoi(token);
+void offset_timestamp(struct tm* dateToOffset, int intervalMultiplier) {
+	int timeVal;
+
+	if (dateToOffset == NULL) return;
+
+	timeVal = dateToOffset->tm_min + (intervalMultiplier * g_pDevCfg->sIntervalsMins.sampling);
+	if (timeVal >= 60) {
+		while (timeVal >= 60) {
+			timeVal -= 60;
+			dateToOffset->tm_min = timeVal;
+			dateToOffset->tm_hour += 1;
 		}
-
-		if (timeIndex == 1) {
-			// Needs to be tested
-			token = strtok(NULL, ",");
-		} else {
-			token = strtok(NULL, ":");
-		}
-
-		timeIndex++;
+	} else {
+		dateToOffset->tm_min = timeVal;
 	}
 }
 
@@ -208,7 +214,8 @@ void fat_check_error(FRESULT fr) {
 	if (fr == FR_DISK_ERR || fr == FR_NOT_READY)
 		g_bFatInitialized = false;
 
-	state_sd_card_problem(fr);
+	g_szLastSD_CardError = FR_ERRORS[fr];
+	state_SD_card_problem(fr, FR_ERRORS[fr]);
 
 	event_LCD_turn_on();
 	lcd_printl(LINEC, "SD CARD FAILURE");
@@ -243,6 +250,7 @@ FRESULT fat_init_drive() {
 	FRESULT fr;
 	FILINFO fno;
 
+	g_szLastSD_CardError = NULL;
 	/* Register work area to the default drive */
 	fr = f_mount(&FatFs, "", 0);
 	fat_check_error(fr);
@@ -260,6 +268,7 @@ FRESULT fat_init_drive() {
 
 	// Fat is ready
 	g_bFatInitialized = true;
+	state_SD_card_OK();
 
 	fr = log_append_("");
 	fr = log_append_("*****************************************************");
@@ -273,6 +282,9 @@ FRESULT fat_save_config(char *text) {
 	size_t len;
 	int bw = 0;
 
+	if (!g_pDevCfg->cfg.logs.server_config)
+		return FR_OK;
+
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
 
@@ -283,11 +295,16 @@ FRESULT fat_save_config(char *text) {
 	if (len == 0)
 		return FR_OK;
 
-	fr = f_open(&fobj, CONFIG_FILE_PATH,
+	fr = f_open(&fobj, CONFIG_LOG_FILE_PATH,
 	FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
 	if (fr != FR_OK) {
 		fat_check_error(fr);
 		return fr;
+	}
+
+	if (fobj.fsize) {
+		//append to the file
+		f_lseek(&fobj, fobj.fsize);
 	}
 
 	fr = f_write(&fobj, text, len, (UINT *) &bw);
@@ -309,6 +326,9 @@ FRESULT log_append_(char *text) {
 	int bw = 0;
 	char szLog[32];
 	FRESULT fr;
+
+	if (!g_pDevCfg->cfg.logs.system_log)
+		return FR_OK;
 
 	if (g_bLogDisabled)
 		return FR_NOT_READY;
@@ -452,6 +472,9 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	UINT bw = 0;	//bytes written
 	FRESULT fr;
 
+	if (!g_pDevCfg->cfg.logs.web_csv)
+		return FR_OK;
+
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
 
@@ -499,6 +522,7 @@ FRESULT log_sample_web_format(UINT *tbw) {
 
 FRESULT log_sample_to_disk(UINT *tbw) {
 	FIL fobj;
+	struct tm tempDate;
 	char szLog[64];
 	int iBatteryLevel;
 	FRESULT fr = FR_OK;
@@ -512,7 +536,7 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 	char* fn = get_current_fileName(&g_tmCurrTime, FOLDER_TEXT, EXTENSION_TEXT);
 
 	evt = events_find(EVT_SAVE_SAMPLE_TEMP);
-	iSamplePeriod = evt->interval / 60; // Time is in seconds, we need it in minutes
+	iSamplePeriod = event_getIntervalMinutes(evt);
 
 	fr = f_open(&fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
 	if (fr == FR_OK) {
@@ -525,26 +549,27 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 		return fr;
 	}
 
-	rtc_get(&g_tmCurrTime);
+	rtc_get(&g_tmCurrTime, &tempDate);
+
 	// If current time is out of previous interval, log a new time stamp
 	// to avoid time offset issues
-	if (!date_within_interval(&g_tmCurrTime, &g_lastSampleTime,
+	if (!date_within_interval(&tempDate, &g_lastSampleTime,
 			iSamplePeriod)) {
 		g_iStatus |= LOG_TIME_STAMP;
 	}
-	memcpy(&g_lastSampleTime, &g_tmCurrTime, sizeof(struct tm));
+	memcpy(&g_lastSampleTime, &tempDate, sizeof(struct tm));
 
 	// Log time stamp when it's a new day or when
 	// time gets pulled.
 	if (g_iStatus & LOG_TIME_STAMP) {
 		memset(szLog, 0, sizeof(szLog));
 		strcat(szLog, "$TS=");
-		strcat(szLog, itoa_pad(g_tmCurrTime.tm_year));
-		strcat(szLog, itoa_pad(g_tmCurrTime.tm_mon));
-		strcat(szLog, itoa_pad(g_tmCurrTime.tm_mday));
-		strcat(szLog, itoa_pad(g_tmCurrTime.tm_hour));
-		strcat(szLog, itoa_pad(g_tmCurrTime.tm_min));
-		strcat(szLog, itoa_pad(g_tmCurrTime.tm_sec));
+		strcat(szLog, itoa_pad((tempDate.tm_year + 1900)));
+		strcat(szLog, itoa_pad(tempDate.tm_mon));
+		strcat(szLog, itoa_pad(tempDate.tm_mday));
+		strcat(szLog, itoa_pad(tempDate.tm_hour));
+		strcat(szLog, itoa_pad(tempDate.tm_min));
+		strcat(szLog, itoa_pad(tempDate.tm_sec));
 		strcat(szLog, ",");
 		strcat(szLog, "R");
 		strcat(szLog, itoa_pad(iSamplePeriod));

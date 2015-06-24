@@ -17,7 +17,8 @@ extern SYSTEM_STATE *g_pSysState;
 void state_clear_alarm_state();
 
 void state_setNetworkStatus(const char *status);
-void state_sd_card_problem(FRESULT fr);
+void state_SD_card_problem(FRESULT fr, const char *szError);
+void state_SD_card_OK();
 void state_sim_failure(SIM_CARD_CONFIG *sim);
 uint8_t state_getSignalPercentage();
 

@@ -135,6 +135,8 @@ void system_boot() {
 
 	hardware_enable_buttons();
 	lcd_init();
+	fat_init_drive();
+
 	config_init(); // Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
 	config_setLastCommand(COMMAND_BOOT);
 
@@ -146,8 +148,6 @@ void system_boot() {
 #else
 	lcd_printl(LINE2, "(db)" __TIME__);
 #endif
-
-	fat_init_drive();
 
 	// Initial trigger of temperature capture. Just get one sample
 	temperature_subsamples(1);
@@ -204,7 +204,6 @@ int main(void) {
 	system_boot();
 
 	events_init();
-
 	state_process();
 	sms_process_messages();
 
@@ -213,7 +212,8 @@ int main(void) {
 	process_batch();
 
 #ifdef _DEBUG
-	sms_send_message_number(REPORT_PHONE_NUMBER, "Boot completed");
+	if (g_pDevCfg->cfg.logs.sms_reports)
+		sms_send_message_number(g_pDevCfg->cfgReportSMS, "Boot completed");
 #endif
 
 	thermal_canyon_loop();

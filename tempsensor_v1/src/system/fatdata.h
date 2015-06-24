@@ -10,12 +10,16 @@
 
 extern FATFS FatFs;
 
+extern char g_bFatInitialized;
+extern const char *g_szLastSD_CardError;
+
 char* get_YMD_String(struct tm* timeData);
 char* get_current_fileName(struct tm* timeData, const char *folder, const char *ext);
 char* get_date_string(struct tm* timeData, const char *dateSeperator,
 		const char *dateTimeSeperator, const char *timeSeparator, uint8_t includeTZ);
 char* get_simplified_date_string(struct tm* timeData);
 void parse_time_from_line(struct tm* timeToConstruct, char* formattedLine);
+void offset_timestamp(struct tm* dateToOffset, int intervalMultiplier);
 int date_within_interval(struct tm* timeToCompare, struct tm* baseTime, int interval);
 FRESULT fat_init_drive();
 FRESULT fat_save_config(char *text);
@@ -28,6 +32,7 @@ void log_disable();
 void log_enable();
 
 #define FOLDER_LOG  "/LOG"
+#define FOLDER_SYS  ""
 
 // Web format data
 #define EXTENSION_DATA "CSV"
@@ -38,7 +43,8 @@ void log_enable();
 #define FOLDER_TEXT "/TXT"
 
 #define LOG_FILE_PATH FOLDER_LOG "/system.log"
-#define CONFIG_FILE_PATH FOLDER_LOG "/config.txt"
+#define CONFIG_INI_FILE FOLDER_SYS "/thermal.ini"
+#define CONFIG_LOG_FILE_PATH FOLDER_LOG "/config.log"
 #define LOG_FILE_UNKNOWN FOLDER_DATA "/unknown.csv"
 
 #endif /* TEMPSENSOR_V1_FATDATA_H_ */

@@ -43,12 +43,18 @@ uint8_t http_enable() {
 	//  1..5 - numeric parameter which specifies a particular PDP context definition
 	//  1 - activate the context
 
+	sim->simErrorState = 0;
 	do {
 		uart_tx("AT#SGACT=1,1\r\n");
 		// CME ERROR: 555 Activation failed
 		// CME ERROR: 133 Requested service option not subscribed
 		uart_state = uart_getTransactionState();
+
 		if (uart_state != UART_SUCCESS) {
+			if (sim->simErrorState!=0) {
+				state_failed_gprs(config_getSelectedSIM());
+				return UART_FAILED;
+			}
 			delay(1000);
 		} else {
 			config_reset_error(sim);
@@ -137,7 +143,7 @@ int http_check_error(int *retry) {
 int http_open_connection(int data_length) {
 	char cmd[80];
 	// Test post URL
-	sprintf(cmd, "AT#HTTPSND=1,0,\"%s\",%d,0\r\n", DATA_UPLOAD_URL_PATH, data_length);
+	sprintf(cmd, "AT#HTTPSND=1,0,\"%s\",%d,0\r\n", g_pDevCfg->cfgUpload_URL, data_length);
 
 	// Wait for prompt
 	uart_setHTTPPromptMode();
@@ -160,7 +166,7 @@ int http_get_configuration() {
 	// <command>: Numeric parameter indicating the command requested to HTTP server:
 	// 0 GET 1 HEAD 2 DELETE
 
-	sprintf(szTemp, "AT#HTTPQRY=1,0,\"%s/%s/1/\"\r\n", CONFIGURATION_URL_PATH,
+	sprintf(szTemp, "AT#HTTPQRY=1,0,\"%s/%s/1/\"\r\n", g_pDevCfg->cfgConfig_URL,
 			g_pDevCfg->cfgIMEI);
 	uart_tx_timeout(szTemp, 5000, 1);
 	if (uart_getTransactionState() != UART_SUCCESS) {

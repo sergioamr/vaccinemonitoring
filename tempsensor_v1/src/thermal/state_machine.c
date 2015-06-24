@@ -29,6 +29,7 @@
 #include "thermalcanyon.h"
 #include "state_machine.h"
 #include "buzzer.h"
+#include "alarms.h"
 
 // Overall state of the device to take decisions upon the state of the modem, storage, alerts, etc.
 
@@ -42,20 +43,48 @@ SYSTEM_STATE *g_pSysState = &g_SystemState;
 /* General events that will generate responses from the system */
 /*************************************************************************************************************/
 uint8_t state_getSignalPercentage() {
-	return ((float)(g_pSysState->signal_level - NETWORK_ZERO)*100)/(NETWORK_MAX_SS - NETWORK_ZERO);
+	return ((float) (g_pSysState->signal_level - NETWORK_ZERO) * 100)
+			/ (NETWORK_MAX_SS - NETWORK_ZERO);
 }
 
-// TODO There was a problem in the SD Card, reinit fat
-void state_sd_card_problem(FRESULT fr) {
-	// THERE WAS A PROBLEM
+/***********************************************************************************************************************/
+/* STORAGE */
+/***********************************************************************************************************************/
 
-	// SETUP event FAT INIT ATTEMPT
+// There was a problem in the SD Card, reinit fat
+void state_SD_card_problem(FRESULT fr, const char *szError) {
+	if (fr != FR_OK) {
+		// Activate try again later for the SD card to be re mounted.
+		g_pSysState->system.alarms.sdcard = 1;
+
+		// Disable fat access while there is an error.
+		g_bFatInitialized = false;
+	}
+}
+
+void state_SD_card_OK() {
+	g_pSysState->system.alarms.sdcard = 0;
+}
+
+void state_check_SD_card() {
+	char msg[80];
+	if (g_pSysState->system.alarms.sdcard) {
+		fat_init_drive();
+
+		if (g_bFatInitialized == false) {
+			if (g_szLastSD_CardError != NULL) {
+				sprintf(msg, "%s SD error [%s]", g_pDevCfg->cfgIMEI,
+						g_szLastSD_CardError);
+				alarm_SD_card_failure(msg);
+			}
+		}
+	}
 }
 
 void state_sim_failure(SIM_CARD_CONFIG *sim) {
 
 	// Failed to register to network
-	if (sim->simErrorState == 555 ) {
+	if (sim->simErrorState == 555) {
 		// Total failure in the card,
 		_NOP();
 	}
@@ -66,8 +95,8 @@ void state_sim_failure(SIM_CARD_CONFIG *sim) {
 /***********************************************************************************************************************/
 
 NETWORK_SERVICE inline *state_getCurrentService() {
-	if (g_pSysState->network_mode<0 || g_pSysState->network_mode>1)
-		g_pSysState->network_mode=0;
+	if (g_pSysState->network_mode < 0 || g_pSysState->network_mode > 1)
+		g_pSysState->network_mode = 0;
 
 	return &g_pSysState->net_service[g_pSysState->network_mode];
 }
@@ -79,13 +108,12 @@ char inline *state_getNetworkState() {
 
 void state_setNetworkStatus(const char *status) {
 	NETWORK_SERVICE *service = state_getCurrentService();
-	strcpy(service->network_state, status);
+	strncpy(service->network_state, status, sizeof(service->network_state));
 }
 
 uint8_t state_getSignalLevel() {
 	return g_pSysState->signal_level;
 }
-
 
 int state_isSignalInRange() {
 	int iSignalLevel = g_pSysState->signal_level;
@@ -96,13 +124,13 @@ int state_isSignalInRange() {
 }
 
 void state_setSignalLevel(uint8_t iSignal) {
-	g_pSysState->signal_level=iSignal;
+	g_pSysState->signal_level = iSignal;
 }
 
 void state_check_network() {
 	int res;
 	uint8_t *failures;
-	int service=modem_getNetworkService();
+	int service = modem_getNetworkService();
 
 	modem_getSignal();
 	if (state_isSignalInRange())
@@ -110,18 +138,17 @@ void state_check_network() {
 	else
 		res = UART_FAILED;
 
-
 	failures = &g_pSysState->net_service[service].network_failures;
 
 	// Something was wrong on the connection, swap SIM card.
 	if (res == UART_FAILED) {
 		if (*failures == NETWORK_ATTEMPTS_BEFORE_SWAP_SIM - 1) {
-			log_appendf("[%d] TRY SWAPPING SIM", config_getSelectedSIM());
+			log_appendf("[%d] SIMSWAP", config_getSelectedSIM());
 			res = modem_swap_SIM();
 			*failures = 0;
 		} else {
 			*failures++;
-			log_appendf("[%d] NETWORK DOWN %d", config_getSelectedSIM(), *failures);
+			log_appendf("[%d] NETDOWN %d", config_getSelectedSIM(), *failures);
 		}
 	} else {
 		*failures = 0;
@@ -131,8 +158,8 @@ void state_check_network() {
 int state_isNetworkRegistered() {
 	NETWORK_SERVICE *service = state_getCurrentService();
 
-	if (service->network_status==NETWORK_STATUS_REGISTERED_HOME_NETWORK
-		|| service->network_status==NETWORK_STATUS_REGISTERED_ROAMING)
+	if (service->network_status == NETWORK_STATUS_REGISTERED_HOME_NETWORK
+			|| service->network_status == NETWORK_STATUS_REGISTERED_ROAMING)
 		return 1;
 
 	return 0;
@@ -152,7 +179,7 @@ void state_init() {
 }
 
 uint8_t state_isGPRS() {
-	if (modem_getNetworkService()==NETWORK_GPRS)
+	if (modem_getNetworkService() == NETWORK_GPRS)
 		return true;
 
 	return false;
@@ -217,7 +244,8 @@ void state_alarm_on(char *alarm_msg) {
 	state_alarm_turnon_buzzer();
 
 #ifdef _DEBUG
-	sms_send_message_number(REPORT_PHONE_NUMBER, alarm_msg);
+	if (g_pDevCfg->cfg.logs.sms_reports)
+		sms_send_message_number(g_pDevCfg->cfgReportSMS, alarm_msg);
 #endif
 
 	display_alarm:
@@ -251,8 +279,11 @@ void state_clear_alarm_state() {
 		return;
 
 #ifdef _DEBUG
-	strcat(g_pSysState->alarm_message, " cleared");
-	sms_send_message_number(REPORT_PHONE_NUMBER, g_pSysState->alarm_message);
+	if (g_pDevCfg->cfg.logs.sms_reports) {
+		strcat(g_pSysState->alarm_message, " cleared");
+		sms_send_message_number(g_pDevCfg->cfgReportSMS,
+				g_pSysState->alarm_message);
+	}
 #endif
 
 	s->alarms.buzzer = STATE_OFF;
@@ -270,13 +301,17 @@ void state_network_status(int presentation_mode, int net_status) {
 
 // Clear all the errors for the network connection.
 void state_network_success(uint8_t sim) {
-	SIM_STATE *simState = &g_pSysState->simState[sim];
+	SIM_STATE *simState;
+
+	if (sim > 1)
+		return;
+	simState = &g_pSysState->simState[sim];
 
 	// Eveything is fine
-	if (g_pSysState->network_mode==NETWORK_GSM)
+	if (g_pSysState->network_mode == NETWORK_GSM)
 		simState->failsGSM = 0;
 
-	if (g_pSysState->network_mode==NETWORK_GPRS)
+	if (g_pSysState->network_mode == NETWORK_GPRS)
 		simState->failsGPRS = 0;
 
 	simState->modemErrors = 0;
@@ -292,26 +327,22 @@ void state_modem_timeout(uint8_t sim) {
 }
 
 void state_failed_gprs(uint8_t sim) {
-	SIM_STATE *simState = &g_pSysState->simState[sim];
-	simState->failsGPRS++;
+	if (sim > 1)
+		return;
+
+	g_pSysState->simState[sim].failsGPRS++;
 }
 
 void state_failed_gsm(uint8_t sim) {
-	SIM_STATE *simState = &g_pSysState->simState[sim];
-	simState->failsGSM++;
+	if (sim > 1)
+		return;
+
+	g_pSysState->simState[sim].failsGSM++;
 }
 
 void state_http_transfer(uint8_t sim, uint8_t success) {
 	if (success)
 		state_network_success(sim);
-}
-
-/***********************************************************************************************************************/
-/* STORAGE */
-/***********************************************************************************************************************/
-
-void state_failed_sdcard(uint16_t error) {
-
 }
 
 /***********************************************************************************************************************/
@@ -424,7 +455,7 @@ void state_check_power() {
 
 	// Check the power down time to generate an alert
 
-	if (g_pDevCfg->stBattPowerAlertParam.minutesPower==0)
+	if (g_pDevCfg->stBattPowerAlertParam.minutesPower == 0)
 		return;
 
 	if (elapsed > (g_pDevCfg->stBattPowerAlertParam.minutesPower) * 60) {
@@ -445,4 +476,5 @@ void state_process() {
 
 	state_check_power();
 	state_check_network();
+	state_check_SD_card();
 }

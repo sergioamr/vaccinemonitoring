@@ -23,38 +23,34 @@ EVENT_MANAGER g_sEvents;
 /* Event based system */
 /*******************************************************************************************************/
 
-time_t inline event_getInterval(EVENT *pEvent) {
+time_t inline event_getIntervalSeconds(EVENT *pEvent) {
 	if (pEvent == NULL)
 		return UINT32_MAX;
 
-	if (pEvent->interval == 0)
-		return pEvent->intervalDefault;
-
-	return pEvent->interval;
+	return pEvent->interval_secs + pEvent->offset_secs;
 }
 
-void inline event_setInterval(EVENT *pEvent, time_t time) {
+time_t event_getIntervalMinutes(EVENT *pEvent) {
+	return (event_getIntervalSeconds(pEvent) / 60);
+}
+
+void inline event_setIntervalSeconds(EVENT *pEvent, time_t time_seconds) {
 	if (pEvent == NULL)
 		return;
 
 	// Intervals more than reset time will not be accepted.
-	if (time > HOURS_(48))
+	if (time_seconds)
 		return;
 
-	if (pEvent->interval != 0) {
-		pEvent->interval = time / 60L;
-		return;
-	}
-
-	pEvent->intervalDefault = time;
+	pEvent->interval_secs = time_seconds;
 }
 
-void event_setInterval_by_id(EVENT_IDS id, time_t time) {
+void event_setInterval_by_id_secs(EVENT_IDS id, time_t time_seconds) {
 	EVENT *pEvent = events_find(id);
 	if (pEvent == NULL)
 		return;
 
-	event_setInterval(pEvent, time);
+	event_setIntervalSeconds(pEvent, time_seconds);
 }
 
 time_t events_getTick() {
@@ -103,7 +99,7 @@ void events_send_data(char *phone) {
 		length = (pEvent->nextEventRun - currentTime);
 
 		sprintf(msg, "%s : left %d next %d", pEvent->name, (uint16_t) length,
-				(uint16_t) event_getInterval(pEvent));
+				(uint16_t) event_getIntervalMinutes(pEvent));
 		sms_send_message_number(phone, msg);
 	}
 
@@ -117,7 +113,7 @@ void events_send_data(char *phone) {
 void event_sanity_check(EVENT *pEvent, time_t currentTime) {
 
 	time_t maxRunTime = currentTime + pEvent->offset_secs
-			+ event_getInterval(pEvent);
+			+ event_getIntervalSeconds(pEvent);
 
 	if (pEvent->nextEventRun <= maxRunTime)
 		return;
@@ -169,7 +165,7 @@ void events_find_next_event(time_t currentTime) {
 
 void events_register(EVENT_IDS id, char *name, time_t offset_time_secs,
 		void (*functionCall)(void *, time_t), time_t intervalDefault,
-		time_t interval) {
+		time_t intervalMinutes) {
 	EVENT *pEvent;
 	uint8_t nextEvent;
 
@@ -183,18 +179,17 @@ void events_register(EVENT_IDS id, char *name, time_t offset_time_secs,
 	pEvent->id = id;
 	strncpy(pEvent->name, name, sizeof(pEvent->name));
 
-	if (intervalDefault!=0)
-		pEvent->intervalDefault = intervalDefault-offset_time_secs;
-	else
-		pEvent->intervalDefault = 0;
+#ifdef _DEBUG
+	intervalDefault/=2;
+	offset_time_secs/=2;
+	intervalMinutes/=2;
+#endif
 
-	if (interval!=0)
-		pEvent->interval = MINUTES_(interval)-offset_time_secs;
-	else
-		pEvent->interval = 0;
+	if (intervalDefault != 0)
+		pEvent->interval_secs = intervalDefault - offset_time_secs;
 
-	if (pEvent->interval<0)
-		pEvent->interval = 0;
+	if (intervalMinutes != 0)
+		pEvent->interval_secs = MINUTES_(intervalMinutes) - offset_time_secs;
 
 	pEvent->lastEventRun = 0;
 	pEvent->nextEventRun = 0;
@@ -206,12 +201,13 @@ void events_register(EVENT_IDS id, char *name, time_t offset_time_secs,
 
 void event_init(EVENT *pEvent, time_t currentTime) {
 	pEvent->nextEventRun = currentTime + pEvent->offset_secs
-			+ event_getInterval(pEvent);
+			+ event_getIntervalSeconds(pEvent);
 }
 
 void event_next(EVENT *pEvent, time_t currentTime) {
 	pEvent->lastEventRun = pEvent->nextEventRun;
-	pEvent->nextEventRun = currentTime + event_getInterval(pEvent) + pEvent->offset_secs;
+	pEvent->nextEventRun = currentTime + event_getIntervalSeconds(pEvent)
+			+ pEvent->offset_secs;
 }
 
 void events_sync() {
@@ -300,6 +296,9 @@ void events_run() {
 
 	pEvent = &g_sEvents.events[nextEvent];
 	while (currentTime >= pEvent->nextEventRun && pEvent != NULL) {
+		if (g_iDebug)
+			buzzer_feedback_value(5);
+
 		event_run_now(pEvent);
 		nextEvent = g_sEvents.nextEvent;
 		pEvent = &g_sEvents.events[nextEvent];
@@ -314,7 +313,10 @@ void events_run() {
 /*******************************************************************************************************/
 
 void event_sms_test(void *event, time_t currentTime) {
-	sms_send_data_request(REPORT_PHONE_NUMBER);
+	if (!g_pDevCfg->cfg.logs.sms_reports)
+		return;
+
+	sms_send_data_request(g_pDevCfg->cfgReportSMS);
 }
 
 void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
@@ -324,9 +326,10 @@ void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
 	sms_process_messages();
 	if (g_pDevCfg->cfgServerConfigReceived == 1) {
 #ifndef _DEBUG
-		event_setInterval(pEvent, MINUTES_(PERIOD_SMS_CHECK));
+		event_setIntervalSeconds(pEvent, MINUTES_(PERIOD_SMS_CHECK));
 #endif
-		pEvent->nextEventRun = pEvent->nextEventRun + event_getInterval(pEvent);
+		pEvent->nextEventRun = pEvent->nextEventRun
+				+ event_getIntervalSeconds(pEvent);
 	}
 
 	event_force_event_by_id(EVT_DISPLAY, 0);
@@ -381,11 +384,11 @@ void event_network_check(void *event, time_t currentTime) {
 	}
 
 	if (state_isNetworkRegistered()) {
-		event_setInterval_by_id(EVT_CHECK_NETWORK, MINUTES_(10));
- 	} else {
+		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(10));
+	} else {
 		// Try to connect in 1 minute
-		event_force_event_by_id(EVT_CHECK_NETWORK, MINUTES_(1));
- 	}
+		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(1));
+	}
 
 	event_force_event_by_id(EVT_DISPLAY, 0);
 }
@@ -466,17 +469,18 @@ void events_init() {
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
 
 #ifdef _DEBUG
-	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test, MINUTES_(PERIOD_SMS_TEST),
-	NULL);
+	events_register(EVT_SMS_TEST, "SMS_TEST", 0, &event_sms_test,
+			MINUTES_(PERIOD_SMS_TEST),
+			NULL);
 #endif
 	events_register(EVT_BATTERY_CHECK, "BATTERY", 0, &events_check_battery,
-			MINUTES_(PERIOD_BATTERY_CHECK), NULL);
+			MINUTES_(PERIOD_BATTERY_CHECK), g_pDevCfg->sIntervalsMins.batteryCheck);
 
 	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time,
-			MINUTES_(PERIOD_PULLTIME), NULL);
+			MINUTES_(PERIOD_PULLTIME), g_pDevCfg->sIntervalsMins.modemPullTime);
 
 	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, &event_network_check,
-			MINUTES_(PERIOD_NETWORK_CHECK), NULL);
+			MINUTES_(PERIOD_NETWORK_CHECK),  g_pDevCfg->sIntervalsMins.networkCheck);
 
 	// Check every 30 seconds until we get the configuration message from server;
 	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs,
@@ -486,29 +490,28 @@ void events_init() {
 			MINUTES_(PERIOD_LCD_OFF), NULL);
 
 	events_register(EVT_ALARMS_CHECK, "ALARMS", 1, &events_health_check,
-			MINUTES_(PERIOD_ALARMS_CHECK), NULL);
+			MINUTES_(PERIOD_ALARMS_CHECK),  g_pDevCfg->sIntervalsMins.alarmsCheck);
 
 	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
 			MINUTES_(PERIOD_LCD_REFRESH), NULL);
 
-	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0, &event_subsample_temperature,
-			MINUTES_(PERIOD_SAMPLING),
+	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0,
+			&event_subsample_temperature, MINUTES_(PERIOD_SAMPLING),
 			g_pDevCfg->sIntervalsMins.sampling);
 
 	// Offset the save N seconds from the subsample taking
 	events_register(EVT_SAVE_SAMPLE_TEMP, "SAVE TMP", 15, &event_save_samples,
-			MINUTES_(PERIOD_SAMPLING),
-			g_pDevCfg->sIntervalsMins.sampling);
+			MINUTES_(PERIOD_SAMPLING), g_pDevCfg->sIntervalsMins.sampling);
 
 	events_register(EVT_UPLOAD_SAMPLES, "UPLOAD", 0, &event_upload_samples,
-			MINUTES_(PERIOD_UPLOAD),
-			g_pDevCfg->sIntervalsMins.upload);
+			MINUTES_(PERIOD_UPLOAD), g_pDevCfg->sIntervalsMins.upload);
 
 	events_register(EVT_PERIODIC_REBOOT, "REBOOT", 0, &event_reboot_system,
 			MINUTES_(PERIOD_REBOOT), g_pDevCfg->sIntervalsMins.systemReboot);
 
 	events_register(EVT_CONFIGURATION, "CONFIG", 30, &event_fetch_configuration,
-			MINUTES_(PERIOD_CONFIGURATION_FETCH), g_pDevCfg->sIntervalsMins.configurationFetch);
+			MINUTES_(PERIOD_CONFIGURATION_FETCH),
+			g_pDevCfg->sIntervalsMins.configurationFetch);
 
 	events_sync();
 }

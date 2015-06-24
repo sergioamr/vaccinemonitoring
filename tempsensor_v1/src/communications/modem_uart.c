@@ -43,20 +43,21 @@ volatile UART_TRANSFER uart;
 /*************************** ERROR AND OK  *****************************/
 // Function to check end of msg
 void uart_setCheckMsg(const char *szOK, const char *szError) {
+	uart.iActive = 1;
 	uart.bTransmissionEnd = 0;
 	uart.iUartState = UART_INPROCESS;
 
 	if (szError != NULL) {
 		uart.ErrorIdx = 0;
 		uart.ErrorLength = strlen(szError) - 1; // We don't check for 0 terminated string
-		strcpy((char *) uart.szError, szError);
+		strncpy((char *) uart.szError, szError, sizeof(uart.szError));
 	} else
 		uart.ErrorLength = -1;
 
 	if (szOK != NULL) {
 		uart.OKIdx = 0;
 		uart.OKLength = strlen(szOK) - 1; // We don't check for 0 terminated string
-		strcpy((char *) uart.szOK, szOK);
+		strncpy((char *) uart.szOK, szOK, sizeof(uart.szOK));
 	} else
 		uart.OKLength = -1;
 
@@ -151,8 +152,7 @@ void uart_init() {
 	UCA0STATW |= UCLISTEN;
 #endif
 	UCA0CTLW0 &= ~UCSWRST;                    // Initialize eUSCI
-
-	UCA0IE |= UCRXIE;                // Enable USCI_A0 RX interrupt
+	uart.iActive = 1;
 }
 
 int8_t uart_getTransactionState() {
@@ -216,7 +216,7 @@ void sendCommand(const char *cmd) {
 
 	UCA0IE |= UCRXIE;   // Enable USCI_A0 RX interrupt
 	UCA0IE |= UCTXIE;
-	//_BIS_SR(LPM0_bits + GIE);
+
 	_NOP();
 	return;
 }
@@ -422,6 +422,9 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 		break;
 
 	case USCI_UART_UCRXIFG:
+		if (!uart.iActive)
+			return;
+
 		if (uart.iRXTailIdx >= sizeof(RXBuffer)) {
 			uart.iRXTailIdx = 0;
 			if (uart_numDataPages > 0) {
@@ -452,6 +455,9 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 		break;
 
 	case USCI_UART_UCTXIFG:
+		if (!uart.iActive)
+			return;
+
 		UCA0TXBUF = TXBuffer[uart.iTXIdx];               // Transmit characters
 		uart.iTXIdx++;
 		if (uart.iTXIdx >= uart.iTxLen) {
@@ -487,6 +493,6 @@ void uart_setupIO_clock() {
 #endif
 	UCA0CTLW0 &= ~UCSWRST;                    // Initialize eUSCI
 
-	UCA0IE |= UCRXIE;                // Enable USCI_A0 RX interrupt
+	//UCA0IE |= UCRXIE;                // Enable USCI_A0 RX interrupt
 }
 
