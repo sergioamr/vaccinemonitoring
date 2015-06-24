@@ -276,6 +276,7 @@ typedef struct {
 	uint32_t lastSeek;
 	uint8_t calibrationFinished;
 	TRANSMISSION_TYPE lastTransMethod;
+	char firmwareVersion[17];
 	uint16_t configStructureSize; // Size to check if there are changes on this structure
 
 	// Stats to control buffer sizes

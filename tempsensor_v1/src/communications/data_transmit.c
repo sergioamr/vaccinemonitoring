@@ -10,7 +10,7 @@
 
 #define TS_SIZE					21
 #define TS_FIELD_OFFSET			1	//1 - $, 3 - $TS
-#define TRANS_FAILED		 	-1
+#define TRANS_FAILED		   -1
 #define TRANS_SUCCESS			0
 
 char *getSensorTemp(int sensorID) {
@@ -55,21 +55,25 @@ void select_transmission_method() {
 		if (g_pDevCfg->cfgSelectedSIM_slot == 0) {
 			modem_swap_SIM();
 		}
+		http_enable();
 		break;
 	case HTTP_SIM2:
 		if (g_pDevCfg->cfgSelectedSIM_slot == 1) {
 			modem_swap_SIM();
 		}
+		http_enable();
 		break;
 	case SMS_SIM2:
 		if (g_pDevCfg->cfgSelectedSIM_slot == 1) {
 			modem_swap_SIM();
 		}
+		http_deactivate();
 		break;
 	case SMS_SIM1:
 		if (g_pDevCfg->cfgSelectedSIM_slot == 0) {
 			modem_swap_SIM();
 		}
+		http_deactivate();
 		break;
 	case NONE:
 	default:
