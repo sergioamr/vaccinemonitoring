@@ -468,13 +468,13 @@ void events_init() {
 			NULL);
 #endif
 	events_register(EVT_BATTERY_CHECK, "BATTERY", 0, &events_check_battery,
-			MINUTES_(PERIOD_BATTERY_CHECK), NULL);
+			MINUTES_(PERIOD_BATTERY_CHECK), g_pDevCfg->sIntervalsMins.batteryCheck);
 
 	events_register(EVT_PULLTIME, "PULLTIME", 0, &event_pull_time,
-			MINUTES_(PERIOD_PULLTIME), NULL);
+			MINUTES_(PERIOD_PULLTIME), g_pDevCfg->sIntervalsMins.modemPullTime);
 
 	events_register(EVT_CHECK_NETWORK, "NET CHECK", 1, &event_network_check,
-			MINUTES_(PERIOD_NETWORK_CHECK), NULL);
+			MINUTES_(PERIOD_NETWORK_CHECK),  g_pDevCfg->sIntervalsMins.networkCheck);
 
 	// Check every 30 seconds until we get the configuration message from server;
 	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs,
@@ -484,7 +484,7 @@ void events_init() {
 			MINUTES_(PERIOD_LCD_OFF), NULL);
 
 	events_register(EVT_ALARMS_CHECK, "ALARMS", 1, &events_health_check,
-			MINUTES_(PERIOD_ALARMS_CHECK), NULL);
+			MINUTES_(PERIOD_ALARMS_CHECK),  g_pDevCfg->sIntervalsMins.alarmsCheck);
 
 	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
 			MINUTES_(PERIOD_LCD_REFRESH), NULL);

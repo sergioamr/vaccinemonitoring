@@ -12,6 +12,8 @@
 #define RX_LEN   			1024
 
 typedef struct {
+	int8_t iActive;
+
 	uint16_t iRXTailIdx;
 	uint16_t iRXHeadIdx;
 

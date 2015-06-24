@@ -101,7 +101,7 @@
 
 // 1 will disable the buzzer when there is an Alarm
 // Buzzer will still work on button feedback
-#define BUZZER_DISABLE 1
+#define BUZZER_DISABLE 0
 
 // Disable buttons sounds
 #define BUZZER_DISABLE_FEEDBACK 0
@@ -218,9 +218,30 @@ typedef struct {
 	uint16_t systemReboot;
 	uint16_t configurationFetch;
 	uint16_t smsCheck;
+	uint16_t networkCheck;
+	uint16_t lcdOff;
+	uint16_t alarmsCheck;
+	uint16_t modemPullTime;
+	uint16_t batteryCheck;
 } INTERVAL_PARAM;
 
+typedef union {
+	struct {
+		unsigned char system_log :1;
+		unsigned char web_csv :1;
+		unsigned char server_config :1;
+		unsigned char modem_transactions :1;
+		unsigned char sms_alerts :1;
+		unsigned char bit6 :1;
+		unsigned char bit7 :1;
+		unsigned char bit8 :1;
+	} logs;
+	unsigned char status;
+} LOGGING_COMPONENTS;
+
 typedef struct {
+	char cfgVersion[16];
+
 	int8_t cfgSIM_slot;
 	int8_t cfgSelectedSIM_slot;
 
@@ -241,7 +262,7 @@ typedef struct {
 	SIM_CARD_CONFIG SIM[SYSTEM_NUM_SIM_CARDS];
 	struct tm lastSystemTime;
 
-	int8_t cfgSMS_Alerts;
+	LOGGING_COMPONENTS cfg;
 
 } CONFIG_DEVICE;
 

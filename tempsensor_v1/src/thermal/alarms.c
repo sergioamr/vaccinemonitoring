@@ -20,7 +20,7 @@
 /*************************************************************************************************************/
 void alarm_sms_battery_level() {
 	char msg[MAX_SMS_SIZE];
-	if (!g_pDevCfg->cfgSMS_Alerts)
+	if (!g_pDevCfg->cfg.logs.sms_alerts)
 		return;
 
 	strcpy(msg, "LOW Battery: ColdTrace has now ");
@@ -31,7 +31,7 @@ void alarm_sms_battery_level() {
 
 void alarm_sms_sensor(uint8_t sensorId, int elapsed) {
 	char msg[MAX_SMS_SIZE];
-	if (!g_pDevCfg->cfgSMS_Alerts)
+	if (!g_pDevCfg->cfg.logs.sms_alerts)
 		return;
 
 	sprintf(msg, "Alert Sensor %s at %s degC for %d minutes",
@@ -42,7 +42,7 @@ void alarm_sms_sensor(uint8_t sensorId, int elapsed) {
 }
 
 void alarm_sms_power_outage() {
-	if (!g_pDevCfg->cfgSMS_Alerts)
+	if (!g_pDevCfg->cfg.logs.sms_alerts)
 			return;
 
 	sms_send_message_number(REPORT_PHONE_NUMBER, "Power Outage: ATTENTION! \r\n"
