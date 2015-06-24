@@ -23,9 +23,9 @@ void alarm_sms_battery_level() {
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
 		return;
 
-	strcpy(msg, "LOW Battery: ColdTrace has now ");
+	strcpy(msg, "LOW Battery: ");
 	strcat(msg, itoa_pad(batt_getlevel()));
-	strcat(msg, "battery left. Charge your device immediately.");
+	strcat(msg, "battery left. ");
 	sms_send_message_number(g_pDevCfg->cfgReportSMS, msg);
 }
 
@@ -34,7 +34,7 @@ void alarm_sms_sensor(uint8_t sensorId, int elapsed) {
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
 		return;
 
-	sprintf(msg, "Alert Sensor %s at %s degC for %d minutes",
+	sprintf(msg, "Alert Sensor %s at %s degC for %d mins",
 			SensorName[sensorId], temperature_getString(sensorId),
 			elapsed / 60);
 	strcat(msg, " Take ACTION immediately.");
@@ -45,9 +45,7 @@ void alarm_sms_power_outage() {
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
 			return;
 
-	sms_send_message_number(g_pDevCfg->cfgReportSMS, "Power Outage: ATTENTION! \r\n"
-			"Power is out in your clinic. \r\n"
-			"Monitor the fridge temperature closely.");
+	sms_send_message_number(g_pDevCfg->cfgReportSMS, "Power Outage: ATTENTION!");
 }
 
 void alarm_SD_card_failure(char *msg) {

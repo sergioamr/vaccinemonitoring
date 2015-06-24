@@ -240,7 +240,7 @@ typedef union {
 } LOGGING_COMPONENTS;
 
 typedef struct {
-	char cfgVersion[16];
+	char cfgVersion[8];
 
 	int8_t cfgSIM_slot;
 	int8_t cfgSelectedSIM_slot;
@@ -275,7 +275,7 @@ typedef struct {
 	uint32_t numberConfigurationRuns;
 	uint32_t lastSeek;
 	uint8_t calibrationFinished;
-	char firmwareVersion[17];
+	char firmwareVersion[16];
 	uint16_t configStructureSize; // Size to check if there are changes on this structure
 
 	// Stats to control buffer sizes
@@ -361,7 +361,7 @@ typedef union {
 } SAFEBOOT_STATUS;
 
 typedef struct {
-	char network_state[32];
+	char network_state[18];
 
 	int network_presentation_mode;
 	//NETWORK_STATUS_REGISTERED_HOME_NETWORK

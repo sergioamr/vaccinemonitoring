@@ -71,9 +71,10 @@ void state_check_SD_card() {
 	if (g_pSysState->system.alarms.sdcard) {
 		fat_init_drive();
 
-		if (g_bFatInitialized==false) {
-			if (g_szLastSD_CardError!=NULL) {
-				sprintf(msg, "%s SD card error [%s]", g_pDevCfg->cfgIMEI, g_szLastSD_CardError);
+		if (g_bFatInitialized == false) {
+			if (g_szLastSD_CardError != NULL) {
+				sprintf(msg, "%s SD error [%s]", g_pDevCfg->cfgIMEI,
+						g_szLastSD_CardError);
 				alarm_SD_card_failure(msg);
 			}
 		}
@@ -107,7 +108,7 @@ char inline *state_getNetworkState() {
 
 void state_setNetworkStatus(const char *status) {
 	NETWORK_SERVICE *service = state_getCurrentService();
-	strcpy(service->network_state, status);
+	strncpy(service->network_state, status, sizeof(service->network_state));
 }
 
 uint8_t state_getSignalLevel() {
@@ -142,13 +143,12 @@ void state_check_network() {
 	// Something was wrong on the connection, swap SIM card.
 	if (res == UART_FAILED) {
 		if (*failures == NETWORK_ATTEMPTS_BEFORE_SWAP_SIM - 1) {
-			log_appendf("[%d] TRY SWAPPING SIM", config_getSelectedSIM());
+			log_appendf("[%d] SIMSWAP", config_getSelectedSIM());
 			res = modem_swap_SIM();
 			*failures = 0;
 		} else {
 			*failures++;
-			log_appendf("[%d] NETWORK DOWN %d", config_getSelectedSIM(),
-					*failures);
+			log_appendf("[%d] NETDOWN %d", config_getSelectedSIM(), *failures);
 		}
 	} else {
 		*failures = 0;
@@ -303,7 +303,7 @@ void state_network_status(int presentation_mode, int net_status) {
 void state_network_success(uint8_t sim) {
 	SIM_STATE *simState;
 
-	if (sim>1)
+	if (sim > 1)
 		return;
 	simState = &g_pSysState->simState[sim];
 
@@ -327,14 +327,14 @@ void state_modem_timeout(uint8_t sim) {
 }
 
 void state_failed_gprs(uint8_t sim) {
-	if (sim>1)
+	if (sim > 1)
 		return;
 
 	g_pSysState->simState[sim].failsGPRS++;
 }
 
 void state_failed_gsm(uint8_t sim) {
-	if (sim>1)
+	if (sim > 1)
 		return;
 
 	g_pSysState->simState[sim].failsGSM++;
