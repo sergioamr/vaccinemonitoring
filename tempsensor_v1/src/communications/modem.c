@@ -443,8 +443,6 @@ void modem_check_sim_active() {
 
 int modem_swap_SIM() {
 	int res = UART_FAILED;
-
-	config_incLastCmd();
 	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
 	g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;
 
@@ -474,8 +472,6 @@ int modem_getSignal() {
 	char *token;
 	int iSignalLevel = 0;
 
-	config_incLastCmd();
-
 	if (uart_tx_timeout("AT+CSQ\r\n", TIMEOUT_CSQ, 1) != UART_SUCCESS)
 		return 0;
 
@@ -491,7 +487,6 @@ int8_t modem_parse_string(char *cmd, char *response, char *destination,
 		uint16_t size) {
 	char *token;
 	int8_t uart_state;
-	config_incLastCmd();
 
 	uart_tx_timeout(cmd, MODEM_TX_DELAY1, 1);
 
@@ -549,7 +544,6 @@ void modem_getIMEI() {
 	// added for IMEI number//
 	char IMEI[IMEI_MAX_LEN + 1];
 	char *token = NULL;
-	config_incLastCmd();
 
 	uart_tx("AT+CGSN\r\n");
 	memset(IMEI, 0, sizeof(IMEI));
@@ -595,7 +589,6 @@ void modem_survey_network() {
 	char *pToken1;
 	int attempts = NET_ATTEMPTS;
 	int uart_state;
-	config_incLastCmd();
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
@@ -760,7 +753,7 @@ void modem_getPreferredOperatorList() {
 
 void modem_init() {
 
-#ifdef _DEBUG
+#if defined _DEBUG && defined DEBUG_SAVE_COMMAND
 	config_setLastCommand(COMMAND_MODEMINIT);
 #endif
 

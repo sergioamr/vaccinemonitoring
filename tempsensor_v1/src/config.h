@@ -474,9 +474,17 @@ void config_SIM_operational();
 void config_init();
 void config_send_configuration(char *number);
 void config_reconfigure();
+
+#ifndef DEBUG_SAVE_COMMAND
+#define config_save_command
+#define config_incLastCmd
+#define config_setLastCommand
+#else
 void config_save_command(char *string);
 void config_setLastCommand(uint16_t lastCmd);
 void config_incLastCmd();
+#endif
+
 void config_update_system_time();
 
 uint32_t config_get_boot_midnight_difference();

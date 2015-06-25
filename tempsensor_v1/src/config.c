@@ -148,9 +148,8 @@ void config_SafeMode() {
 	_NOP();
 }
 
-void config_incLastCmd() {
-	g_pSysCfg->lastCommand++;
-}
+// Debugging functionality by storing last command runs
+#ifdef DEBUG_SAVE_COMMAND
 
 // Stores what was the last command run and what time
 void config_setLastCommand(uint16_t lastCmd) {
@@ -183,6 +182,12 @@ void config_save_command(char *str) {
 	log_append_(str);
 }
 
+void config_incLastCmd() {
+	g_pSysCfg->lastCommand++;
+}
+
+#endif
+
 void config_reconfigure() {
 	g_pSysCfg->memoryInitialized = 0xFF;
 	PMM_trigBOR();
@@ -192,6 +197,7 @@ void config_reconfigure() {
 
 // Send back data after an SMS request
 void config_send_configuration(char *number) {
+#ifdef DEBUG_SEND_CONFIG
 	TEMP_ALERT_PARAM *alert;
 	BATT_POWER_ALERT_PARAM *power;
 	char msg[MAX_SMS_SIZE_FULL];
@@ -234,6 +240,7 @@ void config_send_configuration(char *number) {
 			);
 
 	sms_send_message_number(number, msg);
+#endif
 }
 
 extern int main_test();
