@@ -210,6 +210,10 @@ void event_next(EVENT *pEvent, time_t currentTime) {
 			+ pEvent->offset_secs;
 }
 
+void events_sync_rtc() {
+	// Events dependent on time
+}
+
 void events_sync() {
 	EVENT *pEvent;
 	int t;
@@ -338,7 +342,7 @@ void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
 void event_pull_time(void *event, time_t currentTime) {
 	modem_pull_time();
 	// We update all the timers according to the new time
-	events_sync();
+	events_sync_rtc();
 	event_force_event_by_id(EVT_DISPLAY, 0);
 }
 
