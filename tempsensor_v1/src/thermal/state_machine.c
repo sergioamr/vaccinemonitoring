@@ -279,7 +279,7 @@ void state_alarm_on(char *alarm_msg) {
 					sizeof(g_pSysState->alarm_message));
 			lcd_turn_on();
 			lcd_printl(LINEC, "ALARM!");
-			lcd_printf(LINEH, "*** %s ***", alarm_msg);
+			lcd_printf(LINEH, "%s", alarm_msg);
 		}
 		count = events_getTick();
 	}

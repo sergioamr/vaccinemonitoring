@@ -277,9 +277,7 @@ FRESULT fat_init_drive() {
 	f_unlink(LOG_MODEM_PATH);
 	f_unlink(CONFIG_LOG_FILE_PATH);
 
-	fr = log_append_("");
-	fr = log_append_("*****************************************************");
-	fr = log_appendf("Start Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
+	fr = log_appendf("\r\n\r\nStart Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
 	return fr;
 }
 
