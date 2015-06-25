@@ -184,8 +184,13 @@ void process_batch() {
 	if (transMethod == NONE) {
 		return;
 	} else if (transMethod == HTTP_SIM1 || transMethod == HTTP_SIM2) {
-		if (http_enable() == UART_SUCCESS) {
-
+		if (http_enable() != UART_SUCCESS) {
+			http_deactivate();
+			if (transMethod == HTTP_SIM1) {
+				transMethod = SMS_SIM1;
+			} else {
+				transMethod = SMS_SIM2;
+			}
 		}
 	}
 

@@ -383,9 +383,7 @@ void event_subsample_temperature(void *event, time_t currentTime) {
 void event_network_check(void *event, time_t currentTime) {
 	int res;
 	uint8_t *failures;
-	int service = modem_getNetworkService();
-
-	failures = &g_pSysState->net_service[service].network_failures;
+	int service;
 
 	switch (g_pSysState->lastTransMethod) {
 		case HTTP_SIM1:
@@ -401,6 +399,9 @@ void event_network_check(void *event, time_t currentTime) {
 			modem_run_failover_sequence();
 			break;
 	}
+
+	service = modem_getNetworkService();
+	failures = &g_pSysState->net_service[service].network_failures;
 
 	if (state_isNetworkRegistered()) {
 		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(10));
