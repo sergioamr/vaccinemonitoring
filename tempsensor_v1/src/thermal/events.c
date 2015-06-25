@@ -434,6 +434,10 @@ void event_fetch_configuration(void *event, time_t currentTime) {
 	backend_get_configuration();
 }
 
+void event_reset_trans(void *event, time_t currentTime) {
+	g_pSysCfg->lastTransMethod = NONE;
+}
+
 // Sleeping state
 uint8_t iMainSleep = 0;
 
@@ -483,7 +487,7 @@ void events_init() {
 			MINUTES_(PERIOD_NETWORK_CHECK),  g_pDevCfg->sIntervalsMins.networkCheck);
 
 	// Check every 30 seconds until we get the configuration message from server;
-	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs,
+	events_register(EVT_SMSCHECK, "SMS CHECK", 0, &event_SIM_check_incoming_msgs,
 			MINUTES_(PERIOD_SMS_CHECK), g_pDevCfg->sIntervalsMins.smsCheck);
 
 	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off,
@@ -512,6 +516,9 @@ void events_init() {
 	events_register(EVT_CONFIGURATION, "CONFIG", 30, &event_fetch_configuration,
 			MINUTES_(PERIOD_CONFIGURATION_FETCH),
 			g_pDevCfg->sIntervalsMins.configurationFetch);
+
+	events_register(EVT_RESET_FAILOVER, "RESET TRANS", 0, &event_reset_trans,
+			MINUTES_(PERIOD_TRANS_RESET), g_pDevCfg->sIntervalsMins.transmissionReset);
 
 	events_sync();
 }

@@ -52,6 +52,7 @@
 #define PERIOD_SAMPLING			5		//in minutes
 #define PERIOD_UPLOAD			20		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
+#define PERIOD_TRANS_RESET		6*60   //in minutes
 #define PERIOD_LCD_OFF			5
 #define PERIOD_ALARMS_CHECK	    5
 #define PERIOD_CONFIGURATION_FETCH 5
@@ -150,6 +151,7 @@
 #define PERIOD_SAMPLING			1		//in minutes
 #define PERIOD_UPLOAD			3		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
+#define PERIOD_TRANS_RESET 		6*60   //in minutes
 #define PERIOD_LCD_OFF			10
 #define PERIOD_ALARMS_CHECK	    2
 #define PERIOD_CONFIGURATION_FETCH 5
@@ -223,6 +225,7 @@ typedef struct {
 	uint16_t alarmsCheck;
 	uint16_t modemPullTime;
 	uint16_t batteryCheck;
+	uint16_t transmissionReset;
 } INTERVAL_PARAM;
 
 typedef union {
