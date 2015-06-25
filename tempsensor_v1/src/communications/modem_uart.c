@@ -260,7 +260,7 @@ int waitForReady(uint32_t timeoutTimeMs) {
 	}
 
 	if (g_pDevCfg->cfg.logs.modem_transactions) {
-		log_modem("FAILED");
+		log_modem("FAILED\r\n");
 		log_modem(uart_getRXHead());
 	}
 

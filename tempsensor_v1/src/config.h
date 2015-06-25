@@ -195,6 +195,8 @@ typedef struct {
 
 	char networkMode;   // Connecting to network
 	char networkStatus; // check NETWORK_MODE_1 array for status
+
+	char SMSNotSupported;
 	char simOperational; // The sim is in a functional state to send and receive messages
 } SIM_CARD_CONFIG;
 

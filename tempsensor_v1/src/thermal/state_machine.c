@@ -92,7 +92,17 @@ void state_check_SD_card() {
 	}
 }
 
+void state_setSMS_notSupported(SIM_CARD_CONFIG *sim) {
+	sim->SMSNotSupported = 1;
+}
+
 void state_sim_failure(SIM_CARD_CONFIG *sim) {
+
+	// 69 - "Requested facility not implemented"
+	// This cause indicates that the network is unable to provide the requested short message service.
+	if (sim->simErrorState==69) {
+		state_setSMS_notSupported(sim);
+	}
 
 	// Failed to register to network
 	if (sim->simErrorState == 555) {
