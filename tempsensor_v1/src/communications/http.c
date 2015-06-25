@@ -20,7 +20,7 @@ void backend_get_configuration() {
 
 void full_backend_get_configuration() {
 
-	config_setLastCommand(COMMAND_HTTP_DATA_TRANSFER);
+	//config_setLastCommand(COMMAND_HTTP_DATA_TRANSFER);
 	lcd_print("NEXLEAF PING");
 	if (modem_check_network() != UART_SUCCESS) {
 		return;
@@ -181,7 +181,7 @@ int http_get_configuration() {
 
 	uart_setCheckMsg(HTTP_OK, HTTP_ERROR);
 
-	while (retry == 1 && --attempts > 0) {
+	while (retry == 1 && attempts > 0) {
 		if (uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 5) == UART_SUCCESS) {
 			uart_state = uart_getTransactionState();
 			if (uart_state == UART_SUCCESS) {
@@ -192,6 +192,7 @@ int http_get_configuration() {
 			if (uart_state == UART_ERROR)
 				http_check_error(&retry);  // Tries again
 		}
+		attempts--;
 	};
 
 	http_deactivate();
