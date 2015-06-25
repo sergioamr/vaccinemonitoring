@@ -30,8 +30,6 @@
 // SMS alerts, it will send an SMS to the local testing number
 #define ALERTS_SMS 1
 
-#define NETWORK_ATTEMPTS_BEFORE_SWAP_SIM 3
-
 // Threshold in percentage in which the device will enter deep hibernate mode
 #define BATTERY_HIBERNATE_THRESHOLD 10
 #define POWER_ENABLE_ALERT 1
@@ -280,9 +278,7 @@ typedef struct {
 	uint8_t memoryInitialized;
 	uint32_t numberRuns;
 	uint32_t numberConfigurationRuns;
-	uint32_t lastSeek;
 	uint8_t calibrationFinished;
-	TRANSMISSION_TYPE lastTransMethod;
 	char firmwareVersion[17];
 	uint16_t configStructureSize; // Size to check if there are changes on this structure
 
@@ -407,8 +403,11 @@ typedef struct {
 	SYSTEM_SWITCHES system;
 	SYSTEM_ALARMS state;
 
+	uint32_t lastSeek;
+
 	// GSM or GPRS
 	int network_mode;
+	TRANSMISSION_TYPE lastTransMethod;
 	NETWORK_SERVICE net_service[2];
 
 	SAFEBOOT_STATUS safeboot;

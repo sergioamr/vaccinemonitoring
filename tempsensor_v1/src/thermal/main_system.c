@@ -163,7 +163,6 @@ void system_boot() {
 		_NOP(); // Modem failed to power on
 	}
 
-
 	batt_check_level();
 
 	// Init finished, we disabled the debugging display
@@ -205,11 +204,11 @@ int main(void) {
 
 	events_init();
 	state_process();
+
 	sms_process_messages();
 
 	// Done init, start watchdog
 	watchdog_init();
-	process_batch();
 
 #ifdef _DEBUG
 	if (g_pDevCfg->cfg.logs.sms_reports)

@@ -204,6 +204,37 @@ void modem_setNetworkService(int service) {
 	}
 }
 
+void modem_run_failover_sequence() {
+	if (modem_check_network() != UART_SUCCESS) {
+		modem_swap_SIM();
+		log_appendf("[%d] SIMSWAP", config_getSelectedSIM());
+		if (modem_check_network() != UART_SUCCESS) {
+			g_pSysState->lastTransMethod = NONE;
+		}
+	}
+
+	if (http_enable() != UART_SUCCESS) {
+		modem_swap_SIM();
+		log_appendf("[%d] SIMSWAP", config_getSelectedSIM());
+		if (modem_check_network() == UART_SUCCESS &&
+				http_enable() != UART_SUCCESS) {
+			if (g_pDevCfg->cfgSIM_slot == 0) {
+				g_pSysState->lastTransMethod = SMS_SIM1;
+			} else {
+				g_pSysState->lastTransMethod = SMS_SIM2;
+			}
+		}
+	} else {
+		if (g_pDevCfg->cfgSIM_slot == 0) {
+			g_pSysState->lastTransMethod = HTTP_SIM1;
+		} else {
+			g_pSysState->lastTransMethod = HTTP_SIM2;
+		}
+	}
+
+	http_deactivate();
+}
+
 int modem_connect_network(uint8_t attempts) {
 
 	int net_status = 0;
@@ -437,6 +468,14 @@ void modem_check_sim_active() {
 	}
 }
 
+int modem_swap_to_SIM(int sim) {
+	if (g_pDevCfg->cfgSelectedSIM_slot != sim) {
+		return modem_swap_SIM();
+	}
+
+	return UART_SUCCESS;
+}
+
 int modem_swap_SIM() {
 	int res = UART_FAILED;
 	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
@@ -453,7 +492,7 @@ int modem_swap_SIM() {
 
 	// Just send the message if we dont have errors.
 	if (modem_isSIM_Operational()) {
-		sms_send_heart_beat();
+		sms_send_heart_beat(); // Neccessary?
 		res = UART_SUCCESS;
 	} else {
 		res = UART_FAILED;

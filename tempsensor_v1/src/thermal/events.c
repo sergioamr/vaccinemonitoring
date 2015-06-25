@@ -377,10 +377,25 @@ void event_subsample_temperature(void *event, time_t currentTime) {
 }
 
 void event_network_check(void *event, time_t currentTime) {
+	int res;
+	uint8_t *failures;
+	int service = modem_getNetworkService();
 
-	// Checks network and if it is down it does the swapping
-	if (modem_connect_network(1) != UART_SUCCESS) {
-		// Checks several parameters to see if we have to reset the modem, switch sim card, etc.
+	failures = &g_pSysState->net_service[service].network_failures;
+
+	switch (g_pSysState->lastTransMethod) {
+		case HTTP_SIM1:
+		case SMS_SIM1:
+			res = modem_swap_to_SIM(0);
+			break;
+		case HTTP_SIM2:
+		case SMS_SIM2:
+			res = modem_swap_to_SIM(1);
+			break;
+		case NONE:
+		default:
+			modem_run_failover_sequence();
+			break;
 	}
 
 	if (state_isNetworkRegistered()) {
@@ -388,6 +403,24 @@ void event_network_check(void *event, time_t currentTime) {
 	} else {
 		// Try to connect in 1 minute
 		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(1));
+		event_force_event_by_id(EVT_DISPLAY, 0);
+		return;
+	}
+
+	modem_getSignal();
+	if (state_isSignalInRange()) {
+		res = modem_connect_network(1);
+	} else {
+		res = UART_FAILED;
+	}
+
+	if (res == UART_FAILED) {
+		// No signal on this SIM
+		g_pSysState->lastTransMethod = NONE;
+		*failures++;
+		log_appendf("[%d] NETDOWN %d", config_getSelectedSIM(), *failures);
+	} else {
+		*failures = 0;
 	}
 
 	event_force_event_by_id(EVT_DISPLAY, 0);
@@ -435,7 +468,7 @@ void event_fetch_configuration(void *event, time_t currentTime) {
 }
 
 void event_reset_trans(void *event, time_t currentTime) {
-	g_pSysCfg->lastTransMethod = NONE;
+	g_pSysState->lastTransMethod = NONE;
 }
 
 // Sleeping state

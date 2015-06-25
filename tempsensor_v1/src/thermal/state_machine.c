@@ -97,7 +97,6 @@ void state_setSMS_notSupported(SIM_CARD_CONFIG *sim) {
 }
 
 void state_sim_failure(SIM_CARD_CONFIG *sim) {
-
 	// 69 - "Requested facility not implemented"
 	// This cause indicates that the network is unable to provide the requested short message service.
 	if (sim->simErrorState==69) {
@@ -146,34 +145,6 @@ int state_isSignalInRange() {
 
 void state_setSignalLevel(uint8_t iSignal) {
 	g_pSysState->signal_level = iSignal;
-}
-
-void state_check_network() {
-	int res;
-	uint8_t *failures;
-	int service = modem_getNetworkService();
-
-	modem_getSignal();
-	if (state_isSignalInRange())
-		res = modem_connect_network(1);
-	else
-		res = UART_FAILED;
-
-	failures = &g_pSysState->net_service[service].network_failures;
-
-	// Something was wrong on the connection, swap SIM card.
-	if (res == UART_FAILED) {
-		if (*failures == NETWORK_ATTEMPTS_BEFORE_SWAP_SIM - 1) {
-			log_appendf("[%d] SIMSWAP", config_getSelectedSIM());
-			res = modem_swap_SIM();
-			*failures = 0;
-		} else {
-			*failures++;
-			log_appendf("[%d] NETDOWN %d", config_getSelectedSIM(), *failures);
-		}
-	} else {
-		*failures = 0;
-	}
 }
 
 int state_isNetworkRegistered() {
@@ -515,7 +486,6 @@ void state_process() {
 	last_check = rtc_get_second_tick();
 
 	state_check_power();
-	state_check_network();
 	state_check_SD_card();
 
 	// Global check for all the alarms
