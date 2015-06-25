@@ -196,6 +196,11 @@ void sendCommand(const char *cmd) {
 
 	uart.iTxLen = strlen(cmd);
 
+	if (g_pDevCfg->cfg.logs.modem_transactions) {
+		log_modem(get_simplified_date_string(NULL));
+		log_modem(cmd);
+	}
+
 	// Store the maximum size used from this buffer
 	if (uart.iTxLen > g_pSysCfg->maxTXBuffer)
 		g_pSysCfg->maxTXBuffer = uart.iTxLen;
@@ -244,9 +249,17 @@ int waitForReady(uint32_t timeoutTimeMs) {
 		delay(delayTime);
 		if (uart.bTransmissionEnd == 1) {
 			delay(100);  // Documentation specifies 30 ms delay between commands
+			if (g_pDevCfg->cfg.logs.modem_transactions)
+				log_modem(uart_getRXHead());
+
 			return UART_SUCCESS; // There was a transaction, you have to check the state of the uart transaction to check if it was successful
 		}
 		count--;
+	}
+
+	if (g_pDevCfg->cfg.logs.modem_transactions) {
+		log_modem("FAILED");
+		log_modem(uart_getRXHead());
 	}
 
 	// Store the maximum size used from this buffer
@@ -365,6 +378,7 @@ uint8_t uart_tx(const char *cmd) {
 #endif
 	int uart_state;
 	int transaction_completed;
+
 
 	uart_reset_headers();
 
