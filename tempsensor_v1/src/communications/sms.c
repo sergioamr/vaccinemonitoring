@@ -259,6 +259,9 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	int verbose = g_iLCDVerbose;
 	int phonecode = 129;
 	char *token;
+	SIM_CARD_CONFIG *sim = config_getSIM();
+
+	state_SMS_lastMessageACK(sim, -1);
 
 	if (szPhoneNumber==NULL || strlen(szPhoneNumber)==0)
 		return UART_SUCCESS;
@@ -292,6 +295,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 		if (token == NULL) {
 			token = strstr(uart_getRXHead(), "+CMGS:");
 			msgNumber = atoi(token + 6);
+			state_SMS_lastMessageACK(sim, msgNumber);
 			if (msgNumber != 0)
 				res = UART_SUCCESS;
 			else

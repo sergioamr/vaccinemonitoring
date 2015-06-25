@@ -191,6 +191,8 @@ typedef struct {
 	uint16_t simErrorState;
 	char simErrorToken;
 
+	int8_t last_SMS_message;  // Last message sent with this SIM card;
+
 	char networkMode;   // Connecting to network
 	char networkStatus; // check NETWORK_MODE_1 array for status
 	char simOperational; // The sim is in a functional state to send and receive messages
@@ -309,7 +311,7 @@ typedef union {
 		unsigned char bit6 :1;
 		unsigned char bit7 :1;
 		unsigned char bit8 :1;
-	} alarms;
+	} state;
 	unsigned char status;
 } SENSOR_STATUS;
 
@@ -338,16 +340,22 @@ typedef struct {
 typedef union {
 	struct {
 		unsigned char globalAlarm :1;
-		unsigned char SD_cardFailure :1;
-		unsigned char buzzer :1;
-		unsigned char power :1;
-		unsigned char buzzer_disabled :1;
-		unsigned char button_buzzer_override :1;
 		unsigned char battery :1;
-		unsigned char sdcard :1;
+		unsigned char SD_card_failure :1;
+		unsigned char poweroutage :1;
 	} alarms;
 	unsigned char status;
-} SYSTEM_STATUS;
+} SYSTEM_ALARMS;
+
+typedef union {
+	struct {
+		unsigned char buzzer_disabled :1;
+		unsigned char power_connected :1;
+		unsigned char button_buzzer_override :1;
+		unsigned char buzzer_sound :1;
+	} switches;
+	unsigned char status;
+} SYSTEM_SWITCHES;
 
 //  Commands to ignore if there was a problem on last boot
 typedef union {
@@ -376,22 +384,34 @@ typedef struct {
 } NETWORK_SERVICE;
 
 typedef struct {
+	// Last alarm message
 	char alarm_message[32];
+
+	// Current battery level
 	uint8_t battery_level;
+
+	// Last time it was plugged
 	time_t time_powerOutage;
-	uint32_t buzzerFeedback;
+
+	// SIM cards alarms and states
 	SIM_STATE simState[MAX_SMS_NUM];
 
+	// Current sim modem Signal level
 	uint8_t signal_level;
 
+	// Temperature of sensors and alarms
 	TEMPERATURE temp;
-	SYSTEM_STATUS system;
+
+	SYSTEM_SWITCHES system;
+	SYSTEM_ALARMS state;
 
 	// GSM or GPRS
 	int network_mode;
 	NETWORK_SERVICE net_service[2];
 
 	SAFEBOOT_STATUS safeboot;
+
+	uint32_t buzzerFeedback; // Set to play sound on buzzer and activate buzzer
 } SYSTEM_STATE;
 
 typedef struct {

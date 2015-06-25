@@ -22,7 +22,8 @@ void state_SD_card_OK();
 void state_sim_failure(SIM_CARD_CONFIG *sim);
 uint8_t state_getSignalPercentage();
 
-SYSTEM_STATUS *state_getAlarms();
+SYSTEM_ALARMS *state_getAlarms();
+SYSTEM_SWITCHES *state_getSwitches();
 int state_isSignalInRange();
 int state_isNetworkRegistered();
 void state_setSignalLevel(uint8_t iSignal);
@@ -38,6 +39,7 @@ void state_power_on();
 void state_power_out();
 uint8_t state_isBuzzerOn();
 
+void state_SMS_lastMessageACK(SIM_CARD_CONFIG *sim, int8_t msgNumber);
 void state_network_status(int net_mode, int net_status);
 void state_network_fail(uint8_t sim, uint16_t error);
 void state_network_success(uint8_t sim);
