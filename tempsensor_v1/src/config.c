@@ -148,9 +148,8 @@ void config_SafeMode() {
 	_NOP();
 }
 
-void config_incLastCmd() {
-	g_pSysCfg->lastCommand++;
-}
+// Debugging functionality by storing last command runs
+#ifdef DEBUG_SAVE_COMMAND
 
 // Stores what was the last command run and what time
 void config_setLastCommand(uint16_t lastCmd) {
@@ -183,6 +182,12 @@ void config_save_command(char *str) {
 	log_append_(str);
 }
 
+void config_incLastCmd() {
+	g_pSysCfg->lastCommand++;
+}
+
+#endif
+
 void config_reconfigure() {
 	g_pSysCfg->memoryInitialized = 0xFF;
 	PMM_trigBOR();
@@ -192,6 +197,7 @@ void config_reconfigure() {
 
 // Send back data after an SMS request
 void config_send_configuration(char *number) {
+#ifdef DEBUG_SEND_CONFIG
 	TEMP_ALERT_PARAM *alert;
 	BATT_POWER_ALERT_PARAM *power;
 	char msg[MAX_SMS_SIZE_FULL];
@@ -234,6 +240,7 @@ void config_send_configuration(char *number) {
 			);
 
 	sms_send_message_number(number, msg);
+#endif
 }
 
 extern int main_test();
@@ -296,8 +303,8 @@ void config_init() {
 
 // First run
 	g_pSysCfg->numberConfigurationRuns = 1;
-	g_pSysCfg->lastSeek = 0;
-	g_pSysCfg->lastTransMethod = NONE;
+	g_pSysState->lastSeek = 0;
+	g_pSysState->lastTransMethod = NONE;
 
 // Value to check to make sure the structure is still the same size;
 	g_pSysCfg->configStructureSize = sizeof(CONFIG_SYSTEM);
@@ -442,8 +449,9 @@ int config_parse_configuration(char *msg) {
 
 int config_process_configuration() {
 	char *token;
-
+#ifdef _DEBUG
 	log_append_("configuration processing");
+#endif
 // FINDSTR uses RXBuffer - There is no need to initialize the data to parse.
 	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
 	return config_parse_configuration((char *) uart_getRXHead());

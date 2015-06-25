@@ -94,6 +94,9 @@ char* get_simplified_date_string(struct tm* timeData) {
 	static char g_szDateString[26]; // "YYYY-MM-DD HH:MM:S IST"
 #pragma SET_DATA_SECTION()
 
+	if (timeData==NULL)
+		timeData=&g_tmCurrTime;
+
 	g_szDateString[0] = 0;
 	if (timeData->tm_year < 1900 || timeData->tm_year > 3000) // Working for 1000 years?
 		strcpy(g_szDateString, "0000");
@@ -270,9 +273,11 @@ FRESULT fat_init_drive() {
 	g_bFatInitialized = true;
 	state_SD_card_OK();
 
-	fr = log_append_("");
-	fr = log_append_("*****************************************************");
-	fr = log_appendf("Start Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
+	// Delete old config files
+	f_unlink(LOG_MODEM_PATH);
+	f_unlink(CONFIG_LOG_FILE_PATH);
+
+	fr = log_appendf("\r\n\r\nStart Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
 	return fr;
 }
 
@@ -386,6 +391,32 @@ FRESULT log_append_(char *text) {
 	strcpy(szLog, "\r\n");
 	fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 
+	f_sync(&fobj);
+	return f_close(&fobj);
+}
+
+FRESULT log_modem(const char *text) {
+	FIL fobj;
+	int len = 0;
+	int bw = 0;
+	FRESULT fr;
+
+	if (g_bLogDisabled || !g_bFatInitialized)
+		return FR_NOT_READY;
+
+	len=strlen(text);
+	if (len==0)
+		return FR_NOT_READY;
+
+	fr = f_open(&fobj, LOG_MODEM_PATH,
+	FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
+	if (fr == FR_OK) {
+		if (fobj.fsize)
+			f_lseek(&fobj, fobj.fsize);
+	} else
+		return fr;
+
+	fr = f_write(&fobj, text, len, (UINT *) &bw);
 	f_sync(&fobj);
 	return f_close(&fobj);
 }

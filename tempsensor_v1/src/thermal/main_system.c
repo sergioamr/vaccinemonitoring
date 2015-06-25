@@ -138,7 +138,7 @@ void system_boot() {
 	fat_init_drive();
 
 	config_init(); // Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
-	config_setLastCommand(COMMAND_BOOT);
+	//config_setLastCommand(COMMAND_BOOT);
 
 	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
 	lcd_printf(LINEC, "Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
@@ -162,7 +162,6 @@ void system_boot() {
 	if (modem_first_init() != 1) {
 		_NOP(); // Modem failed to power on
 	}
-
 
 	batt_check_level();
 
@@ -205,11 +204,11 @@ int main(void) {
 
 	events_init();
 	state_process();
+
 	sms_process_messages();
 
 	// Done init, start watchdog
 	watchdog_init();
-	process_batch();
 
 #ifdef _DEBUG
 	if (g_pDevCfg->cfg.logs.sms_reports)

@@ -377,10 +377,25 @@ void event_subsample_temperature(void *event, time_t currentTime) {
 }
 
 void event_network_check(void *event, time_t currentTime) {
+	int res;
+	uint8_t *failures;
+	int service = modem_getNetworkService();
 
-	// Checks network and if it is down it does the swapping
-	if (modem_connect_network(1) != UART_SUCCESS) {
-		// Checks several parameters to see if we have to reset the modem, switch sim card, etc.
+	failures = &g_pSysState->net_service[service].network_failures;
+
+	switch (g_pSysState->lastTransMethod) {
+		case HTTP_SIM1:
+		case SMS_SIM1:
+			res = modem_swap_to_SIM(0);
+			break;
+		case HTTP_SIM2:
+		case SMS_SIM2:
+			res = modem_swap_to_SIM(1);
+			break;
+		case NONE:
+		default:
+			modem_run_failover_sequence();
+			break;
 	}
 
 	if (state_isNetworkRegistered()) {
@@ -388,6 +403,24 @@ void event_network_check(void *event, time_t currentTime) {
 	} else {
 		// Try to connect in 1 minute
 		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(1));
+		event_force_event_by_id(EVT_DISPLAY, 0);
+		return;
+	}
+
+	modem_getSignal();
+	if (state_isSignalInRange()) {
+		res = modem_connect_network(1);
+	} else {
+		res = UART_FAILED;
+	}
+
+	if (res == UART_FAILED) {
+		// No signal on this SIM
+		g_pSysState->lastTransMethod = NONE;
+		*failures++;
+		log_appendf("[%d] NETDOWN %d", config_getSelectedSIM(), *failures);
+	} else {
+		*failures = 0;
 	}
 
 	event_force_event_by_id(EVT_DISPLAY, 0);
@@ -432,6 +465,10 @@ void event_reboot_system(void *event, time_t currentTime) {
 
 void event_fetch_configuration(void *event, time_t currentTime) {
 	backend_get_configuration();
+}
+
+void event_reset_trans(void *event, time_t currentTime) {
+	g_pSysState->lastTransMethod = NONE;
 }
 
 // Sleeping state
@@ -483,7 +520,7 @@ void events_init() {
 			MINUTES_(PERIOD_NETWORK_CHECK),  g_pDevCfg->sIntervalsMins.networkCheck);
 
 	// Check every 30 seconds until we get the configuration message from server;
-	events_register(EVT_SMSCHECK, "SMSCHECK", 0, &event_SIM_check_incoming_msgs,
+	events_register(EVT_SMSCHECK, "SMS CHECK", 0, &event_SIM_check_incoming_msgs,
 			MINUTES_(PERIOD_SMS_CHECK), g_pDevCfg->sIntervalsMins.smsCheck);
 
 	events_register(EVT_LCD_OFF, "LCD OFF", 1, &event_display_off,
@@ -512,6 +549,9 @@ void events_init() {
 	events_register(EVT_CONFIGURATION, "CONFIG", 30, &event_fetch_configuration,
 			MINUTES_(PERIOD_CONFIGURATION_FETCH),
 			g_pDevCfg->sIntervalsMins.configurationFetch);
+
+	events_register(EVT_RESET_FAILOVER, "RESET TRANS", 0, &event_reset_trans,
+			MINUTES_(PERIOD_TRANS_RESET), g_pDevCfg->sIntervalsMins.transmissionReset);
 
 	events_sync();
 }

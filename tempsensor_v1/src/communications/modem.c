@@ -204,6 +204,37 @@ void modem_setNetworkService(int service) {
 	}
 }
 
+void modem_run_failover_sequence() {
+	if (modem_check_network() != UART_SUCCESS) {
+		modem_swap_SIM();
+		log_appendf("[%d] SIMSWAP", config_getSelectedSIM());
+		if (modem_check_network() != UART_SUCCESS) {
+			g_pSysState->lastTransMethod = NONE;
+		}
+	}
+
+	if (http_enable() != UART_SUCCESS) {
+		modem_swap_SIM();
+		log_appendf("[%d] SIMSWAP", config_getSelectedSIM());
+		if (modem_check_network() == UART_SUCCESS &&
+				http_enable() != UART_SUCCESS) {
+			if (g_pDevCfg->cfgSIM_slot == 0) {
+				g_pSysState->lastTransMethod = SMS_SIM1;
+			} else {
+				g_pSysState->lastTransMethod = SMS_SIM2;
+			}
+		}
+	} else {
+		if (g_pDevCfg->cfgSIM_slot == 0) {
+			g_pSysState->lastTransMethod = HTTP_SIM1;
+		} else {
+			g_pSysState->lastTransMethod = HTTP_SIM2;
+		}
+	}
+
+	http_deactivate();
+}
+
 int modem_connect_network(uint8_t attempts) {
 
 	int net_status = 0;
@@ -400,11 +431,7 @@ int8_t modem_first_init() {
 			if (!modem_isSIM_Operational()) {
 				log_appendf("ERROR: SIM %d FAILED [%s]",
 						config_getSelectedSIM(), config_getSIM()->simLastError);
-
-				lcd_printf(LINEC, "ERROR INIT SIM %d ",
-						config_getSelectedSIM() + 1);
 				lcd_printf(LINEE, config_getSIM()->simLastError);
-
 				iSIM_Error++;
 			}
 		}
@@ -423,7 +450,7 @@ int8_t modem_first_init() {
 			break;
 		case 2:
 			lcd_printf(LINEC, "BOTH SIMS FAILED ");
-			log_appendf("ERROR: BOTH SIMS FAILED ON INIT ");
+			log_appendf("SIMS FAILED ON INIT ");
 			delay(HUMAN_DISPLAY_ERROR_DELAY);
 			break;
 		}
@@ -441,10 +468,16 @@ void modem_check_sim_active() {
 	}
 }
 
+int modem_swap_to_SIM(int sim) {
+	if (g_pDevCfg->cfgSelectedSIM_slot != sim) {
+		return modem_swap_SIM();
+	}
+
+	return UART_SUCCESS;
+}
+
 int modem_swap_SIM() {
 	int res = UART_FAILED;
-
-	config_incLastCmd();
 	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
 	g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;
 
@@ -459,7 +492,7 @@ int modem_swap_SIM() {
 
 	// Just send the message if we dont have errors.
 	if (modem_isSIM_Operational()) {
-		sms_send_heart_beat();
+		sms_send_heart_beat(); // Neccessary?
 		res = UART_SUCCESS;
 	} else {
 		res = UART_FAILED;
@@ -473,8 +506,6 @@ const char COMMAND_RESULT_CSQ[] = "CSQ: ";
 int modem_getSignal() {
 	char *token;
 	int iSignalLevel = 0;
-
-	config_incLastCmd();
 
 	if (uart_tx_timeout("AT+CSQ\r\n", TIMEOUT_CSQ, 1) != UART_SUCCESS)
 		return 0;
@@ -491,7 +522,6 @@ int8_t modem_parse_string(char *cmd, char *response, char *destination,
 		uint16_t size) {
 	char *token;
 	int8_t uart_state;
-	config_incLastCmd();
 
 	uart_tx_timeout(cmd, MODEM_TX_DELAY1, 1);
 
@@ -549,7 +579,6 @@ void modem_getIMEI() {
 	// added for IMEI number//
 	char IMEI[IMEI_MAX_LEN + 1];
 	char *token = NULL;
-	config_incLastCmd();
 
 	uart_tx("AT+CGSN\r\n");
 	memset(IMEI, 0, sizeof(IMEI));
@@ -595,7 +624,6 @@ void modem_survey_network() {
 	char *pToken1;
 	int attempts = NET_ATTEMPTS;
 	int uart_state;
-	config_incLastCmd();
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
@@ -760,7 +788,7 @@ void modem_getPreferredOperatorList() {
 
 void modem_init() {
 
-#ifdef _DEBUG
+#if defined _DEBUG && defined DEBUG_SAVE_COMMAND
 	config_setLastCommand(COMMAND_MODEMINIT);
 #endif
 
@@ -798,6 +826,7 @@ void modem_init() {
 	uart_tx("AT+CMEE=1\r\n"); // Set command enables/disables the report of result code:
 	uart_tx("AT#CMEEMODE=1\r\n"); // This command allows to extend the set of error codes reported by CMEE to the GPRS related error codes.
 	uart_tx("AT#AUTOBND=2\r\n"); // Set command enables/disables the automatic band selection at power-on.  if automatic band selection is enabled the band changes every about 90 seconds through available bands until a GSM cell is found.
+	uart_tx("AT+CGSMS=1\r\n"); // Will try to use GPRS for texts otherwise will use GSM
 
 	//uart_tx("AT+CPMS=\"ME\",\"ME\",\"ME\"");
 

@@ -18,70 +18,6 @@ char *getSensorTemp(int sensorID) {
 	return sensorData;
 }
 
-void run_failover_sequence() {
-	if (modem_check_network() != UART_SUCCESS) {
-		modem_swap_SIM();
-		if (modem_check_network() != UART_SUCCESS) {
-			// neither GSM or GPRS will work
-			lcd_printl(LINEC, "Can't Complete");
-			lcd_printl(LINE2, "No Signal...");
-			g_pSysCfg->lastTransMethod = NONE;
-		}
-	}
-
-	if (http_enable() != UART_SUCCESS) {
-		modem_swap_SIM();
-		if (modem_check_network() == UART_SUCCESS &&
-				http_enable() != UART_SUCCESS) {
-			http_deactivate();
-			if (g_pDevCfg->cfgSIM_slot == 0) {
-				g_pSysCfg->lastTransMethod = SMS_SIM1;
-			} else {
-				g_pSysCfg->lastTransMethod = SMS_SIM2;
-			}
-		}
-	} else {
-		if (g_pDevCfg->cfgSIM_slot == 0) {
-			g_pSysCfg->lastTransMethod = HTTP_SIM1;
-		} else {
-			g_pSysCfg->lastTransMethod = HTTP_SIM2;
-		}
-	}
-}
-
-void select_transmission_method() {
-	switch (g_pSysCfg->lastTransMethod) {
-	case HTTP_SIM1:
-		if (g_pDevCfg->cfgSelectedSIM_slot == 0) {
-			modem_swap_SIM();
-		}
-		http_enable();
-		break;
-	case HTTP_SIM2:
-		if (g_pDevCfg->cfgSelectedSIM_slot == 1) {
-			modem_swap_SIM();
-		}
-		http_enable();
-		break;
-	case SMS_SIM2:
-		if (g_pDevCfg->cfgSelectedSIM_slot == 1) {
-			modem_swap_SIM();
-		}
-		http_deactivate();
-		break;
-	case SMS_SIM1:
-		if (g_pDevCfg->cfgSelectedSIM_slot == 0) {
-			modem_swap_SIM();
-		}
-		http_deactivate();
-		break;
-	case NONE:
-	default:
-		run_failover_sequence();
-		break;
-	}
-}
-
 uint8_t data_send_temperatures_sms() {
 	char data[MAX_SMS_SIZE_FULL];
 	int t = 0;
@@ -141,10 +77,8 @@ int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 		while (file->fptr < end) {
 			if (f_gets(line, lineSize, file) != 0) {
 				linesParsed++;
-				//replace_character(line, '\n', '\0');
-
+				replace_character(line, '\n', '\0');
 				encode_string(line, encodedLine, ",");
-
 				length += strlen(encodedLine);
 				if (length > MAX_SMS_SIZE) {
 					splitSend = 1;
@@ -158,10 +92,12 @@ int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 		}
 
 		if (sms_send_message(smsMsg) != UART_SUCCESS) {
-			modem_swap_SIM();
-			if (sms_send_message(smsMsg) != UART_SUCCESS) {
-				return TRANS_FAILED;
+			if (g_pDevCfg->cfgSIM_slot == 0) {
+				g_pSysState->lastTransMethod = SMS_SIM2;
+			} else {
+				g_pSysState->lastTransMethod = SMS_SIM1;
 			}
+			return TRANS_FAILED;
 		}
 	} while (splitSend == 1);
 
@@ -229,12 +165,13 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 }
 
 void process_batch() {
-	uint8_t canSend = 0;
-	uint32_t seekFrom = g_pSysCfg->lastSeek, seekTo = g_pSysCfg->lastSeek;
+	uint8_t canSend = 0, failedAttempts = 0;
+	uint32_t seekFrom = g_pSysState->lastSeek, seekTo = g_pSysState->lastSeek;
 	char line[80];
 	char path[32];
 	char do_not_process_batch = false;
 	int lineSize = sizeof(line) / sizeof(char);
+	TRANSMISSION_TYPE transMethod;
 
 	FILINFO fili;
 	DIR dir;
@@ -243,9 +180,13 @@ void process_batch() {
 
 	log_disable();
 
-	select_transmission_method();
-	if (g_pSysCfg->lastTransMethod == NONE) {
+	transMethod = g_pSysState->lastTransMethod;
+	if (transMethod == NONE) {
 		return;
+	} else if (transMethod == HTTP_SIM1 || transMethod == HTTP_SIM2) {
+		if (http_enable() == UART_SUCCESS) {
+
+		}
 	}
 
 	// Cycle through all files using f_findfirst, f_findnext.
@@ -270,21 +211,22 @@ void process_batch() {
 		lcd_printl(LINEC, "Transmitting...");
 		lcd_printl(LINE2, fili.fname);
 
-		if (g_pSysCfg->lastSeek > 0) {
-			f_lseek(&filr, g_pSysCfg->lastSeek);
+		if (g_pSysState->lastSeek > 0) {
+			f_lseek(&filr, g_pSysState->lastSeek);
 		}
 
 		while (f_gets(line, lineSize, &filr) != 0) {
 			if (filr.fptr == 0 || strstr(line, "$TS") != NULL) {
 				if (canSend) {
 					canSend = 0;
-					if (g_pSysCfg->lastTransMethod == SMS_SIM1 ||
-							g_pSysCfg->lastTransMethod == SMS_SIM2) {
+					if (transMethod == SMS_SIM1 || transMethod == SMS_SIM2) {
 						if (data_upload_sms(&filr, seekFrom, seekTo) == TRANS_FAILED) {
+							failedAttempts++;
 							break;
 						}
 					} else {
 						if (http_send_batch(&filr, seekFrom, seekTo) == TRANS_FAILED) {
+							failedAttempts++;
 							break;
 						}
 					}
@@ -298,31 +240,32 @@ void process_batch() {
 		}
 
 		if(canSend) {
-			if (g_pSysCfg->lastTransMethod == SMS_SIM1 ||
-					g_pSysCfg->lastTransMethod == SMS_SIM2) {
+			if (transMethod == SMS_SIM1 || transMethod == SMS_SIM2) {
 				if (data_upload_sms(&filr, seekFrom, seekTo) == TRANS_FAILED) {
+					failedAttempts++;
 					break;
 				}
 			} else {
 				if (http_send_batch(&filr, seekFrom, seekTo) == TRANS_FAILED) {
+					failedAttempts++;
 					break;
 				}
 			}
 			seekFrom = canSend = 0;
 		}
 
-		if (seekTo >= filr.fsize) {
-			g_pSysCfg->lastSeek = 0;
-		} else {
-			g_pSysCfg->lastSeek = filr.fptr;
+		if (seekTo < filr.fsize && failedAttempts < 1) {
+			g_pSysState->lastSeek = filr.fptr;
+		} else if (failedAttempts < 1) {
+			g_pSysState->lastSeek = 0;
 		}
 
-		if (f_close(&filr) == FR_OK) {
-			if (g_pSysCfg->lastSeek == 0) {
+		if (f_close(&filr) == FR_OK && failedAttempts < 1) {
+			if (g_pSysState->lastSeek == 0) {
 				fr = f_unlink(path); // Delete the file
 			}
 		} else {
-			break; // This would only happen on corruption - In which case need to redo fat_init?
+			break; // Tranmission failed
 		}
 
 		fr = f_findnext(&dir, &fili);
@@ -331,8 +274,7 @@ void process_batch() {
 		}
 	}
 
-	if (g_pSysCfg->lastTransMethod == HTTP_SIM1 ||
-			g_pSysCfg->lastTransMethod == HTTP_SIM2) {
+	if (transMethod == HTTP_SIM1 || transMethod == HTTP_SIM2) {
 		http_deactivate();
 	}
 	lcd_printl(LINEC, "Transmission");

@@ -73,8 +73,8 @@ void alarm_test_sensor(int id) {
 
 	float temperature = sensor->fTemperature;
 	if (temperature == 0) {
-		if (s->alarms.disconnected == false) {
-			s->alarms.disconnected = true;
+		if (s->state.disconnected == false) {
+			s->state.disconnected = true;
 			sprintf(msg, "%s disconnected", SensorName[id]);
 			goto alarm_error;
 		};
@@ -82,16 +82,16 @@ void alarm_test_sensor(int id) {
 	}
 
 	if (temperature > cold && temperature < hot) {
-		if (s->alarms.alarm) {
+		if (s->state.alarm) {
 			s->status = STATUS_NO_ALARM;
 			tem->alarm_time = 0;
-			g_pSysState->system.alarms.button_buzzer_override = false;
+			g_pSysState->system.switches.button_buzzer_override = false;
 			log_appendf("Alarm %d recovered ", id);
 		}
 		return;
 	}
 
-	if (s->alarms.alarm)
+	if (s->state.alarm)
 		return;
 
 	if (tem->alarm_time == 0)
@@ -101,26 +101,27 @@ void alarm_test_sensor(int id) {
 
 	//lcd_printf(LINEC, "Sensor \"%s\" %s", SensorName[id], getFloatNumber2Text(temperature, msg));
 	if (temperature < cold) {
-		if (!s->alarms.lowAlarm
+		if (!s->state.lowAlarm
 				&& elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsCold) {
 			sprintf(msg, "%s Below limit %s ", SensorName[id],
 					getFloatNumber2Text(cold, tmp));
-			s->alarms.lowAlarm = true;
+			s->state.lowAlarm = true;
 			goto alarm_error;
 		}
 		return;
 	} else if (temperature > hot) {
-		if (!s->alarms.highAlarm
+		if (!s->state.highAlarm
 				&& elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsHot) {
 			sprintf(msg, "%s Above limit %s ", SensorName[id],
 					getFloatNumber2Text(hot, tmp));
-			s->alarms.highAlarm = true;
+			s->state.highAlarm = true;
 			goto alarm_error;
 		}
 		return;
 	}
 
-	alarm_error: s->alarms.alarm = true;
+	alarm_error:
+	s->state.alarm = true;
 	state_alarm_on(msg);
 	alarm_sms_sensor(id, elapsed);
 }

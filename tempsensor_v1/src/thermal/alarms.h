@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 void alarm_SD_card_failure(char *msg);
+SENSOR_STATUS *getAlarmsSensor(int id);
 
 //*****************************************************************************
 //! \brief Check for threshold, trigger buzzer and SMS on alarm condition.

@@ -18,7 +18,7 @@ void buzzer_start() {
 
 	TA2CCTL0 = CCIE;
 
-	if (!g_pSysState->system.alarms.buzzer
+	if (!g_pSysState->system.switches.buzzer_sound
 			&& g_pSysState->buzzerFeedback>0)
 		TA2CCR0 = 8000;						  // 0.5khz
 	else

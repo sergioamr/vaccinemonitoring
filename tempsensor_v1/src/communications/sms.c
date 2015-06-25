@@ -154,7 +154,7 @@ int8_t sms_process_messages() {
 	uint8_t totalr = 0;
 
 #ifdef _DEBUG
-	config_setLastCommand(COMMAND_SMS_PROCESS);
+	//config_setLastCommand(COMMAND_SMS_PROCESS);
 #endif
 
 	memset(SM_ME, 0, sizeof(SM_ME));
@@ -204,50 +204,30 @@ int8_t sms_process_messages() {
 
 void sms_send_heart_beat() {
 	char msg[MAX_SMS_SIZE_FULL];
+	char sensors[16];
 
-	char* pcTmp = NULL;
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	int i = 0;
 
-	lcd_print("SMS SYNC");
+	lcd_printl(LINEC,"SMS SYNC");
 	//send heart beat
-	memset(msg, 0, sizeof(msg));
-	strcat(msg, SMS_HB_MSG_TYPE);
-	strcat(msg, g_pDevCfg->cfgIMEI);
-	strcat(msg, ",");
-	if (config_getSelectedSIM()) {
-		strcat(msg, "1,");
-	} else {
-		strcat(msg, "0,");
-	}
-	strcat(msg, g_pDevCfg->cfgGatewaySMS);
-	strcat(msg, ",");
-	strcat(msg, sim->cfgSMSCenter);
-	strcat(msg, ",");
+	sensors[0]=0;
 	for (i = 0; i < SYSTEM_NUM_SENSORS; i++) {
 		if (temperature_getString(i)[0] == '-') {
-			strcat(msg, "0,");
+			strcat(sensors, "0,");
 		} else {
-			strcat(msg, "1,");
+			strcat(sensors, "1,");
 		}
 	}
 
-	pcTmp = itoa_pad(batt_getlevel());	//opt by directly using tmpstr
-	strcat(msg, pcTmp);
-	if (P4IN & BIT4) {
-		strcat(msg, ",0");
-	} else {
-		strcat(msg, ",1");
-	}
-
-	// Attach Fimware release date
-	strcat(msg, ",");
-	strcat(msg, g_pSysCfg->firmwareVersion);
-#ifdef _DEBUG
-	strcat(msg, " dev");
-#endif
-	strcat(msg, "");
+	sprintf(msg, SMS_HB_MSG_TYPE "%s,%d,%s,%s,%s%d,%d,%s",
+			g_pDevCfg->cfgIMEI, config_getSelectedSIM(),
+			g_pDevCfg->cfgGatewaySMS, sim->cfgSMSCenter,
+			sensors,
+			batt_getlevel(), !(P4IN & BIT4),
+			g_pSysCfg->firmwareVersion
+	);
 
 	sms_send_message(msg);
 }
@@ -259,6 +239,9 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	int verbose = g_iLCDVerbose;
 	int phonecode = 129;
 	char *token;
+	SIM_CARD_CONFIG *sim = config_getSIM();
+
+	state_SMS_lastMessageACK(sim, -1);
 
 	if (szPhoneNumber==NULL || strlen(szPhoneNumber)==0)
 		return UART_SUCCESS;
@@ -292,6 +275,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 		if (token == NULL) {
 			token = strstr(uart_getRXHead(), "+CMGS:");
 			msgNumber = atoi(token + 6);
+			state_SMS_lastMessageACK(sim, msgNumber);
 			if (msgNumber != 0)
 				res = UART_SUCCESS;
 			else
@@ -311,7 +295,8 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 		delay(HUMAN_DISPLAY_INFO_DELAY);
 		_NOP();
 	} else if (res == UART_ERROR) {
-		lcd_printf(LINE2, "MODEM ERROR     ");
+		lcd_printf(LINE2, "MODEM ERROR %d ", config_getSIM()->simErrorState);
+
 		log_appendf("ERROR: SIM %d FAILED [%s]", config_getSelectedSIM(),
 				config_getSIM()->simLastError);
 		delay(HUMAN_DISPLAY_ERROR_DELAY);

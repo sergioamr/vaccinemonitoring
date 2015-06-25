@@ -31,6 +31,9 @@
 #include "buzzer.h"
 #include "alarms.h"
 
+#define SYSTEM_SWITCH g_pSysState->system.switches
+#define STATE_ALARM g_pSysState->state.alarms
+
 // Overall state of the device to take decisions upon the state of the modem, storage, alerts, etc.
 
 #pragma SET_DATA_SECTION(".state_machine")
@@ -55,7 +58,7 @@ uint8_t state_getSignalPercentage() {
 void state_SD_card_problem(FRESULT fr, const char *szError) {
 	if (fr != FR_OK) {
 		// Activate try again later for the SD card to be re mounted.
-		g_pSysState->system.alarms.sdcard = 1;
+		STATE_ALARM.SD_card_failure = STATE_ON;
 
 		// Disable fat access while there is an error.
 		g_bFatInitialized = false;
@@ -63,15 +66,23 @@ void state_SD_card_problem(FRESULT fr, const char *szError) {
 }
 
 void state_SD_card_OK() {
-	g_pSysState->system.alarms.sdcard = 0;
+	STATE_ALARM.SD_card_failure = STATE_OFF;
 }
 
 void state_check_SD_card() {
 	char msg[80];
-	if (g_pSysState->system.alarms.sdcard) {
+	if (STATE_ALARM.SD_card_failure == STATE_ON) {
 		fat_init_drive();
 
-		if (g_bFatInitialized == false) {
+		if (g_bFatInitialized == true) {
+			// Fat was recovered!
+			STATE_ALARM.SD_card_failure = STATE_OFF;
+			return;
+		}
+
+		if (!STATE_ALARM.globalAlarm) {
+
+			state_alarm_on("SD CARD FAILURE");
 			if (g_szLastSD_CardError != NULL) {
 				sprintf(msg, "%s SD error [%s]", g_pDevCfg->cfgIMEI,
 						g_szLastSD_CardError);
@@ -81,7 +92,16 @@ void state_check_SD_card() {
 	}
 }
 
+void state_setSMS_notSupported(SIM_CARD_CONFIG *sim) {
+	sim->SMSNotSupported = 1;
+}
+
 void state_sim_failure(SIM_CARD_CONFIG *sim) {
+	// 69 - "Requested facility not implemented"
+	// This cause indicates that the network is unable to provide the requested short message service.
+	if (sim->simErrorState==69) {
+		state_setSMS_notSupported(sim);
+	}
 
 	// Failed to register to network
 	if (sim->simErrorState == 555) {
@@ -127,34 +147,6 @@ void state_setSignalLevel(uint8_t iSignal) {
 	g_pSysState->signal_level = iSignal;
 }
 
-void state_check_network() {
-	int res;
-	uint8_t *failures;
-	int service = modem_getNetworkService();
-
-	modem_getSignal();
-	if (state_isSignalInRange())
-		res = modem_connect_network(1);
-	else
-		res = UART_FAILED;
-
-	failures = &g_pSysState->net_service[service].network_failures;
-
-	// Something was wrong on the connection, swap SIM card.
-	if (res == UART_FAILED) {
-		if (*failures == NETWORK_ATTEMPTS_BEFORE_SWAP_SIM - 1) {
-			log_appendf("[%d] SIMSWAP", config_getSelectedSIM());
-			res = modem_swap_SIM();
-			*failures = 0;
-		} else {
-			*failures++;
-			log_appendf("[%d] NETDOWN %d", config_getSelectedSIM(), *failures);
-		}
-	} else {
-		*failures = 0;
-	}
-}
-
 int state_isNetworkRegistered() {
 	NETWORK_SERVICE *service = state_getCurrentService();
 
@@ -170,12 +162,10 @@ int state_isNetworkRegistered() {
 /***********************************************************************************************************************/
 
 void state_init() {
-	SYSTEM_STATUS *s;
-
 	memset(g_pSysState, 0, sizeof(SYSTEM_STATE));
-	s = state_getAlarms();
+
 	g_pSysState->network_mode = NETWORK_NOT_SELECTED;
-	s->alarms.buzzer_disabled = BUZZER_DISABLE;
+	SYSTEM_SWITCH.buzzer_disabled = BUZZER_DISABLE;
 }
 
 uint8_t state_isGPRS() {
@@ -189,8 +179,12 @@ uint8_t state_isGPRS() {
 /* GENERATE ALARMS */
 /***********************************************************************************************************************/
 
-SYSTEM_STATUS *state_getAlarms() {
+SYSTEM_SWITCHES *state_getSwitches() {
 	return &g_pSysState->system;
+}
+
+SYSTEM_ALARMS *state_getAlarms() {
+	return &g_pSysState->state;
 }
 
 void state_reset_sensor_alarm(int id) {
@@ -202,36 +196,31 @@ void state_reset_sensor_alarm(int id) {
 }
 
 void state_alarm_disable_buzzer_override() {
-	SYSTEM_STATUS *s = state_getAlarms();
-	s->alarms.button_buzzer_override = false;
+	SYSTEM_SWITCHES *s = state_getSwitches();
+	s->switches.button_buzzer_override = false;
 }
 
 void state_alarm_enable_buzzer_override() {
-	SYSTEM_STATUS *s = state_getAlarms();
-
-	// Should we also check if the alarm is on?
-	// s->alarms.globalAlarm == STATE_ON
-
-	if (s->alarms.buzzer == STATE_ON)
-		s->alarms.button_buzzer_override = true;
+	SYSTEM_SWITCHES *s = state_getSwitches();
+	if (s->switches.buzzer_sound == STATE_ON)
+		s->switches.button_buzzer_override = true;
 }
 
 void state_alarm_turnoff_buzzer() {
-	SYSTEM_STATUS *s = state_getAlarms();
-	s->alarms.buzzer = STATE_OFF;
+	SYSTEM_SWITCHES *s = state_getSwitches();
+	s->switches.buzzer_sound = STATE_OFF;
 	g_iStatus &= ~BUZZER_ON;
 }
 
 void state_alarm_turnon_buzzer() {
 	buzzer_start();
-	SYSTEM_STATUS *s = state_getAlarms();
-
-	if (!s->alarms.buzzer_disabled)
-		s->alarms.buzzer = STATE_ON;
+	SYSTEM_SWITCHES *s = state_getSwitches();
+	if (!s->switches.buzzer_disabled)
+		s->switches.buzzer_sound = STATE_ON;
 }
 
 void state_alarm_on(char *alarm_msg) {
-	SYSTEM_STATUS *s = state_getAlarms();
+	SYSTEM_ALARMS *s = state_getAlarms();
 	static uint16_t count = 0;
 	uint16_t elapsed;
 
@@ -252,7 +241,7 @@ void state_alarm_on(char *alarm_msg) {
 
 	elapsed = events_getTick() - count;
 	if (elapsed > 30) {
-		lcd_turn_off();
+		lcd_clear();
 		delay(500);
 		lcd_turn_on();
 
@@ -261,7 +250,7 @@ void state_alarm_on(char *alarm_msg) {
 					sizeof(g_pSysState->alarm_message));
 			lcd_turn_on();
 			lcd_printl(LINEC, "ALARM!");
-			lcd_printf(LINEH, "*** %s ***", alarm_msg);
+			lcd_printf(LINEH, "%s", alarm_msg);
 		}
 		count = events_getTick();
 	}
@@ -269,7 +258,7 @@ void state_alarm_on(char *alarm_msg) {
 
 // Everything is fine!
 void state_clear_alarm_state() {
-	SYSTEM_STATUS *s = state_getAlarms();
+	SYSTEM_ALARMS *s = state_getAlarms();
 
 	//set buzzer OFF
 	//reset alarm state and counters
@@ -278,20 +267,22 @@ void state_clear_alarm_state() {
 	if (s->alarms.globalAlarm == STATE_OFF)
 		return;
 
-#ifdef _DEBUG
 	if (g_pDevCfg->cfg.logs.sms_reports) {
 		strcat(g_pSysState->alarm_message, " cleared");
 		sms_send_message_number(g_pDevCfg->cfgReportSMS,
 				g_pSysState->alarm_message);
 	}
-#endif
 
-	s->alarms.buzzer = STATE_OFF;
+	SYSTEM_SWITCH.buzzer_sound = STATE_OFF;
 }
 
 /***********************************************************************************************************************/
 /* MODEM & COMMUNICATIONS */
 /***********************************************************************************************************************/
+
+void state_SMS_lastMessageACK(SIM_CARD_CONFIG *sim, int8_t msgNumber) {
+	sim->last_SMS_message = msgNumber;
+}
 
 void state_network_status(int presentation_mode, int net_status) {
 	NETWORK_SERVICE *service = state_getCurrentService();
@@ -359,11 +350,10 @@ void state_low_battery_alert() {
 }
 
 void state_battery_level(uint8_t battery_level) {
-	SYSTEM_STATUS *s = state_getAlarms();
 
 	g_pSysState->battery_level = battery_level;
 	if (battery_level
-			< g_pDevCfg->stBattPowerAlertParam.battThreshold&& s->alarms.power == STATE_OFF) {
+			< g_pDevCfg->stBattPowerAlertParam.battThreshold && SYSTEM_SWITCH.power_connected == false) {
 		state_low_battery_alert();
 		thermal_low_battery_hibernate();
 	}
@@ -374,29 +364,30 @@ void state_battery_level(uint8_t battery_level) {
 /***********************************************************************************************************************/
 
 uint8_t state_isBuzzerOn() {
-	SYSTEM_STATUS *s = state_getAlarms();
-
 	// Manual override by the button
-	if (g_pSysState->system.alarms.button_buzzer_override == true)
+	if (SYSTEM_SWITCH.button_buzzer_override == true)
 		return false;
 
 	if (g_iStatus & BUZZER_ON)
 		return true;
 
-	return s->alarms.buzzer;
+	return SYSTEM_SWITCH.buzzer_sound;
 }
 
 // Power out, we store the time in which the power went down
 // called from the Interruption, careful
 
 void state_power_out() {
-	SYSTEM_STATUS *s = state_getAlarms();
-	//P4OUT |= BIT7; // BLUE LED 3 ON
 
-	if (s->alarms.power == STATE_OFF)
+	if (SYSTEM_SWITCH.power_connected == false)
 		return;
 
-	s->alarms.power = STATE_OFF;
+	SYSTEM_SWITCH.power_connected = false;
+	if (STATE_ALARM.poweroutage == STATE_ON) {
+		sms_send_message_number(g_pDevCfg->cfgReportSMS, "POWER RESUMED");
+		STATE_ALARM.poweroutage = STATE_OFF;
+	}
+
 	if (g_pSysState->time_powerOutage == 0)
 		g_pSysState->time_powerOutage = rtc_get_second_tick();
 
@@ -404,13 +395,11 @@ void state_power_out() {
 
 // called from the Interruption, careful
 void state_power_on() {
-	SYSTEM_STATUS *s = state_getAlarms();
-	//P4OUT &= ~BIT7; // BLUE  LED 3 OFF
 
-	if (s->alarms.power == STATE_ON)
+	if (SYSTEM_SWITCH.power_connected == true)
 		return;
 
-	s->alarms.power = STATE_ON;
+	SYSTEM_SWITCH.power_connected = true;
 	g_pSysState->time_powerOutage = 0;
 }
 
@@ -427,24 +416,23 @@ void state_power_resume() {
 
 void state_check_power() {
 
-	static uint8_t last_state = STATE_ON;
-	SYSTEM_STATUS *s = state_getAlarms();
+	static uint8_t last_state = true;
 
 	if (POWER_ON)
 		state_power_on();
 	else
 		state_power_out();
 
-	if (last_state != s->alarms.power) {
+	if (last_state != SYSTEM_SWITCH.power_connected) {
 		if (POWER_ON)
 			state_power_resume();
 		else
 			state_power_disconnected();
 
-		last_state = s->alarms.power;
+		last_state = SYSTEM_SWITCH.power_connected;
 	}
 
-	if (s->alarms.power == STATE_ON)
+	if (SYSTEM_SWITCH.power_connected == true)
 		return;
 
 	if (!g_pDevCfg->stBattPowerAlertParam.enablePowerAlert)
@@ -459,6 +447,7 @@ void state_check_power() {
 		return;
 
 	if (elapsed > (g_pDevCfg->stBattPowerAlertParam.minutesPower) * 60) {
+		STATE_ALARM.poweroutage = STATE_ON;
 		state_alarm_on("POWER OUT");
 	}
 }
@@ -466,6 +455,28 @@ void state_check_power() {
 /***********************************************************************************************************************/
 /* Check the state of every component */
 /***********************************************************************************************************************/
+
+void state_check_alarm_states() {
+	int t;
+	SYSTEM_ALARMS *s = state_getAlarms();
+	SENSOR_STATUS *sensor;
+
+	if (s->alarms.globalAlarm == STATE_OFF)
+		return;
+
+	if (s->alarms.battery || s->alarms.poweroutage || s->alarms.SD_card_failure)
+		return;
+
+	for (t = 0; t < SYSTEM_NUM_SENSORS; t++) {
+		sensor = getAlarmsSensor(t);
+		if (sensor->state.lowAlarm || sensor->state.highAlarm
+				|| sensor->state.alarm)
+			return;
+	}
+
+	// There is still an alarm in the system.
+	state_clear_alarm_state();
+}
 
 void state_process() {
 
@@ -475,6 +486,8 @@ void state_process() {
 	last_check = rtc_get_second_tick();
 
 	state_check_power();
-	state_check_network();
 	state_check_SD_card();
+
+	// Global check for all the alarms
+	state_check_alarm_states();
 }

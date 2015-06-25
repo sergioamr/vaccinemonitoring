@@ -49,7 +49,6 @@ typedef enum {
 HARDWARE_ACTIONS g_iHardware_actions = HWD_NOTHING;
 
 void hardware_actions() {
-	SYSTEM_STATUS *s;
 	uint8_t lcd_on = false;
 	if (g_iHardware_actions==HWD_NOTHING)
 		return;
@@ -70,8 +69,7 @@ void hardware_actions() {
 			lcd_on = 1;
 
 		case HWD_BUZZER_FEEDBACK:
-			s = state_getAlarms();
-			if (s->alarms.button_buzzer_override) {
+			if (g_pSysState->system.switches.button_buzzer_override) {
 				lcd_printf(LINE1, "BUZZER OFF");
 			} else {
 				lcd_printf(LINE1, "BUZZER ON");

@@ -96,6 +96,7 @@ void thermal_canyon_loop(void) {
 	time_t currentTime = 0;
 
 	events_sync(rtc_update_time());
+	event_force_event_by_id(EVT_CHECK_NETWORK, 0);
 	lcd_show();
 
 	while (1) {

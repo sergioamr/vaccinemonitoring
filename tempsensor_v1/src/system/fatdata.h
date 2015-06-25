@@ -31,6 +31,8 @@ FRESULT log_sample_web_format(UINT* tbw);
 void log_disable();
 void log_enable();
 
+FRESULT log_modem(const char *text);
+
 #define FOLDER_LOG  "/LOG"
 #define FOLDER_SYS  ""
 
@@ -43,6 +45,7 @@ void log_enable();
 #define FOLDER_TEXT "/TXT"
 
 #define LOG_FILE_PATH FOLDER_LOG "/system.log"
+#define LOG_MODEM_PATH FOLDER_LOG "/modem.log"
 #define CONFIG_INI_FILE FOLDER_SYS "/thermal.ini"
 #define CONFIG_LOG_FILE_PATH FOLDER_LOG "/config.log"
 #define LOG_FILE_UNKNOWN FOLDER_DATA "/unknown.csv"

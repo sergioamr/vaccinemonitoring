@@ -30,8 +30,6 @@
 // SMS alerts, it will send an SMS to the local testing number
 #define ALERTS_SMS 1
 
-#define NETWORK_ATTEMPTS_BEFORE_SWAP_SIM 3
-
 // Threshold in percentage in which the device will enter deep hibernate mode
 #define BATTERY_HIBERNATE_THRESHOLD 10
 #define POWER_ENABLE_ALERT 1
@@ -52,6 +50,7 @@
 #define PERIOD_SAMPLING			5		//in minutes
 #define PERIOD_UPLOAD			20		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
+#define PERIOD_TRANS_RESET		6*60   //in minutes
 #define PERIOD_LCD_OFF			5
 #define PERIOD_ALARMS_CHECK	    5
 #define PERIOD_CONFIGURATION_FETCH 5
@@ -150,6 +149,7 @@
 #define PERIOD_SAMPLING			1		//in minutes
 #define PERIOD_UPLOAD			3		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
+#define PERIOD_TRANS_RESET 		6*60   //in minutes
 #define PERIOD_LCD_OFF			10
 #define PERIOD_ALARMS_CHECK	    2
 #define PERIOD_CONFIGURATION_FETCH 5
@@ -189,8 +189,12 @@ typedef struct {
 	uint16_t simErrorState;
 	char simErrorToken;
 
+	int8_t last_SMS_message;  // Last message sent with this SIM card;
+
 	char networkMode;   // Connecting to network
 	char networkStatus; // check NETWORK_MODE_1 array for status
+
+	char SMSNotSupported;
 	char simOperational; // The sim is in a functional state to send and receive messages
 } SIM_CARD_CONFIG;
 
@@ -223,6 +227,7 @@ typedef struct {
 	uint16_t alarmsCheck;
 	uint16_t modemPullTime;
 	uint16_t batteryCheck;
+	uint16_t transmissionReset;
 } INTERVAL_PARAM;
 
 typedef union {
@@ -273,9 +278,7 @@ typedef struct {
 	uint8_t memoryInitialized;
 	uint32_t numberRuns;
 	uint32_t numberConfigurationRuns;
-	uint32_t lastSeek;
 	uint8_t calibrationFinished;
-	TRANSMISSION_TYPE lastTransMethod;
 	char firmwareVersion[17];
 	uint16_t configStructureSize; // Size to check if there are changes on this structure
 
@@ -306,7 +309,7 @@ typedef union {
 		unsigned char bit6 :1;
 		unsigned char bit7 :1;
 		unsigned char bit8 :1;
-	} alarms;
+	} state;
 	unsigned char status;
 } SENSOR_STATUS;
 
@@ -335,16 +338,22 @@ typedef struct {
 typedef union {
 	struct {
 		unsigned char globalAlarm :1;
-		unsigned char SD_cardFailure :1;
-		unsigned char buzzer :1;
-		unsigned char power :1;
-		unsigned char buzzer_disabled :1;
-		unsigned char button_buzzer_override :1;
 		unsigned char battery :1;
-		unsigned char sdcard :1;
+		unsigned char SD_card_failure :1;
+		unsigned char poweroutage :1;
 	} alarms;
 	unsigned char status;
-} SYSTEM_STATUS;
+} SYSTEM_ALARMS;
+
+typedef union {
+	struct {
+		unsigned char buzzer_disabled :1;
+		unsigned char power_connected :1;
+		unsigned char button_buzzer_override :1;
+		unsigned char buzzer_sound :1;
+	} switches;
+	unsigned char status;
+} SYSTEM_SWITCHES;
 
 //  Commands to ignore if there was a problem on last boot
 typedef union {
@@ -373,22 +382,37 @@ typedef struct {
 } NETWORK_SERVICE;
 
 typedef struct {
+	// Last alarm message
 	char alarm_message[32];
+
+	// Current battery level
 	uint8_t battery_level;
+
+	// Last time it was plugged
 	time_t time_powerOutage;
-	uint32_t buzzerFeedback;
+
+	// SIM cards alarms and states
 	SIM_STATE simState[MAX_SMS_NUM];
 
+	// Current sim modem Signal level
 	uint8_t signal_level;
 
+	// Temperature of sensors and alarms
 	TEMPERATURE temp;
-	SYSTEM_STATUS system;
+
+	SYSTEM_SWITCHES system;
+	SYSTEM_ALARMS state;
+
+	uint32_t lastSeek;
 
 	// GSM or GPRS
 	int network_mode;
+	TRANSMISSION_TYPE lastTransMethod;
 	NETWORK_SERVICE net_service[2];
 
 	SAFEBOOT_STATUS safeboot;
+
+	uint32_t buzzerFeedback; // Set to play sound on buzzer and activate buzzer
 } SYSTEM_STATE;
 
 typedef struct {
@@ -451,9 +475,17 @@ void config_SIM_operational();
 void config_init();
 void config_send_configuration(char *number);
 void config_reconfigure();
+
+#ifndef DEBUG_SAVE_COMMAND
+#define config_save_command
+#define config_incLastCmd
+#define config_setLastCommand
+#else
 void config_save_command(char *string);
 void config_setLastCommand(uint16_t lastCmd);
 void config_incLastCmd();
+#endif
+
 void config_update_system_time();
 
 uint32_t config_get_boot_midnight_difference();
