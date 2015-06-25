@@ -197,7 +197,9 @@ void sendCommand(const char *cmd) {
 	uart.iTxLen = strlen(cmd);
 
 	if (g_pDevCfg->cfg.logs.modem_transactions) {
+		log_modem("-------- ");
 		log_modem(get_simplified_date_string(NULL));
+		log_modem("-------- \r\n");
 		log_modem(cmd);
 	}
 
