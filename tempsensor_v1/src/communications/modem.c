@@ -400,11 +400,7 @@ int8_t modem_first_init() {
 			if (!modem_isSIM_Operational()) {
 				log_appendf("ERROR: SIM %d FAILED [%s]",
 						config_getSelectedSIM(), config_getSIM()->simLastError);
-
-				lcd_printf(LINEC, "ERROR INIT SIM %d ",
-						config_getSelectedSIM() + 1);
 				lcd_printf(LINEE, config_getSIM()->simLastError);
-
 				iSIM_Error++;
 			}
 		}
@@ -423,7 +419,7 @@ int8_t modem_first_init() {
 			break;
 		case 2:
 			lcd_printf(LINEC, "BOTH SIMS FAILED ");
-			log_appendf("ERROR: BOTH SIMS FAILED ON INIT ");
+			log_appendf("SIMS FAILED ON INIT ");
 			delay(HUMAN_DISPLAY_ERROR_DELAY);
 			break;
 		}

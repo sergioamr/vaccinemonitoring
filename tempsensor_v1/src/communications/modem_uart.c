@@ -316,8 +316,6 @@ uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 		if (g_iLCDVerbose == VERBOSE_BOOTING) {
 			lcd_printl(LINEC, modem_lastCommand);
 			lcd_print_boot("MODEM TIMEOUT", LINE2);
-			log_appendf("TIMEOUT: SIM %d cmd[%s]", config_getSelectedSIM(),
-					cmd);
 		}
 	}
 
