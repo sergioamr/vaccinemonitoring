@@ -52,11 +52,7 @@ uint8_t http_enable() {
 
 		if (uart_state != UART_SUCCESS) {
 
-			if (config_getSIM()->simErrorState == 133) {
-				lcd_printl(LINE1, "WRONG APN");
-			}
-
-			if (sim->simErrorState!=0) {
+			if (sim->simErrorState != 0) {
 				state_failed_gprs(config_getSelectedSIM());
 				return UART_FAILED;
 			}
@@ -148,7 +144,8 @@ int http_check_error(int *retry) {
 int http_open_connection(int data_length) {
 	char cmd[80];
 	// Test post URL
-	sprintf(cmd, "AT#HTTPSND=1,0,\"%s\",%d,0\r\n", g_pDevCfg->cfgUpload_URL, data_length);
+	sprintf(cmd, "AT#HTTPSND=1,0,\"%s\",%d,0\r\n", g_pDevCfg->cfgUpload_URL,
+			data_length);
 
 	// Wait for prompt
 	uart_setHTTPPromptMode();
@@ -205,19 +202,19 @@ int http_get_configuration() {
 }
 
 /*
-int8_t http_post(char* postdata) {
-	char cmd[64];
-	http_enable();
+ int8_t http_post(char* postdata) {
+ char cmd[64];
+ http_enable();
 
-	sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%s,0\r\n", itoa_pad(strlen(postdata)));
+ sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%s,0\r\n", itoa_pad(strlen(postdata)));
 
-	// Wait for prompt
-	uart_setHTTPPromptMode();
-	if (uart_tx_waitForPrompt(cmd, TIMEOUT_HTTPSND_PROMPT)) {
-		uart_tx_timeout(postdata, TIMEOUT_HTTPSND, 1);
-	}
+ // Wait for prompt
+ uart_setHTTPPromptMode();
+ if (uart_tx_waitForPrompt(cmd, TIMEOUT_HTTPSND_PROMPT)) {
+ uart_tx_timeout(postdata, TIMEOUT_HTTPSND, 1);
+ }
 
-	http_deactivate();
-	return uart_getTransactionState();
-}
-*/
+ http_deactivate();
+ return uart_getTransactionState();
+ }
+ */

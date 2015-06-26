@@ -207,8 +207,6 @@ void process_batch() {
 
 	g_pSysState->safeboot.disable.data_transmit = 1;
 
-	do_not_process_batch = 1;
-
 	while (fr == FR_OK) {
 		sprintf(path, "%s/%s", FOLDER_TEXT, fili.fname);
 		fr = f_open(&filr, path, FA_READ | FA_OPEN_ALWAYS);

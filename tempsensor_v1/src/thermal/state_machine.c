@@ -99,15 +99,24 @@ void state_setSMS_notSupported(SIM_CARD_CONFIG *sim) {
 void state_sim_failure(SIM_CARD_CONFIG *sim) {
 	// 69 - "Requested facility not implemented"
 	// This cause indicates that the network is unable to provide the requested short message service.
-	if (sim->simErrorState==69) {
-		state_setSMS_notSupported(sim);
+
+	switch (sim->simErrorState) {
+		case 133:
+		case 567:
+			lcd_printl(LINEC, "ERROR");
+			lcd_printl(LINEE, "WRONG APN");
+			break;
+
+		case 69:
+			state_setSMS_notSupported(sim);
+			break;
+
+			// Failed to register to network
+		case 555:
+			// Total failure in the card,
+			_NOP();
 	}
 
-	// Failed to register to network
-	if (sim->simErrorState == 555) {
-		// Total failure in the card,
-		_NOP();
-	}
 }
 
 /***********************************************************************************************************************/

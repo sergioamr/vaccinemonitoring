@@ -529,6 +529,9 @@ int config_default_configuration() {
 	g_pDevCfg->sIntervalsMins.smsCheck = PERIOD_SMS_CHECK;
 
 	g_pDevCfg->cfg.logs.sms_alerts = ALERTS_SMS;
+#ifdef _DEBUG
+	g_pDevCfg->cfg.logs.commmands = 1;
+#endif
 
 // Battery and power alarms
 	return 1;

@@ -33,7 +33,7 @@ char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
 
 /*
- * AT Commands Reference Guide 80000ST10025a Rev. 9 � 2010-10-04
+ * AT Commands Reference Guide 80000ST10025a Rev. 9 2010-10-04
  *
  * Read command reports the <mode> and <stat> parameter values in the format:
  * +CREG: <mode>,<stat>[,<Lac>,<Ci>]
