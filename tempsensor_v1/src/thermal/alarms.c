@@ -103,7 +103,7 @@ void alarm_test_sensor(int id) {
 	if (temperature < cold) {
 		if (!s->state.lowAlarm
 				&& elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsCold) {
-			sprintf(msg, "%s Below limit %s ", SensorName[id],
+			sprintf(msg, "%s Below %s", SensorName[id],
 					getFloatNumber2Text(cold, tmp));
 			s->state.lowAlarm = true;
 			goto alarm_error;
@@ -112,7 +112,7 @@ void alarm_test_sensor(int id) {
 	} else if (temperature > hot) {
 		if (!s->state.highAlarm
 				&& elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsHot) {
-			sprintf(msg, "%s Above limit %s ", SensorName[id],
+			sprintf(msg, "%s Above %s", SensorName[id],
 					getFloatNumber2Text(hot, tmp));
 			s->state.highAlarm = true;
 			goto alarm_error;

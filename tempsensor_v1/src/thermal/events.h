@@ -27,6 +27,7 @@ extern volatile time_t iSecondTick;
 
 typedef enum {
 	EVT_DISPLAY = 0,
+	EVT_DISPLAY_ALARM,
 	EVT_PULLTIME,
 	EVT_SMSCHECK,
 	EVT_SUBSAMPLE_TEMP,

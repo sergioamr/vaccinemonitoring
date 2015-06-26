@@ -518,6 +518,17 @@ void event_main_sleep() {
 	iMainSleep = 0;
 }
 
+void events_display_alarm() {
+	if (!g_pSysState->state.alarms.globalAlarm)
+		return;
+
+	lcd_printl(LINEC, "ALARM");
+	lcd_printl(LINEE, g_pSysState->alarm_message);
+	iMainSleep = 1;
+	delay(5000);
+	iMainSleep = 0;
+}
+
 void events_init() {
 
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
@@ -548,6 +559,9 @@ void events_init() {
 
 	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
 			MINUTES_(PERIOD_LCD_REFRESH), NULL);
+
+	events_register(EVT_DISPLAY_ALARM, "LCDALARM", PERIOD_LCD_REFRESH/2, &events_display_alarm,
+			MINUTES_(PERIOD_LCD_REFRESH*2), NULL);
 
 	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0,
 			&event_subsample_temperature, MINUTES_(PERIOD_SAMPLING),
