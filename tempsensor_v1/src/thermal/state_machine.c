@@ -281,6 +281,7 @@ void state_clear_alarm_state() {
 				g_pSysState->alarm_message);
 	}
 
+	g_pSysState->state.alarms.globalAlarm = STATE_OFF;
 	SYSTEM_SWITCH.buzzer_sound = STATE_OFF;
 }
 
