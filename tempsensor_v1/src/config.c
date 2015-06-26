@@ -135,6 +135,20 @@ void config_SIM_operational() {
 	g_pDevCfg->SIM[slot].simOperational = 1;
 }
 
+uint8_t config_is_SIM_configurable(int simSlot) {
+	if (simSlot >= SYSTEM_NUM_SIM_CARDS) {
+		return 0;
+	}
+
+	SIM_CARD_CONFIG *sim = &g_pDevCfg->SIM[simSlot];
+
+	if (sim->cfgAPN[0] == '\0' && sim->cfgPhoneNum[0] == '\0') {
+		return 0;
+	}
+
+	return 1;
+}
+
 uint16_t config_getSimLastError(char *charToken) {
 
 	uint8_t slot = g_pDevCfg->cfgSIM_slot;

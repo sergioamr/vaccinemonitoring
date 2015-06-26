@@ -449,6 +449,8 @@ void config_SIM_not_operational();
 // Flags the sim as working again
 void config_SIM_operational();
 
+uint8_t config_is_SIM_configurable(int simSlot);
+
 /*****************************************************************************************************************/
 /* DIAGNOSE AND TESTING 			   																		     */
 /* Check if there is a hang on next reset																		 */

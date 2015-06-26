@@ -444,6 +444,31 @@ void event_network_check(void *event, time_t currentTime) {
 }
 
 void event_upload_samples(void *event, time_t currentTime) {
+	SIM_CARD_CONFIG *sim = config_getSIM();
+	int slot = g_pDevCfg->cfgSelectedSIM_slot;
+
+	// Swap SIM on next network check is APN and Phone num has not
+	// been initialized ATM this may not be requires as
+	// 1 unconfigured APN means both won't be parsed correctly
+	if (!config_is_SIM_configurable(slot)) {
+		// Check the other slot
+		if (slot == 0) {
+			slot = 1;
+		} else {
+			slot = 0;
+		}
+
+		if (config_is_SIM_configurable(slot)) {
+			if (slot == 0) {
+				g_pSysState->lastTransMethod = HTTP_SIM1;
+			} else {
+				g_pSysState->lastTransMethod = HTTP_SIM2;
+			}
+		}
+
+		return; // no SIM configurable or SIM requires switch
+	}
+
 	process_batch();
 }
 
