@@ -25,7 +25,7 @@ EVENT_MANAGER g_sEvents;
 
 time_t inline event_getIntervalSeconds(EVENT *pEvent) {
 	if (pEvent == NULL)
-		return UINT32_MAX;
+		return PERIOD_UNDEFINED;
 
 	return pEvent->interval_secs + pEvent->offset_secs;
 }
@@ -34,12 +34,20 @@ time_t event_getIntervalMinutes(EVENT *pEvent) {
 	return (event_getIntervalSeconds(pEvent) / 60);
 }
 
+time_t event_getInterval_by_id_secs(EVENT_IDS id) {
+	EVENT *pEvent = events_find(id);
+	if (pEvent == NULL)
+		return PERIOD_UNDEFINED;
+
+	return event_getIntervalSeconds(pEvent);
+}
+
 void inline event_setIntervalSeconds(EVENT *pEvent, time_t time_seconds) {
 	if (pEvent == NULL)
 		return;
 
 	// Intervals more than reset time will not be accepted.
-	if (time_seconds)
+	if (time_seconds > event_getInterval_by_id_secs(EVT_PERIODIC_REBOOT))
 		return;
 
 	pEvent->interval_secs = time_seconds;

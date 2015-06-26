@@ -146,6 +146,7 @@
 #define MAIN_SLEEP_TIME 100
 #define MAIN_LCD_OFF_SLEEP_TIME 10000
 
+#define PERIOD_UNDEFINED		60
 #define PERIOD_SAMPLING			1		//in minutes
 #define PERIOD_UPLOAD			10		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
