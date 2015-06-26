@@ -233,7 +233,9 @@ void lcd_show() {
 	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t *) &lcdBuffer[iIdx]);
 
 	if (g_pSysState->state.alarms.globalAlarm) {
-		sleep(1000);
+		iMainSleep = 1;
+		delay(5000);
+		iMainSleep = 0;
 		lcd_printl(LINEC, "ALARM");
 		lcd_printl(LINEE, g_pSysState->alarm_message);
 	}
