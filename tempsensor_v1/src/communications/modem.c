@@ -824,7 +824,6 @@ void modem_init() {
 	uart_tx("AT+CMEE=1\r\n"); // Set command enables/disables the report of result code:
 	uart_tx("AT#CMEEMODE=1\r\n"); // This command allows to extend the set of error codes reported by CMEE to the GPRS related error codes.
 	uart_tx("AT#AUTOBND=2\r\n"); // Set command enables/disables the automatic band selection at power-on.  if automatic band selection is enabled the band changes every about 90 seconds through available bands until a GSM cell is found.
-	uart_tx("AT+CGSMS=1\r\n"); // Will try to use GPRS for texts otherwise will use GSM
 
 	//uart_tx("AT+CPMS=\"ME\",\"ME\",\"ME\"");
 
@@ -842,6 +841,7 @@ void modem_init() {
 	// Wait until connnection and registration is successful. (Just try NETWORK_CONNECTION_ATTEMPTS) network could be definitly down or not available.
 	modem_setNetworkService(NETWORK_GPRS);
 
+	uart_tx("AT+CGSMS=1\r\n"); // Will try to use GPRS for texts otherwise will use GSM
 	uart_tx("AT#NITZ=15,1\r\n");   // #NITZ - Network Timezone
 
 	uart_tx("AT+CTZU=1\r\n"); //  4 - software bi-directional with filtering (XON/XOFF)

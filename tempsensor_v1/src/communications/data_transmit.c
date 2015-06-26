@@ -184,6 +184,8 @@ void process_batch() {
 	if (transMethod == NONE) {
 		return;
 	} else if (transMethod == HTTP_SIM1 || transMethod == HTTP_SIM2) {
+		// If we cant attatch to a GPRS service then fall back to the SMS
+		// alternative
 		if (http_enable() != UART_SUCCESS) {
 			http_deactivate();
 			if (transMethod == HTTP_SIM1) {
