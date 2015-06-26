@@ -54,7 +54,6 @@ uint8_t http_enable() {
 
 			if (config_getSIM()->simErrorState == 133) {
 				lcd_printl(LINE1, "WRONG APN");
-				return;
 			}
 
 			if (sim->simErrorState!=0) {

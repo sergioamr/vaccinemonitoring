@@ -238,7 +238,7 @@ typedef union {
 		unsigned char modem_transactions :1;
 		unsigned char sms_alerts :1;
 		unsigned char sms_reports :1;
-		unsigned char bit7 :1;
+		unsigned char commmands :1;
 		unsigned char bit8 :1;
 	} logs;
 	unsigned char status;
@@ -471,7 +471,12 @@ void config_SIM_operational();
 #define COMMAND_HTTP_DATA_TRANSFER 1700
 #define COMMAND_SMS_PROCESS 1800
 #define COMMAND_PARSE_CONFIG_ONLINE 1900
-
+#define COMMAND_SET_NETWORK_SERVICE 2000
+#define COMMAND_NETWORK_CONNECT 2100
+#define COMMAND_SIM_ERROR 2200
+#define COMMAND_UART_ERROR 2300
+#define COMMAND_CHECK_NETWORK 2400
+#define COMMAND_FIRST_INIT 2500
 #define COMMAND_END 99
 
 void config_init();

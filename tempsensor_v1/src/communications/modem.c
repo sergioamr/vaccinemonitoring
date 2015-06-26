@@ -200,6 +200,8 @@ int modem_getNetworkService() {
 void modem_setNetworkService(int service) {
 	if (g_pSysState->network_mode != service) {
 		g_pSysState->network_mode = service;
+		config_setLastCommand(COMMAND_SET_NETWORK_SERVICE);
+
 		modem_connect_network(NETWORK_CONNECTION_ATTEMPTS);
 	}
 }
@@ -245,6 +247,8 @@ int modem_connect_network(uint8_t attempts) {
 	// enable network registration and location information unsolicited result code;
 	// if there is a change of the network cell. +CGREG: <stat>[,<lac>,<ci>]
 
+	config_setLastCommand(COMMAND_NETWORK_CONNECT);
+
 	uart_txf("AT+%s=2\r\n", modem_getNetworkServiceCommand());
 	do {
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
@@ -279,6 +283,7 @@ int modem_connect_network(uint8_t attempts) {
 		lcd_progress_wait(NETWORK_CONNECTION_DELAY);
 	} while (--attempts > 0);
 
+	config_incLastCmd();
 	return UART_FAILED;
 }
 ;
@@ -304,6 +309,9 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	char szCode[16];
 	char szToken[2];
 	char token;
+
+	config_setLastCommand(COMMAND_SIM_ERROR);
+
 	if (config_getSimLastError(&token) == errorCode)
 		return;
 
@@ -339,6 +347,8 @@ void modem_check_uart_error() {
 	char *pToken1;
 	char errorToken;
 
+	config_setLastCommand(COMMAND_UART_ERROR);
+
 	int uart_state = uart_getTransactionState();
 	if (uart_state != UART_ERROR)
 		return;
@@ -372,6 +382,8 @@ int8_t modem_check_network() {
 	int res = UART_FAILED;
 	int iSignal = 0;
 
+	config_setLastCommand(COMMAND_CHECK_NETWORK);
+
 	// Check signal quality,
 	// if it is too low we check if we
 	// are actually connected to the network and fine
@@ -392,6 +404,8 @@ int8_t modem_first_init() {
 	int iIdx;
 	int iStatus = 0;
 	int iSIM_Error = 0;
+
+	config_setLastCommand(COMMAND_FIRST_INIT);
 
 	lcd_printl(LINEC, "Modem power on");
 	delay(500);
