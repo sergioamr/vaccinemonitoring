@@ -137,7 +137,7 @@ char inline *state_getNetworkState() {
 
 void state_setNetworkStatus(const char *status) {
 	NETWORK_SERVICE *service = state_getCurrentService();
-	strncpy(service->network_state, status, sizeof(service->network_state));
+	zeroTerminateCopy(service->network_state, status);
 }
 
 uint8_t state_getSignalLevel() {
@@ -255,11 +255,10 @@ void state_alarm_on(char *alarm_msg) {
 		lcd_turn_on();
 
 		if (g_bLCD_state == 1) {
-			strncpy(g_pSysState->alarm_message, alarm_msg,
-					sizeof(g_pSysState->alarm_message));
+			zeroTerminateCopy(g_pSysState->alarm_message, alarm_msg);
 			lcd_turn_on();
 			lcd_printl(LINEC, "ALARM!");
-			lcd_printf(LINEH, "%s", alarm_msg);
+			lcd_printf(LINEH, "%s", g_pSysState->alarm_message);
 		}
 		count = events_getTick();
 	}

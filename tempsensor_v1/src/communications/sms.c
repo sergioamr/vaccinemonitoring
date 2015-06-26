@@ -294,9 +294,6 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 		_NOP();
 	} else if (res == UART_ERROR) {
 		lcd_printf(LINE2, "MODEM ERROR %d ", config_getSIM()->simErrorState);
-
-		log_appendf("ERROR: SIM %d FAILED [%s]", config_getSelectedSIM(),
-				config_getSIM()->simLastError);
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	} else {
 		lcd_print("MODEM TIMEOUT");

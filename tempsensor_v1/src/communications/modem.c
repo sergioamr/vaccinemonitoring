@@ -209,7 +209,6 @@ void modem_setNetworkService(int service) {
 void modem_run_failover_sequence() {
 	if (modem_check_network() != UART_SUCCESS) {
 		modem_swap_SIM();
-		log_appendf("[%d] SIMSWAP", config_getSelectedSIM());
 		if (modem_check_network() != UART_SUCCESS) {
 			g_pSysState->lastTransMethod = NONE;
 		}
@@ -217,7 +216,6 @@ void modem_run_failover_sequence() {
 
 	if (http_enable() != UART_SUCCESS) {
 		modem_swap_SIM();
-		log_appendf("[%d] SIMSWAP", config_getSelectedSIM());
 		if (modem_check_network() == UART_SUCCESS &&
 				http_enable() != UART_SUCCESS) {
 			if (g_pDevCfg->cfgSIM_slot == 0) {
@@ -360,8 +358,6 @@ void modem_check_uart_error() {
 
 		if (g_iUartIgnoreError != 0) {
 			g_iUartIgnoreError--;
-			log_appendf("ERROR: SIM %d CMD[%s] ERROR %s", config_getSelectedSIM(), &modem_lastCommand[0],
-					error);
 #ifndef _DEBUG
 			if (errorToken=='S') {
 				lcd_printl(LINEC, "SERVICE ERROR");
@@ -491,11 +487,14 @@ int modem_swap_to_SIM(int sim) {
 }
 
 int modem_swap_SIM() {
+
+	log_appendf("[%d]SWAP", config_getSelectedSIM());
+
 	int res = UART_FAILED;
 	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
 	g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;
 
-	lcd_printf(LINEC, "Activate SIM: %d", g_pDevCfg->cfgSIM_slot + 1);
+	lcd_printf(LINEC, "SIM Active %d", g_pDevCfg->cfgSIM_slot + 1);
 	modem_init();
 	modem_getExtraInfo();
 

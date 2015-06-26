@@ -81,6 +81,7 @@ time_t events_getTick() {
 }
 
 void events_send_data(char *phone) {
+/*
 	char msg[MAX_SMS_SIZE_FULL];
 	EVENT *pEvent;
 	int t;
@@ -108,8 +109,10 @@ void events_send_data(char *phone) {
 	sprintf(msg, "[%s] Events end",
 			get_date_string(&g_tmCurrTime, "-", " ", ":", 1));
 	sms_send_message_number(phone, msg);
+*/
 }
 
+/*
 void event_sanity_check(EVENT *pEvent, time_t currentTime) {
 
 	time_t maxRunTime = currentTime + pEvent->offset_secs
@@ -131,6 +134,7 @@ void events_sanity(time_t currentTime) {
 		event_sanity_check(pEvent, currentTime);
 	}
 }
+*/
 
 // Populates the next event index depending on event times
 void events_find_next_event(time_t currentTime) {
@@ -309,7 +313,7 @@ void events_run() {
 		currentTime = events_getTick();
 	}
 
-	events_sanity(currentTime);
+	//events_sanity(currentTime);
 }
 
 /*******************************************************************************************************/

@@ -292,8 +292,7 @@ uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 		lcd_print_progress();
 	}
 
-	strncpy(modem_lastCommand, cmdInput, sizeof(modem_lastCommand)-1);
-	modem_lastCommand[sizeof(modem_lastCommand)-1]=0;
+	zeroTerminateCopy(modem_lastCommand, cmdInput);
 	if (len < 16) {
 		if (cmd[len - 1] != '\n') {
 			strcat(cmd, "\r\n");

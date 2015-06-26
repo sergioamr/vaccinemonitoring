@@ -90,8 +90,8 @@ void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
 	if (error == NULL || sim == NULL)
 		return;
 
-	memset(sim->simLastError, 0, sizeof(sim->simLastError));
-	strncpy(sim->simLastError, error, sizeof(sim->simLastError));
+	zeroTerminateCopy(sim->simLastError, error);
+
 	sim->simErrorState = errorID;
 	sim->simErrorToken = errorToken;
 	state_sim_failure(sim);

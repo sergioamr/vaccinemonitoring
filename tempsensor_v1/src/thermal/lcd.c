@@ -138,6 +138,7 @@ void lcd_show() {
 		return;
 
 	lastRefresh = rtc_get_second_tick();
+
 	lcd_clear();
 
 	memset(lcdBuffer, 0, LCD_DISPLAY_LEN);
@@ -230,6 +231,12 @@ void lcd_show() {
 	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t *) lcdBuffer);
 	lcd_setaddr(0x40);	//go to next line
 	i2c_write(0x3e, 0x40, LCD_LINE_LEN, (uint8_t *) &lcdBuffer[iIdx]);
+
+	if (g_pSysState->state.alarms.globalAlarm) {
+		sleep(1000);
+		lcd_printl(LINEC, "ALARM");
+		lcd_printl(LINEE, g_pSysState->alarm_message);
+	}
 }
 
 void lcd_progress_wait(uint16_t delayTime) {
