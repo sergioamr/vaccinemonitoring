@@ -253,7 +253,7 @@ void event_run_now(EVENT *pEvent) {
 	hardware_disable_buttons();
 
 	// Store in the log file
-	config_save_command(pEvent->name);
+	config_setLastCommand(pEvent->id);
 
 	// Move the interval to the next time
 	event_next(pEvent, currentTime);

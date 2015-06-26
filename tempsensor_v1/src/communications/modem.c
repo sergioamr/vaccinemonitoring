@@ -788,9 +788,7 @@ void modem_getPreferredOperatorList() {
 
 void modem_init() {
 
-#if defined _DEBUG && defined DEBUG_SAVE_COMMAND
 	config_setLastCommand(COMMAND_MODEMINIT);
-#endif
 
 	config_getSelectedSIM(); // Init the SIM and check boundaries
 

@@ -20,7 +20,7 @@ void backend_get_configuration() {
 
 void full_backend_get_configuration() {
 
-	//config_setLastCommand(COMMAND_HTTP_DATA_TRANSFER);
+	config_setLastCommand(COMMAND_HTTP_DATA_TRANSFER);
 	lcd_print("NEXLEAF PING");
 	if (modem_check_network() != UART_SUCCESS) {
 		return;
@@ -51,6 +51,12 @@ uint8_t http_enable() {
 		uart_state = uart_getTransactionState();
 
 		if (uart_state != UART_SUCCESS) {
+
+			if (config_getSIM()->simErrorState == 133) {
+				lcd_printl(LINE1, "WRONG APN");
+				return;
+			}
+
 			if (sim->simErrorState!=0) {
 				state_failed_gprs(config_getSelectedSIM());
 				return UART_FAILED;
@@ -199,9 +205,11 @@ int http_get_configuration() {
 	return uart_state; // TODO return was missing, is it necessary ?
 }
 
+/*
 int8_t http_post(char* postdata) {
 	char cmd[64];
 	http_enable();
+
 	sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%s,0\r\n", itoa_pad(strlen(postdata)));
 
 	// Wait for prompt
@@ -213,3 +221,4 @@ int8_t http_post(char* postdata) {
 	http_deactivate();
 	return uart_getTransactionState();
 }
+*/

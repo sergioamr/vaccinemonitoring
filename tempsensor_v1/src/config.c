@@ -149,45 +149,17 @@ void config_SafeMode() {
 }
 
 // Debugging functionality by storing last command runs
-#ifdef DEBUG_SAVE_COMMAND
 
 // Stores what was the last command run and what time
 void config_setLastCommand(uint16_t lastCmd) {
-	char cmd[32];
 	g_pSysCfg->lastCommand = lastCmd;
-
-	if (lastCmd == COMMAND_LCDINIT)
-		return;
-
-	sprintf(cmd, "Command [%d] ", lastCmd);
-	config_save_command(cmd);
-}
-
-// Stores what was the last command run and what time
-void config_save_command(char *str) {
-
-	static int lastMin = 0;
-	static int lastSec = 0;
-
-	rtc_getlocal(&g_tmCurrTime);
-
-	if (lastMin != g_tmCurrTime.tm_min && lastSec != g_tmCurrTime.tm_sec) {
-		strcpy(g_pSysCfg->lastCommandTime, itoa_pad(g_tmCurrTime.tm_hour));
-		strcat(g_pSysCfg->lastCommandTime, ":");
-		strcpy(g_pSysCfg->lastCommandTime, itoa_pad(g_tmCurrTime.tm_min));
-		strcat(g_pSysCfg->lastCommandTime, ":");
-		strcat(g_pSysCfg->lastCommandTime, itoa_pad(g_tmCurrTime.tm_sec));
-	}
-
-	log_append_(str);
 }
 
 void config_incLastCmd() {
 	g_pSysCfg->lastCommand++;
 }
 
-#endif
-
+// Runs the system in configuration/calibration mode
 void config_reconfigure() {
 	g_pSysCfg->memoryInitialized = 0xFF;
 	PMM_trigBOR();
@@ -354,6 +326,8 @@ int config_parse_configuration(char *msg) {
 	BATT_POWER_ALERT_PARAM *pBattPower;
 	INTERVAL_PARAM *pInterval;
 
+	config_setLastCommand(COMMAND_PARSE_CONFIG_ONLINE);
+
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	lcd_printf(LINEC, "Parsing");
@@ -444,6 +418,8 @@ int config_parse_configuration(char *msg) {
 
 	lcd_display_config();
 
+	config_incLastCmd();
+
 	return UART_SUCCESS;
 }
 
@@ -476,6 +452,8 @@ FRESULT config_read_ini_file() {
 	if (fr == FR_NO_FILE) {
 		return fr;
 	}
+
+	log_append_("Read INI");
 
 	n = ini_gets("SYSTEM", "Version", __DATE__, g_pDevCfg->cfgVersion, sizearray(g_pDevCfg->cfgVersion), CONFIG_INI_FILE);
 	if (n==0)
@@ -512,7 +490,7 @@ FRESULT config_read_ini_file() {
 	intervals->batteryCheck = ini_getl(SECTION_INTERVALS, "BatteryCheck", PERIOD_BATTERY_CHECK, CONFIG_INI_FILE);
 
 #ifndef _DEBUG
-	fr = f_rename(CONFIG_INI_FILE, "thermal.old");
+	//fr = f_rename(CONFIG_INI_FILE, "thermal.old");
 #endif
 	_NOP();
 	return fr;

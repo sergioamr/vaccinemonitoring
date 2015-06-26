@@ -452,6 +452,7 @@ void config_SIM_operational();
 /* DIAGNOSE AND TESTING 			   																		     */
 /* Check if there is a hang on next reset																		 */
 /*****************************************************************************************************************/
+#define COMMAND_EVENTS 0
 #define COMMAND_BOOT 100
 #define COMMAND_TEMPERATURE_SAMPLE 200
 #define COMMAND_GPRS 300
@@ -469,6 +470,7 @@ void config_SIM_operational();
 #define COMMAND_NETWORK_SIGNAL_MONITOR 1600
 #define COMMAND_HTTP_DATA_TRANSFER 1700
 #define COMMAND_SMS_PROCESS 1800
+#define COMMAND_PARSE_CONFIG_ONLINE 1900
 
 #define COMMAND_END 99
 
@@ -476,15 +478,8 @@ void config_init();
 void config_send_configuration(char *number);
 void config_reconfigure();
 
-#ifndef DEBUG_SAVE_COMMAND
-#define config_save_command
-#define config_incLastCmd
-#define config_setLastCommand
-#else
-void config_save_command(char *string);
 void config_setLastCommand(uint16_t lastCmd);
 void config_incLastCmd();
-#endif
 
 void config_update_system_time();
 
