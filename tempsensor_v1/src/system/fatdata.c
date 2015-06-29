@@ -17,9 +17,9 @@ const char *g_szLastSD_CardError = NULL;
 
 const char * const FR_ERRORS[20] = { "OK", "DISK_ERR", "INT_ERR", "NOT_READY",
 		"NO_FILE", "NO_PATH", "INVALID_NAME", "DENIED", "EXIST",
-		"INVALID_OBJECT", "WRITE_PROTECTED", "INVALID_DRIVE", "NOT_ENABLED",
-		"NO_FILESYSTEM", "MKFS_ABORTED", "TIMEOUT", "LOCKED", "NOT_ENOUGH_CORE",
-		"TOO_MANY_OPEN_FILES", "INVALID_PARAMETER" };
+		"INVALID_OBJ", "WRITE_PROT", "INVALID_DRIVE", "NOT_ENABLED",
+		"NO_FILESYSTEM", "MKFS_ABORT", "TIMEOUT", "LOCKED", "NOT_ENGH_CORE",
+		"TOO_OP_FILES", "INVALID_PARAM" };
 
 DWORD get_fattime(void) {
 	DWORD tmr;
@@ -105,7 +105,7 @@ char* get_simplified_date_string(struct tm* timeData) {
 
 	strcat(g_szDateString, itoa_pad(timeData->tm_mon + 1));
 	strcat(g_szDateString, itoa_pad(timeData->tm_mday));
-	strcat(g_szDateString, ":");
+	//strcat(g_szDateString, ":");
 	strcat(g_szDateString, itoa_pad(timeData->tm_hour));
 	strcat(g_szDateString, itoa_pad(timeData->tm_min));
 	strcat(g_szDateString, itoa_pad(timeData->tm_sec));
@@ -361,18 +361,7 @@ FRESULT log_append_(char *text) {
 
 	rtc_getlocal(&g_tmCurrTime);
 
-	strcpy(szLog, "[");
-	if (g_tmCurrTime.tm_year > 2000) {
-		strcat(szLog, get_YMD_String(&g_tmCurrTime));
-		strcat(szLog, " ");
-		strcat(szLog, itoa_pad(g_tmCurrTime.tm_hour));
-		strcat(szLog, itoa_pad(g_tmCurrTime.tm_min));
-		strcat(szLog, itoa_pad(g_tmCurrTime.tm_sec));
-	} else {
-		for (t = 0; t < 15; t++)
-			strcat(szLog, "*");
-	}
-	strcat(szLog, "] ");
+	sprintf(szLog, "[%s] ", get_simplified_date_string(NULL));
 
 	len = strlen(szLog);
 	fr = f_write(&fobj, szLog, len, (UINT *) &bw);
@@ -598,12 +587,16 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 	if (g_iStatus & LOG_TIME_STAMP) {
 		memset(szLog, 0, sizeof(szLog));
 		strcat(szLog, "$TS=");
+
+		strcat(szLog,get_simplified_date_string(&tempDate));
+/*
 		strcat(szLog, itoa_pad((tempDate.tm_year + 1900)));
 		strcat(szLog, itoa_pad(tempDate.tm_mon));
 		strcat(szLog, itoa_pad(tempDate.tm_mday));
 		strcat(szLog, itoa_pad(tempDate.tm_hour));
 		strcat(szLog, itoa_pad(tempDate.tm_min));
 		strcat(szLog, itoa_pad(tempDate.tm_sec));
+*/
 		strcat(szLog, ",");
 		strcat(szLog, "R");
 		strcat(szLog, itoa_pad(iSamplePeriod));

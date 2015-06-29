@@ -377,28 +377,20 @@ uint8_t uart_tx(const char *cmd) {
 	char* pToken1;
 #endif
 	int uart_state;
-	int transaction_completed;
-
-
 	uart_reset_headers();
 
-	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 10);
-	if (uart.iRXHeadIdx > uart.iRXTailIdx)
-		return transaction_completed;
-
+	uart_tx_timeout(cmd, g_iModemMaxWait, 10);
 	uart_state = uart_getTransactionState();
-	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
 #ifdef _DEBUG_OUTPUT
+	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
 		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": \""); // Display the command returned
 		if (pToken1 != NULL) {
 			lcd_print_boot((char *) pToken1 + 3, LINE2);
 		} else {
 			lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2], LINE2); // Display the OK message
 		}
+	}
 #endif
-	} else
-		modem_check_uart_error();
-
 	return uart_state;
 }
 

@@ -181,17 +181,17 @@ const char inline *modem_getNetworkServiceCommand() {
 
 const char inline *modem_getNetworkServiceText() {
 	switch (g_pSysState->network_mode) {
-		case NETWORK_GSM:
-			return NETWORK_SERVICE_TEXT[NETWORK_GSM];
-		case NETWORK_GPRS:
-			return NETWORK_SERVICE_TEXT[NETWORK_GPRS];
+	case NETWORK_GSM:
+		return NETWORK_SERVICE_TEXT[NETWORK_GSM];
+	case NETWORK_GPRS:
+		return NETWORK_SERVICE_TEXT[NETWORK_GPRS];
 	}
 
 	return NETWORK_UNKNOWN_STATUS;
 }
 
 int modem_getNetworkService() {
-	if (g_pSysState->network_mode<0 || g_pSysState->network_mode>1)
+	if (g_pSysState->network_mode < 0 || g_pSysState->network_mode > 1)
 		return NETWORK_GSM;
 
 	return g_pSysState->network_mode;
@@ -216,8 +216,8 @@ void modem_run_failover_sequence() {
 
 	if (http_enable() != UART_SUCCESS) {
 		modem_swap_SIM();
-		if (modem_check_network() == UART_SUCCESS &&
-				http_enable() != UART_SUCCESS) {
+		if (modem_check_network() == UART_SUCCESS
+				&& http_enable() != UART_SUCCESS) {
 			if (g_pDevCfg->cfgSIM_slot == 0) {
 				g_pSysState->lastTransMethod = SMS_SIM1;
 			} else {
@@ -235,24 +235,36 @@ void modem_run_failover_sequence() {
 	http_deactivate();
 }
 
-int modem_connect_network(uint8_t attempts) {
+#define MODEM_ERROR_SIM_NOT_INSERTED 10
 
+int modem_connect_network(uint8_t attempts) {
+	char token;
 	int net_status = 0;
 	int net_mode = 0;
 	int tests = 0;
 	int nsim = config_getSelectedSIM();
+
+	/* PIN TO CHECK IF THE SIM IS INSERTED IS NOT CONNECTED, CPIN WILL NOT RETURN SIM NOT INSERTED */
+	// Check if the SIM is inserted
+	uart_tx("AT+CPBW=?");
+	int uart_state = uart_getTransactionState();
+	if (uart_state == UART_ERROR) {
+		if (config_getSimLastError(&token) == MODEM_ERROR_SIM_NOT_INSERTED)
+			return UART_ERROR;
+	}
 
 	// enable network registration and location information unsolicited result code;
 	// if there is a change of the network cell. +CGREG: <stat>[,<lac>,<ci>]
 
 	config_setLastCommand(COMMAND_NETWORK_CONNECT);
 
-	uart_txf("AT+%s=2\r\n", modem_getNetworkServiceCommand());
+	uart_txf("AT+%s=2", modem_getNetworkServiceCommand());
 	do {
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
 
 			if (!g_iRunning || net_status != 1) {
-				lcd_printf(LINEC, "SIM %d NET %s", nsim + 1, modem_getNetworkServiceText());
+				lcd_printf(LINEC, "SIM %d NET %s", nsim + 1,
+						modem_getNetworkServiceText());
 				lcd_printl(LINEH,
 						(char *) modem_getNetworkStatusText(net_mode,
 								net_status));
@@ -279,6 +291,12 @@ int modem_connect_network(uint8_t attempts) {
 		}
 
 		lcd_progress_wait(NETWORK_CONNECTION_DELAY);
+
+		if (g_iAbortSleep) {
+			g_iAbortSleep = 0;
+			return UART_SUCCESS;
+		}
+
 	} while (--attempts > 0);
 
 	config_incLastCmd();
@@ -288,19 +306,6 @@ int modem_connect_network(uint8_t attempts) {
 
 int modem_disableNetworkRegistration() {
 	return uart_txf("AT+%s=0\r\n", modem_getNetworkServiceCommand());
-}
-
-// Not used if we activate the error handling
-uint16_t modem_parse_error(const char *error) {
-	uint16_t errorNum = NO_ERROR;
-	if (!strcmp(error, "SIM not inserted\r\n")) {
-		SIM_CARD_CONFIG *sim = config_getSIM();
-		config_setSIMError(sim, 'E', ERROR_SIM_NOT_INSERTED, error);
-		return ERROR_SIM_NOT_INSERTED;
-	}
-
-	_NOP();
-	return errorNum;
 }
 
 void modem_setNumericError(char errorToken, int16_t errorCode) {
@@ -313,7 +318,7 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	if (config_getSimLastError(&token) == errorCode)
 		return;
 
-	if (errorCode==4) {
+	if (errorCode == 4) {
 		strcpy(szCode, "Not supported");
 	} else {
 		sprintf(szCode, "ERROR %d", errorCode);
@@ -325,11 +330,16 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	// Check the error codes to figure out if the SIM is still functional
 	modem_isSIM_Operational();
 
-	szToken[0]=errorToken;  // Minimal SPRINTF support
-	szToken[1]=0;
+	szToken[0] = errorToken;  // Minimal SPRINTF support
+	szToken[1] = 0;
 
-	log_appendf("SIM %d CMD[%s] CM%s ERROR %d", config_getSelectedSIM() + 1, &modem_lastCommand[0], szToken,
-			errorCode);
+	if ((errorToken =='E' && errorCode == 10) || (errorToken=='S' && errorCode == 310))
+		lcd_printl(LINEE, "SIM not inserted");
+	else
+		lcd_printl(LINEE, szCode);
+
+	log_appendf("SIM %d CMD[%s] CM%s ERROR %d", config_getSelectedSIM() + 1,
+			&modem_lastCommand[0], szToken, errorCode);
 
 	return;
 }
@@ -358,6 +368,7 @@ void modem_check_uart_error() {
 
 		if (g_iUartIgnoreError != 0) {
 			g_iUartIgnoreError--;
+		} else {
 #ifndef _DEBUG
 			if (errorToken=='S') {
 				lcd_printl(LINEC, "SERVICE ERROR");
@@ -365,12 +376,9 @@ void modem_check_uart_error() {
 				lcd_printl(LINEC, "MODEM ERROR");
 			}
 #endif
-			lcd_printl(LINEE, error);
 		}
 		modem_setNumericError(errorToken, atoi(error));
 	}
-
-	lcd_progress_wait(HUMAN_DISPLAY_INFO_DELAY);
 }
 
 // Makes sure that there is a network working
@@ -732,10 +740,11 @@ int modem_parse_time(struct tm* pTime) {
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_hour, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_min, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_sec, delimiter, UART_FAILED);
-	if (strchr(pToken1, '-') == NULL) negateTz = 1;
+	if (strchr(pToken1, '-') == NULL)
+		negateTz = 1;
 	PARSE_NEXTVALUE(pToken1, &timeZoneOffset, delimiter, UART_FAILED);
 
-	if(negateTz == 1) {
+	if (negateTz == 1) {
 		_tz.timezone = 0 - ((timeZoneOffset >> 2) * 3600);
 	} else {
 		_tz.timezone = (timeZoneOffset >> 2) * 3600;

@@ -15,6 +15,8 @@ extern "C"
 {
 #endif
 
+extern volatile uint8_t g_iAbortSleep;
+
 //*****************************************************************************
 //
 //! \brief delay loop

@@ -534,7 +534,7 @@ uint8_t event_wake_up_main() {
 
 void event_main_sleep() {
 	iMainSleep = 1;
-
+	g_iAbortSleep = 0;
 	if (g_bLCD_state)
 		delay(MAIN_SLEEP_TIME);
 	else

@@ -141,6 +141,7 @@ void __attribute__ ((interrupt(PORT3_VECTOR))) Port_3 (void)
 		g_iSystemSetup ++;
 		g_iHardware_actions = HWD_THERMAL_SYSTEM;
 		state_alarm_disable_buzzer_override();
+		g_iAbortSleep = true;
     	// Resume execution if the device is in deep sleep mode
 		WAKEUP_MAIN
 		break;
