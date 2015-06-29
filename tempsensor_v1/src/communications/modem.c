@@ -312,6 +312,7 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	char szCode[16];
 	char szToken[2];
 	char token;
+	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	config_setLastCommand(COMMAND_SIM_ERROR);
 
@@ -321,10 +322,9 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	if (errorCode == 4) {
 		strcpy(szCode, "Not supported");
 	} else {
-		sprintf(szCode, "ERROR %d", errorCode);
+		sprintf(szCode, "ERROR %d      ", errorCode);
 	}
 
-	SIM_CARD_CONFIG *sim = config_getSIM();
 	config_setSIMError(sim, errorToken, errorCode, szCode);
 
 	// Check the error codes to figure out if the SIM is still functional
@@ -333,9 +333,10 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	szToken[0] = errorToken;  // Minimal SPRINTF support
 	szToken[1] = 0;
 
-	if ((errorToken =='E' && errorCode == 10) || (errorToken=='S' && errorCode == 310))
-		lcd_printl(LINEE, "SIM not inserted");
-	else
+	if (errorCode == 10 || (errorToken=='S' && errorCode == 310)) {
+		lcd_printl(LINEE, "Not inserted");
+		config_SIM_not_operational();
+	} else
 		lcd_printl(LINEE, szCode);
 
 	log_appendf("SIM %d CMD[%s] CM%s ERROR %d", config_getSelectedSIM() + 1,
@@ -811,12 +812,12 @@ void modem_getPreferredOperatorList() {
 void modem_init() {
 
 	config_setLastCommand(COMMAND_MODEMINIT);
-
 	config_getSelectedSIM(); // Init the SIM and check boundaries
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
-	// Reset error state so we try to initialize the modem.
+	// Reset error states so we try to initialize the modem.
+	// Reset the SIM flag if not operational
 	config_reset_error(sim);
 
 	uart_tx("AT\r\n"); // Display OK

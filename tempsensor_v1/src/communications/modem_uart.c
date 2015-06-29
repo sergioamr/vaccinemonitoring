@@ -287,6 +287,9 @@ uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 		uint8_t attempts) {
 	char *cmd = modem_lastCommand;
 
+	if (!config_isSimOperational())
+		return UART_FAILED;
+
 	int len = strlen(cmdInput);
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_print_progress();

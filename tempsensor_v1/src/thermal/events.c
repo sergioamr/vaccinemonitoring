@@ -397,6 +397,10 @@ void event_network_check(void *event, time_t currentTime) {
 	uint8_t *failures;
 	int service;
 
+	if (!config_isSimOperational()) {
+		modem_swap_SIM();
+	}
+
 	switch (g_pSysState->lastTransMethod) {
 		case HTTP_SIM1:
 		case SMS_SIM1:

@@ -494,6 +494,7 @@ uint8_t config_is_SIM_configurable(int simSlot);
 #define COMMAND_FIRST_INIT 2500
 #define COMMAND_END 99
 
+uint8_t config_isSimOperational();
 void config_init();
 void config_send_configuration(char *number);
 void config_reconfigure();

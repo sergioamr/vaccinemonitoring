@@ -83,6 +83,7 @@ void calibrate_device() {
 void config_reset_error(SIM_CARD_CONFIG *sim) {
 	sim->simErrorToken = '\0';
 	sim->simErrorState = NO_ERROR;
+	config_SIM_operational();
 }
 
 void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
