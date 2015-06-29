@@ -129,7 +129,7 @@ int http_check_error(int *retry) {
 	PARSE_SKIP(token, ",\n", UART_FAILED); 	// Skip content_type string.
 	PARSE_NEXTVALUE(token, &data_size, ",\n", UART_FAILED);
 
-	log_appendf("HTTP ERR %i[%d] %d ", prof_id, http_status_code,
+	log_appendf("HTTP ERR %i[%d] %d", prof_id, http_status_code,
 			data_size);
 
 	// Check for recoverable errors

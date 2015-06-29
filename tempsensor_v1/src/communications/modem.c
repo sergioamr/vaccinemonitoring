@@ -369,7 +369,7 @@ void modem_check_uart_error() {
 		if (g_iUartIgnoreError != 0) {
 			g_iUartIgnoreError--;
 		} else {
-#ifndef _DEBUG
+#ifdef _DEBUG_OUTPUT
 			if (errorToken=='S') {
 				lcd_printl(LINEC, "SERVICE ERROR");
 			} else {
@@ -411,7 +411,7 @@ int8_t modem_first_init() {
 
 	config_setLastCommand(COMMAND_FIRST_INIT);
 
-	lcd_printl(LINEC, "Modem power on");
+	lcd_printl(LINEC, "Power on");
 	delay(500);
 
 	//check Modem is powered on
@@ -429,17 +429,15 @@ int8_t modem_first_init() {
 		uart_setOKMode();
 
 		lcd_disable_verbose();
-		uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted
+		//uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted (not used anymore)
 		uart_tx_timeout("AT\r\n", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
 		lcd_enable_verbose();
 
 		uint8_t nsims = SYSTEM_NUM_SIM_CARDS;
 
-/*
 #ifdef _DEBUG
 		nsims = 1;
 #endif
-*/
 
 		for (t = 0; t < nsims; t++) {
 			modem_swap_SIM(); // Send hearbeat from SIM
@@ -466,9 +464,7 @@ int8_t modem_first_init() {
 				}
 			break;
 		case 2:
-			lcd_printf(LINEC, "BOTH SIMS FAILED ");
-			log_appendf("SIMS FAILED ON INIT ");
-			delay(HUMAN_DISPLAY_ERROR_DELAY);
+			lcd_printf(LINEE, "SIMS FAILED ");
 			break;
 		}
 
@@ -495,7 +491,7 @@ int modem_swap_to_SIM(int sim) {
 
 int modem_swap_SIM() {
 
-	log_appendf("[%d]SWAP", config_getSelectedSIM());
+	log_appendf("SWP [%d]", config_getSelectedSIM());
 
 	int res = UART_FAILED;
 	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
@@ -561,7 +557,7 @@ int8_t modem_parse_string(char *cmd, char *response, char *destination,
 int8_t modem_getSMSCenter() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	return modem_parse_string("AT+CSCA?\r\n", "CSCA: \"", sim->cfgSMSCenter,
-	GW_MAX_LEN + 1);
+			GW_MAX_LEN + 1);
 	// added for SMS Message center number to be sent in the heart beat
 }
 
@@ -570,7 +566,7 @@ int8_t modem_getOwnNumber() {
 	int8_t state;
 	modem_ignore_next_errors(1);
 	state = modem_parse_string("AT+CNUM?\r\n", "CNUM: \"", sim->cfgPhoneNum,
-	GW_MAX_LEN + 1);
+			GW_MAX_LEN + 1);
 	modem_ignore_next_errors(0);
 	return state;
 }
@@ -639,6 +635,8 @@ void modem_getExtraInfo() {
 #define NET_ATTEMPTS 10
 #endif
 
+
+#if defined(CAPTURE_MCC_MNC) && defined(_DEBUG)
 void modem_survey_network() {
 
 	char *pToken1;
@@ -714,6 +712,7 @@ void modem_survey_network() {
 	lcd_progress_wait(10000); // Wait 10 seconds to make sure the modem finished transfering.
 							  // It should be clear already but next transaction
 }
+#endif
 
 const char COMMAND_RESULT_CCLK[] = "+CCLK: \"";
 
@@ -793,13 +792,15 @@ void modem_pull_time() {
 			rtc_init(&g_tmCurrTime);
 			config_update_system_time();
 		} else {
-			lcd_printf(LINEC, "WRONG DATE SIM %d ", config_getSelectedSIM());
+#ifdef DEBUG_OUTPUT
+			lcd_printf(LINEC, "WRONG DATE", config_getSelectedSIM());
 			lcd_printf(LINEH, get_YMD_String(&g_tmCurrTime));
+#endif
 
 			rtc_init(&g_pDevCfg->lastSystemTime);
 			rtc_getlocal(&g_tmCurrTime);
 
-			lcd_printf(LINEC, "LAST DATE ");
+			lcd_printf(LINEC, "LAST DATE");
 			lcd_printf(LINEH, get_YMD_String(&g_tmCurrTime));
 		}
 	}
