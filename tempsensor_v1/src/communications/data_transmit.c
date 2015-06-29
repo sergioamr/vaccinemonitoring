@@ -50,7 +50,7 @@ int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 	do {
 		if (splitSend == 1) {
 			offset_timestamp(&firstDate, linesParsed);
-			dateString = get_date_string(&firstDate, "", "", "", 0);
+			dateString = get_simplified_date_string(&firstDate);
 			sprintf(smsMsg, "%d,%s,%d,%d,", 11, dateString,
 					g_pDevCfg->sIntervalsMins.sampling, 5);
 			strcat(smsMsg, encodedLine);
@@ -59,7 +59,7 @@ int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 			// Must get first line before transmitting to calculate the length properly
 			if (f_gets(line, lineSize, file) != 0) {
 				parse_time_from_line(&firstDate, line);
-				dateString = get_date_string(&firstDate, "", "", "", 0);
+				dateString = get_simplified_date_string(&firstDate);
 				sprintf(smsMsg, "%d,%s,%d,%d,", 11, dateString,
 						g_pDevCfg->sIntervalsMins.sampling, 5);
 			} else {
@@ -121,7 +121,7 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	// Must get first line before transmitting to calculate the length properly
 	if (f_gets(line, lineSize, file) != 0) {
 		parse_time_from_line(&firstDate, line);
-		dateString = get_date_string(&firstDate, "", "", "", 0);
+		dateString = get_simplified_date_string(&firstDate);
 		sprintf(line, "IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=",
 				g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa", dateString,
 				g_pDevCfg->sIntervalsMins.sampling);

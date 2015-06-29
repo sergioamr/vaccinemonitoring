@@ -195,7 +195,7 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 /****************************************************************************/
 
 int main(void) {
-	memset((void*) (&__STACK_END - &__STACK_SIZE), 0x00, (size_t) __STACK_SIZE);
+	//memset((void*) (&__STACK_END - &__STACK_SIZE), 0x00, (size_t) __STACK_SIZE);
 	// Disable for init since we are not going to be able to respond to it.
 	watchdog_disable();
 

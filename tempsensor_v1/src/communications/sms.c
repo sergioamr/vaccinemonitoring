@@ -157,8 +157,11 @@ int8_t sms_process_messages() {
 
 	memset(SM_ME, 0, sizeof(SM_ME));
 
-	lcd_printf(LINEC, "Reading SMSs");
-	lcd_printf(LINE2, "SIM %d ", config_getSelectedSIM() + 1);
+	if (!config_isSimOperational())
+		return UART_FAILED;
+
+	lcd_printf(LINEC, "SIM %d ", config_getSelectedSIM() + 1);
+	lcd_printf(LINEH, "Reading SMSs");
 
 	//check if messages are available
 	uart_tx("AT+CPMS?\r\n");

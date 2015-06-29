@@ -100,13 +100,12 @@ void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
 	event_LCD_turn_on();
 }
 
-uint8_t config_isSimOperational() {
-	uint8_t slot = g_pDevCfg->cfgSIM_slot;
-	return g_pDevCfg->SIM[slot].simOperational;
+uint8_t inline config_isSimOperational() {
+	return g_pDevCfg->SIM[g_pDevCfg->cfgSIM_slot].simOperational;
 }
 
 // Returns the current structure containing the info for the current SIM selected
-uint16_t config_getSIMError(int slot) {
+uint16_t inline config_getSIMError(int slot) {
 	return g_pDevCfg->SIM[slot].simErrorState;
 }
 
@@ -127,13 +126,11 @@ uint8_t config_getSelectedSIM() {
 }
 
 void config_SIM_not_operational() {
-	uint8_t slot = g_pDevCfg->cfgSIM_slot;
-	g_pDevCfg->SIM[slot].simOperational = 0;
+	g_pDevCfg->SIM[g_pDevCfg->cfgSIM_slot].simOperational = 0;
 }
 
 void config_SIM_operational() {
-	uint8_t slot = g_pDevCfg->cfgSIM_slot;
-	g_pDevCfg->SIM[slot].simOperational = 1;
+	g_pDevCfg->SIM[g_pDevCfg->cfgSIM_slot].simOperational = 1;
 }
 
 uint8_t config_is_SIM_configurable(int simSlot) {
@@ -445,7 +442,7 @@ int config_parse_configuration(char *msg) {
 int config_process_configuration() {
 	char *token;
 #ifdef _DEBUG
-	log_append_("configuration processing");
+	log_append_("cfg process");
 #endif
 // FINDSTR uses RXBuffer - There is no need to initialize the data to parse.
 	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);

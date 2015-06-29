@@ -74,12 +74,11 @@ const char * const NETWORK_SERVICE_TEXT[2] = { "GSM", "GPRS" };
  CME ERROR: 11	SIM PIN required
  CME ERROR: 12	SIM PUK required
  CME ERROR: 13	SIM failure
- CME ERROR: 14	SIM busy
  CME ERROR: 15	SIM wrong
  CME ERROR: 30	No network service
  */
 
-uint16_t CME_fatalErrors[] = { 10, 11, 12, 13, 14, 15, 30 };
+uint16_t CME_fatalErrors[] = { 10, 11, 12, 13, 15, 30 };
 
 /*
  CMS ERROR: 30	Unknown subscriber
@@ -90,6 +89,9 @@ uint16_t CMS_fatalErrors[] = { 10, 30, 38, 310 };
 // Check against all the errors that could kill the SIM card operation
 uint8_t modem_isSIM_Operational() {
 	int t = 0;
+
+	if (!config_isSimOperational())
+		return false;
 
 	char token = '\0';
 	uint16_t lastError = config_getSimLastError(&token);
@@ -433,9 +435,11 @@ int8_t modem_first_init() {
 
 		uint8_t nsims = SYSTEM_NUM_SIM_CARDS;
 
+/*
 #ifdef _DEBUG
 		nsims = 1;
 #endif
+*/
 
 		for (t = 0; t < nsims; t++) {
 			modem_swap_SIM(); // Send hearbeat from SIM
@@ -497,7 +501,7 @@ int modem_swap_SIM() {
 	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
 	g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;
 
-	lcd_printf(LINEC, "SIM Active %d", g_pDevCfg->cfgSIM_slot + 1);
+	lcd_printf(LINEC, "SIM %d Active", g_pDevCfg->cfgSIM_slot + 1);
 	modem_init();
 	modem_getExtraInfo();
 
@@ -808,11 +812,10 @@ void modem_getPreferredOperatorList() {
 }
 
 void modem_init() {
+	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	config_setLastCommand(COMMAND_MODEMINIT);
 	config_getSelectedSIM(); // Init the SIM and check boundaries
-
-	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	// Reset error states so we try to initialize the modem.
 	// Reset the SIM flag if not operational
@@ -826,7 +829,6 @@ void modem_init() {
 	// GPIO<pin> according to <dir> and <mode> parameter.
 	uart_tx("AT#SIMDET=0\r\n"); // Enable automatic pin sim detection
 
-#ifdef ENABLE_SIM_SLOT
 	if (config_getSelectedSIM() != 1) {
 		//enable SIM A (slot 1)
 		uart_tx_timeout("AT#GPIO=2,0,1\r\n", TIMEOUT_GPO, 5); // Sim 1 PWR enable - First command always has a chance of timeout
@@ -838,7 +840,6 @@ void modem_init() {
 		uart_tx("AT#GPIO=4,0,1\r\n"); // Sim 2 PWR enable
 		uart_tx("AT#GPIO=3,1,1\r\n"); // Sim select
 	}
-#endif
 
 	uart_tx_timeout("AT#SIMDET=1\r\n", MODEM_TX_DELAY2, 10); // Disable sim detection. Is it not plugged in hardware?
 

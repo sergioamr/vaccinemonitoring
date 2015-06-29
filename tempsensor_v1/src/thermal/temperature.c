@@ -105,6 +105,7 @@ void temperature_trigger_init() {
 
 
 float resistance_to_temperature(float R) {
+
 	float A1 = 0.00335, B1 = 0.0002565, C1 = 0.0000026059, D1 = 0.00000006329,
 			tempdegC;
 	float R25 = 9965.0;
@@ -116,6 +117,7 @@ float resistance_to_temperature(float R) {
 	tempdegC = tempdegC - 273.15;
 
 	return tempdegC;
+	//return 1;
 }
 
 void temperature_subsampling_calculate(int8_t iSensorIdx) {

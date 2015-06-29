@@ -388,7 +388,7 @@ uint8_t uart_tx(const char *cmd) {
 	int uart_state;
 	uart_reset_headers();
 
-	uart_tx_timeout(cmd, g_iModemMaxWait, 10);
+	uart_tx_timeout(cmd, g_iModemMaxWait, 2);
 	uart_state = uart_getTransactionState();
 #ifdef _DEBUG_OUTPUT
 	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
