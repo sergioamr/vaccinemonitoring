@@ -213,9 +213,9 @@ void lcd_show() {
 
 	if (iCnt != 0xff) {
 		if (g_pSysState->temp.state[iCnt].status!=0) {
-			sprintf(lcdBuffer,"ALERT %s %sC", SensorName[iCnt], temperature_getString(iCnt));
+			sprintf(&lcdBuffer[iIdx],"ALERT %s %sC", SensorName[iCnt], temperature_getString(iCnt));
 		} else {
-			sprintf(lcdBuffer,"Sensor %s %sC", SensorName[iCnt], temperature_getString(iCnt));
+			sprintf(&lcdBuffer[iIdx],"Sensor %s %sC", SensorName[iCnt], temperature_getString(iCnt));
 		}
 	}
 
