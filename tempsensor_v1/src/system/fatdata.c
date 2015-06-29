@@ -277,7 +277,10 @@ FRESULT fat_init_drive() {
 	f_unlink(LOG_MODEM_PATH);
 	f_unlink(CONFIG_LOG_FILE_PATH);
 
-	fr = log_appendf("\r\n\r\nStart Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
+	fr = log_append_(" ");
+	fr = log_appendf("Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
+	fr = log_appendf("Last[%d]", g_pSysCfg->lastCommand);
+
 	return fr;
 }
 
@@ -448,9 +451,9 @@ FRESULT log_appendf(const char *_format, ...) {
 }
 
 const char HEADER_CSV[] =
-		"\"Date of Reading\",\"Battery %\",\"Power Status\","
-				"\"Sensor A (Deg. C)\",\"Sensor B (Deg. C)\",\"Sensor C (Deg. C)\",\"Sensor D (Deg. C)\",\"Sensor E (Deg. C)\","
-				"\"Signal\",\"Network State\"\r\n";
+		"\"Date\",\"Batt\",\"Power\","
+				"\"Sensor A\",\"Sensor B\",\"Sensor C\",\"Sensor D\",\"Sensor E\","
+				"\"Signal\",\"Net\"\r\n";
 
 FRESULT log_write_header(FIL *fobj, UINT *pBw) {
 	return f_write(fobj, HEADER_CSV, sizeof(HEADER_CSV) - 1, pBw);

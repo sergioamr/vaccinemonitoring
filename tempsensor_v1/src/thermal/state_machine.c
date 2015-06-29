@@ -99,15 +99,24 @@ void state_setSMS_notSupported(SIM_CARD_CONFIG *sim) {
 void state_sim_failure(SIM_CARD_CONFIG *sim) {
 	// 69 - "Requested facility not implemented"
 	// This cause indicates that the network is unable to provide the requested short message service.
-	if (sim->simErrorState==69) {
-		state_setSMS_notSupported(sim);
+
+	switch (sim->simErrorState) {
+		case 133:
+		case 567:
+			lcd_printl(LINEC, "ERROR");
+			lcd_printl(LINEE, "WRONG APN");
+			break;
+
+		case 69:
+			state_setSMS_notSupported(sim);
+			break;
+
+			// Failed to register to network
+		case 555:
+			// Total failure in the card,
+			_NOP();
 	}
 
-	// Failed to register to network
-	if (sim->simErrorState == 555) {
-		// Total failure in the card,
-		_NOP();
-	}
 }
 
 /***********************************************************************************************************************/
@@ -128,7 +137,7 @@ char inline *state_getNetworkState() {
 
 void state_setNetworkStatus(const char *status) {
 	NETWORK_SERVICE *service = state_getCurrentService();
-	strncpy(service->network_state, status, sizeof(service->network_state));
+	zeroTerminateCopy(service->network_state, status);
 }
 
 uint8_t state_getSignalLevel() {
@@ -246,11 +255,10 @@ void state_alarm_on(char *alarm_msg) {
 		lcd_turn_on();
 
 		if (g_bLCD_state == 1) {
-			strncpy(g_pSysState->alarm_message, alarm_msg,
-					sizeof(g_pSysState->alarm_message));
+			zeroTerminateCopy(g_pSysState->alarm_message, alarm_msg);
 			lcd_turn_on();
 			lcd_printl(LINEC, "ALARM!");
-			lcd_printf(LINEH, "%s", alarm_msg);
+			lcd_printf(LINEH, "%s", g_pSysState->alarm_message);
 		}
 		count = events_getTick();
 	}
@@ -273,6 +281,7 @@ void state_clear_alarm_state() {
 				g_pSysState->alarm_message);
 	}
 
+	g_pSysState->state.alarms.globalAlarm = STATE_OFF;
 	SYSTEM_SWITCH.buzzer_sound = STATE_OFF;
 }
 

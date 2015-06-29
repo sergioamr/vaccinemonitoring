@@ -18,14 +18,19 @@
 /* BEGIN FACTORY CONFIGURATION 																							  */
 /**************************************************************************************************************************/
 
-#define NEXLEAF_SMS_GATEWAY       "00447482787262"
-
 #ifndef _DEBUG
+#define NEXLEAF_SMS_GATEWAY       " "
+
 #define REPORT_PHONE_NUMBER 	   NEXLEAF_SMS_GATEWAY
-#endif
 
 #define NEXLEAF_DEFAULT_SERVER_IP "54.241.2.213"
-#define NEXLEAF_DEFAULT_APN 	  " "
+#define NEXLEAF_DEFAULT_APN 	  "giffgaff.com"
+
+// Path for getting the configuration from the server
+// CONFIGURATION_URL_PATH/IMEI/1/
+#define CONFIGURATION_URL_PATH "/coldtrace/uploads/multi/v3"
+#define DATA_UPLOAD_URL_PATH "/coldtrace/intel/upload/"
+#endif
 
 // SMS alerts, it will send an SMS to the local testing number
 #define ALERTS_SMS 1
@@ -36,11 +41,6 @@
 
 // Thershold when the alarm will sound if there is a power cut (seconds)
 #define THRESHOLD_TIME_POWER_OUT_ALARM 60*60*1
-
-// Path for getting the configuration from the server
-// CONFIGURATION_URL_PATH/IMEI/1/
-#define CONFIGURATION_URL_PATH " " // "/coldtrace/uploads/multi/v3"
-#define DATA_UPLOAD_URL_PATH " " // "/coldtrace/intel/upload/"
 
 // Number of subsamples to capture per sample
 #define NUM_SAMPLES_CAPTURE 10
@@ -140,14 +140,27 @@
 /**************************************************************************************************************************/
 
 #ifdef _DEBUG
-#define REPORT_PHONE_NUMBER ""
+
+#define NEXLEAF_SMS_GATEWAY       "00000000000"
+
+#define REPORT_PHONE_NUMBER 	   NEXLEAF_SMS_GATEWAY
+
+#define NEXLEAF_DEFAULT_SERVER_IP "0.0.0.0"
+#define NEXLEAF_DEFAULT_APN 	  "test.com"
+
+// Path for getting the configuration from the server
+// CONFIGURATION_URL_PATH/IMEI/1/
+#define CONFIGURATION_URL_PATH "/config"
+#define DATA_UPLOAD_URL_PATH "/upload"
+
 #define ALERTS_SMS 1
 
 #define MAIN_SLEEP_TIME 100
 #define MAIN_LCD_OFF_SLEEP_TIME 10000
 
+#define PERIOD_UNDEFINED		60
 #define PERIOD_SAMPLING			1		//in minutes
-#define PERIOD_UPLOAD			3		//in minutes
+#define PERIOD_UPLOAD			10		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
 #define PERIOD_TRANS_RESET 		6*60   //in minutes
 #define PERIOD_LCD_OFF			10
@@ -238,7 +251,7 @@ typedef union {
 		unsigned char modem_transactions :1;
 		unsigned char sms_alerts :1;
 		unsigned char sms_reports :1;
-		unsigned char bit7 :1;
+		unsigned char commmands :1;
 		unsigned char bit8 :1;
 	} logs;
 	unsigned char status;
@@ -448,10 +461,13 @@ void config_SIM_not_operational();
 // Flags the sim as working again
 void config_SIM_operational();
 
+uint8_t config_is_SIM_configurable(int simSlot);
+
 /*****************************************************************************************************************/
 /* DIAGNOSE AND TESTING 			   																		     */
 /* Check if there is a hang on next reset																		 */
 /*****************************************************************************************************************/
+#define COMMAND_EVENTS 0
 #define COMMAND_BOOT 100
 #define COMMAND_TEMPERATURE_SAMPLE 200
 #define COMMAND_GPRS 300
@@ -469,22 +485,21 @@ void config_SIM_operational();
 #define COMMAND_NETWORK_SIGNAL_MONITOR 1600
 #define COMMAND_HTTP_DATA_TRANSFER 1700
 #define COMMAND_SMS_PROCESS 1800
-
+#define COMMAND_PARSE_CONFIG_ONLINE 1900
+#define COMMAND_SET_NETWORK_SERVICE 2000
+#define COMMAND_NETWORK_CONNECT 2100
+#define COMMAND_SIM_ERROR 2200
+#define COMMAND_UART_ERROR 2300
+#define COMMAND_CHECK_NETWORK 2400
+#define COMMAND_FIRST_INIT 2500
 #define COMMAND_END 99
 
 void config_init();
 void config_send_configuration(char *number);
 void config_reconfigure();
 
-#ifndef DEBUG_SAVE_COMMAND
-#define config_save_command
-#define config_incLastCmd
-#define config_setLastCommand
-#else
-void config_save_command(char *string);
 void config_setLastCommand(uint16_t lastCmd);
 void config_incLastCmd();
-#endif
 
 void config_update_system_time();
 

@@ -33,7 +33,7 @@ char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
 
 /*
- * AT Commands Reference Guide 80000ST10025a Rev. 9 � 2010-10-04
+ * AT Commands Reference Guide 80000ST10025a Rev. 9 2010-10-04
  *
  * Read command reports the <mode> and <stat> parameter values in the format:
  * +CREG: <mode>,<stat>[,<Lac>,<Ci>]
@@ -200,6 +200,8 @@ int modem_getNetworkService() {
 void modem_setNetworkService(int service) {
 	if (g_pSysState->network_mode != service) {
 		g_pSysState->network_mode = service;
+		config_setLastCommand(COMMAND_SET_NETWORK_SERVICE);
+
 		modem_connect_network(NETWORK_CONNECTION_ATTEMPTS);
 	}
 }
@@ -207,7 +209,6 @@ void modem_setNetworkService(int service) {
 void modem_run_failover_sequence() {
 	if (modem_check_network() != UART_SUCCESS) {
 		modem_swap_SIM();
-		log_appendf("[%d] SIMSWAP", config_getSelectedSIM());
 		if (modem_check_network() != UART_SUCCESS) {
 			g_pSysState->lastTransMethod = NONE;
 		}
@@ -215,7 +216,6 @@ void modem_run_failover_sequence() {
 
 	if (http_enable() != UART_SUCCESS) {
 		modem_swap_SIM();
-		log_appendf("[%d] SIMSWAP", config_getSelectedSIM());
 		if (modem_check_network() == UART_SUCCESS &&
 				http_enable() != UART_SUCCESS) {
 			if (g_pDevCfg->cfgSIM_slot == 0) {
@@ -244,6 +244,8 @@ int modem_connect_network(uint8_t attempts) {
 
 	// enable network registration and location information unsolicited result code;
 	// if there is a change of the network cell. +CGREG: <stat>[,<lac>,<ci>]
+
+	config_setLastCommand(COMMAND_NETWORK_CONNECT);
 
 	uart_txf("AT+%s=2\r\n", modem_getNetworkServiceCommand());
 	do {
@@ -279,6 +281,7 @@ int modem_connect_network(uint8_t attempts) {
 		lcd_progress_wait(NETWORK_CONNECTION_DELAY);
 	} while (--attempts > 0);
 
+	config_incLastCmd();
 	return UART_FAILED;
 }
 ;
@@ -304,6 +307,9 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	char szCode[16];
 	char szToken[2];
 	char token;
+
+	config_setLastCommand(COMMAND_SIM_ERROR);
+
 	if (config_getSimLastError(&token) == errorCode)
 		return;
 
@@ -339,6 +345,8 @@ void modem_check_uart_error() {
 	char *pToken1;
 	char errorToken;
 
+	config_setLastCommand(COMMAND_UART_ERROR);
+
 	int uart_state = uart_getTransactionState();
 	if (uart_state != UART_ERROR)
 		return;
@@ -350,8 +358,6 @@ void modem_check_uart_error() {
 
 		if (g_iUartIgnoreError != 0) {
 			g_iUartIgnoreError--;
-			log_appendf("ERROR: SIM %d CMD[%s] ERROR %s", config_getSelectedSIM(), &modem_lastCommand[0],
-					error);
 #ifndef _DEBUG
 			if (errorToken=='S') {
 				lcd_printl(LINEC, "SERVICE ERROR");
@@ -371,6 +377,8 @@ void modem_check_uart_error() {
 int8_t modem_check_network() {
 	int res = UART_FAILED;
 	int iSignal = 0;
+
+	config_setLastCommand(COMMAND_CHECK_NETWORK);
 
 	// Check signal quality,
 	// if it is too low we check if we
@@ -392,6 +400,8 @@ int8_t modem_first_init() {
 	int iIdx;
 	int iStatus = 0;
 	int iSIM_Error = 0;
+
+	config_setLastCommand(COMMAND_FIRST_INIT);
 
 	lcd_printl(LINEC, "Modem power on");
 	delay(500);
@@ -477,11 +487,14 @@ int modem_swap_to_SIM(int sim) {
 }
 
 int modem_swap_SIM() {
+
+	log_appendf("[%d]SWAP", config_getSelectedSIM());
+
 	int res = UART_FAILED;
 	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
 	g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;
 
-	lcd_printf(LINEC, "Activate SIM: %d", g_pDevCfg->cfgSIM_slot + 1);
+	lcd_printf(LINEC, "SIM Active %d", g_pDevCfg->cfgSIM_slot + 1);
 	modem_init();
 	modem_getExtraInfo();
 
@@ -788,9 +801,7 @@ void modem_getPreferredOperatorList() {
 
 void modem_init() {
 
-#if defined _DEBUG && defined DEBUG_SAVE_COMMAND
 	config_setLastCommand(COMMAND_MODEMINIT);
-#endif
 
 	config_getSelectedSIM(); // Init the SIM and check boundaries
 
@@ -826,7 +837,6 @@ void modem_init() {
 	uart_tx("AT+CMEE=1\r\n"); // Set command enables/disables the report of result code:
 	uart_tx("AT#CMEEMODE=1\r\n"); // This command allows to extend the set of error codes reported by CMEE to the GPRS related error codes.
 	uart_tx("AT#AUTOBND=2\r\n"); // Set command enables/disables the automatic band selection at power-on.  if automatic band selection is enabled the band changes every about 90 seconds through available bands until a GSM cell is found.
-	uart_tx("AT+CGSMS=1\r\n"); // Will try to use GPRS for texts otherwise will use GSM
 
 	//uart_tx("AT+CPMS=\"ME\",\"ME\",\"ME\"");
 
@@ -844,6 +854,7 @@ void modem_init() {
 	// Wait until connnection and registration is successful. (Just try NETWORK_CONNECTION_ATTEMPTS) network could be definitly down or not available.
 	modem_setNetworkService(NETWORK_GPRS);
 
+	uart_tx("AT+CGSMS=1\r\n"); // Will try to use GPRS for texts otherwise will use GSM
 	uart_tx("AT#NITZ=15,1\r\n");   // #NITZ - Network Timezone
 
 	uart_tx("AT+CTZU=1\r\n"); //  4 - software bi-directional with filtering (XON/XOFF)

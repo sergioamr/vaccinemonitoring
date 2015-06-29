@@ -25,7 +25,7 @@ EVENT_MANAGER g_sEvents;
 
 time_t inline event_getIntervalSeconds(EVENT *pEvent) {
 	if (pEvent == NULL)
-		return UINT32_MAX;
+		return PERIOD_UNDEFINED;
 
 	return pEvent->interval_secs + pEvent->offset_secs;
 }
@@ -34,12 +34,20 @@ time_t event_getIntervalMinutes(EVENT *pEvent) {
 	return (event_getIntervalSeconds(pEvent) / 60);
 }
 
+time_t event_getInterval_by_id_secs(EVENT_IDS id) {
+	EVENT *pEvent = events_find(id);
+	if (pEvent == NULL)
+		return PERIOD_UNDEFINED;
+
+	return event_getIntervalSeconds(pEvent);
+}
+
 void inline event_setIntervalSeconds(EVENT *pEvent, time_t time_seconds) {
 	if (pEvent == NULL)
 		return;
 
 	// Intervals more than reset time will not be accepted.
-	if (time_seconds)
+	if (time_seconds > event_getInterval_by_id_secs(EVT_PERIODIC_REBOOT))
 		return;
 
 	pEvent->interval_secs = time_seconds;
@@ -81,6 +89,7 @@ time_t events_getTick() {
 }
 
 void events_send_data(char *phone) {
+/*
 	char msg[MAX_SMS_SIZE_FULL];
 	EVENT *pEvent;
 	int t;
@@ -108,8 +117,10 @@ void events_send_data(char *phone) {
 	sprintf(msg, "[%s] Events end",
 			get_date_string(&g_tmCurrTime, "-", " ", ":", 1));
 	sms_send_message_number(phone, msg);
+*/
 }
 
+/*
 void event_sanity_check(EVENT *pEvent, time_t currentTime) {
 
 	time_t maxRunTime = currentTime + pEvent->offset_secs
@@ -131,6 +142,7 @@ void events_sanity(time_t currentTime) {
 		event_sanity_check(pEvent, currentTime);
 	}
 }
+*/
 
 // Populates the next event index depending on event times
 void events_find_next_event(time_t currentTime) {
@@ -210,6 +222,10 @@ void event_next(EVENT *pEvent, time_t currentTime) {
 			+ pEvent->offset_secs;
 }
 
+void events_sync_rtc() {
+	// Events dependent on time
+}
+
 void events_sync() {
 	EVENT *pEvent;
 	int t;
@@ -249,7 +265,7 @@ void event_run_now(EVENT *pEvent) {
 	hardware_disable_buttons();
 
 	// Store in the log file
-	config_save_command(pEvent->name);
+	config_setLastCommand(pEvent->id);
 
 	// Move the interval to the next time
 	event_next(pEvent, currentTime);
@@ -305,7 +321,7 @@ void events_run() {
 		currentTime = events_getTick();
 	}
 
-	events_sanity(currentTime);
+	//events_sanity(currentTime);
 }
 
 /*******************************************************************************************************/
@@ -338,7 +354,7 @@ void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
 void event_pull_time(void *event, time_t currentTime) {
 	modem_pull_time();
 	// We update all the timers according to the new time
-	events_sync();
+	events_sync_rtc();
 	event_force_event_by_id(EVT_DISPLAY, 0);
 }
 
@@ -379,9 +395,7 @@ void event_subsample_temperature(void *event, time_t currentTime) {
 void event_network_check(void *event, time_t currentTime) {
 	int res;
 	uint8_t *failures;
-	int service = modem_getNetworkService();
-
-	failures = &g_pSysState->net_service[service].network_failures;
+	int service;
 
 	switch (g_pSysState->lastTransMethod) {
 		case HTTP_SIM1:
@@ -397,6 +411,9 @@ void event_network_check(void *event, time_t currentTime) {
 			modem_run_failover_sequence();
 			break;
 	}
+
+	service = modem_getNetworkService();
+	failures = &g_pSysState->net_service[service].network_failures;
 
 	if (state_isNetworkRegistered()) {
 		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(10));
@@ -427,6 +444,31 @@ void event_network_check(void *event, time_t currentTime) {
 }
 
 void event_upload_samples(void *event, time_t currentTime) {
+	SIM_CARD_CONFIG *sim = config_getSIM();
+	int slot = g_pDevCfg->cfgSelectedSIM_slot;
+
+	// Swap SIM on next network check is APN and Phone num has not
+	// been initialized ATM this may not be requires as
+	// 1 unconfigured APN means both won't be parsed correctly
+	if (!config_is_SIM_configurable(slot)) {
+		// Check the other slot
+		if (slot == 0) {
+			slot = 1;
+		} else {
+			slot = 0;
+		}
+
+		if (config_is_SIM_configurable(slot)) {
+			if (slot == 0) {
+				g_pSysState->lastTransMethod = HTTP_SIM1;
+			} else {
+				g_pSysState->lastTransMethod = HTTP_SIM2;
+			}
+		}
+
+		return; // no SIM configurable or SIM requires switch
+	}
+
 	process_batch();
 }
 
@@ -501,6 +543,17 @@ void event_main_sleep() {
 	iMainSleep = 0;
 }
 
+void events_display_alarm() {
+	if (!g_pSysState->state.alarms.globalAlarm)
+		return;
+
+	lcd_printl(LINEC, "ALARM");
+	lcd_printl(LINEE, g_pSysState->alarm_message);
+	iMainSleep = 1;
+	delay(5000);
+	iMainSleep = 0;
+}
+
 void events_init() {
 
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
@@ -531,6 +584,9 @@ void events_init() {
 
 	events_register(EVT_DISPLAY, "DISPLAY", 0, &event_update_display,
 			MINUTES_(PERIOD_LCD_REFRESH), NULL);
+
+	events_register(EVT_DISPLAY_ALARM, "LCDALARM", PERIOD_LCD_REFRESH/2, &events_display_alarm,
+			MINUTES_(PERIOD_LCD_REFRESH*2), NULL);
 
 	events_register(EVT_SUBSAMPLE_TEMP, "SUBSAMP", 0,
 			&event_subsample_temperature, MINUTES_(PERIOD_SAMPLING),

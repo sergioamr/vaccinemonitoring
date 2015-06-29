@@ -34,23 +34,23 @@ void alarm_sms_sensor(uint8_t sensorId, int elapsed) {
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
 		return;
 
-	sprintf(msg, "Alert Sensor %s at %s degC for %d mins",
-			SensorName[sensorId], temperature_getString(sensorId),
-			elapsed / 60);
+	sprintf(msg, "Alert Sensor %s at %s degC for %d mins", SensorName[sensorId],
+			temperature_getString(sensorId), elapsed / 60);
 	strcat(msg, " Take ACTION immediately.");
 	sms_send_message_number(g_pDevCfg->cfgReportSMS, msg);
 }
 
 void alarm_sms_power_outage() {
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
-			return;
+		return;
 
-	sms_send_message_number(g_pDevCfg->cfgReportSMS, "Power Outage: ATTENTION!");
+	sms_send_message_number(g_pDevCfg->cfgReportSMS,
+			"Power Outage: ATTENTION!");
 }
 
 void alarm_SD_card_failure(char *msg) {
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
-			return;
+		return;
 
 	sms_send_message_number(g_pDevCfg->cfgReportSMS, msg);
 }
@@ -103,7 +103,7 @@ void alarm_test_sensor(int id) {
 	if (temperature < cold) {
 		if (!s->state.lowAlarm
 				&& elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsCold) {
-			sprintf(msg, "%s Below limit %s ", SensorName[id],
+			sprintf(msg, "%s Below %s", SensorName[id],
 					getFloatNumber2Text(cold, tmp));
 			s->state.lowAlarm = true;
 			goto alarm_error;
@@ -112,7 +112,7 @@ void alarm_test_sensor(int id) {
 	} else if (temperature > hot) {
 		if (!s->state.highAlarm
 				&& elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsHot) {
-			sprintf(msg, "%s Above limit %s ", SensorName[id],
+			sprintf(msg, "%s Above %s", SensorName[id],
 					getFloatNumber2Text(hot, tmp));
 			s->state.highAlarm = true;
 			goto alarm_error;
@@ -120,8 +120,9 @@ void alarm_test_sensor(int id) {
 		return;
 	}
 
-	alarm_error:
-	s->state.alarm = true;
+	return;
+
+	alarm_error: s->state.alarm = true;
 	state_alarm_on(msg);
 	alarm_sms_sensor(id, elapsed);
 }

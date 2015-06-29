@@ -153,9 +153,7 @@ int8_t sms_process_messages() {
 	uint8_t usedr = 0; // Reading memory
 	uint8_t totalr = 0;
 
-#ifdef _DEBUG
-	//config_setLastCommand(COMMAND_SMS_PROCESS);
-#endif
+	config_setLastCommand(COMMAND_SMS_PROCESS);
 
 	memset(SM_ME, 0, sizeof(SM_ME));
 
@@ -296,9 +294,6 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 		_NOP();
 	} else if (res == UART_ERROR) {
 		lcd_printf(LINE2, "MODEM ERROR %d ", config_getSIM()->simErrorState);
-
-		log_appendf("ERROR: SIM %d FAILED [%s]", config_getSelectedSIM(),
-				config_getSIM()->simLastError);
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	} else {
 		lcd_print("MODEM TIMEOUT");
@@ -310,7 +305,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 }
 
 uint8_t sms_send_message(char* pData) {
-	return sms_send_message_number(NEXLEAF_SMS_GATEWAY, pData);
+	return sms_send_message_number(g_pDevCfg->cfgGatewaySMS, pData);
 }
 
 void delallmsg() {

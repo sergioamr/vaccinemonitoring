@@ -138,7 +138,7 @@ void system_boot() {
 	fat_init_drive();
 
 	config_init(); // Checks if this system has been initialized. Reflashes config and runs calibration in case of being first flashed.
-	//config_setLastCommand(COMMAND_BOOT);
+	config_setLastCommand(COMMAND_BOOT);
 
 	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
 	lcd_printf(LINEC, "Boot %d", (int) g_pSysCfg->numberConfigurationRuns);

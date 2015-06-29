@@ -138,6 +138,7 @@ void lcd_show() {
 		return;
 
 	lastRefresh = rtc_get_second_tick();
+
 	lcd_clear();
 
 	memset(lcdBuffer, 0, LCD_DISPLAY_LEN);

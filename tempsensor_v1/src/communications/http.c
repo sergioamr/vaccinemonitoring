@@ -51,7 +51,8 @@ uint8_t http_enable() {
 		uart_state = uart_getTransactionState();
 
 		if (uart_state != UART_SUCCESS) {
-			if (sim->simErrorState!=0) {
+
+			if (sim->simErrorState != 0) {
 				state_failed_gprs(config_getSelectedSIM());
 				return UART_FAILED;
 			}
@@ -143,7 +144,8 @@ int http_check_error(int *retry) {
 int http_open_connection(int data_length) {
 	char cmd[80];
 	// Test post URL
-	sprintf(cmd, "AT#HTTPSND=1,0,\"%s\",%d,0\r\n", g_pDevCfg->cfgUpload_URL, data_length);
+	sprintf(cmd, "AT#HTTPSND=1,0,\"%s\",%d,0\r\n", g_pDevCfg->cfgUpload_URL,
+			data_length);
 
 	// Wait for prompt
 	uart_setHTTPPromptMode();
@@ -181,7 +183,7 @@ int http_get_configuration() {
 
 	uart_setCheckMsg(HTTP_OK, HTTP_ERROR);
 
-	while (retry == 1 && --attempts > 0) {
+	while (retry == 1 && attempts > 0) {
 		if (uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 5) == UART_SUCCESS) {
 			uart_state = uart_getTransactionState();
 			if (uart_state == UART_SUCCESS) {
@@ -192,23 +194,27 @@ int http_get_configuration() {
 			if (uart_state == UART_ERROR)
 				http_check_error(&retry);  // Tries again
 		}
+		attempts--;
 	};
 
 	http_deactivate();
 	return uart_state; // TODO return was missing, is it necessary ?
 }
 
-int8_t http_post(char* postdata) {
-	char cmd[64];
-	http_enable();
-	sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%s,0\r\n", itoa_pad(strlen(postdata)));
+/*
+ int8_t http_post(char* postdata) {
+ char cmd[64];
+ http_enable();
 
-	// Wait for prompt
-	uart_setHTTPPromptMode();
-	if (uart_tx_waitForPrompt(cmd, TIMEOUT_HTTPSND_PROMPT)) {
-		uart_tx_timeout(postdata, TIMEOUT_HTTPSND, 1);
-	}
+ sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%s,0\r\n", itoa_pad(strlen(postdata)));
 
-	http_deactivate();
-	return uart_getTransactionState();
-}
+ // Wait for prompt
+ uart_setHTTPPromptMode();
+ if (uart_tx_waitForPrompt(cmd, TIMEOUT_HTTPSND_PROMPT)) {
+ uart_tx_timeout(postdata, TIMEOUT_HTTPSND, 1);
+ }
+
+ http_deactivate();
+ return uart_getTransactionState();
+ }
+ */

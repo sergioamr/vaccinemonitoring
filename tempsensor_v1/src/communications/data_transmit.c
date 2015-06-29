@@ -8,8 +8,6 @@
 #include "thermalcanyon.h"
 #include "buzzer.h"
 
-#define TS_SIZE					21
-#define TS_FIELD_OFFSET			1	//1 - $, 3 - $TS
 #define TRANS_FAILED		   -1
 #define TRANS_SUCCESS			0
 
@@ -177,6 +175,7 @@ void process_batch() {
 	DIR dir;
 	FIL filr;
 	FRESULT fr;
+	int len;
 
 	log_disable();
 
@@ -184,8 +183,15 @@ void process_batch() {
 	if (transMethod == NONE) {
 		return;
 	} else if (transMethod == HTTP_SIM1 || transMethod == HTTP_SIM2) {
-		if (http_enable() == UART_SUCCESS) {
-
+		// If we cant attatch to a GPRS service then fall back to the SMS
+		// alternative
+		if (http_enable() != UART_SUCCESS) {
+			http_deactivate();
+			if (transMethod == HTTP_SIM1) {
+				transMethod = SMS_SIM1;
+			} else {
+				transMethod = SMS_SIM2;
+			}
 		}
 	}
 
@@ -206,6 +212,19 @@ void process_batch() {
 		fr = f_open(&filr, path, FA_READ | FA_OPEN_ALWAYS);
 		if (fr != FR_OK) {
 			break;
+		}
+
+		// If the last file was corrupted and forced a reboot we remove the extension
+		if (do_not_process_batch) {
+
+			sprintf(line, "%s/%s", FOLDER_TEXT, fili.fname);
+			len = strlen(line);
+			line[len-3]=0;
+			f_close(&filr);
+			f_rename(path, line);
+			http_deactivate();
+			g_pSysState->safeboot.disable.data_transmit = 0;
+			return;
 		}
 
 		lcd_printl(LINEC, "Transmitting...");

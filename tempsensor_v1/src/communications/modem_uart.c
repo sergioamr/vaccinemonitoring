@@ -186,7 +186,7 @@ void uart_reset_headers() {
 	uart.iRxCountBytes = 0; // Stats to know how much data are we getting on this buffer.
 }
 
-void sendCommand(const char *cmd) {
+void modem_send_command(const char *cmd) {
 
 	// Clear reset
 	uart_reset_headers();
@@ -292,7 +292,7 @@ uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 		lcd_print_progress();
 	}
 
-	strncpy(modem_lastCommand, cmdInput, 16);
+	zeroTerminateCopy(modem_lastCommand, cmdInput);
 	if (len < 16) {
 		if (cmd[len - 1] != '\n') {
 			strcat(cmd, "\r\n");
@@ -304,7 +304,7 @@ uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 		cmd = (char *) cmdInput;
 
 	while (attempts > 0) {
-		sendCommand(cmd);
+		modem_send_command(cmd);
 		if (!waitForReady(timeout)) {
 
 			// Transaction could be sucessful but the modem could have return an error.
@@ -329,14 +329,14 @@ uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 
 void uart_tx_nowait(const char *cmd) {
 	uart.bWaitForTXEnd = 1;
-	sendCommand(cmd);
+	modem_send_command(cmd);
 	while (uart.bWaitForTXEnd == 1) {
 		delay(5000);
 	}
 }
 
 uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime) {
-	sendCommand(cmd);
+	modem_send_command(cmd);
 	if (!waitForReady(promptTime)) {
 		uart_setOKMode();
 		return 1; // We found a prompt
