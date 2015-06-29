@@ -18,14 +18,19 @@
 /* BEGIN FACTORY CONFIGURATION 																							  */
 /**************************************************************************************************************************/
 
-#define NEXLEAF_SMS_GATEWAY       "00447482787262"
-
 #ifndef _DEBUG
+#define NEXLEAF_SMS_GATEWAY       " "
+
 #define REPORT_PHONE_NUMBER 	   NEXLEAF_SMS_GATEWAY
-#endif
 
 #define NEXLEAF_DEFAULT_SERVER_IP "54.241.2.213"
 #define NEXLEAF_DEFAULT_APN 	  "giffgaff.com"
+
+// Path for getting the configuration from the server
+// CONFIGURATION_URL_PATH/IMEI/1/
+#define CONFIGURATION_URL_PATH "/coldtrace/uploads/multi/v3"
+#define DATA_UPLOAD_URL_PATH "/coldtrace/intel/upload/"
+#endif
 
 // SMS alerts, it will send an SMS to the local testing number
 #define ALERTS_SMS 1
@@ -36,11 +41,6 @@
 
 // Thershold when the alarm will sound if there is a power cut (seconds)
 #define THRESHOLD_TIME_POWER_OUT_ALARM 60*60*1
-
-// Path for getting the configuration from the server
-// CONFIGURATION_URL_PATH/IMEI/1/
-#define CONFIGURATION_URL_PATH "/coldtrace/uploads/multi/v3" // ""
-#define DATA_UPLOAD_URL_PATH "/coldtrace/intel/upload/" // ""
 
 // Number of subsamples to capture per sample
 #define NUM_SAMPLES_CAPTURE 10
@@ -140,7 +140,19 @@
 /**************************************************************************************************************************/
 
 #ifdef _DEBUG
-#define REPORT_PHONE_NUMBER ""
+
+#define NEXLEAF_SMS_GATEWAY       "00000000000"
+
+#define REPORT_PHONE_NUMBER 	   NEXLEAF_SMS_GATEWAY
+
+#define NEXLEAF_DEFAULT_SERVER_IP "0.0.0.0"
+#define NEXLEAF_DEFAULT_APN 	  "test.com"
+
+// Path for getting the configuration from the server
+// CONFIGURATION_URL_PATH/IMEI/1/
+#define CONFIGURATION_URL_PATH "/config"
+#define DATA_UPLOAD_URL_PATH "/upload"
+
 #define ALERTS_SMS 1
 
 #define MAIN_SLEEP_TIME 100

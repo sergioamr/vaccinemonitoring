@@ -174,6 +174,8 @@ void config_setLastCommand(uint16_t lastCmd) {
 
 void config_incLastCmd() {
 	g_pSysCfg->lastCommand++;
+	if (g_pDevCfg->cfg.logs.commmands)
+		config_setLastCommand(g_pSysCfg->lastCommand);
 }
 
 // Runs the system in configuration/calibration mode
@@ -204,7 +206,7 @@ void config_send_configuration(char *number) {
 	sms_send_message_number(number, msg);
 
 	power = &g_pDevCfg->stBattPowerAlertParam;
-	sprintf(msg, "Power Active %d(%d mins) \nBatt (%d mins threshold %d)\n" \
+	sprintf(msg, "Power Active %d(%d mins) \nBatt (%d mins threshold %d)\n"
 			"\nIntervals\nSampling %d mins\nUpload %d mins\nReboot %d mins\nConfig %d",
 			power->enablePowerAlert, (int) power->minutesPower,
 			(int) power->minutesBattThresh, (int) power->battThreshold,
@@ -215,18 +217,18 @@ void config_send_configuration(char *number) {
 			(int) g_pDevCfg->sIntervalsMins.configurationFetch);
 	sms_send_message_number(number, msg);
 
-	sprintf(msg, "Gateway [%s]\r\n" \
-				 "SIM 1 APN [%s]\r\n" \
-				 "LAST ERROR [%s]\r\n" \
-			     "SIM 2 APN [%s]\r\n" \
-				 "LAST ERROR [%s]\r\n",
+	sprintf(msg, "Gateway [%s]\r\n"
+			"SIM 1 APN [%s]\r\n"
+			"LAST ERROR [%s]\r\n"
+			"SIM 2 APN [%s]\r\n"
+			"LAST ERROR [%s]\r\n",
 			g_pDevCfg->cfgGatewaySMS,
 			g_pDevCfg->SIM[0].cfgAPN,
 			g_pDevCfg->SIM[0].simLastError,
 
 			g_pDevCfg->SIM[1].cfgAPN,
 			g_pDevCfg->SIM[1].simLastError
-			);
+	);
 
 	sms_send_message_number(number, msg);
 #endif
@@ -234,21 +236,20 @@ void config_send_configuration(char *number) {
 
 extern int main_test();
 
+char g_bServiceMode = false;
+
 void config_init() {
 
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
 
-	if (!check_address_empty(g_pSysCfg->memoryInitialized)) {
-
-// Check if the user is pressing the service mode
-// Service Button was pressed during bootup. Rerun calibration
-		if (switch_check_service_pressed()) {
-			lcd_printf(LINEC, "Service Mode");
-			lcd_printl(LINEH, g_pSysCfg->firmwareVersion); // Show the firmware version
-			delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
-			g_pSysCfg->calibrationFinished = 0;
-		}
-
+	// Check if the user is pressing the service mode
+	// Service Button was pressed during bootup. Rerun calibration
+	if (switch_check_service_pressed()) {
+		g_bServiceMode = true;
+		lcd_printf(LINEC, "Service Mode");
+		delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
+		g_pSysCfg->calibrationFinished = 0;
+	} else if (!check_address_empty(g_pSysCfg->memoryInitialized)) {
 // Data structure changed, something failed.
 // Check firmware version?
 		if (g_pSysCfg->configStructureSize != sizeof(CONFIG_SYSTEM)) {
@@ -472,39 +473,80 @@ FRESULT config_read_ini_file() {
 
 	log_append_("Read INI");
 
-	n = ini_gets("SYSTEM", "Version", __DATE__, g_pDevCfg->cfgVersion, sizearray(g_pDevCfg->cfgVersion), CONFIG_INI_FILE);
-	if (n==0)
+	n = ini_gets("SYSTEM", "Version", __DATE__, g_pDevCfg->cfgVersion,
+			sizearray(g_pDevCfg->cfgVersion), CONFIG_INI_FILE);
+	if (n == 0)
 		return FR_NO_FILE;
 
 	cfg = &g_pDevCfg->cfg;
-	cfg->logs.system_log = ini_getbool(SECTION_LOGS, "SystemLog", 0, CONFIG_INI_FILE);
+	cfg->logs.system_log = ini_getbool(SECTION_LOGS, "SystemLog", 0,
+			CONFIG_INI_FILE);
 	cfg->logs.web_csv = ini_getbool(SECTION_LOGS, "WebCSV", 0, CONFIG_INI_FILE);
-	cfg->logs.server_config = ini_getbool(SECTION_LOGS, "ServerConfig", 0, CONFIG_INI_FILE);
-	cfg->logs.modem_transactions = ini_getbool(SECTION_LOGS, "Modem", 0, CONFIG_INI_FILE);
-	cfg->logs.sms_alerts = ini_getbool(SECTION_LOGS, "SMS_Alerts", 0, CONFIG_INI_FILE);
-	cfg->logs.sms_reports = ini_getbool(SECTION_LOGS, "SMS_Reports", 0, CONFIG_INI_FILE);
+	cfg->logs.server_config = ini_getbool(SECTION_LOGS, "ServerConfig", 0,
+			CONFIG_INI_FILE);
+	cfg->logs.modem_transactions = ini_getbool(SECTION_LOGS, "Modem", 0,
+			CONFIG_INI_FILE);
+	cfg->logs.sms_alerts = ini_getbool(SECTION_LOGS, "SMS_Alerts", 0,
+			CONFIG_INI_FILE);
+	cfg->logs.sms_reports = ini_getbool(SECTION_LOGS, "SMS_Reports", 0,
+			CONFIG_INI_FILE);
 
-	n = ini_gets(SECTION_SERVER, "GatewaySMS", NEXLEAF_SMS_GATEWAY, g_pDevCfg->cfgGatewaySMS, sizearray(g_pDevCfg->cfgGatewaySMS), CONFIG_INI_FILE);
-	n = ini_gets(SECTION_SERVER, "ReportSMS", REPORT_PHONE_NUMBER, g_pDevCfg->cfgReportSMS, sizearray(g_pDevCfg->cfgReportSMS), CONFIG_INI_FILE);
+	n = ini_gets(SECTION_SERVER, "GatewaySMS", NEXLEAF_SMS_GATEWAY,
+			g_pDevCfg->cfgGatewaySMS, sizearray(g_pDevCfg->cfgGatewaySMS),
+			CONFIG_INI_FILE);
 
-	n = ini_gets(SECTION_SERVER, "GatewayIP", NEXLEAF_DEFAULT_SERVER_IP, g_pDevCfg->cfgGatewayIP, sizearray(g_pDevCfg->cfgGatewayIP), CONFIG_INI_FILE);
-	n = ini_gets(SECTION_SERVER, "Config_URL", CONFIGURATION_URL_PATH, g_pDevCfg->cfgConfig_URL, sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
-	n = ini_gets(SECTION_SERVER, "Upload_URL", DATA_UPLOAD_URL_PATH, g_pDevCfg->cfgUpload_URL, sizearray(g_pDevCfg->cfgUpload_URL), CONFIG_INI_FILE);
+	if (g_bServiceMode) {
+		lcd_printf(LINEC, "SMS Gateway");
+		lcd_printf(LINEH, g_pDevCfg->cfgGatewaySMS);
+	}
 
-	n = ini_gets("SIM1", "APN", NEXLEAF_DEFAULT_APN, g_pDevCfg->SIM[0].cfgAPN, sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
-	n = ini_gets("SIM2", "APN", NEXLEAF_DEFAULT_APN, g_pDevCfg->SIM[1].cfgAPN, sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
+	n = ini_gets(SECTION_SERVER, "ReportSMS", REPORT_PHONE_NUMBER,
+			g_pDevCfg->cfgReportSMS, sizearray(g_pDevCfg->cfgReportSMS),
+			CONFIG_INI_FILE);
+
+	n = ini_gets(SECTION_SERVER, "GatewayIP", NEXLEAF_DEFAULT_SERVER_IP,
+			g_pDevCfg->cfgGatewayIP, sizearray(g_pDevCfg->cfgGatewayIP),
+			CONFIG_INI_FILE);
+
+	if (g_bServiceMode) {
+		lcd_printf(LINEC, "Gateway IP");
+		lcd_printf(LINEH, g_pDevCfg->cfgGatewayIP);
+	}
+
+	n = ini_gets(SECTION_SERVER, "Config_URL", CONFIGURATION_URL_PATH,
+			g_pDevCfg->cfgConfig_URL, sizearray(g_pDevCfg->cfgConfig_URL),
+			CONFIG_INI_FILE);
+	n = ini_gets(SECTION_SERVER, "Upload_URL", DATA_UPLOAD_URL_PATH,
+			g_pDevCfg->cfgUpload_URL, sizearray(g_pDevCfg->cfgUpload_URL),
+			CONFIG_INI_FILE);
+
+	n = ini_gets("SIM1", "APN", NEXLEAF_DEFAULT_APN, g_pDevCfg->SIM[0].cfgAPN,
+			sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
+	n = ini_gets("SIM2", "APN", NEXLEAF_DEFAULT_APN, g_pDevCfg->SIM[1].cfgAPN,
+			sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
 
 	intervals = &g_pDevCfg->sIntervalsMins;
-	intervals->sampling = ini_getl(SECTION_INTERVALS, "Sampling", PERIOD_SAMPLING, CONFIG_INI_FILE);
-	intervals->upload = ini_getl(SECTION_INTERVALS, "Upload", PERIOD_UPLOAD, CONFIG_INI_FILE); ;
-	intervals->systemReboot  = ini_getl(SECTION_INTERVALS, "Reboot", PERIOD_REBOOT, CONFIG_INI_FILE);
-	intervals->configurationFetch = ini_getl(SECTION_INTERVALS, "Configuration", PERIOD_CONFIGURATION_FETCH, CONFIG_INI_FILE);
-	intervals->smsCheck = ini_getl(SECTION_INTERVALS, "SMS_Check", PERIOD_SMS_CHECK, CONFIG_INI_FILE);
-	intervals->networkCheck = ini_getl(SECTION_INTERVALS, "Network_Check", PERIOD_NETWORK_CHECK, CONFIG_INI_FILE);
-	intervals->lcdOff = ini_getl(SECTION_INTERVALS, "LCD_off", PERIOD_LCD_OFF, CONFIG_INI_FILE);
-	intervals->alarmsCheck = ini_getl(SECTION_INTERVALS, "Alarms", PERIOD_ALARMS_CHECK, CONFIG_INI_FILE);
-	intervals->modemPullTime = ini_getl(SECTION_INTERVALS, "ModemPullTime", PERIOD_PULLTIME, CONFIG_INI_FILE);
-	intervals->batteryCheck = ini_getl(SECTION_INTERVALS, "BatteryCheck", PERIOD_BATTERY_CHECK, CONFIG_INI_FILE);
+	intervals->sampling = ini_getl(SECTION_INTERVALS, "Sampling",
+			PERIOD_SAMPLING, CONFIG_INI_FILE);
+	intervals->upload = ini_getl(SECTION_INTERVALS, "Upload", PERIOD_UPLOAD,
+			CONFIG_INI_FILE);
+	;
+	intervals->systemReboot = ini_getl(SECTION_INTERVALS, "Reboot",
+			PERIOD_REBOOT, CONFIG_INI_FILE);
+	intervals->configurationFetch = ini_getl(SECTION_INTERVALS, "Configuration",
+			PERIOD_CONFIGURATION_FETCH, CONFIG_INI_FILE);
+	intervals->smsCheck = ini_getl(SECTION_INTERVALS, "SMS_Check",
+			PERIOD_SMS_CHECK, CONFIG_INI_FILE);
+	intervals->networkCheck = ini_getl(SECTION_INTERVALS, "Network_Check",
+			PERIOD_NETWORK_CHECK, CONFIG_INI_FILE);
+	intervals->lcdOff = ini_getl(SECTION_INTERVALS, "LCD_off", PERIOD_LCD_OFF,
+			CONFIG_INI_FILE);
+	intervals->alarmsCheck = ini_getl(SECTION_INTERVALS, "Alarms",
+			PERIOD_ALARMS_CHECK, CONFIG_INI_FILE);
+	intervals->modemPullTime = ini_getl(SECTION_INTERVALS, "ModemPullTime",
+			PERIOD_PULLTIME, CONFIG_INI_FILE);
+	intervals->batteryCheck = ini_getl(SECTION_INTERVALS, "BatteryCheck",
+			PERIOD_BATTERY_CHECK, CONFIG_INI_FILE);
 
 #ifndef _DEBUG
 	//fr = f_rename(CONFIG_INI_FILE, "thermal.old");

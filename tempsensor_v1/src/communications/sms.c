@@ -305,7 +305,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 }
 
 uint8_t sms_send_message(char* pData) {
-	return sms_send_message_number(NEXLEAF_SMS_GATEWAY, pData);
+	return sms_send_message_number(g_pDevCfg->cfgGatewaySMS, pData);
 }
 
 void delallmsg() {
