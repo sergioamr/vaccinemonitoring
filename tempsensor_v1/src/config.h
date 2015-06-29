@@ -19,12 +19,12 @@
 /**************************************************************************************************************************/
 
 #ifndef _DEBUG
-#define NEXLEAF_SMS_GATEWAY       " "
+#define NEXLEAF_SMS_GATEWAY       "0000"
 
 #define REPORT_PHONE_NUMBER 	   NEXLEAF_SMS_GATEWAY
 
 #define NEXLEAF_DEFAULT_SERVER_IP "54.241.2.213"
-#define NEXLEAF_DEFAULT_APN 	  "giffgaff.com"
+#define NEXLEAF_DEFAULT_APN 	  "test.com"
 
 // Path for getting the configuration from the server
 // CONFIGURATION_URL_PATH/IMEI/1/
@@ -47,6 +47,7 @@
 
 //Sampling configuration
 #ifndef _DEBUG
+#define PERIOD_UNDEFINED		60
 #define PERIOD_SAMPLING			5		//in minutes
 #define PERIOD_UPLOAD			20		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
@@ -141,7 +142,7 @@
 
 #ifdef _DEBUG
 
-#define NEXLEAF_SMS_GATEWAY       "00000000000"
+#define NEXLEAF_SMS_GATEWAY       "0000"
 
 #define REPORT_PHONE_NUMBER 	   NEXLEAF_SMS_GATEWAY
 

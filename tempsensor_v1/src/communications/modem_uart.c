@@ -202,9 +202,13 @@ void modem_send_command(const char *cmd) {
 	uart.iTxLen = strlen(cmd);
 
 	if (g_pDevCfg->cfg.logs.modem_transactions) {
+#ifdef _DEBUG
 		log_modem("-------- ");
+#endif
 		log_modem(get_simplified_date_string(NULL));
+#ifdef _DEBUG
 		log_modem("-------- \r\n");
+#endif
 		log_modem(cmd);
 	}
 

@@ -8,8 +8,8 @@
 #ifndef TEMPSENSOR_V1_UART_H_
 #define TEMPSENSOR_V1_UART_H_
 
-#define TX_LEN   			256
-#define RX_LEN   			512
+#define TX_LEN   			180
+#define RX_LEN   			480
 
 typedef struct {
 	int8_t iActive;
