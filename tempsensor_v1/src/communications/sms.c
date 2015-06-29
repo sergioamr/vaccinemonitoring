@@ -157,7 +157,7 @@ int8_t sms_process_messages() {
 
 	memset(SM_ME, 0, sizeof(SM_ME));
 
-	lcd_printf(LINEC, "Fetching SMSs");
+	lcd_printf(LINEC, "Reading SMSs");
 	lcd_printf(LINE2, "SIM %d ", config_getSelectedSIM() + 1);
 
 	//check if messages are available
@@ -182,7 +182,7 @@ int8_t sms_process_messages() {
 		return UART_SUCCESS;
 	}
 
-	lcd_printf(LINEC, "%d Config sms", usedr);
+	lcd_printf(LINEC, "%d sms", usedr);
 	lcd_printl(LINE2, "Msg Processing..");
 
 	uart_tx("AT+CSDH=0\r\n"); // Disable extended output
@@ -247,12 +247,14 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	if (pData==NULL || strlen(pData)==0)
 		return UART_SUCCESS;
 
+	/*
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_clear();
 		lcd_printf(LINE1, "SYNC SMS %d ", g_pDevCfg->cfgSIM_slot + 1);
 		lcd_printl(LINE2, szPhoneNumber);
 		lcd_disable_verbose();
 	}
+	*/
 
 	strcat(pData, ctrlZ);
 

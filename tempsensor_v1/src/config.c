@@ -281,8 +281,8 @@ void config_init() {
 	strcpy(g_pDevCfg->cfgConfig_URL, CONFIGURATION_URL_PATH);
 	strcpy(g_pDevCfg->cfgUpload_URL, DATA_UPLOAD_URL_PATH);
 
-	config_setSIMError(&g_pDevCfg->SIM[0], '+', NO_ERROR, "*1 NOERROR*");
-	config_setSIMError(&g_pDevCfg->SIM[1], '+', NO_ERROR, "*2 NOERROR*");
+	config_setSIMError(&g_pDevCfg->SIM[0], '+', NO_ERROR, "1 OK");
+	config_setSIMError(&g_pDevCfg->SIM[1], '+', NO_ERROR, "2 OK");
 
 	strcpy(g_pDevCfg->SIM[0].cfgAPN, NEXLEAF_DEFAULT_APN);
 	strcpy(g_pDevCfg->SIM[1].cfgAPN, NEXLEAF_DEFAULT_APN);

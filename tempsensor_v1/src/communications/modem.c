@@ -85,7 +85,7 @@ uint16_t CME_fatalErrors[] = { 10, 11, 12, 13, 14, 15, 30 };
  CMS ERROR: 30	Unknown subscriber
  CMS ERROR: 38	Network out of order
  */
-uint16_t CMS_fatalErrors[] = { 30, 38 };
+uint16_t CMS_fatalErrors[] = { 10, 30, 38, 310 };
 
 // Check against all the errors that could kill the SIM card operation
 uint8_t modem_isSIM_Operational() {
@@ -253,6 +253,9 @@ int modem_connect_network(uint8_t attempts) {
 			return UART_ERROR;
 	}
 
+	if (!config_isSimOperational())
+		return UART_ERROR;
+
 	// enable network registration and location information unsolicited result code;
 	// if there is a change of the network cell. +CGREG: <stat>[,<lac>,<ci>]
 
@@ -332,12 +335,6 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 
 	szToken[0] = errorToken;  // Minimal SPRINTF support
 	szToken[1] = 0;
-
-	if (errorCode == 10 || (errorToken=='S' && errorCode == 310)) {
-		lcd_printl(LINEE, "Not inserted");
-		config_SIM_not_operational();
-	} else
-		lcd_printl(LINEE, szCode);
 
 	log_appendf("SIM %d CMD[%s] CM%s ERROR %d", config_getSelectedSIM() + 1,
 			&modem_lastCommand[0], szToken, errorCode);
@@ -448,9 +445,6 @@ int8_t modem_first_init() {
 			 */
 
 			if (!modem_isSIM_Operational()) {
-				log_appendf("ERROR: SIM %d FAILED [%s]",
-						config_getSelectedSIM(), config_getSIM()->simLastError);
-				lcd_printf(LINEE, config_getSIM()->simLastError);
 				iSIM_Error++;
 			}
 		}
@@ -782,6 +776,10 @@ int8_t modem_set_max_messages() {
 void modem_pull_time() {
 	int i;
 	int res = UART_FAILED;
+
+	if (!config_isSimOperational())
+		return;
+
 	for (i = 0; i < NETWORK_PULLTIME_ATTEMPTS; i++) {
 		res = uart_tx("AT+CCLK?\r\n");
 		if (res == UART_SUCCESS)

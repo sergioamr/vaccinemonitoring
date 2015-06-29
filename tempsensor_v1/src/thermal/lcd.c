@@ -213,17 +213,9 @@ void lcd_show() {
 
 	if (iCnt != 0xff) {
 		if (g_pSysState->temp.state[iCnt].status!=0) {
-			strcat(lcdBuffer, "ALERT ");
-			strcat(lcdBuffer, SensorName[iCnt]);
-			strcat(lcdBuffer, " ");
-			strcat(lcdBuffer, temperature_getString(iCnt));
-			strcat(lcdBuffer, "C ");
+			sprintf(lcdBuffer,"ALERT %s %sC", SensorName[iCnt], temperature_getString(iCnt));
 		} else {
-			strcat(lcdBuffer, "Sensor ");
-			strcat(lcdBuffer, SensorName[iCnt]);
-			strcat(lcdBuffer, " ");
-			strcat(lcdBuffer, temperature_getString(iCnt));
-			strcat(lcdBuffer, "C ");
+			sprintf(lcdBuffer,"Sensor %s %sC", SensorName[iCnt], temperature_getString(iCnt));
 		}
 	}
 

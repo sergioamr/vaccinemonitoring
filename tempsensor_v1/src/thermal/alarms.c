@@ -86,7 +86,7 @@ void alarm_test_sensor(int id) {
 			s->status = STATUS_NO_ALARM;
 			tem->alarm_time = 0;
 			g_pSysState->system.switches.button_buzzer_override = false;
-			log_appendf("Alarm %d recovered ", id);
+			log_appendf("Alarm %d OK", id);
 		}
 		return;
 	}
