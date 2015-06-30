@@ -70,7 +70,7 @@ int8_t http_setup() {
 	int uart_state = UART_FAILED;
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
-	if (!config_isSimOperational())
+	if (!state_isSimOperational())
 		return UART_ERROR;
 
 	if (sim->cfgAPN[0] == '\0')
@@ -149,7 +149,7 @@ int http_check_error(int *retry) {
 int http_open_connection(int data_length) {
 	char cmd[80];
 
-	if (!config_isSimOperational())
+	if (!state_isSimOperational())
 		return UART_ERROR;
 
 	// Test post URL
@@ -170,7 +170,7 @@ int http_get_configuration() {
 	int retry = 1;
 	int attempts = HTTP_COMMAND_ATTEMPTS;
 
-	if (!config_isSimOperational())
+	if (!state_isSimOperational())
 		return UART_ERROR;
 
 	// #HTTPQRY send HTTP GET, HEAD or DELETE request

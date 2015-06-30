@@ -463,10 +463,10 @@ int config_process_configuration();
 int config_parse_configuration(char *msg);
 
 // Flags the sim as not working
-void config_SIM_not_operational();
+void state_SIM_not_operational();
 
 // Flags the sim as working again
-void config_SIM_operational();
+void state_SIM_operational();
 
 uint8_t config_is_SIM_configurable(int simSlot);
 
@@ -501,7 +501,7 @@ uint8_t config_is_SIM_configurable(int simSlot);
 #define COMMAND_FIRST_INIT 2500
 #define COMMAND_END 99
 
-uint8_t config_isSimOperational();
+uint8_t state_isSimOperational();
 void config_init();
 void config_send_configuration(char *number);
 void config_reconfigure();

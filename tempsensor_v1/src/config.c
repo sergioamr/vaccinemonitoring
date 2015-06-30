@@ -83,8 +83,10 @@ void calibrate_device() {
 void config_reset_error(SIM_CARD_CONFIG *sim) {
 	sim->simErrorToken = '\0';
 	sim->simErrorState = NO_ERROR;
-	config_SIM_operational();
+	state_SIM_operational();
 }
+
+//TODO This should go to the state machine
 
 void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
 		const char *error) {
@@ -110,12 +112,9 @@ void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
 		state_setSMS_notSupported(sim);
 
 	state_sim_failure(sim);
+	modem_check_working_SIM();
 
 	event_LCD_turn_on();
-}
-
-uint8_t inline config_isSimOperational() {
-	return g_pDevCfg->SIM[g_pDevCfg->cfgSIM_slot].simOperational;
 }
 
 // Returns the current structure containing the info for the current SIM selected
@@ -137,14 +136,6 @@ uint8_t config_getSelectedSIM() {
 		g_pDevCfg->cfgSIM_slot = 0;
 
 	return g_pDevCfg->cfgSIM_slot;
-}
-
-void config_SIM_not_operational() {
-	g_pDevCfg->SIM[g_pDevCfg->cfgSIM_slot].simOperational = 0;
-}
-
-void config_SIM_operational() {
-	g_pDevCfg->SIM[g_pDevCfg->cfgSIM_slot].simOperational = 1;
 }
 
 uint8_t config_is_SIM_configurable(int simSlot) {

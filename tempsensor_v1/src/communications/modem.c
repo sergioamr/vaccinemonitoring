@@ -87,10 +87,10 @@ uint16_t CME_fatalErrors[] = { 10, 11, 12, 13, 15, 30 };
 uint16_t CMS_fatalErrors[] = { 10, 30, 38, 310 };
 
 // Check against all the errors that could kill the SIM card operation
-uint8_t modem_isSIM_Operational() {
+uint8_t modem_check_working_SIM() {
 	int t = 0;
 
-	if (!config_isSimOperational())
+	if (!state_isSimOperational())
 		return false;
 
 	char token = '\0';
@@ -98,18 +98,18 @@ uint8_t modem_isSIM_Operational() {
 	if (token == 'S')
 		for (t = 0; t < sizeof(CMS_fatalErrors) / sizeof(uint16_t); t++)
 			if (CMS_fatalErrors[t] == lastError) {
-				config_SIM_not_operational();
+				state_SIM_not_operational();
 				return false;
 			}
 
 	if (token == 'E')
 		for (t = 0; t < sizeof(CME_fatalErrors) / sizeof(uint16_t); t++)
 			if (CME_fatalErrors[t] == lastError) {
-				config_SIM_not_operational();
+				state_SIM_not_operational();
 				return false;
 			}
 
-	config_SIM_operational();
+	state_SIM_operational();
 	return true;
 }
 
@@ -255,7 +255,7 @@ int modem_connect_network(uint8_t attempts) {
 			return UART_ERROR;
 	}
 
-	if (!config_isSimOperational())
+	if (!state_isSimOperational())
 		return UART_ERROR;
 
 	// enable network registration and location information unsolicited result code;
@@ -323,7 +323,7 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	config_setSIMError(sim, errorToken, errorCode, szCode);
 
 	// Check the error codes to figure out if the SIM is still functional
-	modem_isSIM_Operational();
+	modem_check_working_SIM();
 
 	//szToken[0] = errorToken;  // Minimal SPRINTF support
 	//szToken[1] = 0;
@@ -434,7 +434,7 @@ int8_t modem_first_init() {
 			 *
 			 */
 
-			if (!modem_isSIM_Operational()) {
+			if (!state_isSimOperational()) {
 				iSIM_Error++;
 			}
 		}
@@ -495,7 +495,7 @@ int modem_swap_SIM() {
 #endif
 
 	// Just send the message if we dont have errors.
-	if (modem_isSIM_Operational()) {
+	if (state_isSimOperational()) {
 		sms_send_heart_beat(); // Neccessary?
 		res = UART_SUCCESS;
 	} else {
@@ -768,7 +768,7 @@ void modem_pull_time() {
 	int i;
 	int res = UART_FAILED;
 
-	if (!config_isSimOperational())
+	if (!state_isSimOperational())
 		return;
 
 	for (i = 0; i < NETWORK_PULLTIME_ATTEMPTS; i++) {
@@ -891,9 +891,6 @@ void modem_init() {
 #endif
 
 	http_setup();
-
-	// Check if the network/sim card works
-	modem_isSIM_Operational();
 }
 
 #ifdef POWER_SAVING_ENABLED

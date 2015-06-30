@@ -289,6 +289,9 @@ uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 		uint8_t attempts) {
 	char *cmd = modem_lastCommand;
 
+	if (!state_isSimOperational())
+		return UART_FAILED;
+
 	int len = strlen(cmdInput);
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_print_progress();
@@ -381,6 +384,8 @@ uint8_t uart_tx(const char *cmd) {
 	int uart_state;
 	int transaction_completed;
 
+	if (!state_isSimOperational())
+		return UART_FAILED;
 
 	uart_reset_headers();
 
@@ -398,8 +403,7 @@ uint8_t uart_tx(const char *cmd) {
 			lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2], LINE2); // Display the OK message
 		}
 #endif
-	} else
-		modem_check_uart_error();
+	}
 
 	return uart_state;
 }

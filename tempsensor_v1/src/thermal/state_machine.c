@@ -107,6 +107,18 @@ void state_sim_failure(SIM_CARD_CONFIG *sim) {
 /* NETWORK STATE AND STATUS */
 /***********************************************************************************************************************/
 
+uint8_t inline state_isSimOperational() {
+	return g_pDevCfg->SIM[g_pDevCfg->cfgSIM_slot].simOperational;
+}
+
+void state_SIM_not_operational() {
+	g_pDevCfg->SIM[g_pDevCfg->cfgSIM_slot].simOperational = 0;
+}
+
+void state_SIM_operational() {
+	g_pDevCfg->SIM[g_pDevCfg->cfgSIM_slot].simOperational = 1;
+}
+
 NETWORK_SERVICE inline *state_getCurrentService() {
 	if (g_pSysState->network_mode < 0 || g_pSysState->network_mode > 1)
 		g_pSysState->network_mode = 0;

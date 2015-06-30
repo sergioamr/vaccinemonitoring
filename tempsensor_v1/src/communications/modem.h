@@ -53,6 +53,7 @@ int8_t modem_enter_powersave_mode();
 int8_t modem_exit_powersave_mode();
 #endif
 
+uint8_t modem_check_working_SIM();
 int modem_getSignal();
 void modem_init();
 void modem_getExtraInfo();
