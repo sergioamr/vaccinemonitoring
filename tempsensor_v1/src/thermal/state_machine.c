@@ -99,6 +99,29 @@ void state_sim_failure(SIM_CARD_CONFIG *sim) {
 	// 69 - "Requested facility not implemented"
 	// This cause indicates that the network is unable to provide the requested short message service.
 
+	char line1[17];
+	int t;
+	int split = 0;
+
+	// Split line looking for a space
+	int len = strlen(sim->simLastError);
+	if (len>14) {
+		for (t=16; t>6; t--) {
+			if (sim->simLastError[t]==' ') {
+				split=t;
+				break;
+			}
+		}
+
+		if (split>0) {
+			memcpy(line1, sim->simLastError, split);
+			line1[split]=0;
+			lcd_printl(LINEC, line1);
+			lcd_printl(LINEE, &sim->simLastError[split+1]);
+			return;
+		}
+	}
+
 	lcd_printl(LINEC, "SIM ERROR");
 	lcd_printl(LINEE, sim->simLastError);
 }
