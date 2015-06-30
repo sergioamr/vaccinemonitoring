@@ -400,7 +400,7 @@ uint8_t uart_tx(const char *cmd) {
 
 	uart_reset_headers();
 
-	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 4);
+	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 2);
 	if (uart.iRXHeadIdx > uart.iRXTailIdx)
 		return transaction_completed;
 
