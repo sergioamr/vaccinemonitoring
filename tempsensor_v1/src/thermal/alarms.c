@@ -126,6 +126,11 @@ void alarm_test_sensor(int id) {
 	alarm_error: s->state.alarm = true;
 	state_alarm_on(msg);
 	alarm_sms_sensor(id, elapsed);
+
+	// Force the upload of data to the server in 15 seconds
+	event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 5);
+	event_force_event_by_id(EVT_SAVE_SAMPLE_TEMP, 10);
+	event_force_event_by_id(EVT_UPLOAD_SAMPLES, 15);
 }
 
 void alarm_monitor() {
