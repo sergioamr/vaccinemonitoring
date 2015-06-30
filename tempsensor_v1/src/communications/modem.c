@@ -486,7 +486,7 @@ int modem_swap_SIM() {
 	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
 	g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;
 
-	lcd_printf(LINEC, "SIM %d Active", g_pDevCfg->cfgSIM_slot + 1);
+	lcd_printf(LINEC, "SIM %d", g_pDevCfg->cfgSIM_slot + 1);
 	modem_init();
 	modem_getExtraInfo();
 
