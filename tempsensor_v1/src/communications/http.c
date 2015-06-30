@@ -49,7 +49,7 @@ uint8_t http_enable() {
 
 	sim->simErrorState = 0;
 	do {
-		uart_tx("AT#SGACT=1,1\r\n");
+		uart_tx("#SGACT=1,1\r\n");
 		// CME ERROR: 555 Activation failed
 		// CME ERROR: 133 Requested service option not subscribed
 		uart_state = uart_getTransactionState();

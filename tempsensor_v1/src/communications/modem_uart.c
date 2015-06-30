@@ -288,6 +288,7 @@ char modem_lastCommand[16];
 uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 		uint8_t attempts) {
 	char *cmd = modem_lastCommand;
+	char idx = 0;
 
 	if (!state_isSimOperational())
 		return UART_FAILED;
@@ -297,16 +298,25 @@ uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 		lcd_print_progress();
 	}
 
-	zeroTerminateCopy(modem_lastCommand, cmdInput);
-	if (len < 16) {
-		if (cmd[len - 1] != '\n') {
-			strcat(cmd, "\r\n");
+	// Append AT and
+	if (!uart.bRXWaitForReturn && len < sizeof(modem_lastCommand)+1) {
+		if (cmdInput[0]!='A') {
+			modem_lastCommand[0]='A';
+			modem_lastCommand[1]='T';
+ 			idx=2;
+		}
+		strcpy(&modem_lastCommand[idx], cmdInput);
+
+		if (cmdInput[len - 1] != '\n') {
+			strcat(modem_lastCommand, "\r\n");
 			_NOP();
 		} else {
 			_NOP();
 		}
-	} else
+	} else {
+		zeroTerminateCopy(modem_lastCommand, cmdInput);
 		cmd = (char *) cmdInput;
+	}
 
 	while (attempts > 0) {
 		modem_send_command(cmd);
