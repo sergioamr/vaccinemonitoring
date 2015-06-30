@@ -16,7 +16,7 @@ extern "C"
 {
 #endif
 
-#define MINUTES_BEFORE_REBOOT 5
+#define MINUTES_BEFORE_REBOOT 20
 void rtc_dead_mans_switch();
 //*****************************************************************************
 //
