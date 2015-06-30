@@ -582,7 +582,7 @@ void events_init() {
 			MINUTES_(PERIOD_SMS_CHECK), g_pDevCfg->sIntervalsMins.smsCheck);
 
 	events_register(EVT_LCD_OFF, "LOF", 1, &event_display_off,
-			MINUTES_(PERIOD_LCD_OFF), NULL);
+			MINUTES_(PERIOD_LCD_OFF), g_pDevCfg->sIntervalsMins.lcdOff);
 
 	events_register(EVT_ALARMS_CHECK, "ALR", 1, &events_health_check,
 			MINUTES_(PERIOD_ALARMS_CHECK),  g_pDevCfg->sIntervalsMins.alarmsCheck);
