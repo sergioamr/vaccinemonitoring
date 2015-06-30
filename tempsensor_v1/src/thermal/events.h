@@ -48,13 +48,13 @@ typedef enum {
 
 typedef struct {
 	EVENT_IDS id;
-	char name[8];
+	char name[4];
 	void (*callback)(void *, time_t);
-	time_t nextEventRun;
-	time_t lastEventRun;
-	time_t interval_secs;    // Interval between events in minutes
-	time_t offset_secs; // Minute of the current day to start this event
-					  // 0 is now
+	uint32_t nextEventRun;
+	uint32_t lastEventRun;
+	uint32_t interval_secs; // Interval between events in seconds
+	uint16_t offset_secs;   // Seconds to offset the start of this event
+
 } EVENT;
 
 typedef struct {

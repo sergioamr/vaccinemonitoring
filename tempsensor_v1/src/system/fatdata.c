@@ -7,7 +7,10 @@ FATFS* fs /* File system object */
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 FATFS FatFs; /* Work area (file system object) for logical drive */
-char g_szFatFileName[64];
+#pragma SET_DATA_SECTION()
+
+#pragma SET_DATA_SECTION(".helpers")
+char g_szFatFileName[32];
 #pragma SET_DATA_SECTION()
 
 char g_bFatInitialized = false;

@@ -62,7 +62,7 @@ char ESC[2] = { 0x1B, 0 };
  *  Note: <Lac> and <Ci> are reported only if <mode>=2 and the mobile is registered on some network cell.
  */
 
-const char NETWORK_MODE_0[] = "Network disabled";
+const char NETWORK_MODE_0[] = "Net disabled";
 const char * const NETWORK_STATUS[6] = { "initializing", "connected",
 		"searching net", "reg denied", "unknown state", "roaming net" };
 const char NETWORK_MODE_2[] = "Registered";
@@ -146,7 +146,7 @@ int modem_getNetworkStatus(int *mode, int *status) {
 
 	sprintf(command_result, "+%s: ", modem_getNetworkServiceCommand());
 
-	uart_txf("AT+%s?\r\n", modem_getNetworkServiceCommand());
+	uart_txf("AT+%s?", modem_getNetworkServiceCommand());
 
 	lcd_setVerboseMode(verbose);
 
@@ -421,7 +421,7 @@ int8_t modem_first_init() {
 
 		lcd_disable_verbose();
 		//uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted (not used anymore)
-		uart_tx_timeout("AT\r\n", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
+		uart_tx_timeout("AT", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
 		lcd_enable_verbose();
 
 		uint8_t nsims = SYSTEM_NUM_SIM_CARDS;
@@ -455,7 +455,7 @@ int8_t modem_first_init() {
 				}
 			break;
 		case 2:
-			lcd_printf(LINEE, "SIMS FAILED ");
+			lcd_printf(LINEE, "SIMS FAILED");
 			break;
 		}
 
@@ -555,8 +555,8 @@ int8_t modem_getSMSCenter() {
 int8_t modem_getOwnNumber() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	int8_t state;
-	modem_ignore_next_errors(1);
-	state = modem_parse_string("AT+CNUM?\r\n", "CNUM: \"", sim->cfgPhoneNum,
+	modem_ignore_next_errors(1); // Ignore 1 error since we know our sim cards dont support this command
+	state = modem_parse_string("AT+CNUM?", "CNUM: \"", sim->cfgPhoneNum,
 			GW_MAX_LEN + 1);
 	modem_ignore_next_errors(0);
 	return state;
@@ -587,7 +587,7 @@ void modem_getIMEI() {
 	char IMEI[IMEI_MAX_LEN + 1];
 	char *token = NULL;
 
-	uart_tx("AT+CGSN\r\n");
+	uart_tx("AT+CGSN");
 	memset(IMEI, 0, sizeof(IMEI));
 
 	token = strstr(uart_getRXHead(), "OK");
@@ -650,14 +650,14 @@ void modem_survey_network() {
 			lcd_printl(LINEC, "MCC DISCOVER");
 
 		// Displays info for the only serving cell
-		uart_tx("AT#CSURVEXT=0\r\n");
+		uart_tx("AT#CSURVEXT=0");
 		uart_state = uart_getTransactionState();
 
 		if (uart_state == UART_SUCCESS) {
 
 			// We just want only one full buffer. The data is on the first few characters of the stream
 			uart_setNumberOfPages(1);
-			uart_tx_timeout("AT#CSURV\r\n", TIMEOUT_CSURV, 10); // #CSURV - Network Survey
+			uart_tx_timeout("AT#CSURV", TIMEOUT_CSURV, 10); // #CSURV - Network Survey
 			// Maximum timeout is 2 minutes
 
 			//Execution command allows to perform a quick survey through channels
@@ -752,7 +752,7 @@ int8_t modem_set_max_messages() {
 	char memory[16];
 	int storedmessages = 0;
 	//check if messages are available
-	uart_tx("AT+CPMS?\r\n");
+	uart_tx("AT+CPMS?");
 	uart_state = uart_getTransactionState();
 	if (uart_state == UART_SUCCESS) {
 		PARSE_FINDSTR_RET(token, "CPMS: \"", UART_FAILED);
@@ -775,7 +775,7 @@ void modem_pull_time() {
 		return;
 
 	for (i = 0; i < NETWORK_PULLTIME_ATTEMPTS; i++) {
-		res = uart_tx("AT+CCLK?\r\n");
+		res = uart_tx("AT+CCLK?");
 		if (res == UART_SUCCESS)
 			res = modem_parse_time(&g_tmCurrTime);
 
@@ -800,7 +800,7 @@ void modem_pull_time() {
 // Read command returns the selected PLMN selector <list> from the SIM/USIM
 void modem_getPreferredOperatorList() {
 	// List of networks for roaming
-	uart_tx("AT+CPOL?\r\n");
+	uart_tx("AT+CPOL?");
 }
 
 void modem_init() {
@@ -874,10 +874,10 @@ void modem_init() {
 #endif
 
 #ifdef POWER_SAVING_ENABLED
-	uart_tx("AT+CFUN=5\r\n"); //full modem functionality with power saving enabled (triggered via DTR)
+	uart_tx("AT+CFUN=5"); //full modem functionality with power saving enabled (triggered via DTR)
 	delay(MODEM_TX_DELAY1);
 
-	uart_tx("AT+CFUN?\r\n");//full modem functionality with power saving enabled (triggered via DTR)
+	uart_tx("AT+CFUN?");//full modem functionality with power saving enabled (triggered via DTR)
 	delay(MODEM_TX_DELAY1);
 #endif
 

@@ -197,9 +197,9 @@ void modem_send_command(const char *cmd) {
 	uart.iTxLen = strlen(cmd);
 
 	if (g_pDevCfg->cfg.logs.modem_transactions) {
-		log_modem("-------- ");
+		log_modem("--- ");
 		log_modem(get_simplified_date_string(NULL));
-		log_modem("-------- \r\n");
+		log_modem("--- \r\n");
 		log_modem(cmd);
 	}
 
@@ -354,7 +354,7 @@ uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime) {
 uint32_t g_iModemMaxWait = MODEM_TX_DELAY1;
 
 void uart_setDelay(uint32_t delay) {
-	g_iModemMaxWait = MODEM_TX_DELAY1;
+	g_iModemMaxWait = delay;
 }
 
 uint8_t isTransactionOK() {
@@ -389,7 +389,7 @@ uint8_t uart_tx(const char *cmd) {
 
 	uart_reset_headers();
 
-	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 10);
+	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 4);
 	if (uart.iRXHeadIdx > uart.iRXTailIdx)
 		return transaction_completed;
 
