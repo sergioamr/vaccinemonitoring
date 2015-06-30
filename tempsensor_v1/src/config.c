@@ -193,7 +193,7 @@ void config_send_configuration(char *number) {
 	char temp[64];
 	int i;
 
-	msg[0] = 0;
+	zeroString(msg);
 	for (i = 0; i < SYSTEM_NUM_SENSORS; i++) {
 		alert = &g_pDevCfg->stTempAlertParams[i];
 		sprintf(temp, "%s(C%dm H%dm tC %d tH %d)\r\n", SensorName[i],

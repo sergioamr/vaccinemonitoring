@@ -9,8 +9,7 @@
 #define TEMPSENSOR_V1_STRINGUTILS_H_
 
 
-
-
+#define zeroString(dest) dest[0]=0;
 #define zeroTerminateCopy(dest, org) strncpy(dest, org, sizeof(dest)-1); dest[sizeof(dest)-1]=0;
 
 extern char* itoa_pad(int num);

@@ -15,9 +15,9 @@ extern const char *g_szLastSD_CardError;
 
 char* get_YMD_String(struct tm* timeData);
 char* get_current_fileName(struct tm* timeData, const char *folder, const char *ext);
-char* get_date_string(struct tm* timeData, const char *dateSeperator,
+void get_date_string(char* dest, struct tm* timeData, const char *dateSeperator,
 		const char *dateTimeSeperator, const char *timeSeparator, uint8_t includeTZ);
-char* get_simplified_date_string(struct tm* timeData);
+void get_simplified_date_string(char* dest, struct tm* timeData);
 void parse_time_from_line(struct tm* timeToConstruct, char* formattedLine);
 void offset_timestamp(struct tm* dateToOffset, int intervalMultiplier);
 int date_within_interval(struct tm* timeToCompare, struct tm* baseTime, int interval);

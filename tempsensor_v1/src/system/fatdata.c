@@ -52,47 +52,33 @@ char* get_YMD_String(struct tm* timeData) {
 	return g_szYMDString;
 }
 
-char* get_date_string(struct tm* timeData, const char* dateSeperator,
+void get_date_string(char *dest, struct tm* timeData, const char* dateSeperator,
 		const char* dateTimeSeperator, const char* timeSeparator,
 		uint8_t includeTZ) {
 
-#pragma SET_DATA_SECTION(".aggregate_vars")
-	static char g_szDateString[24]; // "YYYY-MM-DD HH:MM:SS IST"
-#pragma SET_DATA_SECTION()
-
-	g_szDateString[0] = 0;
 	if (timeData->tm_year < 1900 || timeData->tm_year > 3000) // Working for 1000 years?
-		strcpy(g_szDateString, "0000");
+		strcat(dest, "0000");
 	else
-		strcpy(g_szDateString, itoa_nopadding(timeData->tm_year));
+		strcat(dest, itoa_nopadding(timeData->tm_year));
 
-	strcat(g_szDateString, dateSeperator);
-	strcat(g_szDateString, itoa_pad(timeData->tm_mon));
-	strcat(g_szDateString, dateSeperator);
-	strcat(g_szDateString, itoa_pad(timeData->tm_mday));
-	strcat(g_szDateString, dateTimeSeperator);
-	strcat(g_szDateString, itoa_pad(timeData->tm_hour));
-	strcat(g_szDateString, timeSeparator);
-	strcat(g_szDateString, itoa_pad(timeData->tm_min));
-	strcat(g_szDateString, timeSeparator);
-	strcat(g_szDateString, itoa_pad(timeData->tm_sec));
-
-	//[TODO] Check timezone it doesnt work
-
-	/*
-	 if (includeTZ && timeData->tm_isdst) {
-	 strcat(g_szDateString, " DST");
-	 }
-	 */
-	return g_szDateString;
+	strcat(dest, dateSeperator);
+	strcat(dest, itoa_pad(timeData->tm_mon));
+	strcat(dest, dateSeperator);
+	strcat(dest, itoa_pad(timeData->tm_mday));
+	strcat(dest, dateTimeSeperator);
+	strcat(dest, itoa_pad(timeData->tm_hour));
+	strcat(dest, timeSeparator);
+	strcat(dest, itoa_pad(timeData->tm_min));
+	strcat(dest, timeSeparator);
+	strcat(dest, itoa_pad(timeData->tm_sec));
 }
 
 // FORMAT IN FORMAT [YYYYMMDD:HHMMSS] Used for SMS timestamp
-char* get_simplified_date_string(struct tm* timeData) {
+void get_simplified_date_string(char *dest, struct tm* timeData) {
 	if (timeData==NULL)
 		timeData=&g_tmCurrTime;
 
-	return get_date_string(timeData, "", "", "", false);
+	return get_date_string(dest, timeData, "", "", "", false);
 }
 
 void parse_time_from_line(struct tm* timeToConstruct, char* formattedLine) {
@@ -344,7 +330,9 @@ FRESULT log_append_(char *text) {
 
 	rtc_getlocal(&g_tmCurrTime);
 
-	sprintf(szLog, "[%s] ", get_simplified_date_string(NULL));
+	strcpy(szLog, "[");
+	get_simplified_date_string(szLog, NULL);
+	strcat(szLog, "] ");
 
 	len = strlen(szLog);
 	fr = f_write(&fobj, szLog, len, (UINT *) &bw);
@@ -447,14 +435,15 @@ const char *getPowerStateString() {
 FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 	char szLog[120];
 	UINT bw = 0;
-	char *date;
+
 	FRESULT fr;
 	int8_t iBatteryLevel;
 	int8_t iSignalLevel;
 	char *network_state;
 
-	date = get_date_string(&g_tmCurrTime, "-", " ", ":", 1);
-	fr = f_write(fobj, date, strlen(date), &bw);
+	szLog[0]=0;
+	get_date_string(szLog, &g_tmCurrTime, "-", " ", ":", 1);
+	fr = f_write(fobj, szLog, strlen(szLog), &bw);
 	if (fr != FR_OK)
 		return fr;
 
@@ -571,7 +560,7 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 		memset(szLog, 0, sizeof(szLog));
 		strcat(szLog, "$TS=");
 
-		strcat(szLog,get_simplified_date_string(&tempDate));
+		get_simplified_date_string(szLog, &tempDate);
 /*
 		strcat(szLog, itoa_pad((tempDate.tm_year + 1900)));
 		strcat(szLog, itoa_pad(tempDate.tm_mon));

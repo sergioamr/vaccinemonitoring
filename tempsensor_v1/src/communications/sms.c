@@ -17,9 +17,9 @@ void sms_send_data_request(char *number) {
 		return;
 
 	//get temperature values
-	memset(data, 0, MAX_SMS_SIZE_FULL);
 	rtc_update_time();
-	strcat(data, get_simplified_date_string(&g_tmCurrTime));
+	zeroString(data);
+	get_simplified_date_string(data, &g_tmCurrTime);
 	strcat(data, " ");
 	for (iOffset = 0; iOffset < SYSTEM_NUM_SENSORS; iOffset++) {
 		strcat(data, SensorName[iOffset]);
@@ -89,7 +89,7 @@ int8_t sms_process_memory_message(int8_t index) {
 
 	// Jump first \n to get the OK
 	PARSE_SKIP(token, "\n", UART_FAILED);
-	ok[0] = 0;
+	zeroString(ok);
 	PARSE_NEXTSTRING(token, ok, sizeof(ok), "\n", UART_FAILED);
 	if (ok[0] != 'O' || ok[1] != 'K')
 		return UART_FAILED;
