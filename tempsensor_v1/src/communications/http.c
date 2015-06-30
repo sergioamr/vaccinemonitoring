@@ -13,11 +13,14 @@
 #define HTTP_RESPONSE_RETRY	10
 
 void backend_get_configuration() {
+	config_setLastCommand(COMMAND_FETCH_CONFIG);
+	lcd_print("PING");
 	http_enable();
 	http_get_configuration();
 	http_deactivate();
 }
 
+/*
 void full_backend_get_configuration() {
 
 	config_setLastCommand(COMMAND_HTTP_DATA_TRANSFER);
@@ -31,6 +34,7 @@ void full_backend_get_configuration() {
 		http_deactivate();
 	}
 }
+*/
 
 uint8_t http_enable() {
 	int attempts = HTTP_COMMAND_ATTEMPTS;
