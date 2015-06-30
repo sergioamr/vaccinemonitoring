@@ -81,8 +81,7 @@ void state_check_SD_card() {
 		}
 
 		if (!STATE_ALARM.globalAlarm) {
-
-			state_alarm_on("SD CARD FAILURE");
+			state_alarm_on("SD FAILURE");
 			if (g_szLastSD_CardError != NULL) {
 				sprintf(msg, "%s SD error [%s]", g_pDevCfg->cfgIMEI,
 						g_szLastSD_CardError);
@@ -100,28 +99,25 @@ void state_sim_failure(SIM_CARD_CONFIG *sim) {
 	// 69 - "Requested facility not implemented"
 	// This cause indicates that the network is unable to provide the requested short message service.
 
-	switch (sim->simErrorState) {
-		case 133:
-		case 567:
-			lcd_printl(LINEC, "ERROR");
-			lcd_printl(LINEE, "WRONG APN");
-			break;
-
-		case 69:
-			state_setSMS_notSupported(sim);
-			break;
-
-			// Failed to register to network
-		case 555:
-			// Total failure in the card,
-			_NOP();
-	}
-
+	lcd_printl(LINEC, "SIM ERROR");
+	lcd_printl(LINEE, sim->simLastError);
 }
 
 /***********************************************************************************************************************/
 /* NETWORK STATE AND STATUS */
 /***********************************************************************************************************************/
+
+uint8_t inline state_isSimOperational() {
+	return g_pDevCfg->SIM[g_pDevCfg->cfgSIM_slot].simOperational;
+}
+
+void state_SIM_not_operational() {
+	g_pDevCfg->SIM[g_pDevCfg->cfgSIM_slot].simOperational = 0;
+}
+
+void state_SIM_operational() {
+	g_pDevCfg->SIM[g_pDevCfg->cfgSIM_slot].simOperational = 1;
+}
 
 NETWORK_SERVICE inline *state_getCurrentService() {
 	if (g_pSysState->network_mode < 0 || g_pSysState->network_mode > 1)
@@ -254,12 +250,8 @@ void state_alarm_on(char *alarm_msg) {
 		delay(500);
 		lcd_turn_on();
 
-		if (g_bLCD_state == 1) {
-			zeroTerminateCopy(g_pSysState->alarm_message, alarm_msg);
-			lcd_turn_on();
-			lcd_printl(LINEC, "ALARM!");
-			lcd_printf(LINEH, "%s", g_pSysState->alarm_message);
-		}
+		zeroTerminateCopy(g_pSysState->alarm_message, alarm_msg);
+		events_display_alarm(NULL, 0);
 		count = events_getTick();
 	}
 }

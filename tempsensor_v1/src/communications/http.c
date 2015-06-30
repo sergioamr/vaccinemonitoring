@@ -21,7 +21,7 @@ void backend_get_configuration() {
 void full_backend_get_configuration() {
 
 	config_setLastCommand(COMMAND_HTTP_DATA_TRANSFER);
-	lcd_print("NEXLEAF PING");
+	lcd_print("PING");
 	if (modem_check_network() != UART_SUCCESS) {
 		return;
 	}
@@ -70,10 +70,13 @@ int8_t http_setup() {
 	int uart_state = UART_FAILED;
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
+	if (!state_isSimOperational())
+		return UART_ERROR;
+
 	if (sim->cfgAPN[0] == '\0')
 		return UART_FAILED;
 
-	lcd_printf(LINEC, "HTTP SIM %d", config_getSelectedSIM() + 1);
+	lcd_printf(LINEC, "HTTP %d", config_getSelectedSIM() + 1);
 
 	uart_txf("AT+CGDCONT=1,\"IP\",\"%s\",\"0.0.0.0\",0,0\r\n", sim->cfgAPN); //APN
 	if (uart_getTransactionState() != UART_SUCCESS)
@@ -126,15 +129,17 @@ int http_check_error(int *retry) {
 	PARSE_SKIP(token, ",\n", UART_FAILED); 	// Skip content_type string.
 	PARSE_NEXTVALUE(token, &data_size, ",\n", UART_FAILED);
 
-	log_appendf("HTTP ERROR %i [%d] - Data size %d ", prof_id, http_status_code,
+	log_appendf("HTTP ERR %i[%d] %d", prof_id, http_status_code,
 			data_size);
 
 	// Check for recoverable errors
-	// Server didnt responded
+	// Server didnt return any data
 	if (http_status_code == 200 && data_size == 0) {
 		*retry = 1;
+#ifdef _DEBUG_OUTPUT
 		lcd_printl(LINEC, "HTTP Server");
 		lcd_printl(LINEH, "Empty response");
+#endif
 	}
 
 	// TODO Find non recoverable errors
@@ -143,6 +148,10 @@ int http_check_error(int *retry) {
 
 int http_open_connection(int data_length) {
 	char cmd[80];
+
+	if (!state_isSimOperational())
+		return UART_ERROR;
+
 	// Test post URL
 	sprintf(cmd, "AT#HTTPSND=1,0,\"%s\",%d,0\r\n", g_pDevCfg->cfgUpload_URL,
 			data_length);
@@ -161,7 +170,10 @@ int http_get_configuration() {
 	int retry = 1;
 	int attempts = HTTP_COMMAND_ATTEMPTS;
 
-	// #HTTPQRY � send HTTP GET, HEAD or DELETE request
+	if (!state_isSimOperational())
+		return UART_ERROR;
+
+	// #HTTPQRY send HTTP GET, HEAD or DELETE request
 	// Execution command performs a GET, HEAD or DELETE request to HTTP server.
 	// Parameters:
 	// <prof_id> - Numeric parameter indicating the profile identifier. Range: 0-2

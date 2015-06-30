@@ -213,17 +213,9 @@ void lcd_show() {
 
 	if (iCnt != 0xff) {
 		if (g_pSysState->temp.state[iCnt].status!=0) {
-			strcat(lcdBuffer, "ALERT ");
-			strcat(lcdBuffer, SensorName[iCnt]);
-			strcat(lcdBuffer, " ");
-			strcat(lcdBuffer, temperature_getString(iCnt));
-			strcat(lcdBuffer, "C ");
+			sprintf(&lcdBuffer[iIdx],"ALERT %s %sC", SensorName[iCnt], temperature_getString(iCnt));
 		} else {
-			strcat(lcdBuffer, "Sensor ");
-			strcat(lcdBuffer, SensorName[iCnt]);
-			strcat(lcdBuffer, " ");
-			strcat(lcdBuffer, temperature_getString(iCnt));
-			strcat(lcdBuffer, "C ");
+			sprintf(&lcdBuffer[iIdx],"Sensor %s %sC", SensorName[iCnt], temperature_getString(iCnt));
 		}
 	}
 
@@ -366,10 +358,9 @@ void lcd_print_boot(const char* pcData, int line) {
 
 void lcd_display_config() {
 	TEMP_ALERT_PARAM *pAlertParams = &g_pDevCfg->stTempAlertParams[0];
-	char num1[5];
-	char num2[5];
+	char num1[TEMP_DATA_LEN+1];
+	char num2[TEMP_DATA_LEN+1];
 
-	num2[4]=num1[4]=0;
 	getFloatNumber2Text(pAlertParams->threshCold, num1);
 	getFloatNumber2Text(pAlertParams->threshHot, num2);
 

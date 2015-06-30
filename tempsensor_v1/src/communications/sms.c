@@ -208,7 +208,6 @@ void sms_send_heart_beat() {
 
 	int i = 0;
 
-	lcd_printl(LINEC,"SMS SYNC");
 	//send heart beat
 	sensors[0]=0;
 	for (i = 0; i < SYSTEM_NUM_SENSORS; i++) {
@@ -288,15 +287,14 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 
 	if (res == UART_SUCCESS) {
 		lcd_clear();
-		lcd_printl(LINE1, "SMS Confirm    ");
-		lcd_printf(LINE2, "MSG %d ", msgNumber);
+		lcd_printl(LINE1, "SMS Confirm");
+		lcd_printf(LINE2, "MSG %d", msgNumber);
 		delay(HUMAN_DISPLAY_INFO_DELAY);
 		_NOP();
 	} else if (res == UART_ERROR) {
-		lcd_printf(LINE2, "MODEM ERROR %d ", config_getSIM()->simErrorState);
-		delay(HUMAN_DISPLAY_ERROR_DELAY);
+
 	} else {
-		lcd_print("MODEM TIMEOUT");
+		lcd_print("TIMEOUT");
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	}
 

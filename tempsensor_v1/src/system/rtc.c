@@ -35,7 +35,6 @@ uint32_t rtc_get_minute_tick() {
 
 extern struct tm g_tmCurrTime;
 
-#define MINUTES_BEFORE_REBOOT 10
 void rtc_dead_mans_switch() {
 	iDeadCountdown = MINUTES_BEFORE_REBOOT;
 }

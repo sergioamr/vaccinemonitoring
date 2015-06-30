@@ -20,6 +20,7 @@ void state_setNetworkStatus(const char *status);
 void state_SD_card_problem(FRESULT fr, const char *szError);
 void state_SD_card_OK();
 void state_sim_failure(SIM_CARD_CONFIG *sim);
+void state_setSMS_notSupported();
 uint8_t state_getSignalPercentage();
 
 SYSTEM_ALARMS *state_getAlarms();

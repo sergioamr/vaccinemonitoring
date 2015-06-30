@@ -214,14 +214,14 @@ void batt_init()
 
 uint8_t batt_getlevel()
 {
-	// Read battery levels only in minutes
 	static uint32_t lastTick = UINT32_MAX;
+	uint8_t level = 0;
+	double adjustedlevel = 0.0;
+	// Read battery levels only in minutes
 	if (g_pSysState->battery_level!=0 && lastTick==rtc_get_minute_tick())
 		return g_pSysState->battery_level;
 
 	lastTick = rtc_get_minute_tick();
-	uint8_t level = 0;
-	double adjustedlevel = 0.0;
 
 	i2c_read(SLAVE_ADDR_BATTERY, BATT_STATE_OF_CHARGE, 1, (uint8_t *) &level);
 

@@ -89,7 +89,7 @@ time_t events_getTick() {
 }
 
 void events_send_data(char *phone) {
-/*
+#ifdef _DEBUG_OUTPUT
 	char msg[MAX_SMS_SIZE_FULL];
 	EVENT *pEvent;
 	int t;
@@ -117,7 +117,7 @@ void events_send_data(char *phone) {
 	sprintf(msg, "[%s] Events end",
 			get_date_string(&g_tmCurrTime, "-", " ", ":", 1));
 	sms_send_message_number(phone, msg);
-*/
+#endif
 }
 
 /*
@@ -397,6 +397,10 @@ void event_network_check(void *event, time_t currentTime) {
 	uint8_t *failures;
 	int service;
 
+	if (!state_isSimOperational()) {
+		modem_swap_SIM();
+	}
+
 	switch (g_pSysState->lastTransMethod) {
 		case HTTP_SIM1:
 		case SMS_SIM1:
@@ -534,7 +538,6 @@ uint8_t event_wake_up_main() {
 
 void event_main_sleep() {
 	iMainSleep = 1;
-
 	if (g_bLCD_state)
 		delay(MAIN_SLEEP_TIME);
 	else
@@ -543,7 +546,7 @@ void event_main_sleep() {
 	iMainSleep = 0;
 }
 
-void events_display_alarm() {
+void events_display_alarm(void *event, time_t currentTime) {
 	if (!g_pSysState->state.alarms.globalAlarm)
 		return;
 

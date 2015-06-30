@@ -15,6 +15,8 @@ char *getFloatNumber2Text(float number, char *ret) {
 	int i = 0;
 	int8_t count = 0;
 
+	memset(ret, 0, 6);
+
 	//Round to one digit after decimal point
 	int32_t fixedPoint = (int32_t) (number * 10);
 

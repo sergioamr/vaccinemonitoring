@@ -204,11 +204,12 @@ void modem_send_command(const char *cmd) {
 	}
 
 	// Store the maximum size used from this buffer
+#ifdef _DEBUG_COUNT_BUFFERS
 	if (uart.iTxLen > g_pSysCfg->maxTXBuffer)
 		g_pSysCfg->maxTXBuffer = uart.iTxLen;
-
+#endif
 	if (uart.iTxLen > sizeof(TXBuffer)) {
-		lcd_print("TXBUFFER ERROR");
+		lcd_print("TXERR");
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	}
 
@@ -263,10 +264,11 @@ int waitForReady(uint32_t timeoutTimeMs) {
 		log_modem("FAILED\r\n");
 		log_modem(uart_getRXHead());
 	}
-
+#ifdef _DEBUG_COUNT_BUFFERS
 	// Store the maximum size used from this buffer
 	if (uart.iRxCountBytes > g_pSysCfg->maxRXBuffer)
 		g_pSysCfg->maxRXBuffer = uart.iRxCountBytes;
+#endif
 
 	delay(100);  // Documentation specifies 30 ms delay between commands
 
@@ -286,6 +288,9 @@ char modem_lastCommand[16];
 uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 		uint8_t attempts) {
 	char *cmd = modem_lastCommand;
+
+	if (!state_isSimOperational())
+		return UART_FAILED;
 
 	int len = strlen(cmdInput);
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
@@ -379,6 +384,8 @@ uint8_t uart_tx(const char *cmd) {
 	int uart_state;
 	int transaction_completed;
 
+	if (!state_isSimOperational())
+		return UART_FAILED;
 
 	uart_reset_headers();
 
@@ -396,8 +403,7 @@ uint8_t uart_tx(const char *cmd) {
 			lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2], LINE2); // Display the OK message
 		}
 #endif
-	} else
-		modem_check_uart_error();
+	}
 
 	return uart_state;
 }

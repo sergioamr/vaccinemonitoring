@@ -83,29 +83,42 @@ void calibrate_device() {
 void config_reset_error(SIM_CARD_CONFIG *sim) {
 	sim->simErrorToken = '\0';
 	sim->simErrorState = NO_ERROR;
+	state_SIM_operational();
 }
+
+//TODO This should go to the state machine
 
 void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
 		const char *error) {
+
+	char CM[4] = "CMX";
+
 	if (error == NULL || sim == NULL)
 		return;
 
-	zeroTerminateCopy(sim->simLastError, error);
-
 	sim->simErrorState = errorID;
 	sim->simErrorToken = errorToken;
+
+	// 69 - "Requested facility not implemented"
+	// This cause indicates that the network is unable to provide the requested short message service.
+
+	if (errorID==0)
+		return;
+
+	CM[2] = errorToken;
+	ini_gets(CM, itoa_nopadding(errorID), error, sim->simLastError, sizeof(sim->simLastError), "errors.ini");
+
+	if (errorID==69)
+		state_setSMS_notSupported(sim);
+
 	state_sim_failure(sim);
+	modem_check_working_SIM();
 
 	event_LCD_turn_on();
 }
 
-uint8_t config_isSimOperational() {
-	uint8_t slot = g_pDevCfg->cfgSIM_slot;
-	return g_pDevCfg->SIM[slot].simOperational;
-}
-
 // Returns the current structure containing the info for the current SIM selected
-uint16_t config_getSIMError(int slot) {
+uint16_t inline config_getSIMError(int slot) {
 	return g_pDevCfg->SIM[slot].simErrorState;
 }
 
@@ -123,16 +136,6 @@ uint8_t config_getSelectedSIM() {
 		g_pDevCfg->cfgSIM_slot = 0;
 
 	return g_pDevCfg->cfgSIM_slot;
-}
-
-void config_SIM_not_operational() {
-	uint8_t slot = g_pDevCfg->cfgSIM_slot;
-	g_pDevCfg->SIM[slot].simOperational = 0;
-}
-
-void config_SIM_operational() {
-	uint8_t slot = g_pDevCfg->cfgSIM_slot;
-	g_pDevCfg->SIM[slot].simOperational = 1;
 }
 
 uint8_t config_is_SIM_configurable(int simSlot) {
@@ -195,7 +198,7 @@ void config_send_configuration(char *number) {
 	char temp[64];
 	int i;
 
-	msg[0] = 0;
+	zeroString(msg);
 	for (i = 0; i < SYSTEM_NUM_SENSORS; i++) {
 		alert = &g_pDevCfg->stTempAlertParams[i];
 		sprintf(temp, "%s(C%dm H%dm tC %d tH %d)\r\n", SensorName[i],
@@ -280,8 +283,8 @@ void config_init() {
 	strcpy(g_pDevCfg->cfgConfig_URL, CONFIGURATION_URL_PATH);
 	strcpy(g_pDevCfg->cfgUpload_URL, DATA_UPLOAD_URL_PATH);
 
-	config_setSIMError(&g_pDevCfg->SIM[0], '+', NO_ERROR, "*1 NOERROR*");
-	config_setSIMError(&g_pDevCfg->SIM[1], '+', NO_ERROR, "*2 NOERROR*");
+	config_setSIMError(&g_pDevCfg->SIM[0], '+', NO_ERROR, "1 OK");
+	config_setSIMError(&g_pDevCfg->SIM[1], '+', NO_ERROR, "2 OK");
 
 	strcpy(g_pDevCfg->SIM[0].cfgAPN, NEXLEAF_DEFAULT_APN);
 	strcpy(g_pDevCfg->SIM[1].cfgAPN, NEXLEAF_DEFAULT_APN);
@@ -302,18 +305,18 @@ void config_init() {
 
 // Set the date and time of compilation as firmware version
 	strcpy(g_pSysCfg->firmwareVersion, "v(" __DATE__ ")");
-
+#ifdef _DEBUG_COUNT_BUFFERS
 	g_pSysCfg->maxSamplebuffer = 0;
 
 	g_pSysCfg->maxRXBuffer = 0;
 	g_pSysCfg->maxTXBuffer = 0;
-
+#endif
 	config_default_configuration();
 #ifdef USE_MININI
 	config_read_ini_file();
 #endif
 
-	lcd_printf(LINEC, "CONFIG MODE");
+	lcd_printf(LINEC, "CONFIG");
 	lcd_printl(LINEH, g_pSysCfg->firmwareVersion); // Show the firmware version
 #ifndef _DEBUG
 			delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
@@ -444,7 +447,7 @@ int config_parse_configuration(char *msg) {
 int config_process_configuration() {
 	char *token;
 #ifdef _DEBUG
-	log_append_("configuration processing");
+	log_append_("cfg process");
 #endif
 // FINDSTR uses RXBuffer - There is no need to initialize the data to parse.
 	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
@@ -473,10 +476,12 @@ FRESULT config_read_ini_file() {
 
 	log_append_("Read INI");
 
+#ifdef _DEBUG
 	n = ini_gets("SYSTEM", "Version", __DATE__, g_pDevCfg->cfgVersion,
 			sizearray(g_pDevCfg->cfgVersion), CONFIG_INI_FILE);
 	if (n == 0)
 		return FR_NO_FILE;
+#endif
 
 	cfg = &g_pDevCfg->cfg;
 	cfg->logs.system_log = ini_getbool(SECTION_LOGS, "SystemLog", 0,

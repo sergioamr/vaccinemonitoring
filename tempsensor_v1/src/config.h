@@ -19,12 +19,12 @@
 /**************************************************************************************************************************/
 
 #ifndef _DEBUG
-#define NEXLEAF_SMS_GATEWAY       " "
+#define NEXLEAF_SMS_GATEWAY       "0000"
 
 #define REPORT_PHONE_NUMBER 	   NEXLEAF_SMS_GATEWAY
 
 #define NEXLEAF_DEFAULT_SERVER_IP "54.241.2.213"
-#define NEXLEAF_DEFAULT_APN 	  "giffgaff.com"
+#define NEXLEAF_DEFAULT_APN 	  "test.com"
 
 // Path for getting the configuration from the server
 // CONFIGURATION_URL_PATH/IMEI/1/
@@ -47,6 +47,7 @@
 
 //Sampling configuration
 #ifndef _DEBUG
+#define PERIOD_UNDEFINED		60
 #define PERIOD_SAMPLING			5		//in minutes
 #define PERIOD_UPLOAD			20		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
@@ -141,7 +142,7 @@
 
 #ifdef _DEBUG
 
-#define NEXLEAF_SMS_GATEWAY       "00000000000"
+#define NEXLEAF_SMS_GATEWAY       "0000"
 
 #define REPORT_PHONE_NUMBER 	   NEXLEAF_SMS_GATEWAY
 
@@ -213,13 +214,15 @@ typedef struct {
 
 // 255.255.255.255
 #define MAX_IP_SIZE 3*4+3+1
-#define MAX_URL_PATH 40
+
+// Careful with exceeding the size of the URL
+#define MAX_URL_PATH 35
 
 typedef struct {
 	float threshCold;
 	float threshHot;
-	uint32_t maxSecondsCold;
-	uint32_t maxSecondsHot;
+	uint16_t maxSecondsCold;
+	uint16_t maxSecondsHot;
 } TEMP_ALERT_PARAM;
 
 typedef struct {
@@ -258,7 +261,9 @@ typedef union {
 } LOGGING_COMPONENTS;
 
 typedef struct {
+#ifdef _DEBUG
 	char cfgVersion[8];
+#endif
 
 	int8_t cfgSIM_slot;
 	int8_t cfgSelectedSIM_slot;
@@ -295,10 +300,12 @@ typedef struct {
 	char firmwareVersion[17];
 	uint16_t configStructureSize; // Size to check if there are changes on this structure
 
+#ifdef _DEBUG_COUNT_BUFFERS
 	// Stats to control buffer sizes
 	uint16_t maxSamplebuffer;
 	uint16_t maxRXBuffer;
 	uint16_t maxTXBuffer;
+#endif
 
 	uint16_t lastCommand; // Command that was last executed to control flow.
 	char lastCommandTime[2 + 2 + 2 + 1 + 1 + 1]; //
@@ -384,7 +391,7 @@ typedef union {
 } SAFEBOOT_STATUS;
 
 typedef struct {
-	char network_state[18];
+	char network_state[12];
 
 	int network_presentation_mode;
 	//NETWORK_STATUS_REGISTERED_HOME_NETWORK
@@ -396,7 +403,7 @@ typedef struct {
 
 typedef struct {
 	// Last alarm message
-	char alarm_message[32];
+	char alarm_message[16];
 
 	// Current battery level
 	uint8_t battery_level;
@@ -430,7 +437,7 @@ typedef struct {
 
 typedef struct {
 	int32_t dwLastSeek;
-	double calibration[SYSTEM_NUM_SENSORS][2];
+	float calibration[SYSTEM_NUM_SENSORS][2];
 } CONFIG_CALIBRATION;
 
 /*****************************************************************************************************************/
@@ -456,10 +463,10 @@ int config_process_configuration();
 int config_parse_configuration(char *msg);
 
 // Flags the sim as not working
-void config_SIM_not_operational();
+void state_SIM_not_operational();
 
 // Flags the sim as working again
-void config_SIM_operational();
+void state_SIM_operational();
 
 uint8_t config_is_SIM_configurable(int simSlot);
 
@@ -494,6 +501,7 @@ uint8_t config_is_SIM_configurable(int simSlot);
 #define COMMAND_FIRST_INIT 2500
 #define COMMAND_END 99
 
+uint8_t state_isSimOperational();
 void config_init();
 void config_send_configuration(char *number);
 void config_reconfigure();
