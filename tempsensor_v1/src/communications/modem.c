@@ -268,7 +268,7 @@ int modem_connect_network(uint8_t attempts) {
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
 
 			if (!g_iRunning || net_status != 1) {
-				lcd_printf(LINEC, "SIM %d NET %s", nsim + 1,
+				lcd_printf(LINEC, "SIM %d %s", nsim + 1,
 						modem_getNetworkServiceText());
 				lcd_printl(LINEH,
 						(char *) modem_getNetworkStatusText(net_mode,
@@ -334,6 +334,7 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 
 static const char AT_ERROR[] = " ERROR: ";
 
+// Used to ignore previsible errors like the SIM not supporting a command.
 uint8_t g_iUartIgnoreError = 0;
 void modem_ignore_next_errors(int errors) {
 	g_iUartIgnoreError = errors;
@@ -364,8 +365,8 @@ void modem_check_uart_error() {
 				lcd_printl(LINEC, "MODEM ERROR");
 			}
 #endif
+			modem_setNumericError(errorToken, atoi(error));
 		}
-		modem_setNumericError(errorToken, atoi(error));
 	}
 }
 
