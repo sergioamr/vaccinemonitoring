@@ -10,7 +10,6 @@
 
 volatile uint16_t iTick = 0;
 volatile uint32_t delay_count = 0;
-volatile uint8_t g_iAbortSleep = 0;
 
 // Timer0_A0 interrupt service routine
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
@@ -22,7 +21,7 @@ void __attribute__ ((interrupt(TIMER0_A0_VECTOR))) Timer0_A0_ISR (void)
 #error Compiler not supported!
 #endif
 {
-	if (++iTick >= delay_count || g_iAbortSleep)
+	if (++iTick >= delay_count)
 		__bic_SR_register_on_exit(LPM0_bits); // Resume functionality.
 }
 

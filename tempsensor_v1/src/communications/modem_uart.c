@@ -156,11 +156,6 @@ void uart_init() {
 }
 
 int8_t uart_getTransactionState() {
-	SIM_CARD_CONFIG *sim = config_getSIM();
-
-	if (!sim->simOperational)
-		return UART_ERROR;
-
 	return uart.iUartState;
 }
 
@@ -193,7 +188,6 @@ void uart_reset_headers() {
 
 void modem_send_command(const char *cmd) {
 
-	char simplDate[26];
 	// Clear reset
 	uart_reset_headers();
 
@@ -204,8 +198,7 @@ void modem_send_command(const char *cmd) {
 
 	if (g_pDevCfg->cfg.logs.modem_transactions) {
 		log_modem("-------- ");
-		get_simplified_date_string(simplDate, NULL);
-		log_modem(simplDate);
+		log_modem(get_simplified_date_string(NULL));
 		log_modem("-------- \r\n");
 		log_modem(cmd);
 	}
@@ -293,10 +286,6 @@ char modem_lastCommand[16];
 uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 		uint8_t attempts) {
 	char *cmd = modem_lastCommand;
-
-	if (!config_isSimOperational()) {
-		return UART_FAILED;
-	}
 
 	int len = strlen(cmdInput);
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
@@ -388,20 +377,28 @@ uint8_t uart_tx(const char *cmd) {
 	char* pToken1;
 #endif
 	int uart_state;
+	int transaction_completed;
+
+
 	uart_reset_headers();
 
-	uart_tx_timeout(cmd, g_iModemMaxWait, 2);
+	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 10);
+	if (uart.iRXHeadIdx > uart.iRXTailIdx)
+		return transaction_completed;
+
 	uart_state = uart_getTransactionState();
-#ifdef _DEBUG_OUTPUT
 	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
+#ifdef _DEBUG_OUTPUT
 		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": \""); // Display the command returned
 		if (pToken1 != NULL) {
 			lcd_print_boot((char *) pToken1 + 3, LINE2);
 		} else {
 			lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2], LINE2); // Display the OK message
 		}
-	}
 #endif
+	} else
+		modem_check_uart_error();
+
 	return uart_state;
 }
 

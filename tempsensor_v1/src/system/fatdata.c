@@ -7,7 +7,7 @@ FATFS* fs /* File system object */
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 FATFS FatFs; /* Work area (file system object) for logical drive */
-char g_szFatFileName[32];
+char g_szFatFileName[64];
 #pragma SET_DATA_SECTION()
 
 char g_bFatInitialized = false;
@@ -16,10 +16,10 @@ char g_bLogDisabled = false;
 const char *g_szLastSD_CardError = NULL;
 
 const char * const FR_ERRORS[20] = { "OK", "DISK_ERR", "INT_ERR", "NOT_READY",
-		"NO_FILE", "NO_PATH", "INV_NAME", "DENIED", "EXIST",
-		"INV_OBJ", "WRITE_PROT", "INV_DRIVE", "NOT_ENABLED",
-		"NO_FILESYS", "MK_ABORT", "TIMEOUT", "LOCKED", "N_ENGH_CORE",
-		"TOO_OP_FILES", "INV_PARAM" };
+		"NO_FILE", "NO_PATH", "INVALID_NAME", "DENIED", "EXIST",
+		"INVALID_OBJECT", "WRITE_PROTECTED", "INVALID_DRIVE", "NOT_ENABLED",
+		"NO_FILESYSTEM", "MKFS_ABORTED", "TIMEOUT", "LOCKED", "NOT_ENOUGH_CORE",
+		"TOO_MANY_OPEN_FILES", "INVALID_PARAMETER" };
 
 DWORD get_fattime(void) {
 	DWORD tmr;
@@ -52,33 +52,64 @@ char* get_YMD_String(struct tm* timeData) {
 	return g_szYMDString;
 }
 
-void get_date_string(char *dest, struct tm* timeData, const char* dateSeperator,
+char* get_date_string(struct tm* timeData, const char* dateSeperator,
 		const char* dateTimeSeperator, const char* timeSeparator,
 		uint8_t includeTZ) {
 
-	if (timeData->tm_year < 1900 || timeData->tm_year > 3000) // Working for 1000 years?
-		strcat(dest, "0000");
-	else
-		strcat(dest, itoa_nopadding(timeData->tm_year));
+#pragma SET_DATA_SECTION(".aggregate_vars")
+	static char g_szDateString[24]; // "YYYY-MM-DD HH:MM:SS IST"
+#pragma SET_DATA_SECTION()
 
-	strcat(dest, dateSeperator);
-	strcat(dest, itoa_pad(timeData->tm_mon));
-	strcat(dest, dateSeperator);
-	strcat(dest, itoa_pad(timeData->tm_mday));
-	strcat(dest, dateTimeSeperator);
-	strcat(dest, itoa_pad(timeData->tm_hour));
-	strcat(dest, timeSeparator);
-	strcat(dest, itoa_pad(timeData->tm_min));
-	strcat(dest, timeSeparator);
-	strcat(dest, itoa_pad(timeData->tm_sec));
+	g_szDateString[0] = 0;
+	if (timeData->tm_year < 1900 || timeData->tm_year > 3000) // Working for 1000 years?
+		strcpy(g_szDateString, "0000");
+	else
+		strcpy(g_szDateString, itoa_nopadding(timeData->tm_year));
+
+	strcat(g_szDateString, dateSeperator);
+	strcat(g_szDateString, itoa_pad(timeData->tm_mon));
+	strcat(g_szDateString, dateSeperator);
+	strcat(g_szDateString, itoa_pad(timeData->tm_mday));
+	strcat(g_szDateString, dateTimeSeperator);
+	strcat(g_szDateString, itoa_pad(timeData->tm_hour));
+	strcat(g_szDateString, timeSeparator);
+	strcat(g_szDateString, itoa_pad(timeData->tm_min));
+	strcat(g_szDateString, timeSeparator);
+	strcat(g_szDateString, itoa_pad(timeData->tm_sec));
+
+	//[TODO] Check timezone it doesnt work
+
+	/*
+	 if (includeTZ && timeData->tm_isdst) {
+	 strcat(g_szDateString, " DST");
+	 }
+	 */
+	return g_szDateString;
 }
 
 // FORMAT IN FORMAT [YYYYMMDD:HHMMSS] Used for SMS timestamp
-void get_simplified_date_string(char *dest, struct tm* timeData) {
+char* get_simplified_date_string(struct tm* timeData) {
+
+#pragma SET_DATA_SECTION(".aggregate_vars")
+	static char g_szDateString[26]; // "YYYY-MM-DD HH:MM:S IST"
+#pragma SET_DATA_SECTION()
+
 	if (timeData==NULL)
 		timeData=&g_tmCurrTime;
 
-	return get_date_string(dest, timeData, "", "", "", false);
+	g_szDateString[0] = 0;
+	if (timeData->tm_year < 1900 || timeData->tm_year > 3000) // Working for 1000 years?
+		strcpy(g_szDateString, "0000");
+	else
+		strcpy(g_szDateString, itoa_nopadding(timeData->tm_year));
+
+	strcat(g_szDateString, itoa_pad(timeData->tm_mon + 1));
+	strcat(g_szDateString, itoa_pad(timeData->tm_mday));
+	strcat(g_szDateString, ":");
+	strcat(g_szDateString, itoa_pad(timeData->tm_hour));
+	strcat(g_szDateString, itoa_pad(timeData->tm_min));
+	strcat(g_szDateString, itoa_pad(timeData->tm_sec));
+	return g_szDateString;
 }
 
 void parse_time_from_line(struct tm* timeToConstruct, char* formattedLine) {
@@ -331,7 +362,16 @@ FRESULT log_append_(char *text) {
 	rtc_getlocal(&g_tmCurrTime);
 
 	strcpy(szLog, "[");
-	get_simplified_date_string(szLog, NULL);
+	if (g_tmCurrTime.tm_year > 2000) {
+		strcat(szLog, get_YMD_String(&g_tmCurrTime));
+		strcat(szLog, " ");
+		strcat(szLog, itoa_pad(g_tmCurrTime.tm_hour));
+		strcat(szLog, itoa_pad(g_tmCurrTime.tm_min));
+		strcat(szLog, itoa_pad(g_tmCurrTime.tm_sec));
+	} else {
+		for (t = 0; t < 15; t++)
+			strcat(szLog, "*");
+	}
 	strcat(szLog, "] ");
 
 	len = strlen(szLog);
@@ -435,15 +475,14 @@ const char *getPowerStateString() {
 FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 	char szLog[120];
 	UINT bw = 0;
-
+	char *date;
 	FRESULT fr;
 	int8_t iBatteryLevel;
 	int8_t iSignalLevel;
 	char *network_state;
 
-	szLog[0]=0;
-	get_date_string(szLog, &g_tmCurrTime, "-", " ", ":", 1);
-	fr = f_write(fobj, szLog, strlen(szLog), &bw);
+	date = get_date_string(&g_tmCurrTime, "-", " ", ":", 1);
+	fr = f_write(fobj, date, strlen(date), &bw);
 	if (fr != FR_OK)
 		return fr;
 
@@ -473,7 +512,7 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
 
-#ifdef _DEBUG_OUTPUT
+#ifdef _DEBUG
 	lcd_print("Saving sample");
 #endif
 
@@ -504,7 +543,7 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	if (fr == FR_OK) {
 		f_sync(&fobj);
 
-#ifdef _DEBUG_OUTPUT
+#ifdef _DEBUG
 		lcd_printf(LINE2, "OK %d bytes", *tbw);
 #endif
 
@@ -559,19 +598,17 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 	if (g_iStatus & LOG_TIME_STAMP) {
 		memset(szLog, 0, sizeof(szLog));
 		strcat(szLog, "$TS=");
-
-		get_simplified_date_string(szLog, &tempDate);
-/*
 		strcat(szLog, itoa_pad((tempDate.tm_year + 1900)));
 		strcat(szLog, itoa_pad(tempDate.tm_mon));
 		strcat(szLog, itoa_pad(tempDate.tm_mday));
 		strcat(szLog, itoa_pad(tempDate.tm_hour));
 		strcat(szLog, itoa_pad(tempDate.tm_min));
 		strcat(szLog, itoa_pad(tempDate.tm_sec));
-*/
-		strcat(szLog, ",R");
+		strcat(szLog, ",");
+		strcat(szLog, "R");
 		strcat(szLog, itoa_pad(iSamplePeriod));
-		strcat(szLog, ",\n");
+		strcat(szLog, ",");
+		strcat(szLog, "\n");
 		fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 
 		if (bw > 0) {
@@ -588,10 +625,13 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 #endif
 
 	//log sample period, battery level, power plugged, temperature values
+	memset(szLog, 0, sizeof(szLog));
+#if defined(SYSTEM_NUM_SENSORS) && SYSTEM_NUM_SENSORS == 5
 	sprintf(szLog, "%s,%d,%s,%s,%s,%s,%s\n", itoa_pad(iBatteryLevel),
 			!(P4IN & BIT4), temperature_getString(0), temperature_getString(1),
 			temperature_getString(2), temperature_getString(3),
 			temperature_getString(4));
+#endif
 
 	fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 

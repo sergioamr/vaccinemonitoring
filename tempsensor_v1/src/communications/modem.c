@@ -297,11 +297,6 @@ int modem_connect_network(uint8_t attempts) {
 
 		lcd_progress_wait(NETWORK_CONNECTION_DELAY);
 
-		if (g_iAbortSleep) {
-			g_iAbortSleep = 0;
-			return UART_SUCCESS;
-		}
-
 	} while (--attempts > 0);
 
 	config_incLastCmd();

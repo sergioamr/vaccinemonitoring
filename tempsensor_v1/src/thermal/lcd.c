@@ -232,9 +232,6 @@ void lcd_progress_wait(uint16_t delayTime) {
 	for (t = 0; t < count; t++) {
 		delay(50);
 		lcd_print_progress();
-
-		if (g_iAbortSleep)
-			t = count;
 	}
 }
 

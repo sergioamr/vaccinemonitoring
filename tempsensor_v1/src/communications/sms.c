@@ -17,9 +17,9 @@ void sms_send_data_request(char *number) {
 		return;
 
 	//get temperature values
+	memset(data, 0, MAX_SMS_SIZE_FULL);
 	rtc_update_time();
-	zeroString(data);
-	get_simplified_date_string(data, &g_tmCurrTime);
+	strcat(data, get_simplified_date_string(&g_tmCurrTime));
 	strcat(data, " ");
 	for (iOffset = 0; iOffset < SYSTEM_NUM_SENSORS; iOffset++) {
 		strcat(data, SensorName[iOffset]);
@@ -89,7 +89,7 @@ int8_t sms_process_memory_message(int8_t index) {
 
 	// Jump first \n to get the OK
 	PARSE_SKIP(token, "\n", UART_FAILED);
-	zeroString(ok);
+	ok[0] = 0;
 	PARSE_NEXTSTRING(token, ok, sizeof(ok), "\n", UART_FAILED);
 	if (ok[0] != 'O' || ok[1] != 'K')
 		return UART_FAILED;
@@ -157,11 +157,8 @@ int8_t sms_process_messages() {
 
 	memset(SM_ME, 0, sizeof(SM_ME));
 
-	if (!config_isSimOperational())
-		return UART_FAILED;
-
-	lcd_printf(LINEC, "SIM %d ", config_getSelectedSIM() + 1);
-	lcd_printf(LINEH, "Reading SMSs");
+	lcd_printf(LINEC, "Fetching SMSs");
+	lcd_printf(LINE2, "SIM %d ", config_getSelectedSIM() + 1);
 
 	//check if messages are available
 	uart_tx("AT+CPMS?\r\n");
@@ -185,7 +182,7 @@ int8_t sms_process_messages() {
 		return UART_SUCCESS;
 	}
 
-	lcd_printf(LINEC, "%d sms", usedr);
+	lcd_printf(LINEC, "%d Config sms", usedr);
 	lcd_printl(LINE2, "Msg Processing..");
 
 	uart_tx("AT+CSDH=0\r\n"); // Disable extended output
@@ -250,14 +247,12 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	if (pData==NULL || strlen(pData)==0)
 		return UART_SUCCESS;
 
-	/*
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_clear();
 		lcd_printf(LINE1, "SYNC SMS %d ", g_pDevCfg->cfgSIM_slot + 1);
 		lcd_printl(LINE2, szPhoneNumber);
 		lcd_disable_verbose();
 	}
-	*/
 
 	strcat(pData, ctrlZ);
 

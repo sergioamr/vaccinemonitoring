@@ -82,12 +82,14 @@ void state_check_SD_card() {
 
 		if (!STATE_ALARM.globalAlarm) {
 
-			state_alarm_on("SD CARD FAILURE");
+			state_alarm_on("SD FAILURE");
+			/*
 			if (g_szLastSD_CardError != NULL) {
 				sprintf(msg, "%s SD error [%s]", g_pDevCfg->cfgIMEI,
 						g_szLastSD_CardError);
 				alarm_SD_card_failure(msg);
 			}
+			*/
 		}
 	}
 }

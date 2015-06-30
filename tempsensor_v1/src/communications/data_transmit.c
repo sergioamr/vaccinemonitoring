@@ -23,7 +23,7 @@ uint8_t data_send_temperatures_sms() {
 	rtc_getlocal(&g_tmCurrTime);
 
 	strcpy(data, SMS_DATA_MSG_TYPE);
-	get_simplified_date_string(data, &g_tmCurrTime);
+	strcat(data, get_simplified_date_string(&g_tmCurrTime));
 	for (t = 0; t < SYSTEM_NUM_SENSORS; t++) {
 		strcat(data, getSensorTemp(t));
 	}
@@ -38,6 +38,7 @@ uint8_t data_send_temperatures_sms() {
 int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 	char line[80], encodedLine[40];
 	int lineSize = sizeof(line) / sizeof(char);
+	char* dateString = NULL;
 	struct tm firstDate;
 	char smsMsg[MAX_SMS_SIZE];
 	uint8_t splitSend = 0;
@@ -49,9 +50,8 @@ int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 	do {
 		if (splitSend == 1) {
 			offset_timestamp(&firstDate, linesParsed);
-			zeroString(line);
-			get_simplified_date_string(line, &firstDate);
-			sprintf(smsMsg, "%d,%s,%d,%d,", 11, line,
+			dateString = get_date_string(&firstDate, "", "", "", 0);
+			sprintf(smsMsg, "%d,%s,%d,%d,", 11, dateString,
 					g_pDevCfg->sIntervalsMins.sampling, 5);
 			strcat(smsMsg, encodedLine);
 			linesParsed = splitSend = 0;
@@ -59,9 +59,8 @@ int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 			// Must get first line before transmitting to calculate the length properly
 			if (f_gets(line, lineSize, file) != 0) {
 				parse_time_from_line(&firstDate, line);
-				zeroString(line);
-				get_simplified_date_string(line, &firstDate);
-				sprintf(smsMsg, "%d,%s,%d,%d,", 11, line,
+				dateString = get_date_string(&firstDate, "", "", "", 0);
+				sprintf(smsMsg, "%d,%s,%d,%d,", 11, dateString,
 						g_pDevCfg->sIntervalsMins.sampling, 5);
 			} else {
 				return TRANS_FAILED;
@@ -122,8 +121,7 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	// Must get first line before transmitting to calculate the length properly
 	if (f_gets(line, lineSize, file) != 0) {
 		parse_time_from_line(&firstDate, line);
-		zeroString(line);
-		get_simplified_date_string(line, &firstDate);
+		dateString = get_date_string(&firstDate, "", "", "", 0);
 		sprintf(line, "IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=",
 				g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa", dateString,
 				g_pDevCfg->sIntervalsMins.sampling);

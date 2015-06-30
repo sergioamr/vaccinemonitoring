@@ -11,7 +11,6 @@
 
 char g_szItoa[16];
 
-// Minimum size 6 for the array
 char *getFloatNumber2Text(float number, char *ret) {
 	int i = 0;
 	int8_t count = 0;
@@ -38,7 +37,6 @@ char *getFloatNumber2Text(float number, char *ret) {
 
 	ret[3 + count] = ret[2 + count];
 	ret[2 + count] = (char) '.';
-	ret[5] = 0;
 	return ret;
 }
 
