@@ -64,18 +64,14 @@ extern "C"
 #define IMEI_MIN_LEN		 15
 #define GW_MAX_LEN			 15
 #define APN_MAX_LEN     	 20
-#define ERROR_MAX_LEN   	 12
+#define ERROR_MAX_LEN   	 17
 #define MCC_MAX_LEN     	 3
 #define MNC_MAX_LEN     	 2
 #define UPLOAD_MODE_LEN 	 4
-#define MAX_SMS_NUM			 4
+#define MAX_SMS_NUM			 2
 #define SMS_NUM_LEN			 12
-#define SAMPLE_LEN			 512
 
 #define ENCODED_TEMP_LEN	 3
-#define MSG_RESPONSE_LEN	 100
-#define PHONE_NUM_LEN        14
-#define SMS_CMD_LEN 		 36
 
 #define SMS_HB_MSG_TYPE  	 "10,"
 #define SMS_DATA_MSG_TYPE	 "11,"

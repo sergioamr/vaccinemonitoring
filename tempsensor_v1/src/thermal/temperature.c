@@ -105,7 +105,7 @@ void temperature_trigger_init() {
 
 
 float resistance_to_temperature(float R) {
-	/*
+#ifndef _DEBUG
 	float A1 = 0.00335, B1 = 0.0002565, C1 = 0.0000026059, D1 = 0.00000006329,
 			tempdegC;
 	float R25 = 9965.0;
@@ -117,8 +117,9 @@ float resistance_to_temperature(float R) {
 	tempdegC = tempdegC - 273.15;
 
 	return tempdegC;
-	*/
+#else
 	return 1;
+#endif
 }
 
 void temperature_subsampling_calculate(int8_t iSensorIdx) {
@@ -127,7 +128,7 @@ void temperature_subsampling_calculate(int8_t iSensorIdx) {
 	float A0tempdegC = 0.0;
 
 	char* TemperatureVal = temperature_getString(iSensorIdx);
-	double *calibration;
+	float *calibration;
 
 	TEMPERATURE_SENSOR *sensor = sensor_get(iSensorIdx);
 	if (sensor->iSamplesRead == 0)

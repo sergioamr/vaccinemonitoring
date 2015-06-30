@@ -75,6 +75,7 @@ void events_debug();
 void events_find_next_event();
 void events_run();
 void events_init();
+void events_display_alarm(void *event, time_t currentTime) ;
 void events_sync_rtc();
 void events_sync();
 void event_init(EVENT *pEvent, time_t currentTime);

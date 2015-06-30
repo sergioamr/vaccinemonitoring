@@ -204,11 +204,12 @@ void modem_send_command(const char *cmd) {
 	}
 
 	// Store the maximum size used from this buffer
+#ifdef _DEBUG_COUNT_BUFFERS
 	if (uart.iTxLen > g_pSysCfg->maxTXBuffer)
 		g_pSysCfg->maxTXBuffer = uart.iTxLen;
-
+#endif
 	if (uart.iTxLen > sizeof(TXBuffer)) {
-		lcd_print("TXBUFFER ERROR");
+		lcd_print("TXERR");
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	}
 
@@ -263,10 +264,11 @@ int waitForReady(uint32_t timeoutTimeMs) {
 		log_modem("FAILED\r\n");
 		log_modem(uart_getRXHead());
 	}
-
+#ifdef _DEBUG_COUNT_BUFFERS
 	// Store the maximum size used from this buffer
 	if (uart.iRxCountBytes > g_pSysCfg->maxRXBuffer)
 		g_pSysCfg->maxRXBuffer = uart.iRxCountBytes;
+#endif
 
 	delay(100);  // Documentation specifies 30 ms delay between commands
 

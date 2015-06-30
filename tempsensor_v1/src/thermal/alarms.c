@@ -62,11 +62,12 @@ SENSOR_STATUS *getAlarmsSensor(int id) {
 
 void alarm_test_sensor(int id) {
 	char msg[32];
-	char tmp[6];
+	char tmp[TEMP_DATA_LEN+1];
 	USE_TEMPERATURE
 	SENSOR_STATUS *s = getAlarmsSensor(id);
 	TEMPERATURE_SENSOR *sensor = &tem->sensors[id];
 	time_t elapsed = 0;
+	memset(tmp,0,sizeof(tmp));
 
 	float cold = g_pDevCfg->stTempAlertParams[id].threshCold;
 	float hot = g_pDevCfg->stTempAlertParams[id].threshHot;

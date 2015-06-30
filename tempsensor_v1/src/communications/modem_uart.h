@@ -8,7 +8,7 @@
 #ifndef TEMPSENSOR_V1_UART_H_
 #define TEMPSENSOR_V1_UART_H_
 
-#define TX_LEN   			256
+#define TX_LEN   			200
 #define RX_LEN   			512
 
 typedef struct {

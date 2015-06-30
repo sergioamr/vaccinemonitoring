@@ -88,13 +88,27 @@ void config_reset_error(SIM_CARD_CONFIG *sim) {
 
 void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
 		const char *error) {
+
+	char CM[4] = "CMX";
+
 	if (error == NULL || sim == NULL)
 		return;
 
-	zeroTerminateCopy(sim->simLastError, error);
-
 	sim->simErrorState = errorID;
 	sim->simErrorToken = errorToken;
+
+	// 69 - "Requested facility not implemented"
+	// This cause indicates that the network is unable to provide the requested short message service.
+
+	if (errorID==0)
+		return;
+
+	CM[2] = errorToken;
+	ini_gets(CM, itoa_nopadding(errorID), error, sim->simLastError, sizeof(sim->simLastError), "errors.ini");
+
+	if (errorID==69)
+		state_setSMS_notSupported(sim);
+
 	state_sim_failure(sim);
 
 	event_LCD_turn_on();
@@ -300,18 +314,18 @@ void config_init() {
 
 // Set the date and time of compilation as firmware version
 	strcpy(g_pSysCfg->firmwareVersion, "v(" __DATE__ ")");
-
+#ifdef _DEBUG_COUNT_BUFFERS
 	g_pSysCfg->maxSamplebuffer = 0;
 
 	g_pSysCfg->maxRXBuffer = 0;
 	g_pSysCfg->maxTXBuffer = 0;
-
+#endif
 	config_default_configuration();
 #ifdef USE_MININI
 	config_read_ini_file();
 #endif
 
-	lcd_printf(LINEC, "CONFIG MODE");
+	lcd_printf(LINEC, "CONFIG");
 	lcd_printl(LINEH, g_pSysCfg->firmwareVersion); // Show the firmware version
 #ifndef _DEBUG
 			delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
@@ -471,10 +485,12 @@ FRESULT config_read_ini_file() {
 
 	log_append_("Read INI");
 
+#ifdef _DEBUG
 	n = ini_gets("SYSTEM", "Version", __DATE__, g_pDevCfg->cfgVersion,
 			sizearray(g_pDevCfg->cfgVersion), CONFIG_INI_FILE);
 	if (n == 0)
 		return FR_NO_FILE;
+#endif
 
 	cfg = &g_pDevCfg->cfg;
 	cfg->logs.system_log = ini_getbool(SECTION_LOGS, "SystemLog", 0,

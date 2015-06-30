@@ -40,8 +40,9 @@ int g_iRunning = 0;
 
 //reset the board by issuing a SW BOR
 void system_reboot(const char *message) {
-	PMM_trigBOR();
 	log_appendf("REBOOT %s", message);
+	delay(1000);
+	PMM_trigBOR();
 	while (1);	//code should not come here
 }
 
@@ -173,7 +174,7 @@ void system_boot() {
 
 	temperature_analog_to_digital_conversion();
 	log_sample_web_format(&bytes_written);
-	sms_process_messages(0);
+	sms_process_messages();
 
 	//#ifndef _DEBUG
 	backend_get_configuration();
@@ -204,8 +205,6 @@ int main(void) {
 
 	events_init();
 	state_process();
-
-	sms_process_messages();
 
 	// Done init, start watchdog
 	watchdog_init();

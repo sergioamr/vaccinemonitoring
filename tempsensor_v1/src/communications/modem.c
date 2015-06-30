@@ -310,7 +310,7 @@ int modem_disableNetworkRegistration() {
 
 void modem_setNumericError(char errorToken, int16_t errorCode) {
 	char szCode[16];
-	char szToken[2];
+
 	char token;
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
@@ -319,22 +319,15 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	if (config_getSimLastError(&token) == errorCode)
 		return;
 
-	if (errorCode == 4) {
-		strcpy(szCode, "Not supported");
-	} else {
-		sprintf(szCode, "ERROR %d      ", errorCode);
-	}
-
+	sprintf(szCode, "ERROR %d", errorCode);
 	config_setSIMError(sim, errorToken, errorCode, szCode);
 
 	// Check the error codes to figure out if the SIM is still functional
 	modem_isSIM_Operational();
 
-	szToken[0] = errorToken;  // Minimal SPRINTF support
-	szToken[1] = 0;
-
-	log_appendf("SIM %d CMD[%s] CM%s ERROR %d", config_getSelectedSIM() + 1,
-			&modem_lastCommand[0], szToken, errorCode);
+	//szToken[0] = errorToken;  // Minimal SPRINTF support
+	//szToken[1] = 0;
+	//log_appendf("SIM %d CMD[%s] CM%s ERROR %d", config_getSelectedSIM() + 1, &modem_lastCommand[0], szToken, errorCode);
 
 	return;
 }
@@ -817,31 +810,31 @@ void modem_init() {
 	// Reset the SIM flag if not operational
 	config_reset_error(sim);
 
-	uart_tx("AT\r\n"); // Display OK
-	uart_tx("ATE0\r\n");
+	uart_tx("AT"); // Display OK
+	uart_tx("ATE0");
 
 	// GPIO [PIN, DIR, MODE]
 	// Execution command sets the value of the general purpose output pin
 	// GPIO<pin> according to <dir> and <mode> parameter.
-	uart_tx("AT#SIMDET=0\r\n"); // Enable automatic pin sim detection
+	uart_tx("AT#SIMDET=0"); // Enable automatic pin sim detection
 
 	if (config_getSelectedSIM() != 1) {
 		//enable SIM A (slot 1)
-		uart_tx_timeout("AT#GPIO=2,0,1\r\n", TIMEOUT_GPO, 5); // Sim 1 PWR enable - First command always has a chance of timeout
-		uart_tx("AT#GPIO=4,1,1\r\n"); // Sim 2 PWR enable
-		uart_tx("AT#GPIO=3,0,1\r\n"); // Sim select
+		uart_tx_timeout("AT#GPIO=2,0,1", TIMEOUT_GPO, 5); // Sim 1 PWR enable - First command always has a chance of timeout
+		uart_tx("AT#GPIO=4,1,1"); // Sim 2 PWR enable
+		uart_tx("AT#GPIO=3,0,1"); // Sim select
 	} else {
 		//enable SIM B (slot 2)
-		uart_tx_timeout("AT#GPIO=2,1,1\r\n", TIMEOUT_GPO, 5); // Sim 1 PWR enable
-		uart_tx("AT#GPIO=4,0,1\r\n"); // Sim 2 PWR enable
-		uart_tx("AT#GPIO=3,1,1\r\n"); // Sim select
+		uart_tx_timeout("AT#GPIO=2,1,1", TIMEOUT_GPO, 5); // Sim 1 PWR enable
+		uart_tx("AT#GPIO=4,0,1"); // Sim 2 PWR enable
+		uart_tx("AT#GPIO=3,1,1"); // Sim select
 	}
 
-	uart_tx_timeout("AT#SIMDET=1\r\n", MODEM_TX_DELAY2, 10); // Disable sim detection. Is it not plugged in hardware?
+	uart_tx_timeout("AT#SIMDET=1", MODEM_TX_DELAY2, 10); // Disable sim detection. Is it not plugged in hardware?
 
-	uart_tx("AT+CMEE=1\r\n"); // Set command enables/disables the report of result code:
-	uart_tx("AT#CMEEMODE=1\r\n"); // This command allows to extend the set of error codes reported by CMEE to the GPRS related error codes.
-	uart_tx("AT#AUTOBND=2\r\n"); // Set command enables/disables the automatic band selection at power-on.  if automatic band selection is enabled the band changes every about 90 seconds through available bands until a GSM cell is found.
+	uart_tx("AT+CMEE=1"); // Set command enables/disables the report of result code:
+	uart_tx("AT#CMEEMODE=1"); // This command allows to extend the set of error codes reported by CMEE to the GPRS related error codes.
+	uart_tx("AT#AUTOBND=2"); // Set command enables/disables the automatic band selection at power-on.  if automatic band selection is enabled the band changes every about 90 seconds through available bands until a GSM cell is found.
 
 	//uart_tx("AT+CPMS=\"ME\",\"ME\",\"ME\"");
 
@@ -859,19 +852,19 @@ void modem_init() {
 	// Wait until connnection and registration is successful. (Just try NETWORK_CONNECTION_ATTEMPTS) network could be definitly down or not available.
 	modem_setNetworkService(NETWORK_GPRS);
 
-	uart_tx("AT+CGSMS=1\r\n"); // Will try to use GPRS for texts otherwise will use GSM
-	uart_tx("AT#NITZ=15,1\r\n");   // #NITZ - Network Timezone
+	uart_tx("AT+CGSMS=1"); // Will try to use GPRS for texts otherwise will use GSM
+	uart_tx("AT#NITZ=15,1");   // #NITZ - Network Timezone
 
-	uart_tx("AT+CTZU=1\r\n"); //  4 - software bi-directional with filtering (XON/XOFF)
-	uart_tx("AT&K4\r\n");		// [Flow Control - &K]
-	uart_tx("AT&P0\r\n"); // [Default Reset Full Profile Designation - &P] Execution command defines which full profile will be loaded on startup.
-	uart_tx("AT&W0\r\n"); // [Store Current Configuration - &W] 			 Execution command stores on profile <n> the complete configuration of the	device
+	uart_tx("AT+CTZU=1"); //  4 - software bi-directional with filtering (XON/XOFF)
+	uart_tx("AT&K4");		// [Flow Control - &K]
+	uart_tx("AT&P0"); // [Default Reset Full Profile Designation - &P] Execution command defines which full profile will be loaded on startup.
+	uart_tx("AT&W0"); // [Store Current Configuration - &W] 			 Execution command stores on profile <n> the complete configuration of the	device
 
 	modem_getSMSCenter();
 	modem_getSignal();
 
-	uart_tx("AT+CSDH=1\r\n"); // Show Text Mode Parameters - +CSDH  			 Set command controls whether detailed header information is shown in text mode (+CMGF=1) result codes
-	uart_tx_timeout("AT+CMGF=?\r\n", MODEM_TX_DELAY2, 5); // set sms format to text mode
+	uart_tx("AT+CSDH=1"); // Show Text Mode Parameters - +CSDH  			 Set command controls whether detailed header information is shown in text mode (+CMGF=1) result codes
+	uart_tx_timeout("AT+CMGF=?", MODEM_TX_DELAY2, 5); // set sms format to text mode
 
 #if defined(CAPTURE_MCC_MNC) && defined(_DEBUG)
 	modem_survey_network();

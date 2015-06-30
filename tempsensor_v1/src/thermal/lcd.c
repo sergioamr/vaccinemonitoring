@@ -358,10 +358,9 @@ void lcd_print_boot(const char* pcData, int line) {
 
 void lcd_display_config() {
 	TEMP_ALERT_PARAM *pAlertParams = &g_pDevCfg->stTempAlertParams[0];
-	char num1[5];
-	char num2[5];
+	char num1[TEMP_DATA_LEN+1];
+	char num2[TEMP_DATA_LEN+1];
 
-	num2[4]=num1[4]=0;
 	getFloatNumber2Text(pAlertParams->threshCold, num1);
 	getFloatNumber2Text(pAlertParams->threshHot, num2);
 
