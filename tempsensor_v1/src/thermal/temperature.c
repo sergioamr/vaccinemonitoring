@@ -103,23 +103,29 @@ void temperature_trigger_init() {
 	}
 }
 
+// Implementing basic POW to avoid the 3.5kb overhead of the
+// required libmath.a to enable POW function
+double pow_(double base, int exp) {
+	int t=0;
+	double ret = base;
+	--exp;
+	for (t=0; t<exp; t++) {
+		ret *= base;
+	}
+	return ret;
+}
 
 float resistance_to_temperature(float R) {
-#ifndef _DEBUG
 	float A1 = 0.00335, B1 = 0.0002565, C1 = 0.0000026059, D1 = 0.00000006329,
 			tempdegC;
 	float R25 = 9965.0;
 
 	tempdegC = 1
-			/ (A1 + (B1 * log(R / R25)) + (C1 * pow((log(R / R25)), 2))
-					+ (D1 * pow((log(R / R25)), 3)));
+			/ (A1 + (B1 * log(R / R25)) + (C1 * pow_((log(R / R25)), 2))
+					+ (D1 * pow_((log(R / R25)), 3)));
 
 	tempdegC = tempdegC - 273.15;
-
 	return tempdegC;
-#else
-	return 1;
-#endif
 }
 
 void temperature_subsampling_calculate(int8_t iSensorIdx) {

@@ -13,11 +13,14 @@
 #define HTTP_RESPONSE_RETRY	10
 
 void backend_get_configuration() {
+	config_setLastCommand(COMMAND_FETCH_CONFIG);
+	lcd_print("PING");
 	http_enable();
 	http_get_configuration();
 	http_deactivate();
 }
 
+/*
 void full_backend_get_configuration() {
 
 	config_setLastCommand(COMMAND_HTTP_DATA_TRANSFER);
@@ -31,6 +34,7 @@ void full_backend_get_configuration() {
 		http_deactivate();
 	}
 }
+*/
 
 uint8_t http_enable() {
 	int attempts = HTTP_COMMAND_ATTEMPTS;
@@ -45,7 +49,7 @@ uint8_t http_enable() {
 
 	sim->simErrorState = 0;
 	do {
-		uart_tx("AT#SGACT=1,1\r\n");
+		uart_tx("#SGACT=1,1\r\n");
 		// CME ERROR: 555 Activation failed
 		// CME ERROR: 133 Requested service option not subscribed
 		uart_state = uart_getTransactionState();
@@ -129,9 +133,10 @@ int http_check_error(int *retry) {
 	PARSE_SKIP(token, ",\n", UART_FAILED); 	// Skip content_type string.
 	PARSE_NEXTVALUE(token, &data_size, ",\n", UART_FAILED);
 
-	log_appendf("HTTP ERR %i[%d] %d", prof_id, http_status_code,
+#ifdef _DEBUG
+	log_appendf("HTTP %i[%d] %d", prof_id, http_status_code,
 			data_size);
-
+#endif
 	// Check for recoverable errors
 	// Server didnt return any data
 	if (http_status_code == 200 && data_size == 0) {
@@ -196,7 +201,7 @@ int http_get_configuration() {
 	uart_setCheckMsg(HTTP_OK, HTTP_ERROR);
 
 	while (retry == 1 && attempts > 0) {
-		if (uart_tx_timeout("AT#HTTPRCV=1\r\n", 180000, 5) == UART_SUCCESS) {
+		if (uart_tx_timeout("AT#HTTPRCV=1", TIMEOUT_HTTPRCV, 5) == UART_SUCCESS) {
 			uart_state = uart_getTransactionState();
 			if (uart_state == UART_SUCCESS) {
 				retry = 0; 	// Found a configuration, lets parse it.

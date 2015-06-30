@@ -102,6 +102,7 @@ void alarm_test_sensor(int id) {
 
 	//lcd_printf(LINEC, "Sensor \"%s\" %s", SensorName[id], getFloatNumber2Text(temperature, msg));
 	if (temperature < cold) {
+		buzzer_feedback_value(1000);
 		if (!s->state.lowAlarm
 				&& elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsCold) {
 			sprintf(msg, "%s Below %s", SensorName[id],
@@ -111,6 +112,7 @@ void alarm_test_sensor(int id) {
 		}
 		return;
 	} else if (temperature > hot) {
+		buzzer_feedback_value(1000);
 		if (!s->state.highAlarm
 				&& elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsHot) {
 			sprintf(msg, "%s Above %s", SensorName[id],
@@ -126,6 +128,11 @@ void alarm_test_sensor(int id) {
 	alarm_error: s->state.alarm = true;
 	state_alarm_on(msg);
 	alarm_sms_sensor(id, elapsed);
+
+	// Force the upload of data to the server in 15 seconds
+	event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 5);
+	event_force_event_by_id(EVT_SAVE_SAMPLE_TEMP, 10);
+	event_force_event_by_id(EVT_UPLOAD_SAMPLES, 15);
 }
 
 void alarm_monitor() {

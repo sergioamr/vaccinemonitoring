@@ -197,9 +197,9 @@ void modem_send_command(const char *cmd) {
 	uart.iTxLen = strlen(cmd);
 
 	if (g_pDevCfg->cfg.logs.modem_transactions) {
-		log_modem("-------- ");
+		log_modem("--- ");
 		log_modem(get_simplified_date_string(NULL));
-		log_modem("-------- \r\n");
+		log_modem("--- \r\n");
 		log_modem(cmd);
 	}
 
@@ -281,13 +281,15 @@ int waitForReady(uint32_t timeoutTimeMs) {
 }
 
 uint8_t iModemErrors = 0;
-
+#pragma SET_DATA_SECTION(".helpers")
 char modem_lastCommand[16];
+#pragma SET_DATA_SECTION()
 
 // Try a command until success with timeout and number of attempts to be made at running it
 uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 		uint8_t attempts) {
 	char *cmd = modem_lastCommand;
+	char idx = 0;
 
 	if (!state_isSimOperational())
 		return UART_FAILED;
@@ -297,16 +299,25 @@ uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 		lcd_print_progress();
 	}
 
-	zeroTerminateCopy(modem_lastCommand, cmdInput);
-	if (len < 16) {
-		if (cmd[len - 1] != '\n') {
-			strcat(cmd, "\r\n");
+	// Append AT and
+	if (!uart.bRXWaitForReturn && len < sizeof(modem_lastCommand)+1) {
+		if (cmdInput[0]!='A') {
+			modem_lastCommand[0]='A';
+			modem_lastCommand[1]='T';
+ 			idx=2;
+		}
+		strcpy(&modem_lastCommand[idx], cmdInput);
+
+		if (cmdInput[len - 1] != '\n') {
+			strcat(modem_lastCommand, "\r\n");
 			_NOP();
 		} else {
 			_NOP();
 		}
-	} else
+	} else {
+		zeroTerminateCopy(modem_lastCommand, cmdInput);
 		cmd = (char *) cmdInput;
+	}
 
 	while (attempts > 0) {
 		modem_send_command(cmd);
@@ -320,7 +331,7 @@ uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 		attempts--;
 		if (g_iLCDVerbose == VERBOSE_BOOTING) {
 			lcd_printl(LINEC, modem_lastCommand);
-			lcd_print_boot("MODEM TIMEOUT", LINE2);
+			lcd_print_boot("TIMEOUT", LINE2);
 		}
 	}
 
@@ -354,7 +365,7 @@ uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime) {
 uint32_t g_iModemMaxWait = MODEM_TX_DELAY1;
 
 void uart_setDelay(uint32_t delay) {
-	g_iModemMaxWait = MODEM_TX_DELAY1;
+	g_iModemMaxWait = delay;
 }
 
 uint8_t isTransactionOK() {
@@ -389,7 +400,7 @@ uint8_t uart_tx(const char *cmd) {
 
 	uart_reset_headers();
 
-	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 10);
+	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 2);
 	if (uart.iRXHeadIdx > uart.iRXTailIdx)
 		return transaction_completed;
 

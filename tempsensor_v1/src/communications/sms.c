@@ -67,7 +67,7 @@ int8_t sms_process_memory_message(int8_t index) {
 	char *phone;
 	char answer = 0;
 
-	uart_txf("AT+CMGR=%d\r\n", index);
+	uart_txf("+CMGR=%d", index);
 
 	int8_t uart_state = uart_getTransactionState();
 	if (uart_state != UART_SUCCESS)
@@ -158,10 +158,10 @@ int8_t sms_process_messages() {
 	memset(SM_ME, 0, sizeof(SM_ME));
 
 	lcd_printf(LINEC, "Fetching SMSs");
-	lcd_printf(LINE2, "SIM %d ", config_getSelectedSIM() + 1);
+	lcd_printf(LINE2, "SIM %d", config_getSelectedSIM() + 1);
 
 	//check if messages are available
-	uart_tx("AT+CPMS?\r\n");
+	uart_tx("+CPMS?");
 
 	// Failed to get parameters
 	int8_t uart_state = uart_getTransactionState();
@@ -182,10 +182,10 @@ int8_t sms_process_messages() {
 		return UART_SUCCESS;
 	}
 
-	lcd_printf(LINEC, "%d Config sms", usedr);
+	lcd_printf(LINEC, "%d cfg", usedr);
 	lcd_printl(LINE2, "Msg Processing..");
 
-	uart_tx("AT+CSDH=0\r\n"); // Disable extended output
+	uart_tx("+CSDH=0"); // Disable extended output
 
 	for (iIdx = 1; iIdx <= totalr; iIdx++) {
 		if (sms_process_memory_message(iIdx) == UART_SUCCESS)
@@ -195,7 +195,7 @@ int8_t sms_process_messages() {
 	}
 
 	delallmsg();
-	uart_tx("AT+CSDH=1\r\n"); // Restore extended output
+	uart_tx("+CSDH=1"); // Restore extended output
 
 	return UART_SUCCESS;
 }
@@ -248,7 +248,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
 		lcd_clear();
-		lcd_printf(LINE1, "SYNC SMS %d ", g_pDevCfg->cfgSIM_slot + 1);
+		lcd_printf(LINE1, "SYNC SMS %d", g_pDevCfg->cfgSIM_slot + 1);
 		lcd_printl(LINE2, szPhoneNumber);
 		lcd_disable_verbose();
 	}
@@ -307,13 +307,11 @@ uint8_t sms_send_message(char* pData) {
 }
 
 void delallmsg() {
-	uart_tx("AT+CMGD=1,2\r\n");	//delete all the sms msgs read or sent successfully
+	uart_tx("+CMGD=1,2");	//delete all the sms msgs read or sent successfully
 }
 
 void delmsg(int8_t iMsgIdx, char* pData) {
-	char szCmd[64];
-	sprintf(szCmd, "AT+CMGD=%d,0\r\n", iMsgIdx);
-	uart_tx(szCmd);
+	uart_txf("+CMGD=%d,0", iMsgIdx);
 	delay(2000);	//opt
 }
 
