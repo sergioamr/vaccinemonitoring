@@ -404,10 +404,12 @@ void event_network_check(void *event, time_t currentTime) {
 	switch (g_pSysState->lastTransMethod) {
 		case HTTP_SIM1:
 		case SMS_SIM1:
+			config_setLastCommand(COMMAND_SWAP_SIM0);
 			res = modem_swap_to_SIM(0);
 			break;
 		case HTTP_SIM2:
 		case SMS_SIM2:
+			config_setLastCommand(COMMAND_SWAP_SIM1);
 			res = modem_swap_to_SIM(1);
 			break;
 		case NONE:

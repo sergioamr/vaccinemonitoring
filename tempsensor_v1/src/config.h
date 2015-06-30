@@ -499,6 +499,11 @@ uint8_t config_is_SIM_configurable(int simSlot);
 #define COMMAND_UART_ERROR 2300
 #define COMMAND_CHECK_NETWORK 2400
 #define COMMAND_FIRST_INIT 2500
+#define COMMAND_FAILOVER 2600
+#define COMMAND_FAILOVER_HTTP_FAILED 2700
+#define COMMAND_SWAP_SIM0 2800
+#define COMMAND_SWAP_SIM1 2900
+
 #define COMMAND_END 99
 
 uint8_t state_isSimOperational();

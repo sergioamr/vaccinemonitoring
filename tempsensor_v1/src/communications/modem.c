@@ -209,6 +209,7 @@ void modem_setNetworkService(int service) {
 }
 
 void modem_run_failover_sequence() {
+	config_setLastCommand(COMMAND_FAILOVER);
 	if (modem_check_network() != UART_SUCCESS) {
 		modem_swap_SIM();
 		if (modem_check_network() != UART_SUCCESS) {
@@ -217,6 +218,7 @@ void modem_run_failover_sequence() {
 	}
 
 	if (http_enable() != UART_SUCCESS) {
+		config_setLastCommand(COMMAND_FAILOVER_HTTP_FAILED);
 		modem_swap_SIM();
 		if (modem_check_network() == UART_SUCCESS
 				&& http_enable() != UART_SUCCESS) {
