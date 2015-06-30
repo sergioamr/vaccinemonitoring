@@ -128,8 +128,8 @@
 // So we have to wait for the modem to be ready.
 
 #ifndef _DEBUG
-#define HTTP_COMMAND_ATTEMPTS 40
-#define NETWORK_CONNECTION_ATTEMPTS 120
+#define HTTP_COMMAND_ATTEMPTS 5
+#define NETWORK_CONNECTION_ATTEMPTS 5
 #define NETWORK_CONNECTION_DELAY 3000
 #endif
 
