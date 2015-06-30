@@ -281,8 +281,9 @@ int waitForReady(uint32_t timeoutTimeMs) {
 }
 
 uint8_t iModemErrors = 0;
-
+#pragma SET_DATA_SECTION(".helpers")
 char modem_lastCommand[16];
+#pragma SET_DATA_SECTION()
 
 // Try a command until success with timeout and number of attempts to be made at running it
 uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
