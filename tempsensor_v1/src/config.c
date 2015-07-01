@@ -213,8 +213,8 @@ void config_send_configuration(char *number) {
 	sms_send_message_number(number, msg);
 
 	power = &g_pDevCfg->stBattPowerAlertParam;
-	sprintf(msg, "Power Active %d(%d mins) \nBatt (%d mins threshold %d)\n"
-			"\nIntervals\nSampling %d mins\nUpload %d mins\nReboot %d mins\nConfig %d",
+	sprintf(msg, "Power %d(%d mins) \nBatt (%d mins thresd %d)\n"
+			"\nIntervals Mins:\nSampling %d\nUpload %d\nReboot %d\nConfig %d",
 			power->enablePowerAlert, (int) power->minutesPower,
 			(int) power->minutesBattThresh, (int) power->battThreshold,
 
@@ -224,11 +224,11 @@ void config_send_configuration(char *number) {
 			(int) g_pDevCfg->sIntervalsMins.configurationFetch);
 	sms_send_message_number(number, msg);
 
-	sprintf(msg, "Gateway [%s]\r\n"
-			"SIM 1 APN [%s]\r\n"
-			"LAST ERROR [%s]\r\n"
-			"SIM 2 APN [%s]\r\n"
-			"LAST ERROR [%s]\r\n",
+	sprintf(msg, "GATEWAY [%s]\r\n"
+			"SIM1APN [%s]\r\n"
+			"LASTERR [%s]\r\n"
+			"SIM2APN [%s]\r\n"
+			"LASTERR [%s]\r\n",
 			g_pDevCfg->cfgGatewaySMS,
 			g_pDevCfg->SIM[0].cfgAPN,
 			g_pDevCfg->SIM[0].simLastError,
