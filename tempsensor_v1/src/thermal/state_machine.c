@@ -369,6 +369,12 @@ void state_http_transfer(uint8_t sim, uint8_t success) {
 /***********************************************************************************************************************/
 
 void state_low_battery_alert() {
+
+	if (STATE_ALARM.battery==true)
+		return;
+
+	STATE_ALARM.battery = true;
+
 	// Activate sound alarm
 	state_alarm_on("LOW BATTERY");
 }
@@ -376,11 +382,15 @@ void state_low_battery_alert() {
 void state_battery_level(uint8_t battery_level) {
 
 	g_pSysState->battery_level = battery_level;
-	if (battery_level
-			< g_pDevCfg->stBattPowerAlertParam.battThreshold && SYSTEM_SWITCH.power_connected == false) {
-		state_low_battery_alert();
+	if (battery_level > g_pDevCfg->stBattPowerAlertParam.battThreshold)
+		return;
+
+	if (SYSTEM_SWITCH.power_connected == true)
+		return;
+
+	state_low_battery_alert();
+	if (battery_level<BATTERY_HIBERNATE_THRESHOLD)
 		thermal_low_battery_hibernate();
-	}
 }
 
 /***********************************************************************************************************************/
@@ -425,6 +435,9 @@ void state_power_on() {
 
 	SYSTEM_SWITCH.power_connected = true;
 	g_pSysState->time_powerOutage = 0;
+
+	// We reset the alarm from the battery since we are plugged
+	STATE_ALARM.battery = false;
 }
 
 void state_power_disconnected() {
