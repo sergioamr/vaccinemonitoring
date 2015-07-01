@@ -41,6 +41,11 @@ uint8_t http_enable() {
 	int uart_state = UART_FAILED;
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
+	if (g_pSysState->system.switches.http_enabled) {
+		_NOP();
+		return UART_SUCCESS;
+	}
+
 	config_setLastCommand(COMMAND_HTTP_ENABLE);
 
 	// Context Activation - #SGACT
@@ -68,6 +73,9 @@ uint8_t http_enable() {
 		}
 
 	} while (uart_state != UART_SUCCESS && --attempts > 0);
+
+	if (uart_state == UART_SUCCESS)
+		g_pSysState->system.switches.http_enabled = 1;
 
 	return uart_state;
 }
@@ -111,6 +119,12 @@ int8_t http_setup() {
 
 uint8_t http_deactivate() {
 	// LONG TIMEOUT
+/*
+	if (!g_pSysState->system.switches.http_enabled) {
+		_NOP();
+	}
+*/
+	g_pSysState->system.switches.http_enabled = 0;
 	config_setLastCommand(COMMAND_HTTP_DISABLE);
 	return uart_tx("AT#SGACT=1,0\r\n");	//deactivate GPRS context
 }

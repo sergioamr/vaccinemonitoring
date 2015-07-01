@@ -440,6 +440,9 @@ int config_parse_configuration(char *msg) {
 	lcd_display_config();
 
 	config_incLastCmd();
+#ifdef CONFIG_SAVE_IN_PROGRESS
+	config_save_ini();
+#endif
 
 	return UART_SUCCESS;
 }
@@ -459,6 +462,42 @@ int config_process_configuration() {
 #define SECTION_LOGS "LOGS"
 
 #ifdef USE_MININI
+
+// This functionality doesnt work yet
+#ifdef CONFIG_SAVE_IN_PROGRESS
+void config_save_ini() {
+	long n;
+	INTERVAL_PARAM *intervals;
+
+	//f_rename(CONFIG_INI_FILE, "thermal.old");
+	lcd_printf(LINEC, "SAVING CONFIG");
+
+	n = ini_puts(SECTION_SERVER, "GatewaySMS", g_pDevCfg->cfgGatewaySMS, CONFIG_INI_FILE);
+	n = ini_puts(SECTION_SERVER, "ReportSMS", g_pDevCfg->cfgReportSMS, CONFIG_INI_FILE);
+	n = ini_puts(SECTION_SERVER, "GatewayIP", g_pDevCfg->cfgGatewayIP, 	CONFIG_INI_FILE);
+	n = ini_puts(SECTION_SERVER, "Config_URL", g_pDevCfg->cfgConfig_URL, CONFIG_INI_FILE);
+	n = ini_puts(SECTION_SERVER, "Upload_URL", g_pDevCfg->cfgUpload_URL, CONFIG_INI_FILE);
+
+	n = ini_puts("SIM1", "APN", g_pDevCfg->SIM[0].cfgAPN, CONFIG_INI_FILE);
+	n = ini_puts("SIM2", "APN", g_pDevCfg->SIM[1].cfgAPN, CONFIG_INI_FILE);
+
+	intervals = &g_pDevCfg->sIntervalsMins;
+	n = ini_putl(SECTION_INTERVALS, "Sampling", intervals->sampling, CONFIG_INI_FILE);
+	if (n == 0)
+		return;
+
+	n = ini_putl(SECTION_INTERVALS, "Upload", intervals->upload, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "Reboot", intervals->systemReboot, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "Configuration", intervals->configurationFetch, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "SMS_Check", intervals->smsCheck, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "Network_Check", intervals->networkCheck, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "LCD_off", intervals->lcdOff, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "Alarms", intervals->alarmsCheck, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "ModemPullTime", intervals->modemPullTime, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "BatteryCheck", intervals->batteryCheck, CONFIG_INI_FILE);
+}
+#endif
+
 FRESULT config_read_ini_file() {
 	FRESULT fr;
 	FILINFO fno;
@@ -557,8 +596,13 @@ FRESULT config_read_ini_file() {
 	//fr = f_rename(CONFIG_INI_FILE, "thermal.old");
 #endif
 	_NOP();
+
+#ifdef CONFIG_SAVE_IN_PROGRESS
+	config_save_ini();
+#endif
 	return fr;
 }
+
 #endif
 
 int config_default_configuration() {
@@ -590,6 +634,7 @@ int config_default_configuration() {
 	g_pDevCfg->sIntervalsMins.smsCheck = PERIOD_SMS_CHECK;
 
 	g_pDevCfg->cfg.logs.sms_alerts = ALERTS_SMS;
+
 #ifdef _DEBUG
 	g_pDevCfg->cfg.logs.commmands = 1;
 #endif

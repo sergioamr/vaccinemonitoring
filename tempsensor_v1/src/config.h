@@ -371,6 +371,7 @@ typedef union {
 		unsigned char power_connected :1;
 		unsigned char button_buzzer_override :1;
 		unsigned char buzzer_sound :1;
+		unsigned char http_enabled :1;
 	} switches;
 	unsigned char status;
 } SYSTEM_SWITCHES;
@@ -459,6 +460,10 @@ extern void config_reset_error(SIM_CARD_CONFIG *sim);
 extern uint16_t config_getSimLastError(char *charToken);
 int config_default_configuration();
 int config_process_configuration();
+
+#ifdef CONFIG_SAVE_IN_PROGRESS
+void config_save_ini();
+#endif
 
 int config_parse_configuration(char *msg);
 
