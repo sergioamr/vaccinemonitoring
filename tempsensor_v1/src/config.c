@@ -90,6 +90,23 @@ void config_reset_error(SIM_CARD_CONFIG *sim) {
 	state_SIM_operational();
 }
 
+void config_display_config() {
+	int t;
+
+	lcd_printf(LINEC, "SMS Gateway");
+	lcd_printf(LINEH, g_pDevCfg->cfgGatewaySMS);
+
+	lcd_printf(LINEC, "Gateway IP");
+	lcd_printf(LINEH, g_pDevCfg->cfgGatewayIP);
+
+	for (t = 0; t < 2; t++) {
+		lcd_printf(LINEC, "APN %d", t + 1);
+		lcd_printf(LINEH, g_pDevCfg->SIM[t].cfgAPN);
+	}
+
+	lcd_display_config();
+}
+
 //TODO This should go to the state machine
 
 void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
@@ -189,8 +206,7 @@ void config_incLastCmd() {
 void config_reconfigure() {
 	g_pSysCfg->memoryInitialized = 0xFF;
 	PMM_trigBOR();
-	while (1)
-		;
+	while (1);
 }
 
 // Send back data after an SMS request
@@ -515,14 +531,13 @@ int config_parse_configuration(char *msg) {
 	event_setInterval_by_id_secs(EVT_UPLOAD_SAMPLES,
 			MINUTES_(pInterval->upload));
 
-	lcd_display_config();
-
 	config_incLastCmd();
 #ifdef CONFIG_SAVE_IN_PROGRESS
 	config_save_ini();
 #endif
 
 #ifdef _DEBUG
+	config_display_config();
 	config_send_configuration(g_pDevCfg->cfgReportSMS);
 #endif
 
@@ -621,11 +636,6 @@ FRESULT config_read_ini_file() {
 			g_pDevCfg->cfgGatewaySMS, sizearray(g_pDevCfg->cfgGatewaySMS),
 			CONFIG_INI_FILE);
 
-	if (g_bServiceMode) {
-		lcd_printf(LINEC, "SMS Gateway");
-		lcd_printf(LINEH, g_pDevCfg->cfgGatewaySMS);
-	}
-
 	n = ini_gets(SECTION_SERVER, "ReportSMS", REPORT_PHONE_NUMBER,
 			g_pDevCfg->cfgReportSMS, sizearray(g_pDevCfg->cfgReportSMS),
 			CONFIG_INI_FILE);
@@ -633,11 +643,6 @@ FRESULT config_read_ini_file() {
 	n = ini_gets(SECTION_SERVER, "GatewayIP", NEXLEAF_DEFAULT_SERVER_IP,
 			g_pDevCfg->cfgGatewayIP, sizearray(g_pDevCfg->cfgGatewayIP),
 			CONFIG_INI_FILE);
-
-	if (g_bServiceMode) {
-		lcd_printf(LINEC, "Gateway IP");
-		lcd_printf(LINEH, g_pDevCfg->cfgGatewayIP);
-	}
 
 	n = ini_gets(SECTION_SERVER, "Config_URL", CONFIGURATION_URL_PATH,
 			g_pDevCfg->cfgConfig_URL, sizearray(g_pDevCfg->cfgConfig_URL),
@@ -673,6 +678,10 @@ FRESULT config_read_ini_file() {
 			PERIOD_PULLTIME, CONFIG_INI_FILE);
 	intervals->batteryCheck = ini_getl(SECTION_INTERVALS, "BatteryCheck",
 			PERIOD_BATTERY_CHECK, CONFIG_INI_FILE);
+
+	if (g_bServiceMode) {
+		config_display_config();
+	}
 
 #ifndef _DEBUG
 	//fr = f_rename(CONFIG_INI_FILE, "thermal.old");

@@ -319,7 +319,6 @@ void events_run() {
 		// We don't want to run the same event twice in a row
 		// lets return control over the system for a round of CPU before repeating the process
 		if (pOldEvent == pEvent) {
-			_NOP();
 			return;
 		}
 
