@@ -27,6 +27,10 @@
 FRESULT config_read_ini_file();
 #endif
 
+#ifdef _DEBUG
+#define DEBUG_SEND_CONFIG
+#endif
+
 // Setup mode in which we are at the moment
 // Triggered by the Switch 3 button
 int8_t g_iSystemSetup = -1;
@@ -395,7 +399,9 @@ int config_parse_configuration_ST1(char *token) {
 	// TODO CHECK IF THE SIM CARD IS OPPERATIONAL
 	g_pDevCfg->cfgSelectedSIM_slot = tempValue;
 
-	log_append_("Config Success");
+#ifdef _DEBUG
+	log_append_("ST1 OK");
+#endif
 	return UART_SUCCESS;
 }
 
@@ -445,12 +451,25 @@ int config_parse_configuration_ST2(char *token) {
 			UART_FAILED);
 
 	PARSE_NEXTVALUE(token, &pBattPower->battThreshold, delimiter, UART_FAILED);
+
+#ifdef _DEBUG
+	log_append_("ST2 OK");
+#endif
+
 	return UART_SUCCESS;
 }
 
-int config_parse_configuration_ST3(char *msg) {
+int config_parse_configuration_ST3(char *token) {
 	config_setLastCommand(COMMAND_PARSE_CONFIG_ST3);
 	lcd_printl(LINEH, CHUNK_ST3);
+
+	// Skip $ST3,
+	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
+
+#ifdef _DEBUG
+	log_append_("ST3 OK");
+#endif
+
 	return UART_SUCCESS;
 }
 
@@ -501,6 +520,10 @@ int config_parse_configuration(char *msg) {
 	config_incLastCmd();
 #ifdef CONFIG_SAVE_IN_PROGRESS
 	config_save_ini();
+#endif
+
+#ifdef _DEBUG
+	config_send_configuration(g_pDevCfg->cfgReportSMS);
 #endif
 
 	return UART_SUCCESS;

@@ -303,6 +303,7 @@ EVENT inline *events_getNextEvent() {
 void events_run() {
 	time_t currentTime;
 	EVENT *pEvent;
+	EVENT *pOldEvent = NULL;
 	uint8_t nextEvent = g_sEvents.nextEvent;
 
 	if (nextEvent > MAX_EVENTS)
@@ -315,6 +316,14 @@ void events_run() {
 		if (g_iDebug)
 			buzzer_feedback_value(5);
 
+		// We don't want to run the same event twice in a row
+		// lets return control over the system for a round of CPU before repeating the process
+		if (pOldEvent == pEvent) {
+			_NOP();
+			return;
+		}
+
+		pOldEvent = pEvent;
 		event_run_now(pEvent);
 		nextEvent = g_sEvents.nextEvent;
 		pEvent = &g_sEvents.events[nextEvent];
