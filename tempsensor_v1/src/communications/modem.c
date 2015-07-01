@@ -287,7 +287,7 @@ int modem_connect_network(uint8_t attempts) {
 				state_network_success(nsim);
 
 				// We tested more than once, lets show a nice we are connected message
-				if (tests > 2)
+				if (tests > 4)
 					delay(HUMAN_DISPLAY_INFO_DELAY);
 				return UART_SUCCESS;
 			} else {

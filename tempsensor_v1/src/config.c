@@ -336,30 +336,71 @@ void config_update_system_time() {
 // http://54.241.2.213/coldtrace/uploads/multi/v3/358072043112124/1/
 // $ST2,7,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,600,1,600,15,$ST1,919243100142,both,airtelgprs.com,10,1,0,0,$EN
 
-int config_parse_configuration(char *msg) {
-	char *token;
-	char command[5] = "$EN";
-	char delimiter[2] = ",";
-	int tempValue = 0;
+const char CHUNK_ST1[5]="$ST1";
+const char CHUNK_ST2[5]="$ST2";
+const char CHUNK_ST3[5]="$ST3";
+const char CHUNK_END[3]="$EN";
+const char delimiter[2] = ",";
+
+int config_parse_configuration_ST1(char *token) {
 	int iCnt = 0;
-	int i = 0;
-	TEMP_ALERT_PARAM *pAlertParams;
-	BATT_POWER_ALERT_PARAM *pBattPower;
+	int tempValue = 0;
 	INTERVAL_PARAM *pInterval;
-
-	config_setLastCommand(COMMAND_PARSE_CONFIG_ONLINE);
-
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
-	lcd_printf(LINEC, "Parsing");
-	lcd_printl(LINEH, "Configuration"); // Show the firmware version
+	config_setLastCommand(COMMAND_PARSE_CONFIG_ST1);
+	lcd_printl(LINEH, (char *) CHUNK_ST1);
 
-	fat_save_config(msg);
+	// Skip $ST1,
+	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
+	// SIM info
+	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewaySMS[0], sizeof(g_pDevCfg->cfgGatewaySMS),
+			delimiter, UART_FAILED); // GATEWAY NUM
+	PARSE_NEXTVALUE(token, &sim->cfgUploadMode, delimiter, UART_FAILED); // NETWORK TYPE E.G. GPRS
+	PARSE_NEXTSTRING(token, &sim->cfgAPN[0], sizeof(sim->cfgAPN), delimiter,
+			UART_FAILED); //APN
 
-	PARSE_FINDSTR_BUFFER_RET(token, msg, "$ST2,", UART_FAILED);
+	pInterval = &g_pDevCfg->sIntervalsMins;
+	PARSE_NEXTVALUE(token, &pInterval->upload, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &pInterval->sampling, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); // Reset alert
+	if (tempValue > 0) {
+		state_clear_alarm_state();
+		for (iCnt = 0; iCnt < SYSTEM_NUM_SENSORS; iCnt++) {
+			//reset the alarm
+			state_reset_sensor_alarm(iCnt);
+		}
+	}
+
+	// Value from the server comes 1 or 2. We use 0 to 1 format.
+	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); ////
+	if (tempValue < 0 || tempValue > 1)
+		tempValue = 0;
+
+	// TODO CHECK IF THE SIM CARD IS OPPERATIONAL
+	g_pDevCfg->cfgSelectedSIM_slot = tempValue;
+
+	log_append_("Config Success");
+	return UART_SUCCESS;
+}
+
+int config_parse_configuration_ST2(char *token) {
+	int i = 0;
+	int tempValue = 0;
+	TEMP_ALERT_PARAM *pAlertParams;
+	BATT_POWER_ALERT_PARAM *pBattPower;
+
+	config_setLastCommand(COMMAND_PARSE_CONFIG_ST2);
+	lcd_printl(LINEH, CHUNK_ST2);
+
+	// Skip $ST2,
+	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
 
 	// Return success if no configuration has changed
-	PARSE_FIRSTVALUE(token, &tempValue, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED);
+	if (tempValue==1)
+		_NOP();
+
 	if (g_pDevCfg->cfgServerConfigReceived && g_pDevCfg->cfgSyncId == 0)
 		return UART_SUCCESS;
 
@@ -389,42 +430,45 @@ int config_parse_configuration(char *msg) {
 			UART_FAILED);
 
 	PARSE_NEXTVALUE(token, &pBattPower->battThreshold, delimiter, UART_FAILED);
+	return UART_SUCCESS;
+}
 
-// SIM info
-	PARSE_NEXTSTRING(token, command, sizeof(command), delimiter, UART_FAILED); // $ST1,
-	if (strncmp(command, "$ST1", 4))
+int config_parse_configuration_ST3(char *msg) {
+	config_setLastCommand(COMMAND_PARSE_CONFIG_ST3);
+	lcd_printl(LINEH, CHUNK_ST3);
+	return UART_SUCCESS;
+}
+
+int config_parse_configuration(char *msg) {
+	char *tokenEND, *tokenST3, *tokenST2, *tokenST1;
+	INTERVAL_PARAM *pInterval = &g_pDevCfg->sIntervalsMins;
+
+	config_setLastCommand(COMMAND_PARSE_CONFIG_ONLINE);
+
+	lcd_printf(LINEC, "Parsing Config");
+
+	fat_save_config(msg);
+
+	// Try to see if we have an end for the config
+	tokenEND =strstr((const char *) msg, "$EN");
+	if (tokenEND==NULL)
 		return UART_FAILED;
 
-	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewaySMS[0], strlen(token),
-			delimiter, UART_FAILED); // GATEWAY NUM
-	PARSE_NEXTVALUE(token, &sim->cfgUploadMode, delimiter, UART_FAILED); // NETWORK TYPE E.G. GPRS
-	PARSE_NEXTSTRING(token, &sim->cfgAPN[0], strlen(token), delimiter,
-			UART_FAILED); //APN
+	tokenST1=strstr((const char *) msg, CHUNK_ST1);
+	tokenST2=strstr((const char *) msg, CHUNK_ST2);
+	tokenST3=strstr((const char *) msg, CHUNK_ST3);
 
-	pInterval = &g_pDevCfg->sIntervalsMins;
-	PARSE_NEXTVALUE(token, &pInterval->upload, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &pInterval->sampling, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); // Reset alert
-	if (tempValue > 0) {
-		state_clear_alarm_state();
-		for (iCnt = 0; iCnt < SYSTEM_NUM_SENSORS; iCnt++) {
-			//reset the alarm
-			state_reset_sensor_alarm(iCnt);
-		}
-	}
+	if (tokenST1!=NULL)
+		if (config_parse_configuration_ST1(tokenST1)==UART_FAILED)
+			return UART_FAILED;
 
-	// Value from the server comes 1 or 2. We use 0 to 1 format.
-	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); ////
-	if (tempValue < 0 || tempValue > 1)
-		tempValue = 0;
+	if (tokenST2!=NULL)
+		if (config_parse_configuration_ST2(tokenST2)==UART_FAILED)
+			return UART_FAILED;
 
-	g_pDevCfg->cfgSelectedSIM_slot = tempValue;
-
-	PARSE_NEXTSTRING(token, command, sizeof(command), ", \n", UART_FAILED); // $EN
-	if (strncmp(command, "$EN", 3))
-		return UART_FAILED;
-
-	log_append_("Config Success");
+	if (tokenST3!=NULL)
+		if (config_parse_configuration_ST3(tokenST3)==UART_FAILED)
+			return UART_FAILED;
 
 	g_pDevCfg->cfgServerConfigReceived = 1;
 

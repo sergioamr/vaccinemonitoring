@@ -108,9 +108,11 @@ void modem_ignore_next_errors(int errors);
 	if(token!=NULL) { if(var!=atoi(token)) var=atoi(token); } else return error;
 
 #define PARSE_FIRSTSKIP(token, delimiter, error) token = strtok(token, delimiter); \
-	if(token==NULL) return error;
+	if(token==NULL) return error; else token+=strlen(token)-1;
 
 #define PARSE_SKIP(token, delimiter, error) token = strtok(NULL, delimiter); \
 	if(token==NULL) return error;
+
+//else token+=strlen(sz)-1;
 
 #endif /* TEMPSENSOR_V1_MODEM_H_ */

@@ -116,8 +116,11 @@ void modem_turn_off() {
 	P4OUT |= BIT0;
 }
 
+// Used to check the stack for leaks
+#ifdef __CLEAR_STACK__
 extern char __STACK_END;
 extern char __STACK_SIZE;
+#endif
 
 void system_boot() {
 	UINT bytes_written = 0;
@@ -196,7 +199,10 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 /****************************************************************************/
 
 int main(void) {
-	//memset((void*) (&__STACK_END - &__STACK_SIZE), 0x00, (size_t) __STACK_SIZE);
+#ifdef __CLEAR_STACK__
+	memset((void*) (&__STACK_END - &__STACK_SIZE), 0x00, (size_t) __STACK_SIZE);
+#endif
+
 	// Disable for init since we are not going to be able to respond to it.
 	watchdog_disable();
 
