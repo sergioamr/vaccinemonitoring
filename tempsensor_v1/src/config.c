@@ -347,6 +347,8 @@ int config_parse_configuration_ST1(char *token) {
 	int tempValue = 0;
 	INTERVAL_PARAM *pInterval;
 	SIM_CARD_CONFIG *sim = config_getSIM();
+	char uploadMode[6];
+	memset(uploadMode,0,sizeof(uploadMode));
 
 	config_setLastCommand(COMMAND_PARSE_CONFIG_ST1);
 	lcd_printl(LINEH, (char *) CHUNK_ST1);
@@ -356,7 +358,20 @@ int config_parse_configuration_ST1(char *token) {
 	// SIM info
 	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewaySMS[0], sizeof(g_pDevCfg->cfgGatewaySMS),
 			delimiter, UART_FAILED); // GATEWAY NUM
-	PARSE_NEXTVALUE(token, &sim->cfgUploadMode, delimiter, UART_FAILED); // NETWORK TYPE E.G. GPRS
+	PARSE_NEXTSTRING(token, uploadMode, sizeof(uploadMode), delimiter, UART_FAILED); // NETWORK TYPE E.G. GPRS
+
+	sim->cfgUploadMode = MODE_GPRS;
+#ifdef _DEBUG
+	if (!strncmp(uploadMode, "grps", sizeof(uploadMode)))
+		sim->cfgUploadMode=MODE_GPRS;
+	else
+#endif
+	if (!strncmp(uploadMode, "gsm", sizeof(uploadMode)))
+		sim->cfgUploadMode=MODE_GSM;
+	else
+	if (!strncmp(uploadMode, "both", sizeof(uploadMode)))
+		sim->cfgUploadMode=MODE_GSM+MODE_GPRS;
+
 	PARSE_NEXTSTRING(token, &sim->cfgAPN[0], sizeof(sim->cfgAPN), delimiter,
 			UART_FAILED); //APN
 

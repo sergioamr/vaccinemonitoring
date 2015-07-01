@@ -190,6 +190,8 @@
 /*****************************************************************************************************************/
 /* Main structures for the application */
 /*****************************************************************************************************************/
+#define MODE_GSM 1
+#define MODE_GPRS 2
 typedef struct {
 	char cfgSMSCenter[GW_MAX_LEN + 1]; // Service Message Center number
 	char cfgPhoneNum[GW_MAX_LEN + 1];
