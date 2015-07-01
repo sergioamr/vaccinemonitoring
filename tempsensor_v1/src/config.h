@@ -503,6 +503,8 @@ uint8_t config_is_SIM_configurable(int simSlot);
 #define COMMAND_FAILOVER_HTTP_FAILED 2700
 #define COMMAND_SWAP_SIM0 2800
 #define COMMAND_SWAP_SIM1 2900
+#define COMMAND_HTTP_ENABLE 3000
+#define COMMAND_HTTP_DISABLE 3100
 
 #define COMMAND_END 99
 

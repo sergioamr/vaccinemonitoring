@@ -182,7 +182,7 @@ int8_t sms_process_messages() {
 		return UART_SUCCESS;
 	}
 
-	lcd_printf(LINEC, "%d cfg", usedr);
+	lcd_printf(LINEC, "%d SMS Fetch", usedr);
 	lcd_printl(LINE2, "Msg Processing..");
 
 	uart_tx("+CSDH=0"); // Disable extended output

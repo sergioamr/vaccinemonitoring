@@ -41,6 +41,8 @@ uint8_t http_enable() {
 	int uart_state = UART_FAILED;
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
+	config_setLastCommand(COMMAND_HTTP_ENABLE);
+
 	// Context Activation - #SGACT
 	// Execution command is used to activate or deactivate either the GSM context
 	// or the specified PDP context.
@@ -103,11 +105,13 @@ int8_t http_setup() {
 	}
 
 	lcd_printl(LINE2, "SUCCESS");
+	http_deactivate();
 	return UART_SUCCESS;
 }
 
 uint8_t http_deactivate() {
 	// LONG TIMEOUT
+	config_setLastCommand(COMMAND_HTTP_DISABLE);
 	return uart_tx("AT#SGACT=1,0\r\n");	//deactivate GPRS context
 }
 
