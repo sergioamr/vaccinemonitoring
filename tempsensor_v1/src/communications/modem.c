@@ -209,17 +209,30 @@ void modem_setNetworkService(int service) {
 }
 
 void modem_run_failover_sequence() {
+
+	uint8_t swapped = false;
 	config_setLastCommand(COMMAND_FAILOVER);
 	if (modem_check_network() != UART_SUCCESS) {
 		modem_swap_SIM();
+		swapped = true;
 		if (modem_check_network() != UART_SUCCESS) {
 			g_pSysState->lastTransMethod = NONE;
 		}
 	}
 
+	// TODO Check if we want GRPS or GSM here
+	if ((g_pDevCfg->cfgUploadMode & MODE_GPRS) == 0) {
+		_NOP();
+	}
+
+	// TODO We have to split this sequence otherwise we will lock the device
+	// for 10 minutes at least and the deadman switch will reboot us.
 	if (http_enable() != UART_SUCCESS) {
 		config_setLastCommand(COMMAND_FAILOVER_HTTP_FAILED);
-		modem_swap_SIM();
+
+		if (!swapped)
+			modem_swap_SIM();
+
 		if (modem_check_network() == UART_SUCCESS
 				&& http_enable() != UART_SUCCESS) {
 			if (g_pDevCfg->cfgSIM_slot == 0) {

@@ -380,17 +380,16 @@ int config_parse_configuration_ST1(char *token) {
 			delimiter, UART_FAILED); // GATEWAY NUM
 	PARSE_NEXTSTRING(token, uploadMode, sizeof(uploadMode), delimiter, UART_FAILED); // NETWORK TYPE E.G. GPRS
 
-	sim->cfgUploadMode = MODE_GPRS;
+	g_pDevCfg->cfgUploadMode = MODE_GPRS;
 #ifdef _DEBUG
 	if (!strncmp(uploadMode, "grps", sizeof(uploadMode)))
-		sim->cfgUploadMode=MODE_GPRS;
+		g_pDevCfg->cfgUploadMode = MODE_GPRS;
 	else
 #endif
 	if (!strncmp(uploadMode, "gsm", sizeof(uploadMode)))
-		sim->cfgUploadMode=MODE_GSM;
-	else
-	if (!strncmp(uploadMode, "both", sizeof(uploadMode)))
-		sim->cfgUploadMode=MODE_GSM+MODE_GPRS;
+		g_pDevCfg->cfgUploadMode = MODE_GSM;
+	else if (!strncmp(uploadMode, "both", sizeof(uploadMode)))
+		g_pDevCfg->cfgUploadMode = MODE_GSM + MODE_GPRS;
 
 	PARSE_NEXTSTRING(token, &sim->cfgAPN[0], sizeof(sim->cfgAPN), delimiter,
 			UART_FAILED); //APN

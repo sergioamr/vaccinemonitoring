@@ -199,7 +199,6 @@ typedef struct {
 	uint8_t iMaxMessages; // Max messages stored on sim card
 	uint16_t iCfgMCC;
 	uint16_t iCfgMNC;
-	int8_t cfgUploadMode;
 
 	char simLastError[ERROR_MAX_LEN];
 	uint16_t simErrorState;
@@ -287,6 +286,7 @@ typedef struct {
 	// User that can get messages from the alarms
 	char cfgReportSMS[GW_MAX_LEN + 1];
 
+	int8_t cfgUploadMode;
 	SIM_CARD_CONFIG SIM[SYSTEM_NUM_SIM_CARDS];
 	struct tm lastSystemTime;
 

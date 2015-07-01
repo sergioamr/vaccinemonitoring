@@ -405,10 +405,14 @@ void event_network_check(void *event, time_t currentTime) {
 	uint8_t *failures;
 	int service;
 
+	// Network is totally broken for this SIM
+	// Change SIM card and don't failover anything.
 	if (!state_isSimOperational()) {
 		modem_swap_SIM();
+		return;
 	}
 
+	// Try to failover into different modes
 	switch (g_pSysState->lastTransMethod) {
 		case HTTP_SIM1:
 		case SMS_SIM1:

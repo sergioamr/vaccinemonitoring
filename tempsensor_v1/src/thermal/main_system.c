@@ -117,7 +117,7 @@ void modem_turn_off() {
 }
 
 // Used to check the stack for leaks
-#ifdef __CLEAR_STACK__
+#ifdef ___CLEAR_STACK___
 extern char __STACK_END;
 extern char __STACK_SIZE;
 #endif
@@ -199,7 +199,7 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 /****************************************************************************/
 
 int main(void) {
-#ifdef __CLEAR_STACK__
+#ifdef ___CLEAR_STACK___
 	memset((void*) (&__STACK_END - &__STACK_SIZE), 0x00, (size_t) __STACK_SIZE);
 #endif
 
