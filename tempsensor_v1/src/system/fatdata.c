@@ -436,7 +436,10 @@ void log_enable() {
 }
 
 FRESULT log_appendf(const char *_format, ...) {
-	char szTemp[180];
+// This function is called with the stack really full. We get this array from the stack for it to not create strange behaviour
+#pragma SET_DATA_SECTION(".aggregate_vars")
+	static char szTemp[80];
+#pragma SET_DATA_SECTION()
 
 	va_list _ap;
 	char *fptr = (char *) _format;

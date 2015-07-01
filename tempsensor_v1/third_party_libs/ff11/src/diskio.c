@@ -7,6 +7,8 @@
 /* storage control modules to the FatFs module with a defined API.       */
 /*-----------------------------------------------------------------------*/
 
+// TODO Clean all the returns and crazy status here from original developer :(
+
 #include "diskio.h"		/* FatFs lower layer API */
 #include "MMC.h"	    /* Header file of MMC SD card control module */
 
@@ -93,8 +95,7 @@ DRESULT disk_read (
 		}
 	}
 
-
-	return stat;
+	return (DRESULT) stat;
 }
 
 DRESULT disk_read_ex (
@@ -122,7 +123,7 @@ DRESULT disk_read_ex (
 	}
 
 
-	return stat;
+	return (DRESULT) stat;
 }
 
 
@@ -143,7 +144,7 @@ DRESULT disk_write (
 
 	for(iIdx = 0; ((iIdx < count) && (stat == RES_OK)); iIdx++)
 	{
-		result = mmcWriteBlock(sector*SECTOR_SIZE, SECTOR_SIZE, buff);
+		result = mmcWriteBlock(sector*SECTOR_SIZE, SECTOR_SIZE, (unsigned char *) buff);
 		if(result == MMC_SUCCESS)
 		{
 			stat = RES_OK;
@@ -156,7 +157,7 @@ DRESULT disk_write (
 	}
 
 
-	return stat;
+	return (DRESULT) stat;
 
 }
 #endif
@@ -190,6 +191,6 @@ DRESULT disk_ioctl (
 		stat = RES_PARERR;
 		break;
 	}
-	return stat;
+	return (DRESULT) stat;
 }
 #endif
