@@ -271,8 +271,10 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 		token = strstr(uart_getRXHead(), "ERROR");
 		if (token == NULL) {
 			token = strstr(uart_getRXHead(), "+CMGS:");
-			msgNumber = atoi(token + 6);
-			state_SMS_lastMessageACK(sim, msgNumber);
+			if (token!=NULL) {
+				msgNumber = atoi(token + 6);
+				state_SMS_lastMessageACK(sim, msgNumber);
+			}
 			if (msgNumber != 0)
 				res = UART_SUCCESS;
 			else
