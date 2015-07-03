@@ -134,7 +134,10 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 
 	// Send the date line
 	uart_tx_nowait(line);
-	lcd_progress_wait(1000);
+	if (uart_getTransactionState()!=UART_SUCCESS)
+		return TRANS_FAILED;
+
+	lcd_progress_wait(500);
 
 	// check that the transmitted data equals the size to send
 	while (file->fptr < end) {
@@ -142,6 +145,8 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 			if (file->fptr != end) {
 				replace_character(line, '\n', '|');
 				uart_tx_nowait(line);
+				if (uart_getTransactionState()!=UART_SUCCESS)
+					return TRANS_FAILED;
 				lcd_print_progress();
 			} else {
 				// Last line! Wait for OK

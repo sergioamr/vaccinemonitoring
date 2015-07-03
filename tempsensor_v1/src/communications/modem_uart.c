@@ -344,11 +344,19 @@ uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 }
 
 void uart_tx_nowait(const char *cmd) {
+	uint16_t attempts = 60;
 	uart.bWaitForTXEnd = 1;
 	modem_send_command(cmd);
-	while (uart.bWaitForTXEnd == 1) {
-		delay(5000);
+
+	while (uart.bWaitForTXEnd == 1 && attempts>0) {
+		delay(1000);
+		attempts--;
 	}
+
+	if (attempts==0)
+		uart.iUartState = UART_FAILED;
+	else
+		uart.iUartState = UART_SUCCESS;
 }
 
 uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime) {
@@ -400,22 +408,21 @@ uint8_t uart_tx(const char *cmd) {
 
 	uart_reset_headers();
 
-	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 2);
+	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 10);
 	if (uart.iRXHeadIdx > uart.iRXTailIdx)
 		return transaction_completed;
 
 	uart_state = uart_getTransactionState();
-	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
 #ifdef _DEBUG_OUTPUT
+	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
 		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": \""); // Display the command returned
 		if (pToken1 != NULL) {
 			lcd_print_boot((char *) pToken1 + 3, LINE2);
 		} else {
 			lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2], LINE2); // Display the OK message
 		}
-#endif
 	}
-
+#endif
 	return uart_state;
 }
 

@@ -462,7 +462,7 @@ extern uint16_t config_getSIMError(int slot);
 extern void config_reset_error(SIM_CARD_CONFIG *sim);
 extern uint16_t config_getSimLastError(char *charToken);
 int config_default_configuration();
-int config_process_configuration();
+int config_process_configuration(char *token);
 
 #ifdef CONFIG_SAVE_IN_PROGRESS
 void config_save_ini();

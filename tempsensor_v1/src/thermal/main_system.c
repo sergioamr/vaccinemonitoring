@@ -198,6 +198,7 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 /*  MAIN                                                                    */
 /****************************************************************************/
 
+
 int main(void) {
 #ifdef ___CLEAR_STACK___
 	memset((void*) (&__STACK_END - &__STACK_SIZE), 0x00, (size_t) __STACK_SIZE);
