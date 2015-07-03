@@ -367,7 +367,7 @@ void lcd_display_config() {
 	lcd_printf(LINEC, "C%d %s H%d %s", (int) pAlertParams->maxSecondsCold / 60, &num1[0],
 			(int) pAlertParams->maxSecondsHot / 60, &num2[0]);
 
-	lcd_printf(LINEH, "S%d U%d L%d P%d", g_pDevCfg->cfgSelectedSIM_slot+1,
+	lcd_printf(LINE2, "S%d U%d L%d P%d", g_pDevCfg->cfgSelectedSIM_slot+1,
 			g_pDevCfg->sIntervalsMins.upload,
 			g_pDevCfg->sIntervalsMins.sampling,
 			g_pDevCfg->stBattPowerAlertParam.minutesPower);

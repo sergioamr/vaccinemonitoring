@@ -172,7 +172,7 @@ void uart_reset_headers() {
 #ifdef _DEBUG
 	memset((char *) RXBuffer, 0, sizeof(RXBuffer));
 #else
-	RXBuffer[0]=0;
+	RXBuffer[0] = 0;
 #endif
 
 	uart.iTXIdx = 0;
@@ -206,7 +206,7 @@ void modem_send_command(const char *cmd) {
 	// Store the maximum size used from this buffer
 #ifdef _DEBUG_COUNT_BUFFERS
 	if (uart.iTxLen > g_pSysCfg->maxTXBuffer)
-		g_pSysCfg->maxTXBuffer = uart.iTxLen;
+	g_pSysCfg->maxTXBuffer = uart.iTxLen;
 #endif
 	if (uart.iTxLen > sizeof(TXBuffer)) {
 		lcd_print("TXERR");
@@ -217,7 +217,7 @@ void modem_send_command(const char *cmd) {
 #ifdef _DEBUG
 		memset((char *) TXBuffer, 0, sizeof(TXBuffer));
 #else
-		TXBuffer[0]=0;
+		TXBuffer[0] = 0;
 #endif
 		memcpy((char *) TXBuffer, cmd, uart.iTxLen);
 	}
@@ -267,7 +267,7 @@ int waitForReady(uint32_t timeoutTimeMs) {
 #ifdef _DEBUG_COUNT_BUFFERS
 	// Store the maximum size used from this buffer
 	if (uart.iRxCountBytes > g_pSysCfg->maxRXBuffer)
-		g_pSysCfg->maxRXBuffer = uart.iRxCountBytes;
+	g_pSysCfg->maxRXBuffer = uart.iRxCountBytes;
 #endif
 
 	delay(100);  // Documentation specifies 30 ms delay between commands
@@ -300,11 +300,11 @@ uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 	}
 
 	// Append AT and
-	if (!uart.bRXWaitForReturn && len < sizeof(modem_lastCommand)+1) {
-		if (cmdInput[0]!='A') {
-			modem_lastCommand[0]='A';
-			modem_lastCommand[1]='T';
- 			idx=2;
+	if (!uart.bRXWaitForReturn && len < sizeof(modem_lastCommand) + 1) {
+		if (cmdInput[0] != 'A') {
+			modem_lastCommand[0] = 'A';
+			modem_lastCommand[1] = 'T';
+			idx = 2;
 		}
 		strcpy(&modem_lastCommand[idx], cmdInput);
 

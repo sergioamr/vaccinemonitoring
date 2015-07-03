@@ -310,6 +310,7 @@ void events_run() {
 		return;
 
 	currentTime = events_getTick();
+	state_check_power();
 
 	pEvent = &g_sEvents.events[nextEvent];
 	while (currentTime >= pEvent->nextEventRun && pEvent != NULL) {
@@ -552,9 +553,16 @@ uint8_t event_wake_up_main() {
 
 void event_main_sleep() {
 	iMainSleep = 1;
+
+	// Screen on, check every second
 	if (g_bLCD_state)
 		delay(MAIN_SLEEP_TIME);
 	else
+	// If we are disconnected, lets check every 5 seconds for the power to be back.
+	if (g_pSysState->system.switches.power_connected)
+			delay(MAIN_SLEEP_POWER_OUTAGE);
+	else
+	// Deep sleep
 		delay(MAIN_LCD_OFF_SLEEP_TIME);
 
 	iMainSleep = 0;

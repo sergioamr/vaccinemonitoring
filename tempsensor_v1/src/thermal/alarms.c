@@ -102,7 +102,8 @@ void alarm_test_sensor(int id) {
 
 	//lcd_printf(LINEC, "Sensor \"%s\" %s", SensorName[id], getFloatNumber2Text(temperature, msg));
 	if (temperature < cold) {
-		buzzer_feedback_value(1000);
+		if (!g_pSysState->system.switches.button_buzzer_override)
+			buzzer_feedback_value(100);
 		if (!s->state.lowAlarm
 				&& elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsCold) {
 			sprintf(msg, "%s Below %s", SensorName[id],
@@ -112,7 +113,8 @@ void alarm_test_sensor(int id) {
 		}
 		return;
 	} else if (temperature > hot) {
-		buzzer_feedback_value(1000);
+		if (!g_pSysState->system.switches.button_buzzer_override)
+			buzzer_feedback_value(100);
 		if (!s->state.highAlarm
 				&& elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsHot) {
 			sprintf(msg, "%s Above %s", SensorName[id],

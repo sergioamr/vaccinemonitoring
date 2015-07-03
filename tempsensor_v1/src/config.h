@@ -101,7 +101,7 @@
 
 // 1 will disable the buzzer when there is an Alarm
 // Buzzer will still work on button feedback
-#define BUZZER_DISABLE 0
+#define BUZZER_DISABLE 1
 
 // Disable buttons sounds
 #define BUZZER_DISABLE_FEEDBACK 0
@@ -122,6 +122,7 @@
 #define MAIN_SLEEP_TIME 1000
 #define MAIN_LCD_OFF_SLEEP_TIME 30000
 #endif
+#define MAIN_SLEEP_POWER_OUTAGE 5000
 
 // Poll times trying to connect to the network.
 // After autoband it could take up to 90 seconds for the bands trial and error.

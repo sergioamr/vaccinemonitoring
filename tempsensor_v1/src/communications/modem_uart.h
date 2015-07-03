@@ -14,28 +14,27 @@
 typedef struct {
 	int8_t iActive;
 
-	uint16_t iRXTailIdx;
-	uint16_t iRXHeadIdx;
+	uint16_t iRXHeadIdx;  // Head of the ring buffer
+	uint16_t iRXTailIdx;  // Current read
 
-	char bWaitForTXEnd;
-	char bTransmissionEnd;
+	char bWaitForTXEnd;	   // Wait for all the data to be transmitted
+	char bTransmissionEnd; // Tranmission ended by OK or ERROR
 
-	int8_t iUartState;
-	uint8_t bRXWaitForReturn;
+	int8_t iUartState;	   // State of the last transmission (ERROR or ok)
+	uint8_t bRXWaitForReturn; // Wait for a carriage return (for error parsing)
 
-	uint16_t iTXIdx;
-
+	uint16_t iTXIdx;		  // Data transmitted from TXbuffer
 	uint8_t iError;
 
-	uint16_t iRxCountBytes;
+	uint16_t iRxCountBytes;   // Used for stats
 	uint16_t iTxCountBytes;
-	uint16_t iTxLen;
+	uint16_t iTxLen;		  // Data to be transmitted
 
-	char szOK[16];
+	char szOK[16];			  // OK string to be checked for
 	uint8_t OKIdx;
 	int8_t OKLength;
 
-	char szError[16];
+	char szError[16];	      // Fail string
 	uint8_t ErrorIdx;
 	int8_t ErrorLength;
 

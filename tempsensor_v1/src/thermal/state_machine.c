@@ -435,6 +435,7 @@ void state_power_on() {
 
 	SYSTEM_SWITCH.power_connected = true;
 	g_pSysState->time_powerOutage = 0;
+	buzzer_feedback();
 
 	// We reset the alarm from the battery since we are plugged
 	STATE_ALARM.battery = false;
@@ -522,7 +523,6 @@ void state_process() {
 		return;
 	last_check = rtc_get_second_tick();
 
-	state_check_power();
 	state_check_SD_card();
 
 	// Global check for all the alarms
