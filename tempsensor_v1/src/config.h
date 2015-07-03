@@ -458,9 +458,10 @@ uint8_t config_getSelectedSIM();
 void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
 		const char *error);
 
-extern uint16_t config_getSIMError(int slot);
-extern void config_reset_error(SIM_CARD_CONFIG *sim);
-extern uint16_t config_getSimLastError(char *charToken);
+uint16_t config_getSIMError(int slot);
+void config_reset_error(SIM_CARD_CONFIG *sim);
+void config_display_config();
+uint16_t config_getSimLastError(char *charToken);
 int config_default_configuration();
 int config_process_configuration();
 

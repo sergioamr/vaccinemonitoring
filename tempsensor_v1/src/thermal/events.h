@@ -54,10 +54,21 @@ typedef struct {
 	uint32_t lastEventRun;
 	uint32_t interval_secs; // Interval between events in seconds
 	uint16_t offset_secs;   // Seconds to offset the start of this event
-
 } EVENT;
 
+// One time commands that will run when the state machine runs.
+// Used to defer commands
+typedef union {
+	struct {
+		unsigned char swap_sim :1;
+		unsigned char send_config :1;
+	} command;
+	unsigned char status;
+} DEFER_COMMANDS;
+
 typedef struct {
+	DEFER_COMMANDS defer;
+
 	EVENT events[MAX_EVENTS];
 	uint8_t registeredEvents;
 	uint8_t nextEvent;

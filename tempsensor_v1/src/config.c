@@ -535,11 +535,8 @@ int config_parse_configuration(char *msg) {
 	config_save_ini();
 #endif
 
-#ifdef _DEBUG
-	config_display_config();
-	config_send_configuration(g_pDevCfg->cfgReportSMS);
-#endif
-
+	// Order the system to send the config later on.
+	g_sEvents.defer.command.send_config = 1;
 	return UART_SUCCESS;
 }
 

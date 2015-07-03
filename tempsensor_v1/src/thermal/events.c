@@ -23,6 +23,27 @@ EVENT_MANAGER g_sEvents;
 /* Event based system */
 /*******************************************************************************************************/
 
+// Commands postponed by their senders.
+// Some commands we don't want to run them just when they happen;
+void event_run_deferred_commands() {
+	if (g_sEvents.defer.status==0)
+		return;
+
+	if (g_sEvents.defer.command.send_config) {
+		g_sEvents.defer.command.send_config=0;
+		config_display_config();
+#ifdef _DEBUG
+		config_send_configuration(g_pDevCfg->cfgReportSMS);
+#endif
+		return;
+	}
+
+	if (g_sEvents.defer.command.swap_sim) {
+		g_sEvents.defer.command.swap_sim=0;
+		return;
+	}
+}
+
 time_t inline event_getIntervalSeconds(EVENT *pEvent) {
 	if (pEvent == NULL)
 		return PERIOD_UNDEFINED;
@@ -306,8 +327,7 @@ void events_run() {
 	EVENT *pOldEvent = NULL;
 	uint8_t nextEvent = g_sEvents.nextEvent;
 
-	if (nextEvent > MAX_EVENTS)
-		return;
+	event_run_deferred_commands();
 
 	currentTime = events_getTick();
 	state_check_power();
@@ -413,6 +433,7 @@ void event_network_check(void *event, time_t currentTime) {
 		return;
 	}
 
+	/*
 	// Try to failover into different modes
 	switch (g_pSysState->lastTransMethod) {
 		case HTTP_SIM1:
@@ -428,8 +449,9 @@ void event_network_check(void *event, time_t currentTime) {
 		case NONE:
 		default:
 			modem_run_failover_sequence();
-			break;
+			return;
 	}
+	*/
 
 	service = modem_getNetworkService();
 	failures = &g_pSysState->net_service[service].network_failures;
