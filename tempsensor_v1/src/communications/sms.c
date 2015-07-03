@@ -129,7 +129,7 @@ int8_t sms_process_memory_message(int8_t index) {
 		break;
 
 	default:
-		config_parse_configuration(token);
+		config_parse_configuration(msg[0]);
 		break;
 	}
 
