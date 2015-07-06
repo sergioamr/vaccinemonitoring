@@ -486,7 +486,7 @@ void modem_check_sim_active() {
 }
 
 int modem_swap_to_SIM(int sim) {
-	if (g_pDevCfg->cfgSelectedSIM_slot != sim) {
+	if (g_pDevCfg->cfgSIM_slot != sim) {
 		return modem_swap_SIM();
 	}
 

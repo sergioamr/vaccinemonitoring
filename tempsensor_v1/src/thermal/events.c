@@ -433,8 +433,8 @@ void event_network_check(void *event, time_t currentTime) {
 		return;
 	}
 
-	/*
 	// Try to failover into different modes
+	// Only swaps sim if it's not already on the chosen SIM
 	switch (g_pSysState->lastTransMethod) {
 		case HTTP_SIM1:
 		case SMS_SIM1:
@@ -451,7 +451,6 @@ void event_network_check(void *event, time_t currentTime) {
 			modem_run_failover_sequence();
 			return;
 	}
-	*/
 
 	service = modem_getNetworkService();
 	failures = &g_pSysState->net_service[service].network_failures;
