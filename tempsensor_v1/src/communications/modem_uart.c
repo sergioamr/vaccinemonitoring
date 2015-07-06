@@ -381,13 +381,13 @@ uint8_t isTransactionOK() {
 }
 
 uint8_t uart_txf(const char *_format, ...) {
-	char szTemp[128];
+	char szTemp[80];
 	va_list _ap;
 	char *fptr = (char *) _format;
 	char *out_end = szTemp;
 
 	va_start(_ap, _format);
-	if (__TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs) > 128) {
+	if (__TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs) > 80) {
 		_NOP();
 	}
 	va_end(_ap);

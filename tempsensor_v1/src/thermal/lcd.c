@@ -343,10 +343,10 @@ void lcd_print_boot(const char* pcData, int line) {
 	if (g_iLCDVerbose == VERBOSE_DISABLED)
 		return;
 
+#ifdef _DEBUG
 	if (g_bLCD_state == 0)
 		return;
 
-#ifdef _DEBUG
 	if (line==1)
 		lcd_clear();
 
