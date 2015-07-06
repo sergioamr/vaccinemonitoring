@@ -65,9 +65,12 @@ void hardware_actions() {
 			lcd_on = 1;
 		break;
 		case HWD_THERMAL_SYSTEM:
-			thermal_handle_system_button();
+			event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 5);
+			event_force_event_by_id(EVT_SAVE_SAMPLE_TEMP, 10);
+			event_force_event_by_id(EVT_UPLOAD_SAMPLES, 15);
+			//thermal_handle_system_button();
 			lcd_on = 1;
-
+			break;
 		case HWD_BUZZER_FEEDBACK:
 			if (g_pSysState->system.switches.button_buzzer_override) {
 				lcd_printf(LINE1, "BUZZER OFF");

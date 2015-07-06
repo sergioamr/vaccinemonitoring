@@ -200,21 +200,30 @@ int modem_getNetworkService() {
 }
 
 void modem_setNetworkService(int service) {
-	if (g_pSysState->network_mode != service) {
-		g_pSysState->network_mode = service;
-		config_setLastCommand(COMMAND_SET_NETWORK_SERVICE);
+	if (g_pSysState->network_mode == service)
+		return;
 
-		modem_connect_network(NETWORK_CONNECTION_ATTEMPTS);
+	g_pSysState->network_mode = service;
+	config_setLastCommand(COMMAND_SET_NETWORK_SERVICE);
+
+	if (modem_connect_network(NETWORK_CONNECTION_ATTEMPTS) == UART_FAILED)
+		return;
+
+	if (service == NETWORK_GSM && g_pSysState->lastTransMethod==NONE) {
+		g_pSysState->lastTransMethod = SMS_SIM1;
+		_NOP();
+	}
+
+	if (service == NETWORK_GPRS && g_pSysState->lastTransMethod<=SMS_SIM2) {
+		g_pSysState->lastTransMethod = HTTP_SIM1;
+		_NOP();
 	}
 }
 
-void modem_run_failover_sequence() {
-
-	uint8_t swapped = false;
+void modem_network_sequence() {
 	config_setLastCommand(COMMAND_FAILOVER);
 	if (modem_check_network() != UART_SUCCESS) {
 		modem_swap_SIM();
-		swapped = true;
 		if (modem_check_network() != UART_SUCCESS) {
 			g_pSysState->lastTransMethod = NONE;
 		}
@@ -229,10 +238,6 @@ void modem_run_failover_sequence() {
 	// for 10 minutes at least and the deadman switch will reboot us.
 	if (http_enable() != UART_SUCCESS) {
 		config_setLastCommand(COMMAND_FAILOVER_HTTP_FAILED);
-
-		if (!swapped)
-			modem_swap_SIM();
-
 		if (modem_check_network() == UART_SUCCESS
 				&& http_enable() != UART_SUCCESS) {
 			if (g_pDevCfg->cfgSIM_slot == 0) {
@@ -561,7 +566,7 @@ int8_t modem_parse_string(char *cmd, char *response, char *destination,
 int8_t modem_getSMSCenter() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	return modem_parse_string("AT+CSCA?\r\n", "CSCA: \"", sim->cfgSMSCenter,
-			GW_MAX_LEN + 1);
+	GW_MAX_LEN + 1);
 	// added for SMS Message center number to be sent in the heart beat
 }
 
@@ -570,7 +575,7 @@ int8_t modem_getOwnNumber() {
 	int8_t state;
 	modem_ignore_next_errors(1); // Ignore 1 error since we know our sim cards dont support this command
 	state = modem_parse_string("AT+CNUM?", "CNUM: \"", sim->cfgPhoneNum,
-			GW_MAX_LEN + 1);
+	GW_MAX_LEN + 1);
 	modem_ignore_next_errors(0);
 	return state;
 }
@@ -639,7 +644,6 @@ void modem_getExtraInfo() {
 #define NET_ATTEMPTS 10
 #endif
 
-
 #if defined(CAPTURE_MCC_MNC) && defined(_DEBUG)
 void modem_survey_network() {
 
@@ -650,7 +654,7 @@ void modem_survey_network() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	if (sim->iCfgMCC != 0 && sim->iCfgMNC != 0)
-		return;
+	return;
 
 	lcd_disable_verbose();
 
@@ -658,9 +662,9 @@ void modem_survey_network() {
 
 	do {
 		if (attempts != NET_ATTEMPTS)
-			lcd_printf(LINEC, "MCC RETRY %d   ", NET_ATTEMPTS - attempts);
+		lcd_printf(LINEC, "MCC RETRY %d   ", NET_ATTEMPTS - attempts);
 		else
-			lcd_printl(LINEC, "MCC DISCOVER");
+		lcd_printl(LINEC, "MCC DISCOVER");
 
 		// Displays info for the only serving cell
 		uart_tx("#CSURVEXT=0");
@@ -670,7 +674,7 @@ void modem_survey_network() {
 
 			// We just want only one full buffer. The data is on the first few characters of the stream
 			uart_setNumberOfPages(1);
-			uart_tx_timeout("AT#CSURV", TIMEOUT_CSURV, 10); // #CSURV - Network Survey
+			uart_tx_timeout("AT#CSURV", TIMEOUT_CSURV, 10);// #CSURV - Network Survey
 			// Maximum timeout is 2 minutes
 
 			//Execution command allows to perform a quick survey through channels
@@ -692,11 +696,11 @@ void modem_survey_network() {
 				} else {
 					pToken1 = strstr(uart_getRXHead(), "mcc:");
 					if (pToken1 != NULL)
-						sim->iCfgMCC = atoi(pToken1 + 5);
+					sim->iCfgMCC = atoi(pToken1 + 5);
 
 					pToken1 = strstr((const char *) pToken1, "mnc:");
 					if (pToken1 != NULL)
-						sim->iCfgMNC = atoi(pToken1 + 5);
+					sim->iCfgMNC = atoi(pToken1 + 5);
 
 					if (sim->iCfgMCC > 0 && sim->iCfgMNC > 0) {
 						lcd_printl(LINEC, "SUCCESS");
@@ -708,7 +712,7 @@ void modem_survey_network() {
 		}
 
 		attempts--;
-	} while (uart_state != UART_SUCCESS && attempts > 0);
+	}while (uart_state != UART_SUCCESS && attempts > 0);
 
 	uart_setDefaultIntervalDivider();
 

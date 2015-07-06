@@ -62,7 +62,7 @@ void modem_check_sim_active();
 int modem_swap_to_SIM(int sim);
 int modem_swap_SIM();
 const char *modem_getNetworkServiceCommand();
-void modem_run_failover_sequence();
+void modem_network_sequence();
 int modem_getNetworkService();
 void modem_setNetworkService(int service);
 int modem_connect_network(uint8_t attempts);

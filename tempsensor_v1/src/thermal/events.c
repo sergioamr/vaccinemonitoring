@@ -448,7 +448,7 @@ void event_network_check(void *event, time_t currentTime) {
 			break;
 		case NONE:
 		default:
-			modem_run_failover_sequence();
+			modem_network_sequence();
 			return;
 	}
 
