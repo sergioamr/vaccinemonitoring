@@ -106,7 +106,7 @@ char* get_simplified_date_string(struct tm* timeData) {
 	else
 		strcpy(g_szDateString, itoa_nopadding(timeData->tm_year));
 
-	strcat(g_szDateString, itoa_pad(timeData->tm_mon + 1));
+	strcat(g_szDateString, itoa_pad(timeData->tm_mon));
 	strcat(g_szDateString, itoa_pad(timeData->tm_mday));
 	strcat(g_szDateString, ":");
 	strcat(g_szDateString, itoa_pad(timeData->tm_hour));
