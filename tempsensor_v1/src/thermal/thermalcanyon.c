@@ -107,12 +107,12 @@ void thermal_canyon_loop(void) {
 #ifdef _DEBUG
 		events_debug(rtc_get_second_tick());
 #endif
+		hardware_actions();
 		// Checks all the events that we have and runs the right one.
 		events_run(currentTime);
 
 		// Wait here behind the interruption to check for a change on display.
 		// If a hardware button is pressed it will resume CPU
 		event_main_sleep();
-		hardware_actions();
 	}
 }

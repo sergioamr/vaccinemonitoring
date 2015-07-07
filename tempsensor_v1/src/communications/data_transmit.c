@@ -8,6 +8,8 @@
 #include "thermalcanyon.h"
 #include "buzzer.h"
 
+#define MAX_LINE_UPLOAD_TEXT 40
+
 #define TRANS_FAILED		   -1
 #define TRANS_SUCCESS			0
 
@@ -36,7 +38,7 @@ uint8_t data_send_temperatures_sms() {
 }
 
 int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
-	char line[80], encodedLine[40];
+	char line[MAX_LINE_UPLOAD_TEXT], encodedLine[40];
 	int lineSize = sizeof(line) / sizeof(char);
 	char* dateString = NULL;
 	struct tm firstDate;
@@ -107,7 +109,7 @@ int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
 int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	int uart_state;
-	char line[80];
+	char line[MAX_LINE_UPLOAD_TEXT];
 	int retry = 0;
 
 	char* dateString = NULL;
@@ -136,7 +138,7 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	if (uart_getTransactionState()!=UART_SUCCESS)
 		return TRANS_FAILED;
 
-	lcd_progress_wait(500);
+	lcd_progress_wait(400);
 
 	// check that the transmitted data equals the size to send
 	while (file->fptr < end) {
@@ -171,7 +173,7 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 void process_batch() {
 	uint8_t canSend = 0, failedAttempts = 0;
 	uint32_t seekFrom = g_pSysState->lastSeek, seekTo = g_pSysState->lastSeek;
-	char line[80];
+	char line[MAX_LINE_UPLOAD_TEXT];
 	char path[32];
 	char do_not_process_batch = false;
 	int lineSize = sizeof(line) / sizeof(char);
