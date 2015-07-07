@@ -177,6 +177,7 @@ char mmcGoIdle()
     mmcSendCmd(MMC_SEND_OP_COND,0x00,0xff);
     response=mmcGetResponse();
   }
+
   CS_HIGH();
   spiSendByte(DUMMY_CHAR);
   return (MMC_SUCCESS);
@@ -197,7 +198,10 @@ char mmcGetResponse(void)
   //while(i<=10000)				//ZZZ recheck the limit
   {
     response=spiSendByte(DUMMY_CHAR);
-    if(response==0x00)break;
+    if(response==0x00) {
+    	_NOP();
+    	break;
+    }
     if(response==0x01)break;
     i++;
   }

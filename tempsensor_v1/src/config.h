@@ -10,6 +10,8 @@
 
 #define EXTERN extern
 
+#define USE_MININI
+
 #include "stdint.h"
 #include "common.h"
 #include "time.h"
@@ -28,8 +30,8 @@
 
 // Path for getting the configuration from the server
 // CONFIGURATION_URL_PATH/IMEI/1/
-#define CONFIGURATION_URL_PATH "/coldtrace/uploads/multi/v3"
-#define DATA_UPLOAD_URL_PATH "/coldtrace/intel/upload/"
+#define CONFIGURATION_URL_PATH "/coldtrace/configuration/ct5/v2/"
+#define DATA_UPLOAD_URL_PATH "/coldtrace/uploads/multi/v4/"
 #endif
 
 // SMS alerts, it will send an SMS to the local testing number
@@ -152,8 +154,8 @@
 
 // Path for getting the configuration from the server
 // CONFIGURATION_URL_PATH/IMEI/1/
-#define CONFIGURATION_URL_PATH "/config"
-#define DATA_UPLOAD_URL_PATH "/upload"
+#define CONFIGURATION_URL_PATH "/dummy/config"
+#define DATA_UPLOAD_URL_PATH "/dummy/upload"
 
 #define ALERTS_SMS 1
 
@@ -212,6 +214,8 @@ typedef struct {
 
 	char SMSNotSupported;
 	char simOperational; // The sim is in a functional state to send and receive messages
+
+	int http_last_status_code;
 } SIM_CARD_CONFIG;
 
 // 255.255.255.255

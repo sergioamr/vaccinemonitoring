@@ -15,6 +15,10 @@
 #include "alarms.h"
 #include "timer.h"
 
+#ifdef USE_MININI
+#include "minIni.h"
+#endif
+
 #pragma SET_DATA_SECTION(".xbigdata_vars")
 EVENT_MANAGER g_sEvents;
 #pragma SET_DATA_SECTION()
@@ -26,6 +30,9 @@ EVENT_MANAGER g_sEvents;
 // Commands postponed by their senders.
 // Some commands we don't want to run them just when they happen;
 void event_run_deferred_commands() {
+	SIM_CARD_CONFIG *sim = config_getSIM();
+	char error[16];
+
 	if (g_sEvents.defer.status==0)
 		return;
 
@@ -40,6 +47,21 @@ void event_run_deferred_commands() {
 
 	if (g_sEvents.defer.command.swap_sim) {
 		g_sEvents.defer.command.swap_sim=0;
+		return;
+	}
+
+	if (g_sEvents.defer.command.display_http_error) {
+		zeroString(error);
+		g_sEvents.defer.command.display_http_error=0;
+		if (sim->http_last_status_code != 200
+				&& sim->http_last_status_code > 0) {
+#ifdef USE_MININI
+			ini_gets("STATUS", itoa_nopadding(sim->http_last_status_code),
+					"unassigned", error, sizeof(error), "http.ini");
+			lcd_printl(LINEC, "HTTP Error");
+			lcd_printl(LINEH, error);
+#endif
+		}
 		return;
 	}
 }

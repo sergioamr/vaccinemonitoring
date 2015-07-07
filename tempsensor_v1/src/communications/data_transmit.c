@@ -109,7 +109,6 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	int uart_state;
 	char line[160];
 	int retry = 0;
-	int lineSize = sizeof(line)/sizeof(char);
 
 	char* dateString = NULL;
 	struct tm firstDate;
@@ -119,7 +118,7 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	f_lseek(file, start);
 
 	// Must get first line before transmitting to calculate the length properly
-	if (f_gets(line, lineSize, file) != 0) {
+	if (f_gets(line, sizeof(line), file) != 0) {
 		parse_time_from_line(&firstDate, line);
 		dateString = get_date_string(&firstDate, "", "", "", 0);
 		sprintf(line, "IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=",
@@ -130,7 +129,7 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	}
 
 	uint32_t length = strlen(line) + (end - file->fptr);
-	http_open_connection(length);
+	http_open_connection_upload(length);
 
 	// Send the date line
 	uart_tx_nowait(line);
@@ -141,7 +140,7 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 
 	// check that the transmitted data equals the size to send
 	while (file->fptr < end) {
-		if (f_gets(line, lineSize, file) != 0) {
+		if (f_gets(line, sizeof(line), file) != 0) {
 			if (file->fptr != end) {
 				replace_character(line, '\n', '|');
 				uart_tx_nowait(line);
@@ -156,8 +155,8 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 				uart_tx_timeout(line, TIMEOUT_HTTPSND, 1); // We don't have more than one attempt to send data
 				uart_setOKMode();
 				uart_state = uart_getTransactionState();
-				if (uart_state == UART_ERROR) {
-					http_check_error(&retry);
+				http_check_error(&retry);
+				if 	(sim->http_last_status_code !=200 || uart_state == UART_ERROR) {
 					return TRANS_FAILED;
 				}
 			}

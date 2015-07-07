@@ -860,7 +860,7 @@ void modem_init() {
 
 	// Check if there are pending messages in the SMS queue
 
-	// We have to wait for the network to be ready, it will take some time. In debug we just wait on connect.
+	// We have to wait for the network to be ready, it will take some time. In debug we just wait on connect. It will generate a SIM BUSY error (14)
 #ifndef _DEBUG
 	lcd_progress_wait(2000);
 #endif

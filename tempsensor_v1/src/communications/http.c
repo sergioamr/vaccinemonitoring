@@ -10,6 +10,10 @@
 #include "stringutils.h"
 #include "config.h"
 
+#ifdef USE_MININI
+#include "minIni.h"
+#endif
+
 #define HTTP_RESPONSE_RETRY	10
 
 void backend_get_configuration() {
@@ -55,6 +59,8 @@ uint8_t http_enable() {
 	//  1 - activate the context
 
 	sim->simErrorState = 0;
+	sim->http_last_status_code = 0;
+
 	do {
 		uart_tx("#SGACT=1,1\r\n");
 		// CME ERROR: 555 Activation failed
@@ -140,9 +146,12 @@ int http_check_error(int *retry) {
 
 	char *token = NULL;
 	int prof_id = 0;
-	int http_status_code = 0;
 	int data_size = 0;
+	int http_status_code = 0;
 
+	SIM_CARD_CONFIG *sim = config_getSIM();
+
+	sim->http_last_status_code = -1;
 	// Parse HTTPRING
 	PARSE_FINDSTR_RET(token, HTTP_RING, UART_FAILED);
 
@@ -151,10 +160,16 @@ int http_check_error(int *retry) {
 	PARSE_SKIP(token, ",\n", UART_FAILED); 	// Skip content_type string.
 	PARSE_NEXTVALUE(token, &data_size, ",\n", UART_FAILED);
 
+	if (http_status_code!=200) {
+		g_sEvents.defer.command.display_http_error=1;
+	}
+
 #ifdef _DEBUG
-	log_appendf("HTTP %i[%d] %d", prof_id, http_status_code,
-			data_size);
+	log_appendf("HTTP %i[%d] %d", prof_id, http_status_code, data_size);
 #endif
+
+	sim->http_last_status_code = http_status_code;
+
 	// Check for recoverable errors
 	// Server didnt return any data
 	if (http_status_code == 200 && data_size == 0) {
@@ -169,14 +184,14 @@ int http_check_error(int *retry) {
 	return UART_SUCCESS;
 }
 
-int http_open_connection(int data_length) {
+int http_open_connection_upload(int data_length) {
 	char cmd[80];
 
 	if (!state_isSimOperational())
 		return UART_ERROR;
 
 	// Test post URL
-	sprintf(cmd, "AT#HTTPSND=1,0,\"%s\",%d,0\r\n", g_pDevCfg->cfgUpload_URL,
+	sprintf(cmd, "AT#HTTPSND=1,0,\"%s/\",%d,0\r\n", g_pDevCfg->cfgUpload_URL,
 			data_length);
 
 	// Wait for prompt
@@ -203,7 +218,7 @@ int http_get_configuration() {
 	// <command>: Numeric parameter indicating the command requested to HTTP server:
 	// 0 GET 1 HEAD 2 DELETE
 
-	sprintf(szTemp, "AT#HTTPQRY=1,0,\"%s/%s/1/\"\r\n", g_pDevCfg->cfgConfig_URL,
+	sprintf(szTemp, "AT#HTTPQRY=1,0,\"%s/%s/\"\r\n", g_pDevCfg->cfgConfig_URL,
 			g_pDevCfg->cfgIMEI);
 	uart_tx_timeout(szTemp, 5000, 1);
 	if (uart_getTransactionState() != UART_SUCCESS) {

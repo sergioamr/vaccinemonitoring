@@ -62,6 +62,7 @@ typedef union {
 	struct {
 		unsigned char swap_sim :1;
 		unsigned char send_config :1;
+		unsigned char display_http_error :1;
 	} command;
 	unsigned char status;
 } DEFER_COMMANDS;

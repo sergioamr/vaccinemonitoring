@@ -7,8 +7,6 @@
 #define CONFIG_C_
 
 // Reads the configuration from a file in disk
-#define USE_MININI
-
 //#define RUN_CALIBRATION
 
 #include "thermalcanyon.h"
