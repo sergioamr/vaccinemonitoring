@@ -522,7 +522,8 @@ uint8_t config_is_SIM_configurable(int simSlot);
 #define COMMAND_SWAP_SIM1 2900
 #define COMMAND_HTTP_ENABLE 3000
 #define COMMAND_HTTP_DISABLE 3100
-
+#define COMMAND_EVENT_CHECK_NETWORK 3200
+#define COMMAND_EVENT_DEFERRED 3300
 #define COMMAND_END 99
 
 uint8_t state_isSimOperational();

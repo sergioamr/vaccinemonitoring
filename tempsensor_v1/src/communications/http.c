@@ -164,9 +164,11 @@ int http_check_error(int *retry) {
 		g_sEvents.defer.command.display_http_error=1;
 	}
 
+/*
 #ifdef _DEBUG
 	log_appendf("HTTP %i[%d] %d", prof_id, http_status_code, data_size);
 #endif
+*/
 
 	sim->http_last_status_code = http_status_code;
 
@@ -185,7 +187,7 @@ int http_check_error(int *retry) {
 }
 
 int http_open_connection_upload(int data_length) {
-	char cmd[80];
+	char cmd[120];
 
 	if (!state_isSimOperational())
 		return UART_ERROR;

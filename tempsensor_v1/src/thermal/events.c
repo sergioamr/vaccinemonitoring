@@ -32,9 +32,10 @@ EVENT_MANAGER g_sEvents;
 void event_run_deferred_commands() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	char error[16];
-
 	if (g_sEvents.defer.status==0)
 		return;
+
+	config_setLastCommand(COMMAND_EVENT_DEFERRED);
 
 	if (g_sEvents.defer.command.send_config) {
 		g_sEvents.defer.command.send_config=0;
@@ -448,6 +449,8 @@ void event_network_check(void *event, time_t currentTime) {
 	uint8_t *failures;
 	int service;
 
+	config_setLastCommand(COMMAND_EVENT_CHECK_NETWORK);
+
 	// Network is totally broken for this SIM
 	// Change SIM card and don't failover anything.
 	if (!state_isSimOperational()) {
@@ -455,6 +458,7 @@ void event_network_check(void *event, time_t currentTime) {
 		return;
 	}
 
+	/*
 	// Try to failover into different modes
 	// Only swaps sim if it's not already on the chosen SIM
 	switch (g_pSysState->lastTransMethod) {
@@ -473,6 +477,7 @@ void event_network_check(void *event, time_t currentTime) {
 			modem_network_sequence();
 			return;
 	}
+	*/
 
 	service = modem_getNetworkService();
 	failures = &g_pSysState->net_service[service].network_failures;

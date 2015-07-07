@@ -107,7 +107,7 @@ int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
 int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	int uart_state;
-	char line[160];
+	char line[80];
 	int retry = 0;
 
 	char* dateString = NULL;
