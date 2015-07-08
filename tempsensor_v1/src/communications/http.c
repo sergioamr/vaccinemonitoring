@@ -236,7 +236,7 @@ int http_get_configuration() {
 	uart_setCheckMsg(HTTP_OK, HTTP_ERROR);
 
 	while (retry == 1 && attempts > 0) {
-		if (uart_tx_timeout("AT#HTTPRCV=1", TIMEOUT_HTTPRCV, 5) == UART_SUCCESS) {
+		if (uart_tx_timeout("#HTTPRCV=1", TIMEOUT_HTTPRCV, 5) == UART_SUCCESS) {
 			uart_state = uart_getTransactionState();
 			if (uart_state == UART_SUCCESS) {
 				retry = 0; 	// Found a configuration, lets parse it.
@@ -252,21 +252,21 @@ int http_get_configuration() {
 	http_deactivate();
 	return uart_state; // TODO return was missing, is it necessary ?
 }
+/* USED FOR TESTING POST
+int8_t http_post(char* postdata) {
+	char cmd[64];
+	http_enable();
 
-/*
- int8_t http_post(char* postdata) {
- char cmd[64];
- http_enable();
+	sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%s,0\r\n",
+			itoa_pad(strlen(postdata)));
 
- sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%s,0\r\n", itoa_pad(strlen(postdata)));
+	// Wait for prompt
+	uart_setHTTPPromptMode();
+	if (uart_tx_waitForPrompt(cmd, TIMEOUT_HTTPSND_PROMPT)) {
+		uart_tx_data(postdata, TIMEOUT_HTTPSND, 1);
+	}
 
- // Wait for prompt
- uart_setHTTPPromptMode();
- if (uart_tx_waitForPrompt(cmd, TIMEOUT_HTTPSND_PROMPT)) {
- uart_tx_timeout(postdata, TIMEOUT_HTTPSND, 1);
- }
-
- http_deactivate();
- return uart_getTransactionState();
- }
- */
+	http_deactivate();
+	return uart_getTransactionState();
+}
+*/

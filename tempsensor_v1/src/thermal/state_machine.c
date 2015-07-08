@@ -416,15 +416,10 @@ void state_power_out() {
 	if (SYSTEM_SWITCH.power_connected == false)
 		return;
 
-	SYSTEM_SWITCH.power_connected = false;
-	if (STATE_ALARM.poweroutage == STATE_ON) {
-		sms_send_message_number(g_pDevCfg->cfgReportSMS, "POWER RESUMED");
-		STATE_ALARM.poweroutage = STATE_OFF;
-	}
-
 	if (g_pSysState->time_powerOutage == 0)
 		g_pSysState->time_powerOutage = rtc_get_second_tick();
 
+	SYSTEM_SWITCH.power_connected = false;
 }
 
 // called from the Interruption, careful
@@ -437,7 +432,7 @@ void state_power_on() {
 	g_pSysState->time_powerOutage = 0;
 	buzzer_feedback();
 
-	// We reset the alarm from the battery since we are plugged
+	// We reset the alarm from the battery since we are plugged in
 	STATE_ALARM.battery = false;
 }
 
@@ -462,10 +457,15 @@ void state_check_power() {
 		state_power_out();
 
 	if (last_state != SYSTEM_SWITCH.power_connected) {
-		if (POWER_ON)
+		if (POWER_ON) {
+			if (STATE_ALARM.poweroutage == STATE_ON) {
+				sms_send_message_number(g_pDevCfg->cfgReportSMS, "POWER RESUMED");
+				STATE_ALARM.poweroutage = STATE_OFF;
+			}
 			state_power_resume();
-		else
+		} else {
 			state_power_disconnected();
+		}
 
 		last_state = SYSTEM_SWITCH.power_connected;
 	}

@@ -154,7 +154,7 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 
 				// This command also disables the appending of AT and \r\n on the data
 				uart_setHTTPDataMode();
-				uart_tx_timeout(line, TIMEOUT_HTTPSND, 1); // We don't have more than one attempt to send data
+				uart_tx_data(line, TIMEOUT_HTTPSND, 1); // We don't have more than one attempt to send data
 				uart_setOKMode();
 				uart_state = uart_getTransactionState();
 				http_check_error(&retry);

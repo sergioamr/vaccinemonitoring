@@ -266,7 +266,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 
 	uart_setSMSPromptMode();
 	if (uart_tx_waitForPrompt(szCmd, TIMEOUT_CMGS_PROMPT)) {
-		uart_tx_timeout(pData, TIMEOUT_CMGS, 1);
+		uart_tx_data(pData, TIMEOUT_CMGS, 1);
 
 		token = strstr(uart_getRXHead(), "ERROR");
 		if (token == NULL) {
