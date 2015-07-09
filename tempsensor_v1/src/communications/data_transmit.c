@@ -138,7 +138,7 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	if (uart_getTransactionState()!=UART_SUCCESS)
 		return TRANS_FAILED;
 
-	lcd_progress_wait(400);
+	lcd_progress_wait(300);
 
 	// check that the transmitted data equals the size to send
 	while (file->fptr < end) {
