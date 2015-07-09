@@ -143,7 +143,7 @@ void state_SIM_operational() {
 }
 
 NETWORK_SERVICE inline *state_getCurrentService() {
-	if (g_pSysState->network_mode > 1)
+	if (g_pSysState->network_mode < 0 || g_pSysState->network_mode > 1)
 		g_pSysState->network_mode = 0;
 
 	return &g_pSysState->net_service[g_pSysState->network_mode];

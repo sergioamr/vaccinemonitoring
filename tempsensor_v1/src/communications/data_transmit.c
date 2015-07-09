@@ -37,13 +37,8 @@ uint8_t data_send_temperatures_sms() {
 	return sms_send_message(data);
 }
 
-<<<<<<< HEAD
-int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
-	char line[MAX_LINE_UPLOAD_TEXT], encodedLine[40];
-=======
 int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
-	char line[80], encodedLine[40];
->>>>>>> Restructure of failover
+	char line[MAX_LINE_UPLOAD_TEXT], encodedLine[40];
 	int lineSize = sizeof(line) / sizeof(char);
 	char* dateString = NULL;
 	struct tm firstDate;
@@ -107,14 +102,8 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 // 11,20150303:082208,interval,sensorid,DATADATADATAT,sensorid,DATADATADATA,
 // sensorid,dATADATADA,sensorID,DATADATADATADATAT, sensorID,DATADATADATADATAT,batt level,battplugged.
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
-<<<<<<< HEAD
-int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
-	int uart_state;
-	char line[MAX_LINE_UPLOAD_TEXT];
-=======
 int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
-	char line[160];
->>>>>>> Restructure of failover
+	char line[MAX_LINE_UPLOAD_TEXT];
 	int retry = 0;
 
 	char* dateString = NULL;
