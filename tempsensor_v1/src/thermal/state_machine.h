@@ -36,6 +36,7 @@ void state_alarm_on(char *alarm_msg) ;
 void state_reset_sensor_alarm(int c);
 void state_init();
 uint8_t state_isGPRS();
+uint8_t state_isGSM();
 void state_power_on();
 void state_power_out();
 uint8_t state_isBuzzerOn();

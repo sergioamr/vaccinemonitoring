@@ -39,7 +39,7 @@ uint8_t data_send_temperatures_sms() {
 	return sms_send_message(data);
 }
 
-int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
+int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 	char line[MAX_LINE_UPLOAD_TEXT], encodedLine[40];
 	int lineSize = sizeof(line) / sizeof(char);
 	char* dateString = NULL;
@@ -109,7 +109,7 @@ int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 // 11,20150303:082208,interval,sensorid,DATADATADATAT,sensorid,DATADATADATA,
 // sensorid,dATADATADA,sensorID,DATADATADATADATAT, sensorID,DATADATADATADATAT,batt level,battplugged.
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
-int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
+int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 	int uart_state;
 	char line[MAX_LINE_UPLOAD_TEXT];
 	int retry = 0;
@@ -160,7 +160,7 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 				uart_setOKMode();
 				uart_state = uart_getTransactionState();
 				http_check_error(&retry);
-				if 	(sim->http_last_status_code !=200 || uart_state == UART_ERROR) {
+				if (sim->http_last_status_code != 200 || uart_state != UART_SUCCESS) {
 					return TRANS_FAILED;
 				}
 			}
@@ -172,8 +172,23 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	return TRANS_SUCCESS;
 }
 
+int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
+	if (g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS > 0 || !state_isGPRS()) {
+		if (data_send_sms(file, start, end) != TRANS_SUCCESS) {
+			state_failed_gsm(g_pDevCfg->cfgSIM_slot);
+			return TRANS_FAILED;
+		}
+	} else {
+		if (data_send_http(file, start, end) != TRANS_SUCCESS) {
+			state_failed_gprs(g_pDevCfg->cfgSIM_slot);
+			return TRANS_FAILED;
+		}
+	}
+	return TRANS_SUCCESS;
+}
+
 void process_batch() {
-	uint8_t canSend = 0, failedAttempts = 0;
+	uint8_t canSend = 0, transactionState = 0;
 	uint32_t seekFrom = g_pSysState->lastSeek, seekTo = g_pSysState->lastSeek;
 	char line[MAX_LINE_UPLOAD_TEXT];
 	char path[32];
@@ -248,16 +263,9 @@ void process_batch() {
 			if (filr.fptr == 0 || strstr(line, "$TS") != NULL) {
 				if (canSend) {
 					canSend = 0;
-					if (transMethod == SMS_SIM1 || transMethod == SMS_SIM2) {
-						if (data_upload_sms(&filr, seekFrom, seekTo) == TRANS_FAILED) {
-							failedAttempts++;
-							break;
-						}
-					} else {
-						if (http_send_batch(&filr, seekFrom, seekTo) == TRANS_FAILED) {
-							failedAttempts++;
-							break;
-						}
+					transactionState = data_send_method(&filr, seekFrom, seekTo);
+					if (transactionState != TRANS_SUCCESS) {
+						break;
 					}
 					seekFrom = seekTo = filr.fptr;
 					// Found next time stamp - Move to next batch now
@@ -269,27 +277,17 @@ void process_batch() {
 		}
 
 		if(canSend) {
-			if (transMethod == SMS_SIM1 || transMethod == SMS_SIM2) {
-				if (data_upload_sms(&filr, seekFrom, seekTo) == TRANS_FAILED) {
-					failedAttempts++;
-					break;
-				}
-			} else {
-				if (http_send_batch(&filr, seekFrom, seekTo) == TRANS_FAILED) {
-					failedAttempts++;
-					break;
-				}
-			}
+			transactionState = data_send_method(&filr, seekFrom, seekTo);
 			seekFrom = canSend = 0;
 		}
 
-		if (seekTo < filr.fsize && failedAttempts < 1) {
+		if (seekTo < filr.fsize && transactionState == TRANS_SUCCESS) {
 			g_pSysState->lastSeek = filr.fptr;
-		} else if (failedAttempts < 1) {
+		} else if (transactionState == TRANS_SUCCESS) {
 			g_pSysState->lastSeek = 0;
 		}
 
-		if (f_close(&filr) == FR_OK && failedAttempts < 1) {
+		if (f_close(&filr) == FR_OK && transactionState == TRANS_SUCCESS) {
 			if (g_pSysState->lastSeek == 0) {
 				fr = f_unlink(path); // Delete the file
 			}
@@ -306,8 +304,13 @@ void process_batch() {
 	if (transMethod == HTTP_SIM1 || transMethod == HTTP_SIM2) {
 		http_deactivate();
 	}
+
 	lcd_printl(LINEC, "Transmission");
-	lcd_printl(LINE2, "Completed");
+	if (transactionState == TRANS_SUCCESS) {
+		lcd_printl(LINE2, "Complete");
+	} else {
+		lcd_printl(LINE2, "Failed");
+	}
 	g_pSysState->safeboot.disable.data_transmit = 0;
 	g_iStatus |= LOG_TIME_STAMP; // Uploads may take a long time and might require offset to be reset
 	log_enable();
