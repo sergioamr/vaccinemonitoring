@@ -143,7 +143,7 @@ void state_SIM_operational() {
 }
 
 NETWORK_SERVICE inline *state_getCurrentService() {
-	if (g_pSysState->network_mode < 0 || g_pSysState->network_mode > 1)
+	if (g_pSysState->network_mode > 1)
 		g_pSysState->network_mode = 0;
 
 	return &g_pSysState->net_service[g_pSysState->network_mode];
@@ -203,6 +203,13 @@ void state_init() {
 
 uint8_t state_isGPRS() {
 	if (modem_getNetworkService() == NETWORK_GPRS)
+		return true;
+
+	return false;
+}
+
+uint8_t state_isGSM() {
+	if (modem_getNetworkService() == NETWORK_GSM)
 		return true;
 
 	return false;
@@ -313,6 +320,14 @@ void state_SMS_lastMessageACK(SIM_CARD_CONFIG *sim, int8_t msgNumber) {
 	sim->last_SMS_message = msgNumber;
 }
 
+void state_reset_network_errors() {
+	uint8_t i;
+	for (i = 0; i < SYSTEM_NUM_SIM_CARDS; i++) {
+		g_pSysState->simState[i].failsGPRS = 0;
+		g_pSysState->simState[i].failsGSM = 0;
+	}
+}
+
 void state_network_status(int presentation_mode, int net_status) {
 	NETWORK_SERVICE *service = state_getCurrentService();
 	service->network_presentation_mode = presentation_mode;
@@ -325,6 +340,7 @@ void state_network_success(uint8_t sim) {
 
 	if (sim > 1)
 		return;
+
 	simState = &g_pSysState->simState[sim];
 
 	// Eveything is fine
@@ -339,7 +355,7 @@ void state_network_success(uint8_t sim) {
 
 // Checks several parameters to see if we have to reset the modem, switch sim card, etc.
 void state_network_fail(uint8_t sim, uint16_t error) {
-
+	state_SIM_not_operational();
 }
 
 void state_modem_timeout(uint8_t sim) {
@@ -358,11 +374,6 @@ void state_failed_gsm(uint8_t sim) {
 		return;
 
 	g_pSysState->simState[sim].failsGSM++;
-}
-
-void state_http_transfer(uint8_t sim, uint8_t success) {
-	if (success)
-		state_network_success(sim);
 }
 
 /***********************************************************************************************************************/

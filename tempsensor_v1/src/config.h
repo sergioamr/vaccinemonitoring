@@ -434,8 +434,7 @@ typedef struct {
 	uint32_t lastSeek;
 
 	// GSM or GPRS
-	int network_mode;
-	TRANSMISSION_TYPE lastTransMethod;
+	uint8_t network_mode;
 	NETWORK_SERVICE net_service[2];
 
 	SAFEBOOT_STATUS safeboot;

@@ -82,14 +82,6 @@ extern "C"
 
 #define MAX_DISPLAY_ID		10
 
-typedef enum {
-	NONE = 0,
-	HTTP_SIM1,
-	HTTP_SIM2,
-	SMS_SIM1,
-	SMS_SIM2
-} TRANSMISSION_TYPE;
-
 //iStatus contants
 #define MODEM_POWERED_ON 	0x0001
 #define ALERT_UPLOAD_ON		0x0002
