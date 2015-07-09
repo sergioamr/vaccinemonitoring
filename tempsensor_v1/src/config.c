@@ -360,11 +360,19 @@ const char CHUNK_ST3[5]="$ST3";
 const char CHUNK_END[3]="$EN";
 const char delimiter[2] = ",";
 
+/*
+NEW config sync $ST1,<GATEWAY NUMBER>,<GPRS/GSM/BOTH>,
+<COLDTRACE IP ADDRESS>,<APN1>,<APN2>,<UPLOADURL>,<CONFIGURL>,
+<UPLOAD INTERVAL>,<SAMPLE INTERVAL>,<SIM CARD>,<ALARM STATE>,$EN
+*/
 int config_parse_configuration_ST1(char *token) {
 	int iCnt = 0;
 	int tempValue = 0;
 	INTERVAL_PARAM *pInterval;
 	SIM_CARD_CONFIG *sim = config_getSIM();
+
+	//SYSTEM_SWITCHES *system; //pointer to system_switches struct
+
 	char uploadMode[6];
 	memset(uploadMode,0,sizeof(uploadMode));
 
@@ -373,28 +381,55 @@ int config_parse_configuration_ST1(char *token) {
 
 	// Skip $ST1,
 	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
-	// SIM info
+
+	// gateway
 	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewaySMS[0], sizeof(g_pDevCfg->cfgGatewaySMS),
 			delimiter, UART_FAILED); // GATEWAY NUM
-	PARSE_NEXTSTRING(token, uploadMode, sizeof(uploadMode), delimiter, UART_FAILED); // NETWORK TYPE E.G. GPRS
 
-	g_pDevCfg->cfgUploadMode = MODE_GPRS;
-#ifdef _DEBUG
-	if (!strncmp(uploadMode, "grps", sizeof(uploadMode)))
-		g_pDevCfg->cfgUploadMode = MODE_GPRS;
-	else
-#endif
-	if (!strncmp(uploadMode, "gsm", sizeof(uploadMode)))
-		g_pDevCfg->cfgUploadMode = MODE_GSM;
-	else if (!strncmp(uploadMode, "both", sizeof(uploadMode)))
-		g_pDevCfg->cfgUploadMode = MODE_GSM + MODE_GPRS;
+	//upload_mode
+	PARSE_NEXTSTRING(token, uploadMode, sizeof(uploadMode), delimiter, UART_FAILED); //parse network type
+	//(0: force gprs, 1: force sms, 2: DEFAULT: failover mode
+		if (!strncmp(uploadMode, "GPRS", sizeof(uploadMode)))
+			g_pDevCfg->cfgUploadMode = MODE_GPRS;
+		else if (!strncmp(uploadMode, "GSM", sizeof(uploadMode)))
+			g_pDevCfg->cfgUploadMode = MODE_GSM;
+		else //default BOTH
+			g_pDevCfg->cfgUploadMode = MODE_GSM + MODE_GPRS;
 
-	PARSE_NEXTSTRING(token, &sim->cfgAPN[0], sizeof(sim->cfgAPN), delimiter,
-			UART_FAILED); //APN
+	//ip address
+	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewayIP, sizeof(g_pDevCfg->cfgGatewayIP),
+				delimiter, UART_FAILED); // GATEWAY NUM
 
-	pInterval = &g_pDevCfg->sIntervalsMins;
+	//APN
+	//get APN for both sim
+	PARSE_NEXTSTRING(token, &g_pDevCfg->SIM[0].cfgAPN, sizeof(g_pDevCfg->SIM[0].cfgAPN), delimiter,
+			UART_FAILED); //APN1
+
+	PARSE_NEXTSTRING(token, &g_pDevCfg->SIM[1].cfgAPN, sizeof(g_pDevCfg->SIM[1].cfgAPN), delimiter,
+			UART_FAILED); //APN2
+
+	//upload URL
+	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgUpload_URL, sizeof(g_pDevCfg->cfgUpload_URL), delimiter,
+					UART_FAILED);
+
+	//config URL
+	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgConfig_URL, sizeof(g_pDevCfg->cfgConfig_URL), delimiter,
+				UART_FAILED);
+
+	//load intervals
+    pInterval = &g_pDevCfg->sIntervalsMins;
+	//upload interval
 	PARSE_NEXTVALUE(token, &pInterval->upload, delimiter, UART_FAILED);
+
+	//sample interval
 	PARSE_NEXTVALUE(token, &pInterval->sampling, delimiter, UART_FAILED);
+
+	//sim_force
+	//(0,1,2)... apply directly to config param using reference
+	PARSE_NEXTVALUE(token, &g_pDevCfg->cfgSIM_force, delimiter, UART_FAILED);
+
+
+	// reset_alarm
 	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); // Reset alert
 	if (tempValue > 0) {
 		state_clear_alarm_state();
@@ -404,9 +439,16 @@ int config_parse_configuration_ST1(char *token) {
 		}
 	}
 
-	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); ////
-	if (tempValue < 0 || tempValue > 1)
-		tempValue = 0;
+
+	//TODO add disable timer config?
+	// disable/enable buzzer
+	// Currently set up to take 0 or 1 for off or on, can be changed if needed
+	/*
+	system = &g_pSysState->system; //switches initialized in system_states
+	PARSE_NEXTVALUE(token, &tempValue , delimiter, UART_FAILED); //read a value
+	system->switches.buzzer_disabled = tempValue; //set to buzzer disabled param
+	*/
+
 
 	// TODO CHECK IF THE SIM CARD IS OPPERATIONAL
 	g_pDevCfg->cfgSelectedSIM_slot = tempValue;

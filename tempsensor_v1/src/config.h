@@ -271,6 +271,7 @@ typedef struct {
 	char cfgVersion[8];
 #endif
 
+	int8_t cfgSIM_force; //force sim
 	int8_t cfgSIM_slot;
 	int8_t cfgSelectedSIM_slot;
 
