@@ -60,6 +60,7 @@ uint8_t http_enable() {
 
 	sim->simErrorState = 0;
 	sim->http_last_status_code = 0;
+	delay(1000);
 
 	do {
 		uart_tx("#SGACT=1,1\r\n");

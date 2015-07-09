@@ -194,6 +194,11 @@ void state_init() {
 
 	g_pSysState->network_mode = NETWORK_NOT_SELECTED;
 	SYSTEM_SWITCH.buzzer_disabled = BUZZER_DISABLE;
+
+	if (POWER_ON)
+		SYSTEM_SWITCH.power_connected = true;
+	else
+		SYSTEM_SWITCH.power_connected = false;
 }
 
 uint8_t state_isGPRS() {
