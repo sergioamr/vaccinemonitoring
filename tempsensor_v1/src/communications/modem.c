@@ -225,11 +225,14 @@ void modem_setNetworkService(int service) {
 }
 
 void modem_network_sequence() {
+	uint8_t networkSwapped = 0;
 	config_setLastCommand(COMMAND_FAILOVER);
 	if (modem_check_network() != UART_SUCCESS) {
 		modem_swap_SIM();
+		networkSwapped = 1;
 		if (modem_check_network() != UART_SUCCESS) {
 			g_pSysState->lastTransMethod = NONE;
+			return;
 		}
 	}
 
@@ -240,8 +243,15 @@ void modem_network_sequence() {
 
 	// TODO We have to split this sequence otherwise we will lock the device
 	// for 10 minutes at least and the deadman switch will reboot us.
-	if (http_enable() != UART_SUCCESS) {
+	if (http_enable() != UART_SUCCESS || ((g_pDevCfg->cfgUploadMode & (MODE_GPRS+MODE_GSM)) == MODE_GSM)) {
 		config_setLastCommand(COMMAND_FAILOVER_HTTP_FAILED);
+		// This means we already checked the network
+		if (networkSwapped == 1) {
+			g_pSysState->lastTransMethod = NONE;
+			return;
+		}
+
+		modem_swap_SIM();
 		if (modem_check_network() == UART_SUCCESS
 				&& http_enable() != UART_SUCCESS) {
 			if (g_pDevCfg->cfgSIM_slot == 0) {
