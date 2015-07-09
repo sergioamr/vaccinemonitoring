@@ -221,7 +221,6 @@ void modem_network_sequence() {
 		modem_swap_SIM();
 		networkSwapped = 1;
 		if (modem_check_network() != UART_SUCCESS) {
-			g_pSysState->lastTransMethod = NONE;
 			return;
 		}
 	}

@@ -52,7 +52,7 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 	f_lseek(file, start);
 
 	do {
-		if (splitSend == 1) {
+		if (splitSend) {
 			offset_timestamp(&firstDate, linesParsed);
 			dateString = get_date_string(&firstDate, "", "", "", 0);
 			sprintf(smsMsg, "%d,%s,%d,%d,", 11, dateString,
@@ -94,14 +94,9 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 		}
 
 		if (sms_send_message(smsMsg) != UART_SUCCESS) {
-			if (g_pDevCfg->cfgSIM_slot == 0) {
-				g_pSysState->lastTransMethod = SMS_SIM2;
-			} else {
-				g_pSysState->lastTransMethod = SMS_SIM1;
-			}
 			return TRANS_FAILED;
 		}
-	} while (splitSend == 1);
+	} while (splitSend);
 
 	return TRANS_SUCCESS;
 }
@@ -194,7 +189,6 @@ void process_batch() {
 	char path[32];
 	char do_not_process_batch = false;
 	int lineSize = sizeof(line) / sizeof(char);
-	TRANSMISSION_TYPE transMethod;
 
 	FILINFO fili;
 	DIR dir;
@@ -204,21 +198,8 @@ void process_batch() {
 
 	log_disable();
 
-	transMethod = g_pSysState->lastTransMethod;
-	if (transMethod == NONE) {
-		return;
-	} else if (transMethod == HTTP_SIM1 || transMethod == HTTP_SIM2) {
-		// If we cant attatch to a GPRS service then fall back to the SMS
-		// alternative
-		if (http_enable() != UART_SUCCESS || ((g_pDevCfg->cfgUploadMode & (MODE_GPRS+MODE_GSM)) == MODE_GSM)) {
-			http_deactivate();
-			if (transMethod == HTTP_SIM1) {
-				transMethod = SMS_SIM1;
-			} else {
-				transMethod = SMS_SIM2;
-			}
-		}
-	}
+	if (!state_isSimOperational())
+ 		return;
 
 	// Cycle through all files using f_findfirst, f_findnext.
 	fr = f_findfirst(&dir, &fili, FOLDER_TEXT, "*." EXTENSION_TEXT);
@@ -241,7 +222,6 @@ void process_batch() {
 
 		// If the last file was corrupted and forced a reboot we remove the extension
 		if (do_not_process_batch) {
-
 			sprintf(line, "%s/%s", FOLDER_TEXT, fili.fname);
 			len = strlen(line);
 			line[len-3]=0;
@@ -301,7 +281,7 @@ void process_batch() {
 		}
 	}
 
-	if (transMethod == HTTP_SIM1 || transMethod == HTTP_SIM2) {
+	if (state_isGPRS()) {
 		http_deactivate();
 	}
 

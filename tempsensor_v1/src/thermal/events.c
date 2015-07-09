@@ -482,7 +482,6 @@ void event_network_check(void *event, time_t currentTime) {
 
 	if (res == UART_FAILED) {
 		// No signal on this SIM
-		g_pSysState->lastTransMethod = NONE;
 		*failures++;
 		log_appendf("[%d] NETDOWN %d", config_getSelectedSIM(), *failures);
 	} else {

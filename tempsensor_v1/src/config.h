@@ -195,6 +195,7 @@
 /*****************************************************************************************************************/
 #define MODE_GSM 1
 #define MODE_GPRS 2
+
 typedef struct {
 	char cfgSMSCenter[GW_MAX_LEN + 1]; // Service Message Center number
 	char cfgPhoneNum[GW_MAX_LEN + 1];
@@ -439,7 +440,6 @@ typedef struct {
 
 	// GSM or GPRS
 	int network_mode;
-	TRANSMISSION_TYPE lastTransMethod;
 	NETWORK_SERVICE net_service[2];
 
 	SAFEBOOT_STATUS safeboot;
