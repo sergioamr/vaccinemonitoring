@@ -193,7 +193,7 @@ void process_batch() {
 	} else if (transMethod == HTTP_SIM1 || transMethod == HTTP_SIM2) {
 		// If we cant attatch to a GPRS service then fall back to the SMS
 		// alternative
-		if (http_enable() != UART_SUCCESS || ((g_pDevCfg->cfgUploadMode & MODE_GPRS) == MODE_GSM)) {
+		if (http_enable() != UART_SUCCESS) {
 			http_deactivate();
 			if (transMethod == HTTP_SIM1) {
 				transMethod = SMS_SIM1;
