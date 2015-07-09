@@ -36,6 +36,7 @@ void state_alarm_on(char *alarm_msg) ;
 void state_reset_sensor_alarm(int c);
 void state_init();
 uint8_t state_isGPRS();
+uint8_t state_isGSM();
 void state_power_on();
 void state_power_out();
 uint8_t state_isBuzzerOn();
@@ -44,6 +45,7 @@ void state_SMS_lastMessageACK(SIM_CARD_CONFIG *sim, int8_t msgNumber);
 void state_network_status(int net_mode, int net_status);
 void state_network_fail(uint8_t sim, uint16_t error);
 void state_network_success(uint8_t sim);
+void state_reset_network_errors();
 
 void state_modem_timeout(uint8_t sim);
 
