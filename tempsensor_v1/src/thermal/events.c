@@ -459,26 +459,7 @@ void event_network_check(void *event, time_t currentTime) {
 		return;
 	}
 
-	/*
-	// Try to failover into different modes
-	// Only swaps sim if it's not already on the chosen SIM
-	switch (g_pSysState->lastTransMethod) {
-		case HTTP_SIM1:
-		case SMS_SIM1:
-			config_setLastCommand(COMMAND_SWAP_SIM0);
-			res = modem_swap_to_SIM(0);
-			break;
-		case HTTP_SIM2:
-		case SMS_SIM2:
-			config_setLastCommand(COMMAND_SWAP_SIM1);
-			res = modem_swap_to_SIM(1);
-			break;
-		case NONE:
-		default:
-			modem_network_sequence();
-			return;
-	}
-	*/
+    modem_network_sequence();
 
 	service = modem_getNetworkService();
 	failures = &g_pSysState->net_service[service].network_failures;
@@ -528,9 +509,9 @@ void event_upload_samples(void *event, time_t currentTime) {
 
 		if (config_is_SIM_configurable(slot)) {
 			if (slot == 0) {
-				g_pSysState->lastTransMethod = HTTP_SIM1;
+				g_pDevCfg->cfgSelectedSIM_slot = 0;
 			} else {
-				g_pSysState->lastTransMethod = HTTP_SIM2;
+				g_pDevCfg->cfgSelectedSIM_slot = 1;
 			}
 		}
 
@@ -578,7 +559,7 @@ void event_fetch_configuration(void *event, time_t currentTime) {
 }
 
 void event_reset_trans(void *event, time_t currentTime) {
-	g_pSysState->lastTransMethod = NONE;
+	state_reset_network_errors();
 }
 
 // Sleeping state

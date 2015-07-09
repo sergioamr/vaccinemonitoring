@@ -212,16 +212,6 @@ void modem_setNetworkService(int service) {
 
 	if (modem_connect_network(NETWORK_CONNECTION_ATTEMPTS) == UART_FAILED)
 		return;
-
-	if (service == NETWORK_GSM && g_pSysState->lastTransMethod==NONE) {
-		g_pSysState->lastTransMethod = SMS_SIM1;
-		_NOP();
-	}
-
-	if (service == NETWORK_GPRS && g_pSysState->lastTransMethod<=SMS_SIM2) {
-		g_pSysState->lastTransMethod = HTTP_SIM1;
-		_NOP();
-	}
 }
 
 void modem_network_sequence() {
@@ -236,36 +226,23 @@ void modem_network_sequence() {
 		}
 	}
 
-	// TODO Check if we want GRPS or GSM here
-	if ((g_pDevCfg->cfgUploadMode & MODE_GPRS) == 0) {
-		_NOP();
-	}
-
 	// TODO We have to split this sequence otherwise we will lock the device
 	// for 10 minutes at least and the deadman switch will reboot us.
-	if (http_enable() != UART_SUCCESS || ((g_pDevCfg->cfgUploadMode & (MODE_GPRS+MODE_GSM)) == MODE_GSM)) {
+	if (state_isGPRS() && http_enable() != UART_SUCCESS) {
 		config_setLastCommand(COMMAND_FAILOVER_HTTP_FAILED);
 		// This means we already checked the network
 		if (networkSwapped == 1) {
-			g_pSysState->lastTransMethod = NONE;
+			state_failed_gprs(config_getSelectedSIM());
 			return;
 		}
 
 		modem_swap_SIM();
 		if (modem_check_network() == UART_SUCCESS
 				&& http_enable() != UART_SUCCESS) {
-			if (g_pDevCfg->cfgSIM_slot == 0) {
-				g_pSysState->lastTransMethod = SMS_SIM1;
-			} else {
-				g_pSysState->lastTransMethod = SMS_SIM2;
-			}
+			state_failed_gprs(config_getSelectedSIM());
 		}
 	} else {
-		if (g_pDevCfg->cfgSIM_slot == 0) {
-			g_pSysState->lastTransMethod = HTTP_SIM1;
-		} else {
-			g_pSysState->lastTransMethod = HTTP_SIM2;
-		}
+		state_failed_gprs(config_getSelectedSIM());
 	}
 
 	http_deactivate();
