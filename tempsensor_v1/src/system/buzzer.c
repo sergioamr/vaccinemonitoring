@@ -18,8 +18,7 @@ void buzzer_start() {
 
 	TA2CCTL0 = CCIE;
 
-	if (!g_pSysState->system.switches.buzzer_sound
-			&& g_pSysState->buzzerFeedback>0)
+	if (!g_pSysState->system.switches.buzzer_sound && g_pSysState->buzzerFeedback>0)
 		TA2CCR0 = 8000;						  // 0.5khz
 	else
 		TA2CCR0 = 1000;						  // 4khz
@@ -28,10 +27,11 @@ void buzzer_start() {
 }
 
 void buzzer_feedback_value(uint16_t value) {
-#if (BUZZER_DISABLE_FEEDBACK != 1)
-	g_pSysState->buzzerFeedback = value;
-	buzzer_start();
-#endif
+	//disable buzzer if system switch is set, else play sound
+	if(g_pSysState->system.switches.buzzer_disabled != 1){
+		g_pSysState->buzzerFeedback = value;
+		buzzer_start();
+	}
 }
 
 void buzzer_feedback() {

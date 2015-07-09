@@ -594,6 +594,9 @@ FRESULT config_read_ini_file() {
 	long n;
 	LOGGING_COMPONENTS *cfg;
 	INTERVAL_PARAM *intervals;
+	SYSTEM_SWITCHES *system; //pointer to system_switches struct
+
+	//TODO: SYSTEM_SWITCHES for buzzer from ini file
 
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
@@ -623,6 +626,11 @@ FRESULT config_read_ini_file() {
 	cfg->logs.sms_alerts = ini_getbool(SECTION_LOGS, "SMS_Alerts", 0,
 			CONFIG_INI_FILE);
 	cfg->logs.sms_reports = ini_getbool(SECTION_LOGS, "SMS_Reports", 0,
+			CONFIG_INI_FILE);
+
+	// Currently in [LOGS] section
+	system = &g_pSysState->system; //switches initialized in system_states
+	system->switches.buzzer_disabled = ini_getbool(SECTION_LOGS, "Buzzer_Off", 0,
 			CONFIG_INI_FILE);
 
 	n = ini_gets(SECTION_SERVER, "GatewaySMS", NEXLEAF_SMS_GATEWAY,

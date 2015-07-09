@@ -106,7 +106,7 @@
 #define BUZZER_DISABLE 1
 
 // Disable buttons sounds
-#define BUZZER_DISABLE_FEEDBACK 0
+#define BUZZER_DISABLE_FEEDBACK 1
 
 /**************************************************************************************************************************/
 /* END FACTORY CONFIGURATION 																							  */
