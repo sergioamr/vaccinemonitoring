@@ -194,6 +194,11 @@ void state_init() {
 
 	g_pSysState->network_mode = NETWORK_NOT_SELECTED;
 	SYSTEM_SWITCH.buzzer_disabled = BUZZER_DISABLE;
+
+	if (POWER_ON)
+		SYSTEM_SWITCH.power_connected = true;
+	else
+		SYSTEM_SWITCH.power_connected = false;
 }
 
 uint8_t state_isGPRS() {
@@ -431,6 +436,8 @@ void state_power_out() {
 		g_pSysState->time_powerOutage = rtc_get_second_tick();
 
 	SYSTEM_SWITCH.power_connected = false;
+	lcd_printl(LINEC, "POWER CABLE");
+	lcd_printf(LINEE, "DISCONNECTED");
 }
 
 // called from the Interruption, careful
@@ -439,47 +446,28 @@ void state_power_on() {
 	if (SYSTEM_SWITCH.power_connected == true)
 		return;
 
+	if (STATE_ALARM.poweroutage == STATE_ON) {
+		sms_send_message_number(g_pDevCfg->cfgReportSMS, "POWER RESUMED");
+		STATE_ALARM.poweroutage = STATE_OFF;
+	}
+
 	SYSTEM_SWITCH.power_connected = true;
 	g_pSysState->time_powerOutage = 0;
 	buzzer_feedback();
 
 	// We reset the alarm from the battery since we are plugged in
 	STATE_ALARM.battery = false;
-}
 
-void state_power_disconnected() {
-	lcd_printl(LINEC, "POWER CABLE");
-	lcd_printf(LINEE, "DISCONNECTED");
-}
-
-void state_power_resume() {
 	lcd_printl(LINEC, "POWER");
 	lcd_printf(LINEH, "RESUMED");
-	event_force_event_by_id(EVT_DISPLAY, 0);
 }
 
 void state_check_power() {
-
-	static uint8_t last_state = true;
 
 	if (POWER_ON)
 		state_power_on();
 	else
 		state_power_out();
-
-	if (last_state != SYSTEM_SWITCH.power_connected) {
-		if (POWER_ON) {
-			if (STATE_ALARM.poweroutage == STATE_ON) {
-				sms_send_message_number(g_pDevCfg->cfgReportSMS, "POWER RESUMED");
-				STATE_ALARM.poweroutage = STATE_OFF;
-			}
-			state_power_resume();
-		} else {
-			state_power_disconnected();
-		}
-
-		last_state = SYSTEM_SWITCH.power_connected;
-	}
 
 	if (SYSTEM_SWITCH.power_connected == true)
 		return;
@@ -487,16 +475,17 @@ void state_check_power() {
 	if (!g_pDevCfg->stBattPowerAlertParam.enablePowerAlert)
 		return;
 
+	// Check the power down time to generate an alert
+
+	if (STATE_ALARM.poweroutage || g_pDevCfg->stBattPowerAlertParam.minutesPower == 0)
+		return;
+
 	time_t currentTime = rtc_get_second_tick();
 	time_t elapsed = currentTime - g_pSysState->time_powerOutage;
 
-	// Check the power down time to generate an alert
-
-	if (g_pDevCfg->stBattPowerAlertParam.minutesPower == 0)
-		return;
-
 	if (elapsed > (g_pDevCfg->stBattPowerAlertParam.minutesPower) * 60) {
 		STATE_ALARM.poweroutage = STATE_ON;
+		alarm_sms_power_outage();
 		state_alarm_on("POWER OUT");
 	}
 }

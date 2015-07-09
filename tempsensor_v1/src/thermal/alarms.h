@@ -12,6 +12,7 @@
 extern "C" {
 #endif
 
+void alarm_sms_power_outage();
 void alarm_SD_card_failure(char *msg);
 SENSOR_STATUS *getAlarmsSensor(int id);
 

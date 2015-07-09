@@ -403,7 +403,6 @@ int config_parse_configuration_ST1(char *token) {
 		}
 	}
 
-	// Value from the server comes 1 or 2. We use 0 to 1 format.
 	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); ////
 	if (tempValue < 0 || tempValue > 1)
 		tempValue = 0;

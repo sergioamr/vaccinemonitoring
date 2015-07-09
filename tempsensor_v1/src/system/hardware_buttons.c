@@ -56,13 +56,8 @@ void hardware_actions() {
 	// TODO Change into flags to run several actions at the same time
 	switch (g_iHardware_actions) {
 		case HWD_POWER_CHANGE:
-			if (POWER_ON)
-				state_power_on();
-			else
-				state_power_out();
-
 			event_force_event_by_id(EVT_ALARMS_CHECK, 0);
-			lcd_on = 1;
+			lcd_on = 0;
 		break;
 		case HWD_THERMAL_SYSTEM:
 			event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 5);
