@@ -193,7 +193,7 @@ const char inline *modem_getNetworkServiceText() {
 }
 
 int modem_getNetworkService() {
-	if (g_pSysState->network_mode > 1)
+	if (g_pSysState->network_mode < 0 || g_pSysState->network_mode > 1)
 		return NETWORK_GSM;
 
 	return g_pSysState->network_mode;
@@ -205,39 +205,60 @@ void modem_setNetworkService(int service) {
 
 	g_pSysState->network_mode = service;
 	config_setLastCommand(COMMAND_SET_NETWORK_SERVICE);
-
+/*
 	if (modem_connect_network(NETWORK_CONNECTION_ATTEMPTS) == UART_FAILED)
 		return;
+
+	if (service == NETWORK_GSM && g_pSysState->lastTransMethod==NONE) {
+		g_pSysState->lastTransMethod = SMS_SIM1;
+		_NOP();
+	}
+
+	if (service == NETWORK_GPRS && g_pSysState->lastTransMethod<=SMS_SIM2) {
+		g_pSysState->lastTransMethod = HTTP_SIM1;
+		_NOP();
+	}
+	*/
 }
 
 void modem_network_sequence() {
 	uint8_t networkSwapped = 0;
 
 	config_setLastCommand(COMMAND_FAILOVER);
-
-	// modem_check_network also updates the sim operational state
 	if (modem_check_network() != UART_SUCCESS) {
 		modem_swap_SIM();
 		networkSwapped = 1;
 		if (modem_check_network() != UART_SUCCESS) {
+			g_pSysState->lastTransMethod = NONE;
 			return;
 		}
 	}
 
 	// TODO We have to split this sequence otherwise we will lock the device
 	// for 10 minutes at least and the deadman switch will reboot us.
-	if (state_isGSM() || http_enable() != UART_SUCCESS) {
+	if (((g_pDevCfg->cfgUploadMode & MODE_GPRS) == MODE_GSM) || http_enable() != UART_SUCCESS) {
 		config_setLastCommand(COMMAND_FAILOVER_HTTP_FAILED);
-		// This means we already checked the network and it failed
+
+		// This means we already checked the network
 		if (networkSwapped == 1) {
-			state_failed_gprs(config_getSelectedSIM());
+			g_pSysState->lastTransMethod = NONE;
 			return;
 		}
 
 		modem_swap_SIM();
 		if (modem_check_network() == UART_SUCCESS
 				&& http_enable() != UART_SUCCESS) {
-			state_failed_gprs(config_getSelectedSIM());
+			if (g_pDevCfg->cfgSIM_slot == 0) {
+				g_pSysState->lastTransMethod = SMS_SIM1;
+			} else {
+				g_pSysState->lastTransMethod = SMS_SIM2;
+			}
+		}
+	} else {
+		if (g_pDevCfg->cfgSIM_slot == 0) {
+			g_pSysState->lastTransMethod = HTTP_SIM1;
+		} else {
+			g_pSysState->lastTransMethod = HTTP_SIM2;
 		}
 	}
 
@@ -309,6 +330,7 @@ int modem_connect_network(uint8_t attempts) {
 	config_incLastCmd();
 	return UART_FAILED;
 }
+;
 
 int modem_disableNetworkRegistration() {
 	return uart_txf("+%s=0\r\n", modem_getNetworkServiceCommand());

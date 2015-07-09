@@ -458,10 +458,26 @@ void event_network_check(void *event, time_t currentTime) {
 		return;
 	}
 
-	// XXX
+	/*
 	// Try to failover into different modes
 	// Only swaps sim if it's not already on the chosen SIM
-	modem_network_sequence();
+	switch (g_pSysState->lastTransMethod) {
+		case HTTP_SIM1:
+		case SMS_SIM1:
+			config_setLastCommand(COMMAND_SWAP_SIM0);
+			res = modem_swap_to_SIM(0);
+			break;
+		case HTTP_SIM2:
+		case SMS_SIM2:
+			config_setLastCommand(COMMAND_SWAP_SIM1);
+			res = modem_swap_to_SIM(1);
+			break;
+		case NONE:
+		default:
+			modem_network_sequence();
+			return;
+	}
+	*/
 
 	service = modem_getNetworkService();
 	failures = &g_pSysState->net_service[service].network_failures;
@@ -484,6 +500,7 @@ void event_network_check(void *event, time_t currentTime) {
 
 	if (res == UART_FAILED) {
 		// No signal on this SIM
+		g_pSysState->lastTransMethod = NONE;
 		*failures++;
 		log_appendf("[%d] NETDOWN %d", config_getSelectedSIM(), *failures);
 	} else {
@@ -497,8 +514,8 @@ void event_upload_samples(void *event, time_t currentTime) {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	int slot = g_pDevCfg->cfgSelectedSIM_slot;
 
-	// Swap SIM on next network check if APN and Phone num has not
-	// been initialized. ATM this may not be required as
+	// Swap SIM on next network check is APN and Phone num has not
+	// been initialized ATM this may not be requires as
 	// 1 unconfigured APN means both won't be parsed correctly
 	if (!config_is_SIM_configurable(slot)) {
 		// Check the other slot
@@ -510,9 +527,9 @@ void event_upload_samples(void *event, time_t currentTime) {
 
 		if (config_is_SIM_configurable(slot)) {
 			if (slot == 0) {
-				g_pDevCfg->cfgSelectedSIM_slot = 0;
+				g_pSysState->lastTransMethod = HTTP_SIM1;
 			} else {
-				g_pDevCfg->cfgSelectedSIM_slot = 1;
+				g_pSysState->lastTransMethod = HTTP_SIM2;
 			}
 		}
 
@@ -560,7 +577,7 @@ void event_fetch_configuration(void *event, time_t currentTime) {
 }
 
 void event_reset_trans(void *event, time_t currentTime) {
-	state_reset_network_errors();
+	g_pSysState->lastTransMethod = NONE;
 }
 
 // Sleeping state
