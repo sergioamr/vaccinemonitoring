@@ -152,8 +152,8 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 				// This command also disables the appending of AT and \r\n on the data
 				uart_setHTTPDataMode();
 				uart_tx_data(line, TIMEOUT_HTTPSND, 1); // We don't have more than one attempt to send data
-				uart_setOKMode();
 				uart_state = uart_getTransactionState();
+				uart_setOKMode();
 				http_check_error(&retry);
 				if (sim->http_last_status_code != 200 || uart_state == UART_FAILED) {
 					return TRANS_FAILED;
