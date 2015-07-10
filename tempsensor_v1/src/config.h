@@ -223,7 +223,7 @@ typedef struct {
 #define MAX_IP_SIZE 3*4+3+1
 
 // Careful with exceeding the size of the URL
-#define MAX_URL_PATH 40
+#define MAX_URL_PATH 37
 
 typedef struct {
 	float threshCold;
