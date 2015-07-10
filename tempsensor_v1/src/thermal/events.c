@@ -446,46 +446,25 @@ void event_subsample_temperature(void *event, time_t currentTime) {
 }
 
 void event_network_check(void *event, time_t currentTime) {
-	int res;
-	uint8_t *failures;
-	int service;
-
 	config_setLastCommand(COMMAND_EVENT_CHECK_NETWORK);
 
 	// Network is totally broken for this SIM
 	// Change SIM card and don't failover anything.
 	if (!state_isSimOperational()) {
-		modem_swap_SIM();
+		modem_swap_SIM(); // Should we swap sim?
 		return;
 	}
 
+	// XXX this already checks if signal in range
     modem_network_sequence();
-
-	service = modem_getNetworkService();
-	failures = &g_pSysState->net_service[service].network_failures;
 
 	if (state_isNetworkRegistered()) {
 		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(10));
 	} else {
 		// Try to connect in 1 minute
-		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(1));
+		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(2));
 		event_force_event_by_id(EVT_DISPLAY, 0);
 		return;
-	}
-
-	modem_getSignal();
-	if (state_isSignalInRange()) {
-		res = modem_connect_network(1);
-	} else {
-		res = UART_FAILED;
-	}
-
-	if (res == UART_FAILED) {
-		// No signal on this SIM
-		*failures++;
-		log_appendf("[%d] NETDOWN %d", config_getSelectedSIM(), *failures);
-	} else {
-		*failures = 0;
 	}
 
 	event_force_event_by_id(EVT_DISPLAY, 0);

@@ -392,7 +392,7 @@ typedef union {
 typedef union {
 	struct {
 		unsigned char sms_process_messages :1; // Clear SMS
-		unsigned char data_transmit :1;	// Delete old files since are crashing the software (corruption?)
+		unsigned char data_transmit :1;	// Delete old files since we are crashing the software (corruption?)
 		unsigned char bit3 :1;
 		unsigned char bit4 :1;
 		unsigned char bit5 :1;
@@ -436,6 +436,8 @@ typedef struct {
 	SYSTEM_SWITCHES system;
 	SYSTEM_ALARMS state;
 
+	// If transmission wasn't fully completed this will
+	// contain the last line we didn't transmit
 	uint32_t lastSeek;
 
 	// GSM or GPRS

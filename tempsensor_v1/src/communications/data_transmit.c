@@ -168,7 +168,7 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 }
 
 int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
-	if (g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS > 0 || !state_isGPRS()) {
+	if (g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS > 0 || state_isGSM()) {
 		if (data_send_sms(file, start, end) != TRANS_SUCCESS) {
 			state_failed_gsm(g_pDevCfg->cfgSIM_slot);
 			return TRANS_FAILED;
@@ -287,6 +287,8 @@ void process_batch() {
 
 	lcd_printl(LINEC, "Transmission");
 	if (transactionState == TRANS_SUCCESS) {
+		// Make sure this sim is the one that's first used next time
+		g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;
 		lcd_printl(LINE2, "Complete");
 	} else {
 		lcd_printl(LINE2, "Failed");

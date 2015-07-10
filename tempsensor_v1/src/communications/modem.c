@@ -216,6 +216,10 @@ void modem_setNetworkService(int service) {
 
 void modem_network_sequence() {
 	uint8_t networkSwapped = 0;
+
+	// Checks if the current sim is the selected one.
+	modem_check_sim_active();
+
 	config_setLastCommand(COMMAND_FAILOVER);
 	if (modem_check_network() != UART_SUCCESS) {
 		modem_swap_SIM();
@@ -225,23 +229,23 @@ void modem_network_sequence() {
 		}
 	}
 
-	// TODO We have to split this sequence otherwise we will lock the device
-	// for 10 minutes at least and the deadman switch will reboot us.
-	if (state_isGPRS() && http_enable() != UART_SUCCESS) {
-		config_setLastCommand(COMMAND_FAILOVER_HTTP_FAILED);
-		// This means we already checked the network
-		if (networkSwapped == 1) {
-			state_failed_gprs(config_getSelectedSIM());
-			return;
-		}
+	if (state_isGPRS()) {
+		if (http_enable() != UART_SUCCESS) {
+			config_setLastCommand(COMMAND_FAILOVER_HTTP_FAILED);
+			// This means we already checked the network
+			if (networkSwapped == 1) {
+				state_failed_gprs(config_getSelectedSIM());
+				return;
+			}
 
-		modem_swap_SIM();
-		if (modem_check_network() == UART_SUCCESS
-				&& http_enable() != UART_SUCCESS) {
+			modem_swap_SIM();
+			if (modem_check_network() == UART_SUCCESS
+					&& http_enable() != UART_SUCCESS) {
+				state_failed_gprs(config_getSelectedSIM());
+			}
+		} else {
 			state_failed_gprs(config_getSelectedSIM());
 		}
-	} else {
-		state_failed_gprs(config_getSelectedSIM());
 	}
 
 	http_deactivate();
@@ -381,25 +385,31 @@ void modem_check_uart_error() {
 int8_t modem_check_network() {
 	int res = UART_FAILED;
 	int iSignal = 0;
+	int service;
 
 	config_setLastCommand(COMMAND_CHECK_NETWORK);
 
 	// Check signal quality,
 	// if it is too low we check if we
 	// are actually connected to the network and fine
+	service = modem_getNetworkService();
 
 	iSignal = modem_getSignal();
 	res = uart_getTransactionState();
-	if (res == UART_SUCCESS)
+	if (res == UART_SUCCESS) {
 		state_setSignalLevel(iSignal);
-	else
+	} else {
+		g_pSysState->net_service[service].network_failures++;
 		state_network_fail(config_getSelectedSIM(),
 		NETWORK_ERROR_SIGNAL_FAILURE);
+		log_appendf("[%d] NETDOWN %d", config_getSelectedSIM(),
+				g_pSysState->net_service[service].network_failures);
+	}
+
 	return res;
 }
 
 int8_t modem_first_init() {
-
 	int t = 0;
 	int iIdx;
 	int iStatus = 0;
