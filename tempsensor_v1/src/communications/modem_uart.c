@@ -201,9 +201,13 @@ void modem_send_command(const char *cmd) {
 	if (uart.iTxLen > g_pSysCfg->maxTXBuffer)
 	g_pSysCfg->maxTXBuffer = uart.iTxLen;
 #endif
+
+	// This problem should not ocurr, if this happens means that you are not zero terminating the string
+	// or you are trying to transmit too much data in one go so you have to split your commands.
 	if (uart.iTxLen > sizeof(TXBuffer)) {
 		lcd_print("TXERR");
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
+		uart.iTxLen = sizeof(TXBuffer) -1;
 	}
 
 	if (cmd != TXBuffer) {
