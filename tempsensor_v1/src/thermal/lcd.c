@@ -121,7 +121,10 @@ void lcd_setDate(char *buffer) {
 }
 
 void lcd_show() {
-	char lcdBuffer[LCD_DISPLAY_LEN+1];
+	static int8_t iItemId = -1;
+	static time_t lastRefresh = 0;
+
+	char lcdBuffer[LCD_DISPLAY_LEN + 1];
 	int iIdx = 0;
 	int iCnt = 0;
 
@@ -130,13 +133,12 @@ void lcd_show() {
 		return;
 
 	memset(lcdBuffer, 0, sizeof(lcdBuffer));
-	int8_t iItemId = g_iDisplayId;
 
-	static time_t lastRefresh = 0;
-
-	if (lastRefresh == rtc_get_second_tick())
+	if (iItemId == g_iDisplayId &&
+		lastRefresh == rtc_get_second_tick())
 		return;
 
+	iItemId = g_iDisplayId;
 	lastRefresh = rtc_get_second_tick();
 
 	lcd_clear();
@@ -146,8 +148,8 @@ void lcd_show() {
 	//get local time
 	iIdx = strlen(lcdBuffer); //marker
 
-	if (iItemId>0 && iItemId<=5) {
-		iCnt = iItemId -1;
+	if (iItemId > 0 && iItemId <= 5) {
+		iCnt = iItemId - 1;
 	}
 
 	switch (iItemId) {
@@ -212,10 +214,12 @@ void lcd_show() {
 	}
 
 	if (iCnt != 0xff) {
-		if (g_pSysState->temp.state[iCnt].status!=0) {
-			sprintf(&lcdBuffer[iIdx],"ALERT %s %sC", SensorName[iCnt], temperature_getString(iCnt));
+		if (g_pSysState->temp.state[iCnt].status != 0) {
+			sprintf(&lcdBuffer[iIdx], "ALERT %s %sC", SensorName[iCnt],
+					temperature_getString(iCnt));
 		} else {
-			sprintf(&lcdBuffer[iIdx],"Sensor %s %sC", SensorName[iCnt], temperature_getString(iCnt));
+			sprintf(&lcdBuffer[iIdx], "Sensor %s %sC", SensorName[iCnt],
+					temperature_getString(iCnt));
 		}
 	}
 
@@ -345,10 +349,10 @@ void lcd_print_boot(const char* pcData, int line) {
 
 #ifdef _DEBUG
 	if (g_bLCD_state == 0)
-		return;
+	return;
 
 	if (line==1)
-		lcd_clear();
+	lcd_clear();
 
 	lcd_printl(line, pcData);
 #else
@@ -358,16 +362,16 @@ void lcd_print_boot(const char* pcData, int line) {
 
 void lcd_display_config() {
 	TEMP_ALERT_PARAM *pAlertParams = &g_pDevCfg->stTempAlertParams[0];
-	char num1[TEMP_DATA_LEN+1];
-	char num2[TEMP_DATA_LEN+1];
+	char num1[TEMP_DATA_LEN + 1];
+	char num2[TEMP_DATA_LEN + 1];
 
 	getFloatNumber2Text(pAlertParams->threshCold, num1);
 	getFloatNumber2Text(pAlertParams->threshHot, num2);
 
-	lcd_printf(LINEC, "C%d %s H%d %s", (int) pAlertParams->maxSecondsCold / 60, &num1[0],
-			(int) pAlertParams->maxSecondsHot / 60, &num2[0]);
+	lcd_printf(LINEC, "C%d %s H%d %s", (int) pAlertParams->maxSecondsCold / 60,
+			&num1[0], (int) pAlertParams->maxSecondsHot / 60, &num2[0]);
 
-	lcd_printf(LINE2, "S%d U%d L%d P%d", g_pDevCfg->cfgSelectedSIM_slot+1,
+	lcd_printf(LINE2, "S%d U%d L%d P%d", g_pDevCfg->cfgSelectedSIM_slot + 1,
 			g_pDevCfg->sIntervalsMins.upload,
 			g_pDevCfg->sIntervalsMins.sampling,
 			g_pDevCfg->stBattPowerAlertParam.minutesPower);
