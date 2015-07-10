@@ -201,6 +201,12 @@ void process_batch() {
 	if (!state_isSimOperational())
  		return;
 
+	if (g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS == 0 && state_isGPRS()) {
+		if (http_enable() != UART_SUCCESS) {
+			g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS++;
+		}
+	}
+
 	// Cycle through all files using f_findfirst, f_findnext.
 	fr = f_findfirst(&dir, &fili, FOLDER_TEXT, "*." EXTENSION_TEXT);
 	if (fr != FR_OK) {
