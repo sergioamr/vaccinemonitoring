@@ -229,21 +229,18 @@ void modem_network_sequence() {
 		}
 	}
 
-	if (state_isGPRS()) {
-		if (http_enable() != UART_SUCCESS) {
-			config_setLastCommand(COMMAND_FAILOVER_HTTP_FAILED);
-			// This means we already checked the network
-			if (networkSwapped == 1) {
-				state_failed_gprs(config_getSelectedSIM());
-				return;
-			}
+	if (state_isGPRS() && http_enable() != UART_SUCCESS) {
+		config_setLastCommand(COMMAND_FAILOVER_HTTP_FAILED);
+		state_failed_gprs(config_getSelectedSIM());
 
-			modem_swap_SIM();
-			if (modem_check_network() == UART_SUCCESS
-					&& http_enable() != UART_SUCCESS) {
-				state_failed_gprs(config_getSelectedSIM());
-			}
-		} else {
+		// This means we already checked the network
+		if (networkSwapped == 1) {
+			return;
+		}
+
+		modem_swap_SIM();
+		if (modem_check_network() == UART_SUCCESS
+				&& http_enable() != UART_SUCCESS) {
 			state_failed_gprs(config_getSelectedSIM());
 		}
 	}
