@@ -464,7 +464,7 @@ void state_check_power() {
 
 	// Check the power down time to generate an alert
 
-	if (STATE_ALARM.poweroutage || g_pDevCfg->stBattPowerAlertParam.minutesPower == 0)
+	if (STATE_ALARM.poweroutage == STATE_ON || g_pDevCfg->stBattPowerAlertParam.minutesPower == 0)
 		return;
 
 	time_t currentTime = rtc_get_second_tick();
