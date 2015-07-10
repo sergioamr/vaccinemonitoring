@@ -17,6 +17,7 @@ typedef union {
 		unsigned char waitForTXEnd :1;
 		unsigned char transmissionEnd :1;
 		unsigned char RXWaitForReturn :1;
+		unsigned char ignoreError :1;
 	} b;
 	unsigned char status;
 } UART_STATES;
@@ -45,6 +46,8 @@ typedef struct {
 	int8_t ErrorLength;
 
 } UART_TRANSFER;
+
+extern volatile UART_TRANSFER uart;
 
 #define UART_SUCCESS 0
 #define UART_ERROR -1

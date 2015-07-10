@@ -359,9 +359,8 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 static const char AT_ERROR[] = " ERROR: ";
 
 // Used to ignore previsible errors like the SIM not supporting a command.
-uint8_t g_iUartIgnoreError = 0;
-void modem_ignore_next_errors(int errors) {
-	g_iUartIgnoreError = errors;
+void modem_ignore_next_errors(int error) {
+	uart.switches.b.ignoreError = error;
 }
 
 void modem_check_uart_error() {
@@ -379,9 +378,7 @@ void modem_check_uart_error() {
 		char *error = (char *) (pToken1 + strlen(AT_ERROR));
 		errorToken = *(pToken1 - 1);
 
-		if (g_iUartIgnoreError != 0) {
-			g_iUartIgnoreError--;
-		} else {
+		if (uart.switches.b.ignoreError == 0) {
 #ifdef _DEBUG_OUTPUT
 			if (errorToken=='S') {
 				lcd_printl(LINEC, "SERVICE ERROR");
