@@ -183,7 +183,7 @@ int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
 }
 
 void process_batch() {
-	uint8_t canSend = 0, transactionState = 0;
+	int8_t canSend = 0, transactionState = 0;
 	uint32_t seekFrom = g_pSysState->lastSeek, seekTo = g_pSysState->lastSeek;
 	char line[MAX_LINE_UPLOAD_TEXT];
 	char path[32];
