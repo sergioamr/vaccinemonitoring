@@ -29,8 +29,10 @@
 #include "state_machine.h"
 #include "main_system.h"
 
+#pragma SET_DATA_SECTION(".aggregate_vars")
 char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
+#pragma SET_DATA_SECTION()
 
 /*
  * AT Commands Reference Guide 80000ST10025a Rev. 9 2010-10-04
@@ -171,8 +173,10 @@ int modem_getNetworkStatus(int *mode, int *status) {
 /* Network cellular service */
 /**********************************************************************************************************************/
 
-char NETWORK_GPRS_COMMAND[] = "CGREG";
-char NETWORK_GSM_COMMAND[] = "CREG";
+#pragma SET_DATA_SECTION(".aggregate_vars")
+static char NETWORK_GPRS_COMMAND[] = "CGREG";
+static char NETWORK_GSM_COMMAND[] = "CREG";
+#pragma SET_DATA_SECTION()
 
 const char inline *modem_getNetworkServiceCommand() {
 	if (g_pSysState->network_mode == NETWORK_GPRS)

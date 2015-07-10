@@ -314,6 +314,9 @@ typedef struct {
 	uint16_t maxRXBuffer;
 	uint16_t maxTXBuffer;
 #endif
+#ifdef _DEBUG
+	uint16_t stackLeft;
+#endif
 
 	uint16_t lastCommand; // Command that was last executed to control flow.
 	char lastCommandTime[2 + 2 + 2 + 1 + 1 + 1]; //
