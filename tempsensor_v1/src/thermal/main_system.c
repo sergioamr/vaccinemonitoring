@@ -234,7 +234,6 @@ int main(void) {
 	watchdog_disable();
 
 	state_init();  // Clean the state machine
-	checkStack();
 	system_boot();
 
 #ifdef ___CHECK_STACK___

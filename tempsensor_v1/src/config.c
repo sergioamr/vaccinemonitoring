@@ -639,7 +639,9 @@ void config_save_ini() {
 FRESULT config_read_ini_file() {
 	FRESULT fr;
 	FILINFO fno;
-	long n;
+
+	long n = 0;
+
 	LOGGING_COMPONENTS *cfg;
 	INTERVAL_PARAM *intervals;
 	SYSTEM_SWITCHES *system; //pointer to system_switches struct
@@ -661,6 +663,7 @@ FRESULT config_read_ini_file() {
 			sizearray(g_pDevCfg->cfgVersion), CONFIG_INI_FILE);
 	if (n == 0)
 		return FR_NO_FILE;
+
 #endif
 
 	cfg = &g_pDevCfg->cfg;
@@ -684,6 +687,9 @@ FRESULT config_read_ini_file() {
 	n = ini_gets(SECTION_SERVER, "GatewaySMS", NEXLEAF_SMS_GATEWAY,
 			g_pDevCfg->cfgGatewaySMS, sizearray(g_pDevCfg->cfgGatewaySMS),
 			CONFIG_INI_FILE);
+
+	if (n == 0)
+		return FR_NO_FILE;
 
 	n = ini_gets(SECTION_SERVER, "ReportSMS", REPORT_PHONE_NUMBER,
 			g_pDevCfg->cfgReportSMS, sizearray(g_pDevCfg->cfgReportSMS),
