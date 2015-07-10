@@ -189,6 +189,9 @@ void config_SafeMode() {
 // Stores what was the last command run and what time
 void config_setLastCommand(uint16_t lastCmd) {
 	g_pSysCfg->lastCommand = lastCmd;
+#ifdef ___CHECK_STACK___
+	checkStack();
+#endif
 #ifdef EXTREME_DEBUG
 	if (g_pDevCfg->cfg.logs.commmands) {
 		log_appendf("CMD [%d]", lastCmd);

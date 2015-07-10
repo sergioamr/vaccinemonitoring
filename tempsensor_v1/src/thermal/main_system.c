@@ -117,7 +117,7 @@ void modem_turn_off() {
 }
 
 // Used to check the stack for leaks
-#ifdef ___CLEAR_STACK___
+#ifdef ___CHECK_STACK___
 extern char __STACK_END;
 extern char __STACK_SIZE;
 #endif
@@ -198,17 +198,35 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 /*  MAIN                                                                    */
 /****************************************************************************/
 
+#define EMPTY_STACK_VALUE 0x69
 
-int main(void) {
-#ifdef ___CLEAR_STACK___
-	memset((void*) (&__STACK_END - &__STACK_SIZE), 0x00, (size_t) __STACK_SIZE);
+#ifdef ___CHECK_STACK___
+void checkStack() {
+	size_t stack_size = (size_t) (&__STACK_SIZE);
+	char *pStack = (void*) (&__STACK_END);
+	size_t t;
+	size_t stack_empty = 0;
+
+	for (t=0; t<=stack_size; t++) {
+		pStack--;
+		if (*pStack==EMPTY_STACK_VALUE)
+			stack_empty++;
+	}
+	_NOP();
+	g_pSysCfg->stackLeft = stack_empty;
+}
 #endif
 
+int main(void) {
 	// Disable for init since we are not going to be able to respond to it.
 	watchdog_disable();
 
 	state_init();  // Clean the state machine
 	system_boot();
+
+#ifdef ___CHECK_STACK___
+	checkStack();
+#endif
 
 	events_init();
 	state_process();

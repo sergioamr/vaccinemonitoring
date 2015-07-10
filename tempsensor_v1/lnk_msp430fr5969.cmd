@@ -56,7 +56,7 @@ MEMORY
     SFR                     : origin = 0x0000, length = 0x0010
     PERIPHERALS_8BIT        : origin = 0x0010, length = 0x00F0
     PERIPHERALS_16BIT       : origin = 0x0100, length = 0x0100
-    RAM                     : origin = 0x1C00, length = 0x0800, fill = 0xA3A4
+    RAM                     : origin = 0x1C00, length = 0x0800, fill = 0x6969
     STATE_MACHINE           : origin = 0x1900, length = 0x0100
     CALIBRATION             : origin = 0x1880, length = 0x0080
     HELPERS                 : origin = 0x1800, length = 0x0080
