@@ -8,7 +8,7 @@
 #include "thermalcanyon.h"
 #include "buzzer.h"
 
-#define MAX_LINE_UPLOAD_TEXT 64
+#define MAX_LINE_UPLOAD_TEXT 46
 
 #define TRANS_FAILED		   -1
 #define TRANS_SUCCESS			0

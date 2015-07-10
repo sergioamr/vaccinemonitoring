@@ -116,12 +116,6 @@ void modem_turn_off() {
 	P4OUT |= BIT0;
 }
 
-// Used to check the stack for leaks
-#ifdef ___CHECK_STACK___
-extern char __STACK_END;
-extern char __STACK_SIZE;
-#endif
-
 void system_boot() {
 	UINT bytes_written = 0;
 
@@ -201,6 +195,10 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 #define EMPTY_STACK_VALUE 0x69
 
 #ifdef ___CHECK_STACK___
+// Used to check the stack for leaks
+extern char __STACK_END;
+extern char __STACK_SIZE;
+
 void checkStack() {
 	size_t stack_size = (size_t) (&__STACK_SIZE);
 	char *pStack = (void*) (&__STACK_END - &__STACK_SIZE);

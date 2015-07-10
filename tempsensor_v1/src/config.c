@@ -389,7 +389,7 @@ int config_parse_configuration_ST1(char *token) {
 	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
 
 	// gateway
-	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewaySMS[0], sizeof(g_pDevCfg->cfgGatewaySMS),
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgGatewaySMS, sizeof(g_pDevCfg->cfgGatewaySMS),
 			delimiter, UART_FAILED); // GATEWAY NUM
 
 	//upload_mode
@@ -403,23 +403,23 @@ int config_parse_configuration_ST1(char *token) {
 			g_pDevCfg->cfgUploadMode = MODE_GSM + MODE_GPRS;
 
 	//ip address
-	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewayIP, sizeof(g_pDevCfg->cfgGatewayIP),
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgGatewayIP, sizeof(g_pDevCfg->cfgGatewayIP),
 				delimiter, UART_FAILED); // GATEWAY NUM
 
 	//APN
 	//get APN for both sim
-	PARSE_NEXTSTRING(token, &g_pDevCfg->SIM[0].cfgAPN, sizeof(g_pDevCfg->SIM[0].cfgAPN), delimiter,
+	PARSE_NEXTSTRING(token, g_pDevCfg->SIM[0].cfgAPN, sizeof(g_pDevCfg->SIM[0].cfgAPN), delimiter,
 			UART_FAILED); //APN1
 
-	PARSE_NEXTSTRING(token, &g_pDevCfg->SIM[1].cfgAPN, sizeof(g_pDevCfg->SIM[1].cfgAPN), delimiter,
+	PARSE_NEXTSTRING(token, g_pDevCfg->SIM[1].cfgAPN, sizeof(g_pDevCfg->SIM[1].cfgAPN), delimiter,
 			UART_FAILED); //APN2
 
 	//upload URL
-	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgUpload_URL, sizeof(g_pDevCfg->cfgUpload_URL), delimiter,
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgUpload_URL, sizeof(g_pDevCfg->cfgUpload_URL), delimiter,
 					UART_FAILED);
 
 	//config URL
-	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgConfig_URL, sizeof(g_pDevCfg->cfgConfig_URL), delimiter,
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgConfig_URL, sizeof(g_pDevCfg->cfgConfig_URL), delimiter,
 				UART_FAILED);
 
 	//load intervals
