@@ -522,6 +522,8 @@ FRESULT log_sample_web_format(UINT *tbw) {
 
 #ifdef _DEBUG
 	lcd_print("Saving sample");
+#else
+	lcd_print_progress();
 #endif
 
 	rtc_getlocal(&g_tmCurrTime);
@@ -553,6 +555,8 @@ FRESULT log_sample_web_format(UINT *tbw) {
 
 #ifdef _DEBUG
 		lcd_printf(LINE2, "OK %d bytes", *tbw);
+#else
+		event_force_event_by_id(EVT_DISPLAY, 0);
 #endif
 
 		f_sync(&fobj);

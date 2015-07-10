@@ -203,25 +203,40 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 #ifdef ___CHECK_STACK___
 void checkStack() {
 	size_t stack_size = (size_t) (&__STACK_SIZE);
-	char *pStack = (void*) (&__STACK_END);
+	char *pStack = (void*) (&__STACK_END - &__STACK_SIZE);
 	size_t t;
 	size_t stack_empty = 0;
 
-	for (t=0; t<=stack_size; t++) {
+	for (t = 0; t < stack_size; t++, pStack++) {
+		if (*pStack != EMPTY_STACK_VALUE)
+			break;
+
+		stack_empty++;
+	}
+	g_pSysCfg->stackLeft = stack_empty;
+}
+
+void clearStack() {
+	register char *pStack = (void*) (&__STACK_END);
+	register size_t t;
+	for (t = 0; t < (size_t) (&__STACK_SIZE); t++) {
 		pStack--;
-		if (*pStack==EMPTY_STACK_VALUE)
-			stack_empty++;
+		*pStack = EMPTY_STACK_VALUE;
 	}
 	_NOP();
-	g_pSysCfg->stackLeft = stack_empty;
 }
 #endif
 
 int main(void) {
+#ifdef ___CHECK_STACK___
+	clearStack();
+#endif
+
 	// Disable for init since we are not going to be able to respond to it.
 	watchdog_disable();
 
 	state_init();  // Clean the state machine
+	checkStack();
 	system_boot();
 
 #ifdef ___CHECK_STACK___
