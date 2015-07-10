@@ -23,14 +23,14 @@ void sms_send_data_request(char *number) {
 	strcat(data, " ");
 	for (iOffset = 0; iOffset < SYSTEM_NUM_SENSORS; iOffset++) {
 		strcat(data, SensorName[iOffset]);
-		strcat(data, "=");
+		strcat(data, ":");
 		strcat(data, temperature_getString(iOffset));
 		strcat(data, "C, ");
 	}
 
 	// added for show msg//
-	strcat(data, "Battery:");
-	strcat(data, itoa_pad(batt_getlevel()));
+	strcat(data, "BATTERY:");
+	strcat(data, itoa_nopadding(batt_getlevel()));
 	strcat(data, "%, ");
 	if (P4IN & BIT4)	//power not plugged
 	{
@@ -40,8 +40,13 @@ void sms_send_data_request(char *number) {
 	} else {
 		strcat(data, "CHARGING");
 	}
-	iOffset = strlen(data);
 
+#ifdef _DEBUG
+	strcat(data, ",UPTIME:");
+	strcat(data, itoa_nopadding(iMinuteTick));
+#endif
+
+	iOffset = strlen(data);
 	sms_send_message_number(number, data);
 }
 
