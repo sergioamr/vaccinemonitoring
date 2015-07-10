@@ -155,7 +155,7 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 				uart_setOKMode();
 				uart_state = uart_getTransactionState();
 				http_check_error(&retry);
-				if (sim->http_last_status_code != 200 || uart_state != UART_SUCCESS) {
+				if (sim->http_last_status_code != 200 || uart_state == UART_FAILED) {
 					return TRANS_FAILED;
 				}
 			}
