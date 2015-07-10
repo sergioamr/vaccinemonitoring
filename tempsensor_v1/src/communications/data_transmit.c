@@ -14,7 +14,9 @@
 #define TRANS_SUCCESS			0
 
 char *getSensorTemp(int sensorID) {
+#pragma SET_DATA_SECTION(".aggregate_vars")
 	static char sensorData[4];
+#pragma SET_DATA_SECTION()
 	return sensorData;
 }
 

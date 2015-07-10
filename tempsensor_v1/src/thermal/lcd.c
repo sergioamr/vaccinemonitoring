@@ -121,8 +121,10 @@ void lcd_setDate(char *buffer) {
 }
 
 void lcd_show() {
+#pragma SET_DATA_SECTION(".aggregate_vars")
 	static int8_t iItemId = -1;
 	static time_t lastRefresh = 0;
+#pragma SET_DATA_SECTION()
 
 	char lcdBuffer[LCD_DISPLAY_LEN + 1];
 	int iIdx = 0;
