@@ -62,7 +62,7 @@ void modem_check_sim_active();
 int modem_swap_to_SIM(int sim);
 int modem_swap_SIM();
 const char *modem_getNetworkServiceCommand();
-void modem_run_failover_sequence();
+void modem_network_sequence();
 int modem_getNetworkService();
 void modem_setNetworkService(int service);
 int modem_connect_network(uint8_t attempts);
@@ -108,9 +108,11 @@ void modem_ignore_next_errors(int errors);
 	if(token!=NULL) { if(var!=atoi(token)) var=atoi(token); } else return error;
 
 #define PARSE_FIRSTSKIP(token, delimiter, error) token = strtok(token, delimiter); \
-	if(token==NULL) return error;
+	if(token==NULL) return error; else token+=strlen(token)-1;
 
 #define PARSE_SKIP(token, delimiter, error) token = strtok(NULL, delimiter); \
 	if(token==NULL) return error;
+
+//else token+=strlen(sz)-1;
 
 #endif /* TEMPSENSOR_V1_MODEM_H_ */

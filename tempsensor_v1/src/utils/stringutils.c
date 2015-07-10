@@ -9,7 +9,9 @@
 #include "string.h"
 #include "globals.h"
 
-char g_szItoa[16];
+#pragma SET_DATA_SECTION(".aggregate_vars")
+static char g_szItoa[16];
+#pragma SET_DATA_SECTION()
 
 char *getFloatNumber2Text(float number, char *ret) {
 	int i = 0;

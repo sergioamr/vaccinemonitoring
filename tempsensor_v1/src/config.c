@@ -7,8 +7,6 @@
 #define CONFIG_C_
 
 // Reads the configuration from a file in disk
-#define USE_MININI
-
 //#define RUN_CALIBRATION
 
 #include "thermalcanyon.h"
@@ -25,6 +23,10 @@
 #ifdef USE_MININI
 #include "minIni.h"
 FRESULT config_read_ini_file();
+#endif
+
+#ifdef _DEBUG
+#define DEBUG_SEND_CONFIG
 #endif
 
 // Setup mode in which we are at the moment
@@ -84,6 +86,23 @@ void config_reset_error(SIM_CARD_CONFIG *sim) {
 	sim->simErrorToken = '\0';
 	sim->simErrorState = NO_ERROR;
 	state_SIM_operational();
+}
+
+void config_display_config() {
+	int t;
+
+	lcd_printf(LINEC, "SMS Gateway");
+	lcd_printf(LINEH, g_pDevCfg->cfgGatewaySMS);
+
+	lcd_printf(LINEC, "Gateway IP");
+	lcd_printf(LINEH, g_pDevCfg->cfgGatewayIP);
+
+	for (t = 0; t < 2; t++) {
+		lcd_printf(LINEC, "APN %d", t + 1);
+		lcd_printf(LINEH, g_pDevCfg->SIM[t].cfgAPN);
+	}
+
+	lcd_display_config();
 }
 
 //TODO This should go to the state machine
@@ -170,23 +189,29 @@ void config_SafeMode() {
 // Stores what was the last command run and what time
 void config_setLastCommand(uint16_t lastCmd) {
 	g_pSysCfg->lastCommand = lastCmd;
+#ifdef ___CHECK_STACK___
+	checkStack();
+#endif
+#ifdef EXTREME_DEBUG
 	if (g_pDevCfg->cfg.logs.commmands) {
 		log_appendf("CMD [%d]", lastCmd);
 	}
+#endif
 }
 
 void config_incLastCmd() {
 	g_pSysCfg->lastCommand++;
+#ifdef EXTREME_DEBUG
 	if (g_pDevCfg->cfg.logs.commmands)
 		config_setLastCommand(g_pSysCfg->lastCommand);
+#endif
 }
 
 // Runs the system in configuration/calibration mode
 void config_reconfigure() {
 	g_pSysCfg->memoryInitialized = 0xFF;
 	PMM_trigBOR();
-	while (1)
-		;
+	while (1);
 }
 
 // Send back data after an SMS request
@@ -209,8 +234,8 @@ void config_send_configuration(char *number) {
 	sms_send_message_number(number, msg);
 
 	power = &g_pDevCfg->stBattPowerAlertParam;
-	sprintf(msg, "Power Active %d(%d mins) \nBatt (%d mins threshold %d)\n"
-			"\nIntervals\nSampling %d mins\nUpload %d mins\nReboot %d mins\nConfig %d",
+	sprintf(msg, "Power %d(%d mins) \nBatt (%d mins thresd %d)\n"
+			"\nIntervals Mins:\nSampling %d\nUpload %d\nReboot %d\nConfig %d",
 			power->enablePowerAlert, (int) power->minutesPower,
 			(int) power->minutesBattThresh, (int) power->battThreshold,
 
@@ -220,11 +245,11 @@ void config_send_configuration(char *number) {
 			(int) g_pDevCfg->sIntervalsMins.configurationFetch);
 	sms_send_message_number(number, msg);
 
-	sprintf(msg, "Gateway [%s]\r\n"
-			"SIM 1 APN [%s]\r\n"
-			"LAST ERROR [%s]\r\n"
-			"SIM 2 APN [%s]\r\n"
-			"LAST ERROR [%s]\r\n",
+	sprintf(msg, "GATEWAY [%s]\r\n"
+			"SIM1APN [%s]\r\n"
+			"LASTERR [%s]\r\n"
+			"SIM2APN [%s]\r\n"
+			"LASTERR [%s]\r\n",
 			g_pDevCfg->cfgGatewaySMS,
 			g_pDevCfg->SIM[0].cfgAPN,
 			g_pDevCfg->SIM[0].simLastError,
@@ -297,7 +322,6 @@ void config_init() {
 // First run
 	g_pSysCfg->numberConfigurationRuns = 1;
 	g_pSysState->lastSeek = 0;
-	g_pSysState->lastTransMethod = NONE;
 
 // Value to check to make sure the structure is still the same size;
 	g_pSysCfg->configStructureSize = sizeof(CONFIG_SYSTEM);
@@ -336,30 +360,128 @@ void config_update_system_time() {
 // http://54.241.2.213/coldtrace/uploads/multi/v3/358072043112124/1/
 // $ST2,7,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,600,1,600,15,$ST1,919243100142,both,airtelgprs.com,10,1,0,0,$EN
 
-int config_parse_configuration(char *msg) {
-	char *token;
-	char command[5] = "$EN";
-	char delimiter[2] = ",";
-	int tempValue = 0;
+const char CHUNK_ST1[5]="$ST1";
+const char CHUNK_ST2[5]="$ST2";
+const char CHUNK_ST3[5]="$ST3";
+const char CHUNK_END[3]="$EN";
+const char delimiter[2] = ",";
+
+/*
+NEW config sync $ST1,<GATEWAY NUMBER>,<GPRS/GSM/BOTH>,
+<COLDTRACE IP ADDRESS>,<APN1>,<APN2>,<UPLOADURL>,<CONFIGURL>,
+<UPLOAD INTERVAL>,<SAMPLE INTERVAL>,<SIM CARD>,<ALARM STATE>,$EN
+*/
+int config_parse_configuration_ST1(char *token) {
 	int iCnt = 0;
-	int i = 0;
-	TEMP_ALERT_PARAM *pAlertParams;
-	BATT_POWER_ALERT_PARAM *pBattPower;
+	int tempValue = 0;
 	INTERVAL_PARAM *pInterval;
-
-	config_setLastCommand(COMMAND_PARSE_CONFIG_ONLINE);
-
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
-	lcd_printf(LINEC, "Parsing");
-	lcd_printl(LINEH, "Configuration"); // Show the firmware version
+	//SYSTEM_SWITCHES *system; //pointer to system_switches struct
 
-	fat_save_config(msg);
+	char uploadMode[6];
+	memset(uploadMode,0,sizeof(uploadMode));
 
-	PARSE_FINDSTR_BUFFER_RET(token, msg, "$ST2,", UART_FAILED);
+	config_setLastCommand(COMMAND_PARSE_CONFIG_ST1);
+	lcd_printl(LINEH, (char *) CHUNK_ST1);
+
+	// Skip $ST1,
+	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
+
+	// gateway
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgGatewaySMS, sizeof(g_pDevCfg->cfgGatewaySMS),
+			delimiter, UART_FAILED); // GATEWAY NUM
+
+	//upload_mode
+	PARSE_NEXTSTRING(token, uploadMode, sizeof(uploadMode), delimiter, UART_FAILED); //parse network type
+	//(0: force gprs, 1: force sms, 2: DEFAULT: failover mode
+		if (!strncmp(uploadMode, "GPRS", sizeof(uploadMode)))
+			g_pDevCfg->cfgUploadMode = MODE_GPRS;
+		else if (!strncmp(uploadMode, "GSM", sizeof(uploadMode)))
+			g_pDevCfg->cfgUploadMode = MODE_GSM;
+		else //default BOTH
+			g_pDevCfg->cfgUploadMode = MODE_GSM + MODE_GPRS;
+
+	//ip address
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgGatewayIP, sizeof(g_pDevCfg->cfgGatewayIP),
+				delimiter, UART_FAILED); // GATEWAY NUM
+
+	//APN
+	//get APN for both sim
+	PARSE_NEXTSTRING(token, g_pDevCfg->SIM[0].cfgAPN, sizeof(g_pDevCfg->SIM[0].cfgAPN), delimiter,
+			UART_FAILED); //APN1
+
+	PARSE_NEXTSTRING(token, g_pDevCfg->SIM[1].cfgAPN, sizeof(g_pDevCfg->SIM[1].cfgAPN), delimiter,
+			UART_FAILED); //APN2
+
+	//upload URL
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgUpload_URL, sizeof(g_pDevCfg->cfgUpload_URL), delimiter,
+					UART_FAILED);
+
+	//config URL
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgConfig_URL, sizeof(g_pDevCfg->cfgConfig_URL), delimiter,
+				UART_FAILED);
+
+	//load intervals
+    pInterval = &g_pDevCfg->sIntervalsMins;
+	//upload interval
+	PARSE_NEXTVALUE(token, &pInterval->upload, delimiter, UART_FAILED);
+
+	//sample interval
+	PARSE_NEXTVALUE(token, &pInterval->sampling, delimiter, UART_FAILED);
+
+	//sim_force
+	//(0,1,2)... apply directly to config param using reference
+	PARSE_NEXTVALUE(token, &g_pDevCfg->cfgSIM_force, delimiter, UART_FAILED);
+
+
+	// reset_alarm
+	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); // Reset alert
+	if (tempValue > 0) {
+		state_clear_alarm_state();
+		for (iCnt = 0; iCnt < SYSTEM_NUM_SENSORS; iCnt++) {
+			//reset the alarm
+			state_reset_sensor_alarm(iCnt);
+		}
+	}
+
+
+	//TODO add disable timer config?
+	// disable/enable buzzer
+	// Currently set up to take 0 or 1 for off or on, can be changed if needed
+	/*
+	system = &g_pSysState->system; //switches initialized in system_states
+	PARSE_NEXTVALUE(token, &tempValue , delimiter, UART_FAILED); //read a value
+	system->switches.buzzer_disabled = tempValue; //set to buzzer disabled param
+	*/
+
+
+	// TODO CHECK IF THE SIM CARD IS OPPERATIONAL
+	g_pDevCfg->cfgSelectedSIM_slot = tempValue;
+
+#ifdef _DEBUG
+	log_append_("ST1 OK");
+#endif
+	return UART_SUCCESS;
+}
+
+int config_parse_configuration_ST2(char *token) {
+	int i = 0;
+	int tempValue = 0;
+	TEMP_ALERT_PARAM *pAlertParams;
+	BATT_POWER_ALERT_PARAM *pBattPower;
+
+	config_setLastCommand(COMMAND_PARSE_CONFIG_ST2);
+	lcd_printl(LINEH, CHUNK_ST2);
+
+	// Skip $ST2,
+	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
 
 	// Return success if no configuration has changed
-	PARSE_FIRSTVALUE(token, &tempValue, delimiter, UART_FAILED);
+	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED);
+	if (tempValue==1)
+		_NOP();
+
 	if (g_pDevCfg->cfgServerConfigReceived && g_pDevCfg->cfgSyncId == 0)
 		return UART_SUCCESS;
 
@@ -390,41 +512,57 @@ int config_parse_configuration(char *msg) {
 
 	PARSE_NEXTVALUE(token, &pBattPower->battThreshold, delimiter, UART_FAILED);
 
-// SIM info
-	PARSE_NEXTSTRING(token, command, sizeof(command), delimiter, UART_FAILED); // $ST1,
-	if (strncmp(command, "$ST1", 4))
+#ifdef _DEBUG
+	log_append_("ST2 OK");
+#endif
+
+	return UART_SUCCESS;
+}
+
+int config_parse_configuration_ST3(char *token) {
+	config_setLastCommand(COMMAND_PARSE_CONFIG_ST3);
+	lcd_printl(LINEH, CHUNK_ST3);
+
+	// Skip $ST3,
+	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
+
+#ifdef _DEBUG
+	log_append_("ST3 OK");
+#endif
+
+	return UART_SUCCESS;
+}
+
+int config_parse_configuration(char *msg) {
+	char *tokenEND, *tokenST3, *tokenST2, *tokenST1;
+	INTERVAL_PARAM *pInterval = &g_pDevCfg->sIntervalsMins;
+
+	config_setLastCommand(COMMAND_PARSE_CONFIG_ONLINE);
+
+	lcd_printf(LINEC, "Parsing Config");
+
+	fat_save_config(msg);
+
+	// Try to see if we have an end for the config
+	tokenEND =strstr((const char *) msg, "$EN");
+	if (tokenEND==NULL)
 		return UART_FAILED;
 
-	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewaySMS[0], strlen(token),
-			delimiter, UART_FAILED); // GATEWAY NUM
-	PARSE_NEXTVALUE(token, &sim->cfgUploadMode, delimiter, UART_FAILED); // NETWORK TYPE E.G. GPRS
-	PARSE_NEXTSTRING(token, &sim->cfgAPN[0], strlen(token), delimiter,
-			UART_FAILED); //APN
+	tokenST1=strstr((const char *) msg, CHUNK_ST1);
+	tokenST2=strstr((const char *) msg, CHUNK_ST2);
+	tokenST3=strstr((const char *) msg, CHUNK_ST3);
 
-	pInterval = &g_pDevCfg->sIntervalsMins;
-	PARSE_NEXTVALUE(token, &pInterval->upload, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &pInterval->sampling, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); // Reset alert
-	if (tempValue > 0) {
-		state_clear_alarm_state();
-		for (iCnt = 0; iCnt < SYSTEM_NUM_SENSORS; iCnt++) {
-			//reset the alarm
-			state_reset_sensor_alarm(iCnt);
-		}
-	}
+	if (tokenST1!=NULL)
+		if (config_parse_configuration_ST1(tokenST1)==UART_FAILED)
+			return UART_FAILED;
 
-	// Value from the server comes 1 or 2. We use 0 to 1 format.
-	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); ////
-	if (tempValue < 0 || tempValue > 1)
-		tempValue = 0;
+	if (tokenST2!=NULL)
+		if (config_parse_configuration_ST2(tokenST2)==UART_FAILED)
+			return UART_FAILED;
 
-	g_pDevCfg->cfgSelectedSIM_slot = tempValue;
-
-	PARSE_NEXTSTRING(token, command, sizeof(command), ", \n", UART_FAILED); // $EN
-	if (strncmp(command, "$EN", 3))
-		return UART_FAILED;
-
-	log_append_("Config Success");
+	if (tokenST3!=NULL)
+		if (config_parse_configuration_ST3(tokenST3)==UART_FAILED)
+			return UART_FAILED;
 
 	g_pDevCfg->cfgServerConfigReceived = 1;
 
@@ -437,10 +575,13 @@ int config_parse_configuration(char *msg) {
 	event_setInterval_by_id_secs(EVT_UPLOAD_SAMPLES,
 			MINUTES_(pInterval->upload));
 
-	lcd_display_config();
-
 	config_incLastCmd();
+#ifdef CONFIG_SAVE_IN_PROGRESS
+	config_save_ini();
+#endif
 
+	// Order the system to send the config later on.
+	g_sEvents.defer.command.send_config = 1;
 	return UART_SUCCESS;
 }
 
@@ -459,12 +600,53 @@ int config_process_configuration() {
 #define SECTION_LOGS "LOGS"
 
 #ifdef USE_MININI
+
+// This functionality doesnt work yet
+#ifdef CONFIG_SAVE_IN_PROGRESS
+void config_save_ini() {
+	long n;
+	INTERVAL_PARAM *intervals;
+
+	//f_rename(CONFIG_INI_FILE, "thermal.old");
+	lcd_printf(LINEC, "SAVING CONFIG");
+
+	n = ini_puts(SECTION_SERVER, "GatewaySMS", g_pDevCfg->cfgGatewaySMS, CONFIG_INI_FILE);
+	n = ini_puts(SECTION_SERVER, "ReportSMS", g_pDevCfg->cfgReportSMS, CONFIG_INI_FILE);
+	n = ini_puts(SECTION_SERVER, "GatewayIP", g_pDevCfg->cfgGatewayIP, 	CONFIG_INI_FILE);
+	n = ini_puts(SECTION_SERVER, "Config_URL", g_pDevCfg->cfgConfig_URL, CONFIG_INI_FILE);
+	n = ini_puts(SECTION_SERVER, "Upload_URL", g_pDevCfg->cfgUpload_URL, CONFIG_INI_FILE);
+
+	n = ini_puts("SIM1", "APN", g_pDevCfg->SIM[0].cfgAPN, CONFIG_INI_FILE);
+	n = ini_puts("SIM2", "APN", g_pDevCfg->SIM[1].cfgAPN, CONFIG_INI_FILE);
+
+	intervals = &g_pDevCfg->sIntervalsMins;
+	n = ini_putl(SECTION_INTERVALS, "Sampling", intervals->sampling, CONFIG_INI_FILE);
+	if (n == 0)
+		return;
+
+	n = ini_putl(SECTION_INTERVALS, "Upload", intervals->upload, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "Reboot", intervals->systemReboot, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "Configuration", intervals->configurationFetch, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "SMS_Check", intervals->smsCheck, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "Network_Check", intervals->networkCheck, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "LCD_off", intervals->lcdOff, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "Alarms", intervals->alarmsCheck, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "ModemPullTime", intervals->modemPullTime, CONFIG_INI_FILE);
+	n = ini_putl(SECTION_INTERVALS, "BatteryCheck", intervals->batteryCheck, CONFIG_INI_FILE);
+}
+#endif
+
 FRESULT config_read_ini_file() {
 	FRESULT fr;
 	FILINFO fno;
-	long n;
+
+	long n = 0;
+
 	LOGGING_COMPONENTS *cfg;
 	INTERVAL_PARAM *intervals;
+	SYSTEM_SWITCHES *system; //pointer to system_switches struct
+
+	//TODO: SYSTEM_SWITCHES for buzzer from ini file
 
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
@@ -481,6 +663,7 @@ FRESULT config_read_ini_file() {
 			sizearray(g_pDevCfg->cfgVersion), CONFIG_INI_FILE);
 	if (n == 0)
 		return FR_NO_FILE;
+
 #endif
 
 	cfg = &g_pDevCfg->cfg;
@@ -496,14 +679,17 @@ FRESULT config_read_ini_file() {
 	cfg->logs.sms_reports = ini_getbool(SECTION_LOGS, "SMS_Reports", 0,
 			CONFIG_INI_FILE);
 
+	// Currently in [LOGS] section
+	system = &g_pSysState->system; //switches initialized in system_states
+	system->switches.buzzer_disabled = ini_getbool(SECTION_LOGS, "Buzzer_Off", 0,
+			CONFIG_INI_FILE);
+
 	n = ini_gets(SECTION_SERVER, "GatewaySMS", NEXLEAF_SMS_GATEWAY,
 			g_pDevCfg->cfgGatewaySMS, sizearray(g_pDevCfg->cfgGatewaySMS),
 			CONFIG_INI_FILE);
 
-	if (g_bServiceMode) {
-		lcd_printf(LINEC, "SMS Gateway");
-		lcd_printf(LINEH, g_pDevCfg->cfgGatewaySMS);
-	}
+	if (n == 0)
+		return FR_NO_FILE;
 
 	n = ini_gets(SECTION_SERVER, "ReportSMS", REPORT_PHONE_NUMBER,
 			g_pDevCfg->cfgReportSMS, sizearray(g_pDevCfg->cfgReportSMS),
@@ -512,11 +698,6 @@ FRESULT config_read_ini_file() {
 	n = ini_gets(SECTION_SERVER, "GatewayIP", NEXLEAF_DEFAULT_SERVER_IP,
 			g_pDevCfg->cfgGatewayIP, sizearray(g_pDevCfg->cfgGatewayIP),
 			CONFIG_INI_FILE);
-
-	if (g_bServiceMode) {
-		lcd_printf(LINEC, "Gateway IP");
-		lcd_printf(LINEH, g_pDevCfg->cfgGatewayIP);
-	}
 
 	n = ini_gets(SECTION_SERVER, "Config_URL", CONFIGURATION_URL_PATH,
 			g_pDevCfg->cfgConfig_URL, sizearray(g_pDevCfg->cfgConfig_URL),
@@ -553,12 +734,21 @@ FRESULT config_read_ini_file() {
 	intervals->batteryCheck = ini_getl(SECTION_INTERVALS, "BatteryCheck",
 			PERIOD_BATTERY_CHECK, CONFIG_INI_FILE);
 
+	if (g_bServiceMode) {
+		config_display_config();
+	}
+
 #ifndef _DEBUG
 	//fr = f_rename(CONFIG_INI_FILE, "thermal.old");
 #endif
 	_NOP();
+
+#ifdef CONFIG_SAVE_IN_PROGRESS
+	config_save_ini();
+#endif
 	return fr;
 }
+
 #endif
 
 int config_default_configuration() {
@@ -590,6 +780,7 @@ int config_default_configuration() {
 	g_pDevCfg->sIntervalsMins.smsCheck = PERIOD_SMS_CHECK;
 
 	g_pDevCfg->cfg.logs.sms_alerts = ALERTS_SMS;
+
 #ifdef _DEBUG
 	g_pDevCfg->cfg.logs.commmands = 1;
 #endif

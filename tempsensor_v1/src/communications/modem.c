@@ -29,8 +29,10 @@
 #include "state_machine.h"
 #include "main_system.h"
 
+#pragma SET_DATA_SECTION(".aggregate_vars")
 char ctrlZ[2] = { 0x1A, 0 };
 char ESC[2] = { 0x1B, 0 };
+#pragma SET_DATA_SECTION()
 
 /*
  * AT Commands Reference Guide 80000ST10025a Rev. 9 2010-10-04
@@ -171,8 +173,10 @@ int modem_getNetworkStatus(int *mode, int *status) {
 /* Network cellular service */
 /**********************************************************************************************************************/
 
-char NETWORK_GPRS_COMMAND[] = "CGREG";
-char NETWORK_GSM_COMMAND[] = "CREG";
+#pragma SET_DATA_SECTION(".aggregate_vars")
+static char NETWORK_GPRS_COMMAND[] = "CGREG";
+static char NETWORK_GSM_COMMAND[] = "CREG";
+#pragma SET_DATA_SECTION()
 
 const char inline *modem_getNetworkServiceCommand() {
 	if (g_pSysState->network_mode == NETWORK_GPRS)
@@ -200,39 +204,44 @@ int modem_getNetworkService() {
 }
 
 void modem_setNetworkService(int service) {
-	if (g_pSysState->network_mode != service) {
-		g_pSysState->network_mode = service;
-		config_setLastCommand(COMMAND_SET_NETWORK_SERVICE);
+	if (g_pSysState->network_mode == service)
+		return;
 
-		modem_connect_network(NETWORK_CONNECTION_ATTEMPTS);
-	}
+	g_pSysState->network_mode = service;
+	config_setLastCommand(COMMAND_SET_NETWORK_SERVICE);
+
+	if (modem_connect_network(NETWORK_CONNECTION_ATTEMPTS) == UART_FAILED)
+		return;
 }
 
-void modem_run_failover_sequence() {
+void modem_network_sequence() {
+	uint8_t networkSwapped = 0;
+
+	// Checks if the current sim is the selected one.
+	modem_check_sim_active();
+
 	config_setLastCommand(COMMAND_FAILOVER);
 	if (modem_check_network() != UART_SUCCESS) {
 		modem_swap_SIM();
+		networkSwapped = 1;
 		if (modem_check_network() != UART_SUCCESS) {
-			g_pSysState->lastTransMethod = NONE;
+			return;
 		}
 	}
 
-	if (http_enable() != UART_SUCCESS) {
+	if (state_isGPRS() && http_enable() != UART_SUCCESS) {
 		config_setLastCommand(COMMAND_FAILOVER_HTTP_FAILED);
+		state_failed_gprs(config_getSelectedSIM());
+
+		// This means we already checked the network
+		if (networkSwapped == 1) {
+			return;
+		}
+
 		modem_swap_SIM();
 		if (modem_check_network() == UART_SUCCESS
 				&& http_enable() != UART_SUCCESS) {
-			if (g_pDevCfg->cfgSIM_slot == 0) {
-				g_pSysState->lastTransMethod = SMS_SIM1;
-			} else {
-				g_pSysState->lastTransMethod = SMS_SIM2;
-			}
-		}
-	} else {
-		if (g_pDevCfg->cfgSIM_slot == 0) {
-			g_pSysState->lastTransMethod = HTTP_SIM1;
-		} else {
-			g_pSysState->lastTransMethod = HTTP_SIM2;
+			state_failed_gprs(config_getSelectedSIM());
 		}
 	}
 
@@ -287,7 +296,7 @@ int modem_connect_network(uint8_t attempts) {
 				state_network_success(nsim);
 
 				// We tested more than once, lets show a nice we are connected message
-				if (tests > 2)
+				if (tests > 4)
 					delay(HUMAN_DISPLAY_INFO_DELAY);
 				return UART_SUCCESS;
 			} else {
@@ -337,9 +346,8 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 static const char AT_ERROR[] = " ERROR: ";
 
 // Used to ignore previsible errors like the SIM not supporting a command.
-uint8_t g_iUartIgnoreError = 0;
-void modem_ignore_next_errors(int errors) {
-	g_iUartIgnoreError = errors;
+void modem_ignore_next_errors(int error) {
+	uart.switches.b.ignoreError = error;
 }
 
 void modem_check_uart_error() {
@@ -357,9 +365,7 @@ void modem_check_uart_error() {
 		char *error = (char *) (pToken1 + strlen(AT_ERROR));
 		errorToken = *(pToken1 - 1);
 
-		if (g_iUartIgnoreError != 0) {
-			g_iUartIgnoreError--;
-		} else {
+		if (uart.switches.b.ignoreError == 0) {
 #ifdef _DEBUG_OUTPUT
 			if (errorToken=='S') {
 				lcd_printl(LINEC, "SERVICE ERROR");
@@ -376,25 +382,31 @@ void modem_check_uart_error() {
 int8_t modem_check_network() {
 	int res = UART_FAILED;
 	int iSignal = 0;
+	int service;
 
 	config_setLastCommand(COMMAND_CHECK_NETWORK);
 
 	// Check signal quality,
 	// if it is too low we check if we
 	// are actually connected to the network and fine
+	service = modem_getNetworkService();
 
 	iSignal = modem_getSignal();
 	res = uart_getTransactionState();
-	if (res == UART_SUCCESS)
+	if (res == UART_SUCCESS) {
 		state_setSignalLevel(iSignal);
-	else
+	} else {
+		g_pSysState->net_service[service].network_failures++;
 		state_network_fail(config_getSelectedSIM(),
 		NETWORK_ERROR_SIGNAL_FAILURE);
+		log_appendf("[%d] NETDOWN %d", config_getSelectedSIM(),
+				g_pSysState->net_service[service].network_failures);
+	}
+
 	return res;
 }
 
 int8_t modem_first_init() {
-
 	int t = 0;
 	int iIdx;
 	int iStatus = 0;
@@ -473,7 +485,7 @@ void modem_check_sim_active() {
 }
 
 int modem_swap_to_SIM(int sim) {
-	if (g_pDevCfg->cfgSelectedSIM_slot != sim) {
+	if (g_pDevCfg->cfgSIM_slot != sim) {
 		return modem_swap_SIM();
 	}
 
@@ -548,7 +560,7 @@ int8_t modem_parse_string(char *cmd, char *response, char *destination,
 int8_t modem_getSMSCenter() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	return modem_parse_string("AT+CSCA?\r\n", "CSCA: \"", sim->cfgSMSCenter,
-			GW_MAX_LEN + 1);
+	GW_MAX_LEN + 1);
 	// added for SMS Message center number to be sent in the heart beat
 }
 
@@ -557,7 +569,7 @@ int8_t modem_getOwnNumber() {
 	int8_t state;
 	modem_ignore_next_errors(1); // Ignore 1 error since we know our sim cards dont support this command
 	state = modem_parse_string("AT+CNUM?", "CNUM: \"", sim->cfgPhoneNum,
-			GW_MAX_LEN + 1);
+	GW_MAX_LEN + 1);
 	modem_ignore_next_errors(0);
 	return state;
 }
@@ -626,7 +638,6 @@ void modem_getExtraInfo() {
 #define NET_ATTEMPTS 10
 #endif
 
-
 #if defined(CAPTURE_MCC_MNC) && defined(_DEBUG)
 void modem_survey_network() {
 
@@ -637,7 +648,7 @@ void modem_survey_network() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	if (sim->iCfgMCC != 0 && sim->iCfgMNC != 0)
-		return;
+	return;
 
 	lcd_disable_verbose();
 
@@ -645,9 +656,9 @@ void modem_survey_network() {
 
 	do {
 		if (attempts != NET_ATTEMPTS)
-			lcd_printf(LINEC, "MCC RETRY %d   ", NET_ATTEMPTS - attempts);
+		lcd_printf(LINEC, "MCC RETRY %d   ", NET_ATTEMPTS - attempts);
 		else
-			lcd_printl(LINEC, "MCC DISCOVER");
+		lcd_printl(LINEC, "MCC DISCOVER");
 
 		// Displays info for the only serving cell
 		uart_tx("#CSURVEXT=0");
@@ -657,7 +668,7 @@ void modem_survey_network() {
 
 			// We just want only one full buffer. The data is on the first few characters of the stream
 			uart_setNumberOfPages(1);
-			uart_tx_timeout("AT#CSURV", TIMEOUT_CSURV, 10); // #CSURV - Network Survey
+			uart_tx_timeout("AT#CSURV", TIMEOUT_CSURV, 10);// #CSURV - Network Survey
 			// Maximum timeout is 2 minutes
 
 			//Execution command allows to perform a quick survey through channels
@@ -679,11 +690,11 @@ void modem_survey_network() {
 				} else {
 					pToken1 = strstr(uart_getRXHead(), "mcc:");
 					if (pToken1 != NULL)
-						sim->iCfgMCC = atoi(pToken1 + 5);
+					sim->iCfgMCC = atoi(pToken1 + 5);
 
 					pToken1 = strstr((const char *) pToken1, "mnc:");
 					if (pToken1 != NULL)
-						sim->iCfgMNC = atoi(pToken1 + 5);
+					sim->iCfgMNC = atoi(pToken1 + 5);
 
 					if (sim->iCfgMCC > 0 && sim->iCfgMNC > 0) {
 						lcd_printl(LINEC, "SUCCESS");
@@ -695,7 +706,7 @@ void modem_survey_network() {
 		}
 
 		attempts--;
-	} while (uart_state != UART_SUCCESS && attempts > 0);
+	}while (uart_state != UART_SUCCESS && attempts > 0);
 
 	uart_setDefaultIntervalDivider();
 
@@ -843,7 +854,7 @@ void modem_init() {
 
 	// Check if there are pending messages in the SMS queue
 
-	// We have to wait for the network to be ready, it will take some time. In debug we just wait on connect.
+	// We have to wait for the network to be ready, it will take some time. In debug we just wait on connect. It will generate a SIM BUSY error (14)
 #ifndef _DEBUG
 	lcd_progress_wait(2000);
 #endif

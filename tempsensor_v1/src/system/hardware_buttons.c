@@ -56,18 +56,16 @@ void hardware_actions() {
 	// TODO Change into flags to run several actions at the same time
 	switch (g_iHardware_actions) {
 		case HWD_POWER_CHANGE:
-			if (POWER_ON)
-				state_power_on();
-			else
-				state_power_out();
-
 			event_force_event_by_id(EVT_ALARMS_CHECK, 0);
-			lcd_on = 1;
+			lcd_on = 0;
 		break;
 		case HWD_THERMAL_SYSTEM:
-			thermal_handle_system_button();
+			event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 5);
+			event_force_event_by_id(EVT_SAVE_SAMPLE_TEMP, 10);
+			event_force_event_by_id(EVT_UPLOAD_SAMPLES, 15);
+			//thermal_handle_system_button();
 			lcd_on = 1;
-
+			break;
 		case HWD_BUZZER_FEEDBACK:
 			if (g_pSysState->system.switches.button_buzzer_override) {
 				lcd_printf(LINE1, "BUZZER OFF");

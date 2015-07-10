@@ -15,6 +15,10 @@
 #include "alarms.h"
 #include "timer.h"
 
+#ifdef USE_MININI
+#include "minIni.h"
+#endif
+
 #pragma SET_DATA_SECTION(".xbigdata_vars")
 EVENT_MANAGER g_sEvents;
 #pragma SET_DATA_SECTION()
@@ -22,6 +26,46 @@ EVENT_MANAGER g_sEvents;
 /*******************************************************************************************************/
 /* Event based system */
 /*******************************************************************************************************/
+
+// Commands postponed by their senders.
+// Some commands we don't want to run them just when they happen;
+void event_run_deferred_commands() {
+	SIM_CARD_CONFIG *sim = config_getSIM();
+	char error[16];
+	if (g_sEvents.defer.status==0)
+		return;
+
+	config_setLastCommand(COMMAND_EVENT_DEFERRED);
+
+	if (g_sEvents.defer.command.send_config) {
+		g_sEvents.defer.command.send_config=0;
+		config_display_config();
+#ifdef _DEBUG
+		config_send_configuration(g_pDevCfg->cfgReportSMS);
+#endif
+		return;
+	}
+
+	if (g_sEvents.defer.command.swap_sim) {
+		g_sEvents.defer.command.swap_sim=0;
+		return;
+	}
+
+	if (g_sEvents.defer.command.display_http_error) {
+		zeroString(error);
+		g_sEvents.defer.command.display_http_error=0;
+		if (sim->http_last_status_code != 200
+				&& sim->http_last_status_code > 0) {
+#ifdef USE_MININI
+			ini_gets("STATUS", itoa_nopadding(sim->http_last_status_code),
+					"unassigned", error, sizeof(error), "http.ini");
+			lcd_printl(LINEC, "HTTP Error");
+			lcd_printl(LINEH, error);
+#endif
+		}
+		return;
+	}
+}
 
 time_t inline event_getIntervalSeconds(EVENT *pEvent) {
 	if (pEvent == NULL)
@@ -160,7 +204,8 @@ void events_find_next_event(time_t currentTime) {
 	for (t = 0; t < g_sEvents.registeredEvents; t++) {
 		pEvent = &g_sEvents.events[t];
 
-		if (pEvent->nextEventRun < nextEventTime) {
+		// 0 seconds events are disabled
+		if (pEvent->interval_secs!=0 && pEvent->nextEventRun < nextEventTime) {
 			nextEventTime = pEvent->nextEventRun;
 			nextEvent = t;
 		}
@@ -247,13 +292,13 @@ void events_debug() {
 	time_t currentTime = events_getTick();
 
 	EVENT *pEvent = &g_sEvents.events[g_sEvents.nextEvent];
-	//if (pEvent->id == EVT_DISPLAY)
-	//	return;
+	if (pEvent->id == EVT_DISPLAY)
+		return;
 
 	time_t nextEventTime = pEvent->nextEventRun - currentTime;
 	int test = nextEventTime % 10;
 	if (test == 0 || nextEventTime < 10 || 1)
-		lcd_printf(LINE2, "[%s] %d  ", pEvent->name, nextEventTime);
+		lcd_printf(LINE1, "[%s %d]   ", pEvent->name, nextEventTime);
 #endif
 }
 
@@ -303,18 +348,26 @@ EVENT inline *events_getNextEvent() {
 void events_run() {
 	time_t currentTime;
 	EVENT *pEvent;
+	EVENT *pOldEvent = NULL;
 	uint8_t nextEvent = g_sEvents.nextEvent;
 
-	if (nextEvent > MAX_EVENTS)
-		return;
+	event_run_deferred_commands();
 
 	currentTime = events_getTick();
+	state_check_power();
 
 	pEvent = &g_sEvents.events[nextEvent];
 	while (currentTime >= pEvent->nextEventRun && pEvent != NULL) {
 		if (g_iDebug)
 			buzzer_feedback_value(5);
 
+		// We don't want to run the same event twice in a row
+		// lets return control over the system for a round of CPU before repeating the process
+		if (pOldEvent == pEvent) {
+			return;
+		}
+
+		pOldEvent = pEvent;
 		event_run_now(pEvent);
 		nextEvent = g_sEvents.nextEvent;
 		pEvent = &g_sEvents.events[nextEvent];
@@ -393,57 +446,25 @@ void event_subsample_temperature(void *event, time_t currentTime) {
 }
 
 void event_network_check(void *event, time_t currentTime) {
-	int res;
-	uint8_t *failures;
-	int service;
+	config_setLastCommand(COMMAND_EVENT_CHECK_NETWORK);
 
+	// Network is totally broken for this SIM
+	// Change SIM card and don't failover anything.
 	if (!state_isSimOperational()) {
-		modem_swap_SIM();
+		modem_swap_SIM(); // Should we swap sim?
+		return;
 	}
 
-	switch (g_pSysState->lastTransMethod) {
-		case HTTP_SIM1:
-		case SMS_SIM1:
-			config_setLastCommand(COMMAND_SWAP_SIM0);
-			res = modem_swap_to_SIM(0);
-			break;
-		case HTTP_SIM2:
-		case SMS_SIM2:
-			config_setLastCommand(COMMAND_SWAP_SIM1);
-			res = modem_swap_to_SIM(1);
-			break;
-		case NONE:
-		default:
-			modem_run_failover_sequence();
-			break;
-	}
-
-	service = modem_getNetworkService();
-	failures = &g_pSysState->net_service[service].network_failures;
+	// XXX this already checks if signal in range
+    modem_network_sequence();
 
 	if (state_isNetworkRegistered()) {
 		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(10));
 	} else {
 		// Try to connect in 1 minute
-		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(1));
+		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(2));
 		event_force_event_by_id(EVT_DISPLAY, 0);
 		return;
-	}
-
-	modem_getSignal();
-	if (state_isSignalInRange()) {
-		res = modem_connect_network(1);
-	} else {
-		res = UART_FAILED;
-	}
-
-	if (res == UART_FAILED) {
-		// No signal on this SIM
-		g_pSysState->lastTransMethod = NONE;
-		*failures++;
-		log_appendf("[%d] NETDOWN %d", config_getSelectedSIM(), *failures);
-	} else {
-		*failures = 0;
 	}
 
 	event_force_event_by_id(EVT_DISPLAY, 0);
@@ -466,9 +487,9 @@ void event_upload_samples(void *event, time_t currentTime) {
 
 		if (config_is_SIM_configurable(slot)) {
 			if (slot == 0) {
-				g_pSysState->lastTransMethod = HTTP_SIM1;
+				g_pDevCfg->cfgSelectedSIM_slot = 0;
 			} else {
-				g_pSysState->lastTransMethod = HTTP_SIM2;
+				g_pDevCfg->cfgSelectedSIM_slot = 1;
 			}
 		}
 
@@ -516,7 +537,7 @@ void event_fetch_configuration(void *event, time_t currentTime) {
 }
 
 void event_reset_trans(void *event, time_t currentTime) {
-	g_pSysState->lastTransMethod = NONE;
+	state_reset_network_errors();
 }
 
 // Sleeping state
@@ -540,9 +561,16 @@ uint8_t event_wake_up_main() {
 
 void event_main_sleep() {
 	iMainSleep = 1;
+
+	// Screen on, check every second
 	if (g_bLCD_state)
 		delay(MAIN_SLEEP_TIME);
 	else
+	// If we are disconnected, lets check every 5 seconds for the power to be back.
+	if (g_pSysState->system.switches.power_connected)
+			delay(MAIN_SLEEP_POWER_OUTAGE);
+	else
+	// Deep sleep
 		delay(MAIN_LCD_OFF_SLEEP_TIME);
 
 	iMainSleep = 0;

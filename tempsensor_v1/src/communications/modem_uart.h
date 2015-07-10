@@ -11,35 +11,43 @@
 #define TX_LEN   			200
 #define RX_LEN   			512
 
+typedef union {
+	struct {
+		unsigned char active :1;
+		unsigned char waitForTXEnd :1;
+		unsigned char transmissionEnd :1;
+		unsigned char RXWaitForReturn :1;
+		unsigned char ignoreError :1;
+	} b;
+	unsigned char status;
+} UART_STATES;
+
 typedef struct {
-	int8_t iActive;
+	UART_STATES switches;
 
-	uint16_t iRXTailIdx;
-	uint16_t iRXHeadIdx;
+	uint16_t iRXHeadIdx;  // Head of the ring buffer
+	uint16_t iRXTailIdx;  // Current read
 
-	char bWaitForTXEnd;
-	char bTransmissionEnd;
+	int8_t iUartState;	   // State of the last transmission (ERROR or ok)
 
-	int8_t iUartState;
-	uint8_t bRXWaitForReturn;
-
-	uint16_t iTXIdx;
-
+	uint16_t iTXIdx;		  // Data transmitted from TXbuffer
 	uint8_t iError;
 
-	uint16_t iRxCountBytes;
+	uint16_t iRxCountBytes;   // Used for stats
 	uint16_t iTxCountBytes;
-	uint16_t iTxLen;
+	uint16_t iTxLen;		  // Data to be transmitted
 
-	char szOK[16];
+	char szOK[16];			  // OK string to be checked for
 	uint8_t OKIdx;
 	int8_t OKLength;
 
-	char szError[16];
+	char szError[16];	      // Fail string
 	uint8_t ErrorIdx;
 	int8_t ErrorLength;
 
 } UART_TRANSFER;
+
+extern volatile UART_TRANSFER uart;
 
 #define UART_SUCCESS 0
 #define UART_ERROR -1
@@ -90,6 +98,7 @@ void uart_setDelayIntervalDivider(uint8_t divider);
 //*****************************************************************************
 uint8_t uart_tx(const char* pTxData);
 uint8_t uart_tx_timeout(const char *cmd, uint32_t timeout, uint8_t attempts);
+uint8_t uart_tx_data(const char *cmd, uint32_t timeout, uint8_t attempts);
 void uart_tx_nowait(const char *cmd);
 uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime);
 uint8_t uart_txf(const char *_format, ...);

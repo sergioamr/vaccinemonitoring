@@ -8,11 +8,15 @@
 #include "thermalcanyon.h"
 #include "buzzer.h"
 
+#define MAX_LINE_UPLOAD_TEXT 46
+
 #define TRANS_FAILED		   -1
 #define TRANS_SUCCESS			0
 
 char *getSensorTemp(int sensorID) {
+#pragma SET_DATA_SECTION(".aggregate_vars")
 	static char sensorData[4];
+#pragma SET_DATA_SECTION()
 	return sensorData;
 }
 
@@ -35,8 +39,8 @@ uint8_t data_send_temperatures_sms() {
 	return sms_send_message(data);
 }
 
-int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
-	char line[80], encodedLine[40];
+int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
+	char line[MAX_LINE_UPLOAD_TEXT], encodedLine[40];
 	int lineSize = sizeof(line) / sizeof(char);
 	char* dateString = NULL;
 	struct tm firstDate;
@@ -48,7 +52,7 @@ int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 	f_lseek(file, start);
 
 	do {
-		if (splitSend == 1) {
+		if (splitSend) {
 			offset_timestamp(&firstDate, linesParsed);
 			dateString = get_date_string(&firstDate, "", "", "", 0);
 			sprintf(smsMsg, "%d,%s,%d,%d,", 11, dateString,
@@ -90,14 +94,9 @@ int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 		}
 
 		if (sms_send_message(smsMsg) != UART_SUCCESS) {
-			if (g_pDevCfg->cfgSIM_slot == 0) {
-				g_pSysState->lastTransMethod = SMS_SIM2;
-			} else {
-				g_pSysState->lastTransMethod = SMS_SIM1;
-			}
 			return TRANS_FAILED;
 		}
-	} while (splitSend == 1);
+	} while (splitSend);
 
 	return TRANS_SUCCESS;
 }
@@ -105,11 +104,10 @@ int8_t data_upload_sms(FIL *file, uint32_t start, uint32_t end) {
 // 11,20150303:082208,interval,sensorid,DATADATADATAT,sensorid,DATADATADATA,
 // sensorid,dATADATADA,sensorID,DATADATADATADATAT, sensorID,DATADATADATADATAT,batt level,battplugged.
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
-int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
+int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 	int uart_state;
-	char line[160];
+	char line[MAX_LINE_UPLOAD_TEXT];
 	int retry = 0;
-	int lineSize = sizeof(line)/sizeof(char);
 
 	char* dateString = NULL;
 	struct tm firstDate;
@@ -119,7 +117,7 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	f_lseek(file, start);
 
 	// Must get first line before transmitting to calculate the length properly
-	if (f_gets(line, lineSize, file) != 0) {
+	if (f_gets(line, sizeof(line), file) != 0) {
 		parse_time_from_line(&firstDate, line);
 		dateString = get_date_string(&firstDate, "", "", "", 0);
 		sprintf(line, "IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=",
@@ -130,29 +128,34 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	}
 
 	uint32_t length = strlen(line) + (end - file->fptr);
-	http_open_connection(length);
+	http_open_connection_upload(length);
 
 	// Send the date line
 	uart_tx_nowait(line);
-	lcd_progress_wait(1000);
+	if (uart_getTransactionState()!=UART_SUCCESS)
+		return TRANS_FAILED;
+
+	lcd_progress_wait(300);
 
 	// check that the transmitted data equals the size to send
 	while (file->fptr < end) {
-		if (f_gets(line, lineSize, file) != 0) {
+		if (f_gets(line, sizeof(line), file) != 0) {
 			if (file->fptr != end) {
 				replace_character(line, '\n', '|');
 				uart_tx_nowait(line);
+				if (uart_getTransactionState()!=UART_SUCCESS)
+					return TRANS_FAILED;
 				lcd_print_progress();
 			} else {
 				// Last line! Wait for OK
 
 				// This command also disables the appending of AT and \r\n on the data
 				uart_setHTTPDataMode();
-				uart_tx_timeout(line, TIMEOUT_HTTPSND, 1); // We don't have more than one attempt to send data
-				uart_setOKMode();
+				uart_tx_data(line, TIMEOUT_HTTPSND, 1); // We don't have more than one attempt to send data
 				uart_state = uart_getTransactionState();
-				if (uart_state == UART_ERROR) {
-					http_check_error(&retry);
+				uart_setOKMode();
+				http_check_error(&retry);
+				if (sim->http_last_status_code != 200 || uart_state == UART_FAILED) {
 					return TRANS_FAILED;
 				}
 			}
@@ -164,14 +167,28 @@ int8_t http_send_batch(FIL *file, uint32_t start, uint32_t end) {
 	return TRANS_SUCCESS;
 }
 
+int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
+	if (g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS > 0 || state_isGSM()) {
+		if (data_send_sms(file, start, end) != TRANS_SUCCESS) {
+			state_failed_gsm(g_pDevCfg->cfgSIM_slot);
+			return TRANS_FAILED;
+		}
+	} else {
+		if (data_send_http(file, start, end) != TRANS_SUCCESS) {
+			state_failed_gprs(g_pDevCfg->cfgSIM_slot);
+			return TRANS_FAILED;
+		}
+	}
+	return TRANS_SUCCESS;
+}
+
 void process_batch() {
-	uint8_t canSend = 0, failedAttempts = 0;
+	int8_t canSend = 0, transactionState = 0;
 	uint32_t seekFrom = g_pSysState->lastSeek, seekTo = g_pSysState->lastSeek;
-	char line[80];
+	char line[MAX_LINE_UPLOAD_TEXT];
 	char path[32];
 	char do_not_process_batch = false;
 	int lineSize = sizeof(line) / sizeof(char);
-	TRANSMISSION_TYPE transMethod;
 
 	FILINFO fili;
 	DIR dir;
@@ -181,19 +198,12 @@ void process_batch() {
 
 	log_disable();
 
-	transMethod = g_pSysState->lastTransMethod;
-	if (transMethod == NONE) {
-		return;
-	} else if (transMethod == HTTP_SIM1 || transMethod == HTTP_SIM2) {
-		// If we cant attatch to a GPRS service then fall back to the SMS
-		// alternative
+	if (!state_isSimOperational())
+ 		return;
+
+	if (g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS == 0 && state_isGPRS()) {
 		if (http_enable() != UART_SUCCESS) {
-			http_deactivate();
-			if (transMethod == HTTP_SIM1) {
-				transMethod = SMS_SIM1;
-			} else {
-				transMethod = SMS_SIM2;
-			}
+			g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS++;
 		}
 	}
 
@@ -218,7 +228,6 @@ void process_batch() {
 
 		// If the last file was corrupted and forced a reboot we remove the extension
 		if (do_not_process_batch) {
-
 			sprintf(line, "%s/%s", FOLDER_TEXT, fili.fname);
 			len = strlen(line);
 			line[len-3]=0;
@@ -240,16 +249,9 @@ void process_batch() {
 			if (filr.fptr == 0 || strstr(line, "$TS") != NULL) {
 				if (canSend) {
 					canSend = 0;
-					if (transMethod == SMS_SIM1 || transMethod == SMS_SIM2) {
-						if (data_upload_sms(&filr, seekFrom, seekTo) == TRANS_FAILED) {
-							failedAttempts++;
-							break;
-						}
-					} else {
-						if (http_send_batch(&filr, seekFrom, seekTo) == TRANS_FAILED) {
-							failedAttempts++;
-							break;
-						}
+					transactionState = data_send_method(&filr, seekFrom, seekTo);
+					if (transactionState != TRANS_SUCCESS) {
+						break;
 					}
 					seekFrom = seekTo = filr.fptr;
 					// Found next time stamp - Move to next batch now
@@ -261,27 +263,17 @@ void process_batch() {
 		}
 
 		if(canSend) {
-			if (transMethod == SMS_SIM1 || transMethod == SMS_SIM2) {
-				if (data_upload_sms(&filr, seekFrom, seekTo) == TRANS_FAILED) {
-					failedAttempts++;
-					break;
-				}
-			} else {
-				if (http_send_batch(&filr, seekFrom, seekTo) == TRANS_FAILED) {
-					failedAttempts++;
-					break;
-				}
-			}
+			transactionState = data_send_method(&filr, seekFrom, seekTo);
 			seekFrom = canSend = 0;
 		}
 
-		if (seekTo < filr.fsize && failedAttempts < 1) {
+		if (seekTo < filr.fsize && transactionState == TRANS_SUCCESS) {
 			g_pSysState->lastSeek = filr.fptr;
-		} else if (failedAttempts < 1) {
+		} else if (transactionState == TRANS_SUCCESS) {
 			g_pSysState->lastSeek = 0;
 		}
 
-		if (f_close(&filr) == FR_OK && failedAttempts < 1) {
+		if (f_close(&filr) == FR_OK && transactionState == TRANS_SUCCESS) {
 			if (g_pSysState->lastSeek == 0) {
 				fr = f_unlink(path); // Delete the file
 			}
@@ -295,11 +287,18 @@ void process_batch() {
 		}
 	}
 
-	if (transMethod == HTTP_SIM1 || transMethod == HTTP_SIM2) {
+	if (state_isGPRS()) {
 		http_deactivate();
 	}
+
 	lcd_printl(LINEC, "Transmission");
-	lcd_printl(LINE2, "Completed");
+	if (transactionState == TRANS_SUCCESS) {
+		// Make sure this sim is the one that's first used next time
+		g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;
+		lcd_printl(LINE2, "Complete");
+	} else {
+		lcd_printl(LINE2, "Failed");
+	}
 	g_pSysState->safeboot.disable.data_transmit = 0;
 	g_iStatus |= LOG_TIME_STAMP; // Uploads may take a long time and might require offset to be reset
 	log_enable();

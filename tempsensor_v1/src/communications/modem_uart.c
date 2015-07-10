@@ -1,10 +1,3 @@
-/*
- * uart.c
- *
- *  Created on: Feb 25, 2015
- *      Author: rajeevnx
- */
-
 #include "msp430.h"
 #include "config.h"
 #include "common.h"
@@ -43,8 +36,8 @@ volatile UART_TRANSFER uart;
 /*************************** ERROR AND OK  *****************************/
 // Function to check end of msg
 void uart_setCheckMsg(const char *szOK, const char *szError) {
-	uart.iActive = 1;
-	uart.bTransmissionEnd = 0;
+	uart.switches.b.active = 1;
+	uart.switches.b.transmissionEnd = 0;
 	uart.iUartState = UART_INPROCESS;
 
 	if (szError != NULL) {
@@ -62,7 +55,7 @@ void uart_setCheckMsg(const char *szOK, const char *szError) {
 		uart.OKLength = -1;
 
 	// Wait for a return after OK
-	uart.bRXWaitForReturn = 0;
+	uart.switches.b.RXWaitForReturn = 0;
 }
 
 // We define the exit condition for the wait for ready function
@@ -73,7 +66,7 @@ inline void uart_checkERROR() {
 
 	if (uart.iUartState == UART_ERROR) {
 		if (UCA0RXBUF == '\n')
-			uart.bTransmissionEnd = 1;
+			uart.switches.b.transmissionEnd = 1;
 		return;
 	}
 
@@ -103,9 +96,9 @@ inline void uart_checkOK() {
 	if (uart.OKLength == -1)
 		return;
 
-	if (uart.bRXWaitForReturn && uart.iUartState == UART_SUCCESS) {
+	if (uart.switches.b.RXWaitForReturn && uart.iUartState == UART_SUCCESS) {
 		if (UCA0RXBUF == 0x0A)
-			uart.bTransmissionEnd = 1;
+			uart.switches.b.transmissionEnd = 1;
 		return;
 	}
 
@@ -116,8 +109,8 @@ inline void uart_checkOK() {
 
 	// Wait for carriage return
 	if (uart.OKIdx == uart.OKLength) {
-		if (!uart.bRXWaitForReturn)
-			uart.bTransmissionEnd = 1;
+		if (!uart.switches.b.RXWaitForReturn)
+			uart.switches.b.transmissionEnd = 1;
 		else
 			_NOP();
 		uart.iUartState = UART_SUCCESS;
@@ -152,7 +145,7 @@ void uart_init() {
 	UCA0STATW |= UCLISTEN;
 #endif
 	UCA0CTLW0 &= ~UCSWRST;                    // Initialize eUSCI
-	uart.iActive = 1;
+	uart.switches.b.active = 1;
 }
 
 int8_t uart_getTransactionState() {
@@ -172,12 +165,12 @@ void uart_reset_headers() {
 #ifdef _DEBUG
 	memset((char *) RXBuffer, 0, sizeof(RXBuffer));
 #else
-	RXBuffer[0]=0;
+	RXBuffer[0] = 0;
 #endif
 
 	uart.iTXIdx = 0;
 	uart.iRXHeadIdx = uart.iRXTailIdx = 0;
-	uart.bTransmissionEnd = 0;
+	uart.switches.b.transmissionEnd = 0;
 
 	uart.OKIdx = 0;     // Indexes for checking for end of command
 	uart.ErrorIdx = 0;
@@ -197,27 +190,31 @@ void modem_send_command(const char *cmd) {
 	uart.iTxLen = strlen(cmd);
 
 	if (g_pDevCfg->cfg.logs.modem_transactions) {
-		log_modem("--- ");
+		log_modem("---");
 		log_modem(get_simplified_date_string(NULL));
-		log_modem("--- \r\n");
+		log_modem("---\r\n");
 		log_modem(cmd);
 	}
 
 	// Store the maximum size used from this buffer
 #ifdef _DEBUG_COUNT_BUFFERS
 	if (uart.iTxLen > g_pSysCfg->maxTXBuffer)
-		g_pSysCfg->maxTXBuffer = uart.iTxLen;
+	g_pSysCfg->maxTXBuffer = uart.iTxLen;
 #endif
+
+	// This problem should not ocurr, if this happens means that you are not zero terminating the string
+	// or you are trying to transmit too much data in one go so you have to split your commands.
 	if (uart.iTxLen > sizeof(TXBuffer)) {
 		lcd_print("TXERR");
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
+		uart.iTxLen = sizeof(TXBuffer) -1;
 	}
 
 	if (cmd != TXBuffer) {
 #ifdef _DEBUG
 		memset((char *) TXBuffer, 0, sizeof(TXBuffer));
 #else
-		TXBuffer[0]=0;
+		TXBuffer[0] = 0;
 #endif
 		memcpy((char *) TXBuffer, cmd, uart.iTxLen);
 	}
@@ -250,7 +247,7 @@ int waitForReady(uint32_t timeoutTimeMs) {
 
 	while (count > 0) {
 		delay(delayTime);
-		if (uart.bTransmissionEnd == 1) {
+		if (uart.switches.b.transmissionEnd == 1) {
 			delay(100);  // Documentation specifies 30 ms delay between commands
 			if (g_pDevCfg->cfg.logs.modem_transactions)
 				log_modem(uart_getRXHead());
@@ -267,7 +264,7 @@ int waitForReady(uint32_t timeoutTimeMs) {
 #ifdef _DEBUG_COUNT_BUFFERS
 	// Store the maximum size used from this buffer
 	if (uart.iRxCountBytes > g_pSysCfg->maxRXBuffer)
-		g_pSysCfg->maxRXBuffer = uart.iRxCountBytes;
+	g_pSysCfg->maxRXBuffer = uart.iRxCountBytes;
 #endif
 
 	delay(100);  // Documentation specifies 30 ms delay between commands
@@ -286,38 +283,13 @@ char modem_lastCommand[16];
 #pragma SET_DATA_SECTION()
 
 // Try a command until success with timeout and number of attempts to be made at running it
-uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
+uint8_t uart_tx_data(const char *cmd, uint32_t timeout,
 		uint8_t attempts) {
-	char *cmd = modem_lastCommand;
-	char idx = 0;
+
+	lcd_print_progress();
 
 	if (!state_isSimOperational())
 		return UART_FAILED;
-
-	int len = strlen(cmdInput);
-	if (g_iLCDVerbose == VERBOSE_BOOTING) {
-		lcd_print_progress();
-	}
-
-	// Append AT and
-	if (!uart.bRXWaitForReturn && len < sizeof(modem_lastCommand)+1) {
-		if (cmdInput[0]!='A') {
-			modem_lastCommand[0]='A';
-			modem_lastCommand[1]='T';
- 			idx=2;
-		}
-		strcpy(&modem_lastCommand[idx], cmdInput);
-
-		if (cmdInput[len - 1] != '\n') {
-			strcat(modem_lastCommand, "\r\n");
-			_NOP();
-		} else {
-			_NOP();
-		}
-	} else {
-		zeroTerminateCopy(modem_lastCommand, cmdInput);
-		cmd = (char *) cmdInput;
-	}
 
 	while (attempts > 0) {
 		modem_send_command(cmd);
@@ -343,12 +315,56 @@ uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
 	return UART_FAILED;
 }
 
-void uart_tx_nowait(const char *cmd) {
-	uart.bWaitForTXEnd = 1;
-	modem_send_command(cmd);
-	while (uart.bWaitForTXEnd == 1) {
-		delay(5000);
+// Try a command until success with timeout and number of attempts to be made at running it
+// Appends AT command
+uint8_t uart_tx_timeout(const char *cmdInput, uint32_t timeout,
+		uint8_t attempts) {
+	char *cmd = modem_lastCommand;
+	char idx = 0;
+
+	if (!state_isSimOperational())
+		return UART_FAILED;
+
+	int len = strlen(cmdInput);
+
+	// Append AT and
+	if (!uart.switches.b.RXWaitForReturn &&
+		len < sizeof(modem_lastCommand) + 1) {
+		if (cmdInput[0] != 'A') {
+			modem_lastCommand[0] = 'A';
+			modem_lastCommand[1] = 'T';
+			idx = 2;
+		}
+		strcpy(&modem_lastCommand[idx], cmdInput);
+
+		if (cmdInput[len - 1] != '\n') {
+			strcat(modem_lastCommand, "\r\n");
+			_NOP();
+		} else {
+			_NOP();
+		}
+	} else {
+		zeroTerminateCopy(modem_lastCommand, cmdInput);
+		cmd = (char *) cmdInput;
 	}
+
+	return uart_tx_data(cmd, timeout, attempts);
+}
+
+void uart_tx_nowait(const char *cmd) {
+	uint16_t attempts = 60;
+	uart.switches.b.waitForTXEnd = 1;
+	modem_send_command(cmd);
+
+	while (uart.switches.b.waitForTXEnd == 1 && attempts>0) {
+		delay(1000);
+		attempts--;
+	}
+
+	if (attempts==0)
+		uart.iUartState = UART_FAILED;
+	else
+		uart.iUartState = UART_SUCCESS;
 }
 
 uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime) {
@@ -373,13 +389,13 @@ uint8_t isTransactionOK() {
 }
 
 uint8_t uart_txf(const char *_format, ...) {
-	char szTemp[128];
+	char szTemp[80];
 	va_list _ap;
 	char *fptr = (char *) _format;
 	char *out_end = szTemp;
 
 	va_start(_ap, _format);
-	if (__TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs) > 128) {
+	if (__TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs) > 80) {
 		_NOP();
 	}
 	va_end(_ap);
@@ -398,45 +414,42 @@ uint8_t uart_tx(const char *cmd) {
 	if (!state_isSimOperational())
 		return UART_FAILED;
 
-	uart_reset_headers();
-
-	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 2);
+	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 5);
 	if (uart.iRXHeadIdx > uart.iRXTailIdx)
 		return transaction_completed;
 
 	uart_state = uart_getTransactionState();
-	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
 #ifdef _DEBUG_OUTPUT
+	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
 		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": \""); // Display the command returned
 		if (pToken1 != NULL) {
 			lcd_print_boot((char *) pToken1 + 3, LINE2);
 		} else {
 			lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2], LINE2); // Display the OK message
 		}
-#endif
 	}
-
+#endif
 	return uart_state;
 }
 
 void uart_setHTTPPromptMode() {
 	uart_setCheckMsg(AT_MSG_LONG_PROMPT, AT_ERROR);
-	uart.bRXWaitForReturn = 0;
+	uart.switches.b.RXWaitForReturn = 0;
 }
 
 void uart_setHTTPDataMode() {
 	uart_setCheckMsg(AT_MSG_HTTPRING, AT_ERROR);
-	uart.bRXWaitForReturn = 1;
+	uart.switches.b.RXWaitForReturn = 1;
 }
 
 void uart_setSMSPromptMode() {
 	uart_setCheckMsg(AT_MSG_PROMPT, AT_CMS_ERROR);
-	uart.bRXWaitForReturn = 0;
+	uart.switches.b.RXWaitForReturn = 0;
 }
 
 void uart_setOKMode() {
 	uart_setCheckMsg(AT_MSG_OK, AT_ERROR);
-	uart.bRXWaitForReturn = 0;
+	uart.switches.b.RXWaitForReturn = 0;
 }
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
@@ -453,7 +466,7 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 		break;
 
 	case USCI_UART_UCRXIFG:
-		if (!uart.iActive)
+		if (!uart.switches.b.active)
 			return;
 
 		if (uart.iRXTailIdx >= sizeof(RXBuffer)) {
@@ -478,7 +491,7 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 			uart.iError++;
 		}
 
-		if (uart.bTransmissionEnd) {
+		if (uart.switches.b.transmissionEnd) {
 			RXBuffer[uart.iRXTailIdx] = 0;
 			__bic_SR_register_on_exit(LPM0_bits); // Resume execution
 		}
@@ -486,7 +499,7 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 		break;
 
 	case USCI_UART_UCTXIFG:
-		if (!uart.iActive)
+		if (!uart.switches.b.active)
 			return;
 
 		UCA0TXBUF = TXBuffer[uart.iTXIdx];               // Transmit characters
@@ -494,8 +507,8 @@ void __attribute__ ((interrupt(USCI_A0_VECTOR))) USCI_A0_ISR (void)
 		if (uart.iTXIdx >= uart.iTxLen) {
 			uart.iTXIdx = 0;
 			UCA0IE &= ~UCTXIE; 	// Finished transmision
-			if (uart.bWaitForTXEnd == 1) {
-				uart.bWaitForTXEnd = 0;
+			if (uart.switches.b.waitForTXEnd == 1) {
+				uart.switches.b.waitForTXEnd = 0;
 				__bic_SR_register_on_exit(LPM0_bits);
 			}
 		}

@@ -10,6 +10,10 @@
 #include "stringutils.h"
 #include "config.h"
 
+#ifdef USE_MININI
+#include "minIni.h"
+#endif
+
 #define HTTP_RESPONSE_RETRY	10
 
 void backend_get_configuration() {
@@ -41,6 +45,13 @@ uint8_t http_enable() {
 	int uart_state = UART_FAILED;
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
+	if (g_pSysState->system.switches.http_enabled) {
+		_NOP();
+		return UART_SUCCESS;
+	}
+
+	config_setLastCommand(COMMAND_HTTP_ENABLE);
+
 	// Context Activation - #SGACT
 	// Execution command is used to activate or deactivate either the GSM context
 	// or the specified PDP context.
@@ -48,6 +59,9 @@ uint8_t http_enable() {
 	//  1 - activate the context
 
 	sim->simErrorState = 0;
+	sim->http_last_status_code = 0;
+	delay(1000);
+
 	do {
 		uart_tx("#SGACT=1,1\r\n");
 		// CME ERROR: 555 Activation failed
@@ -56,7 +70,7 @@ uint8_t http_enable() {
 
 		if (uart_state != UART_SUCCESS) {
 
-			if (sim->simErrorState != 0) {
+			if (sim->simErrorState != 0 && sim->simErrorState!=555) {
 				state_failed_gprs(config_getSelectedSIM());
 				return UART_FAILED;
 			}
@@ -66,6 +80,9 @@ uint8_t http_enable() {
 		}
 
 	} while (uart_state != UART_SUCCESS && --attempts > 0);
+
+	if (uart_state == UART_SUCCESS)
+		g_pSysState->system.switches.http_enabled = 1;
 
 	return uart_state;
 }
@@ -103,11 +120,19 @@ int8_t http_setup() {
 	}
 
 	lcd_printl(LINE2, "SUCCESS");
+	http_deactivate();
 	return UART_SUCCESS;
 }
 
 uint8_t http_deactivate() {
 	// LONG TIMEOUT
+/*
+	if (!g_pSysState->system.switches.http_enabled) {
+		_NOP();
+	}
+*/
+	g_pSysState->system.switches.http_enabled = 0;
+	config_setLastCommand(COMMAND_HTTP_DISABLE);
 	return uart_tx("AT#SGACT=1,0\r\n");	//deactivate GPRS context
 }
 
@@ -122,9 +147,12 @@ int http_check_error(int *retry) {
 
 	char *token = NULL;
 	int prof_id = 0;
-	int http_status_code = 0;
 	int data_size = 0;
+	int http_status_code = 0;
 
+	SIM_CARD_CONFIG *sim = config_getSIM();
+
+	sim->http_last_status_code = -1;
 	// Parse HTTPRING
 	PARSE_FINDSTR_RET(token, HTTP_RING, UART_FAILED);
 
@@ -133,10 +161,18 @@ int http_check_error(int *retry) {
 	PARSE_SKIP(token, ",\n", UART_FAILED); 	// Skip content_type string.
 	PARSE_NEXTVALUE(token, &data_size, ",\n", UART_FAILED);
 
+	if (http_status_code!=200) {
+		g_sEvents.defer.command.display_http_error=1;
+	}
+
+/*
 #ifdef _DEBUG
-	log_appendf("HTTP %i[%d] %d", prof_id, http_status_code,
-			data_size);
+	log_appendf("HTTP %i[%d] %d", prof_id, http_status_code, data_size);
 #endif
+*/
+
+	sim->http_last_status_code = http_status_code;
+
 	// Check for recoverable errors
 	// Server didnt return any data
 	if (http_status_code == 200 && data_size == 0) {
@@ -151,14 +187,14 @@ int http_check_error(int *retry) {
 	return UART_SUCCESS;
 }
 
-int http_open_connection(int data_length) {
-	char cmd[80];
+int http_open_connection_upload(int data_length) {
+	char cmd[120];
 
 	if (!state_isSimOperational())
 		return UART_ERROR;
 
 	// Test post URL
-	sprintf(cmd, "AT#HTTPSND=1,0,\"%s\",%d,0\r\n", g_pDevCfg->cfgUpload_URL,
+	sprintf(cmd, "AT#HTTPSND=1,0,\"%s/\",%d,0\r\n", g_pDevCfg->cfgUpload_URL,
 			data_length);
 
 	// Wait for prompt
@@ -185,7 +221,7 @@ int http_get_configuration() {
 	// <command>: Numeric parameter indicating the command requested to HTTP server:
 	// 0 GET 1 HEAD 2 DELETE
 
-	sprintf(szTemp, "AT#HTTPQRY=1,0,\"%s/%s/1/\"\r\n", g_pDevCfg->cfgConfig_URL,
+	sprintf(szTemp, "AT#HTTPQRY=1,0,\"%s/%s/\"\r\n", g_pDevCfg->cfgConfig_URL,
 			g_pDevCfg->cfgIMEI);
 	uart_tx_timeout(szTemp, 5000, 1);
 	if (uart_getTransactionState() != UART_SUCCESS) {
@@ -201,7 +237,7 @@ int http_get_configuration() {
 	uart_setCheckMsg(HTTP_OK, HTTP_ERROR);
 
 	while (retry == 1 && attempts > 0) {
-		if (uart_tx_timeout("AT#HTTPRCV=1", TIMEOUT_HTTPRCV, 5) == UART_SUCCESS) {
+		if (uart_tx_timeout("#HTTPRCV=1", TIMEOUT_HTTPRCV, 1) == UART_SUCCESS) {
 			uart_state = uart_getTransactionState();
 			if (uart_state == UART_SUCCESS) {
 				retry = 0; 	// Found a configuration, lets parse it.
@@ -217,21 +253,21 @@ int http_get_configuration() {
 	http_deactivate();
 	return uart_state; // TODO return was missing, is it necessary ?
 }
+/* USED FOR TESTING POST
+int8_t http_post(char* postdata) {
+	char cmd[64];
+	http_enable();
 
-/*
- int8_t http_post(char* postdata) {
- char cmd[64];
- http_enable();
+	sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%s,0\r\n",
+			itoa_pad(strlen(postdata)));
 
- sprintf(cmd, "AT#HTTPSND=1,0,\"/coldtrace/uploads/multi/v3/\",%s,0\r\n", itoa_pad(strlen(postdata)));
+	// Wait for prompt
+	uart_setHTTPPromptMode();
+	if (uart_tx_waitForPrompt(cmd, TIMEOUT_HTTPSND_PROMPT)) {
+		uart_tx_data(postdata, TIMEOUT_HTTPSND, 1);
+	}
 
- // Wait for prompt
- uart_setHTTPPromptMode();
- if (uart_tx_waitForPrompt(cmd, TIMEOUT_HTTPSND_PROMPT)) {
- uart_tx_timeout(postdata, TIMEOUT_HTTPSND, 1);
- }
-
- http_deactivate();
- return uart_getTransactionState();
- }
- */
+	http_deactivate();
+	return uart_getTransactionState();
+}
+*/

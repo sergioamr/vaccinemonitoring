@@ -10,6 +10,8 @@
 
 #define EXTERN extern
 
+#define USE_MININI
+
 #include "stdint.h"
 #include "common.h"
 #include "time.h"
@@ -28,8 +30,8 @@
 
 // Path for getting the configuration from the server
 // CONFIGURATION_URL_PATH/IMEI/1/
-#define CONFIGURATION_URL_PATH "/coldtrace/uploads/multi/v3"
-#define DATA_UPLOAD_URL_PATH "/coldtrace/intel/upload/"
+#define CONFIGURATION_URL_PATH "/coldtrace/configuration/ct5/v2/"
+#define DATA_UPLOAD_URL_PATH "/coldtrace/uploads/multi/v4/"
 #endif
 
 // SMS alerts, it will send an SMS to the local testing number
@@ -101,10 +103,10 @@
 
 // 1 will disable the buzzer when there is an Alarm
 // Buzzer will still work on button feedback
-#define BUZZER_DISABLE 0
+#define BUZZER_DISABLE 1
 
 // Disable buttons sounds
-#define BUZZER_DISABLE_FEEDBACK 0
+#define BUZZER_DISABLE_FEEDBACK 1
 
 /**************************************************************************************************************************/
 /* END FACTORY CONFIGURATION 																							  */
@@ -122,6 +124,7 @@
 #define MAIN_SLEEP_TIME 1000
 #define MAIN_LCD_OFF_SLEEP_TIME 30000
 #endif
+#define MAIN_SLEEP_POWER_OUTAGE 5000
 
 // Poll times trying to connect to the network.
 // After autoband it could take up to 90 seconds for the bands trial and error.
@@ -151,8 +154,8 @@
 
 // Path for getting the configuration from the server
 // CONFIGURATION_URL_PATH/IMEI/1/
-#define CONFIGURATION_URL_PATH "/config"
-#define DATA_UPLOAD_URL_PATH "/upload"
+#define CONFIGURATION_URL_PATH "/dummy/config"
+#define DATA_UPLOAD_URL_PATH "/dummy/upload"
 
 #define ALERTS_SMS 1
 
@@ -190,6 +193,9 @@
 /*****************************************************************************************************************/
 /* Main structures for the application */
 /*****************************************************************************************************************/
+#define MODE_GSM 1
+#define MODE_GPRS 2
+
 typedef struct {
 	char cfgSMSCenter[GW_MAX_LEN + 1]; // Service Message Center number
 	char cfgPhoneNum[GW_MAX_LEN + 1];
@@ -197,7 +203,6 @@ typedef struct {
 	uint8_t iMaxMessages; // Max messages stored on sim card
 	uint16_t iCfgMCC;
 	uint16_t iCfgMNC;
-	int8_t cfgUploadMode;
 
 	char simLastError[ERROR_MAX_LEN];
 	uint16_t simErrorState;
@@ -210,13 +215,15 @@ typedef struct {
 
 	char SMSNotSupported;
 	char simOperational; // The sim is in a functional state to send and receive messages
+
+	int http_last_status_code;
 } SIM_CARD_CONFIG;
 
 // 255.255.255.255
 #define MAX_IP_SIZE 3*4+3+1
 
 // Careful with exceeding the size of the URL
-#define MAX_URL_PATH 35
+#define MAX_URL_PATH 40
 
 typedef struct {
 	float threshCold;
@@ -265,6 +272,7 @@ typedef struct {
 	char cfgVersion[8];
 #endif
 
+	int8_t cfgSIM_force; //force sim
 	int8_t cfgSIM_slot;
 	int8_t cfgSelectedSIM_slot;
 
@@ -285,6 +293,7 @@ typedef struct {
 	// User that can get messages from the alarms
 	char cfgReportSMS[GW_MAX_LEN + 1];
 
+	int8_t cfgUploadMode;
 	SIM_CARD_CONFIG SIM[SYSTEM_NUM_SIM_CARDS];
 	struct tm lastSystemTime;
 
@@ -305,6 +314,9 @@ typedef struct {
 	uint16_t maxSamplebuffer;
 	uint16_t maxRXBuffer;
 	uint16_t maxTXBuffer;
+#endif
+#ifdef _DEBUG
+	uint16_t stackLeft;
 #endif
 
 	uint16_t lastCommand; // Command that was last executed to control flow.
@@ -371,6 +383,7 @@ typedef union {
 		unsigned char power_connected :1;
 		unsigned char button_buzzer_override :1;
 		unsigned char buzzer_sound :1;
+		unsigned char http_enabled :1;
 	} switches;
 	unsigned char status;
 } SYSTEM_SWITCHES;
@@ -379,7 +392,7 @@ typedef union {
 typedef union {
 	struct {
 		unsigned char sms_process_messages :1; // Clear SMS
-		unsigned char data_transmit :1;	// Delete old files since are crashing the software (corruption?)
+		unsigned char data_transmit :1;	// Delete old files since we are crashing the software (corruption?)
 		unsigned char bit3 :1;
 		unsigned char bit4 :1;
 		unsigned char bit5 :1;
@@ -423,11 +436,12 @@ typedef struct {
 	SYSTEM_SWITCHES system;
 	SYSTEM_ALARMS state;
 
+	// If transmission wasn't fully completed this will
+	// contain the last line we didn't transmit
 	uint32_t lastSeek;
 
 	// GSM or GPRS
 	int network_mode;
-	TRANSMISSION_TYPE lastTransMethod;
 	NETWORK_SERVICE net_service[2];
 
 	SAFEBOOT_STATUS safeboot;
@@ -454,11 +468,16 @@ uint8_t config_getSelectedSIM();
 void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
 		const char *error);
 
-extern uint16_t config_getSIMError(int slot);
-extern void config_reset_error(SIM_CARD_CONFIG *sim);
-extern uint16_t config_getSimLastError(char *charToken);
+uint16_t config_getSIMError(int slot);
+void config_reset_error(SIM_CARD_CONFIG *sim);
+void config_display_config();
+uint16_t config_getSimLastError(char *charToken);
 int config_default_configuration();
 int config_process_configuration();
+
+#ifdef CONFIG_SAVE_IN_PROGRESS
+void config_save_ini();
+#endif
 
 int config_parse_configuration(char *msg);
 
@@ -493,6 +512,10 @@ uint8_t config_is_SIM_configurable(int simSlot);
 #define COMMAND_FETCH_CONFIG 1700
 #define COMMAND_SMS_PROCESS 1800
 #define COMMAND_PARSE_CONFIG_ONLINE 1900
+#define COMMAND_PARSE_CONFIG_ST1 1910
+#define COMMAND_PARSE_CONFIG_ST2 1920
+#define COMMAND_PARSE_CONFIG_ST3 1930
+
 #define COMMAND_SET_NETWORK_SERVICE 2000
 #define COMMAND_NETWORK_CONNECT 2100
 #define COMMAND_SIM_ERROR 2200
@@ -503,7 +526,10 @@ uint8_t config_is_SIM_configurable(int simSlot);
 #define COMMAND_FAILOVER_HTTP_FAILED 2700
 #define COMMAND_SWAP_SIM0 2800
 #define COMMAND_SWAP_SIM1 2900
-
+#define COMMAND_HTTP_ENABLE 3000
+#define COMMAND_HTTP_DISABLE 3100
+#define COMMAND_EVENT_CHECK_NETWORK 3200
+#define COMMAND_EVENT_DEFERRED 3300
 #define COMMAND_END 99
 
 uint8_t state_isSimOperational();

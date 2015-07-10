@@ -116,9 +116,6 @@ void modem_turn_off() {
 	P4OUT |= BIT0;
 }
 
-extern char __STACK_END;
-extern char __STACK_SIZE;
-
 void system_boot() {
 	UINT bytes_written = 0;
 
@@ -195,13 +192,53 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 /*  MAIN                                                                    */
 /****************************************************************************/
 
+#define EMPTY_STACK_VALUE 0x69
+
+#ifdef ___CHECK_STACK___
+// Used to check the stack for leaks
+extern char __STACK_END;
+extern char __STACK_SIZE;
+
+void checkStack() {
+	size_t stack_size = (size_t) (&__STACK_SIZE);
+	char *pStack = (void*) (&__STACK_END - &__STACK_SIZE);
+	size_t t;
+	size_t stack_empty = 0;
+
+	for (t = 0; t < stack_size; t++, pStack++) {
+		if (*pStack != EMPTY_STACK_VALUE)
+			break;
+
+		stack_empty++;
+	}
+	g_pSysCfg->stackLeft = stack_empty;
+}
+
+void clearStack() {
+	register char *pStack = (void*) (&__STACK_END);
+	register size_t t;
+	for (t = 0; t < (size_t) (&__STACK_SIZE); t++) {
+		pStack--;
+		*pStack = EMPTY_STACK_VALUE;
+	}
+	_NOP();
+}
+#endif
+
 int main(void) {
-	//memset((void*) (&__STACK_END - &__STACK_SIZE), 0x00, (size_t) __STACK_SIZE);
+#ifdef ___CHECK_STACK___
+	clearStack();
+#endif
+
 	// Disable for init since we are not going to be able to respond to it.
 	watchdog_disable();
 
 	state_init();  // Clean the state machine
 	system_boot();
+
+#ifdef ___CHECK_STACK___
+	checkStack();
+#endif
 
 	events_init();
 	state_process();

@@ -194,10 +194,20 @@ void state_init() {
 
 	g_pSysState->network_mode = NETWORK_NOT_SELECTED;
 	SYSTEM_SWITCH.buzzer_disabled = BUZZER_DISABLE;
+
+	// Set the power to connected, if it is disconnected on first boot it will be detected
+	SYSTEM_SWITCH.power_connected = true;
 }
 
 uint8_t state_isGPRS() {
 	if (modem_getNetworkService() == NETWORK_GPRS)
+		return true;
+
+	return false;
+}
+
+uint8_t state_isGSM() {
+	if (modem_getNetworkService() == NETWORK_GSM)
 		return true;
 
 	return false;
@@ -308,6 +318,14 @@ void state_SMS_lastMessageACK(SIM_CARD_CONFIG *sim, int8_t msgNumber) {
 	sim->last_SMS_message = msgNumber;
 }
 
+void state_reset_network_errors() {
+	uint8_t i;
+	for (i = 0; i < SYSTEM_NUM_SIM_CARDS; i++) {
+		g_pSysState->simState[i].failsGPRS = 0;
+		g_pSysState->simState[i].failsGSM = 0;
+	}
+}
+
 void state_network_status(int presentation_mode, int net_status) {
 	NETWORK_SERVICE *service = state_getCurrentService();
 	service->network_presentation_mode = presentation_mode;
@@ -355,11 +373,6 @@ void state_failed_gsm(uint8_t sim) {
 	g_pSysState->simState[sim].failsGSM++;
 }
 
-void state_http_transfer(uint8_t sim, uint8_t success) {
-	if (success)
-		state_network_success(sim);
-}
-
 /***********************************************************************************************************************/
 /* TEMPERATURE CHECKS */
 /***********************************************************************************************************************/
@@ -369,6 +382,12 @@ void state_http_transfer(uint8_t sim, uint8_t success) {
 /***********************************************************************************************************************/
 
 void state_low_battery_alert() {
+
+	if (STATE_ALARM.battery==true)
+		return;
+
+	STATE_ALARM.battery = true;
+
 	// Activate sound alarm
 	state_alarm_on("LOW BATTERY");
 }
@@ -376,11 +395,15 @@ void state_low_battery_alert() {
 void state_battery_level(uint8_t battery_level) {
 
 	g_pSysState->battery_level = battery_level;
-	if (battery_level
-			< g_pDevCfg->stBattPowerAlertParam.battThreshold && SYSTEM_SWITCH.power_connected == false) {
-		state_low_battery_alert();
+	if (battery_level > g_pDevCfg->stBattPowerAlertParam.battThreshold)
+		return;
+
+	if (SYSTEM_SWITCH.power_connected == true)
+		return;
+
+	state_low_battery_alert();
+	if (battery_level<BATTERY_HIBERNATE_THRESHOLD)
 		thermal_low_battery_hibernate();
-	}
 }
 
 /***********************************************************************************************************************/
@@ -406,15 +429,12 @@ void state_power_out() {
 	if (SYSTEM_SWITCH.power_connected == false)
 		return;
 
-	SYSTEM_SWITCH.power_connected = false;
-	if (STATE_ALARM.poweroutage == STATE_ON) {
-		sms_send_message_number(g_pDevCfg->cfgReportSMS, "POWER RESUMED");
-		STATE_ALARM.poweroutage = STATE_OFF;
-	}
-
 	if (g_pSysState->time_powerOutage == 0)
 		g_pSysState->time_powerOutage = rtc_get_second_tick();
 
+	SYSTEM_SWITCH.power_connected = false;
+	lcd_printl(LINEC, "POWER CABLE");
+	lcd_printf(LINEE, "DISCONNECTED");
 }
 
 // called from the Interruption, careful
@@ -423,38 +443,28 @@ void state_power_on() {
 	if (SYSTEM_SWITCH.power_connected == true)
 		return;
 
+	if (STATE_ALARM.poweroutage == STATE_ON) {
+		sms_send_message_number(g_pDevCfg->cfgReportSMS, "POWER RESUMED");
+		STATE_ALARM.poweroutage = STATE_OFF;
+	}
+
 	SYSTEM_SWITCH.power_connected = true;
 	g_pSysState->time_powerOutage = 0;
-}
+	buzzer_feedback();
 
-void state_power_disconnected() {
-	lcd_printl(LINEC, "POWER CABLE");
-	lcd_printf(LINEE, "DISCONNECTED");
-}
+	// We reset the alarm from the battery since we are plugged in
+	STATE_ALARM.battery = false;
 
-void state_power_resume() {
 	lcd_printl(LINEC, "POWER");
 	lcd_printf(LINEH, "RESUMED");
-	event_force_event_by_id(EVT_DISPLAY, 0);
 }
 
 void state_check_power() {
-
-	static uint8_t last_state = true;
 
 	if (POWER_ON)
 		state_power_on();
 	else
 		state_power_out();
-
-	if (last_state != SYSTEM_SWITCH.power_connected) {
-		if (POWER_ON)
-			state_power_resume();
-		else
-			state_power_disconnected();
-
-		last_state = SYSTEM_SWITCH.power_connected;
-	}
 
 	if (SYSTEM_SWITCH.power_connected == true)
 		return;
@@ -462,16 +472,17 @@ void state_check_power() {
 	if (!g_pDevCfg->stBattPowerAlertParam.enablePowerAlert)
 		return;
 
+	// Check the power down time to generate an alert
+
+	if (STATE_ALARM.poweroutage == STATE_ON || g_pDevCfg->stBattPowerAlertParam.minutesPower == 0)
+		return;
+
 	time_t currentTime = rtc_get_second_tick();
 	time_t elapsed = currentTime - g_pSysState->time_powerOutage;
 
-	// Check the power down time to generate an alert
-
-	if (g_pDevCfg->stBattPowerAlertParam.minutesPower == 0)
-		return;
-
 	if (elapsed > (g_pDevCfg->stBattPowerAlertParam.minutesPower) * 60) {
 		STATE_ALARM.poweroutage = STATE_ON;
+		alarm_sms_power_outage();
 		state_alarm_on("POWER OUT");
 	}
 }
@@ -509,7 +520,6 @@ void state_process() {
 		return;
 	last_check = rtc_get_second_tick();
 
-	state_check_power();
 	state_check_SD_card();
 
 	// Global check for all the alarms

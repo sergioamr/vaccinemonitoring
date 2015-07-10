@@ -15,6 +15,8 @@ const char inifile2[] = "testplain.ini";
 
 int main_test()
 {
+#if 0
+
   char str[100];
   long n;
   int s, k;
@@ -38,7 +40,6 @@ int main_test()
   n = ini_getl(NULL, "val", -1, inifile2);
 
   /* ----- */
-#if 0
 
   /* string writing */
   n = ini_puts("first", "alt", "flagged as \"correct\"", inifile);

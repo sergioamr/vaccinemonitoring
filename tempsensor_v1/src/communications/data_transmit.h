@@ -9,7 +9,7 @@
 #define DATA_TRANSMIT_H_
 
 int8_t data_transmit(uint8_t *pSampleCnt);
-int8_t data_upload_sms();
+int8_t data_send_sms();
 void process_batch();
 
 #endif /* DATA_TRANSMIT_H_ */

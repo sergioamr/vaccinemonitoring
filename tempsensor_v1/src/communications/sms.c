@@ -23,14 +23,14 @@ void sms_send_data_request(char *number) {
 	strcat(data, " ");
 	for (iOffset = 0; iOffset < SYSTEM_NUM_SENSORS; iOffset++) {
 		strcat(data, SensorName[iOffset]);
-		strcat(data, "=");
+		strcat(data, ":");
 		strcat(data, temperature_getString(iOffset));
 		strcat(data, "C, ");
 	}
 
 	// added for show msg//
-	strcat(data, "Battery:");
-	strcat(data, itoa_pad(batt_getlevel()));
+	strcat(data, "BATTERY:");
+	strcat(data, itoa_nopadding(batt_getlevel()));
 	strcat(data, "%, ");
 	if (P4IN & BIT4)	//power not plugged
 	{
@@ -40,8 +40,13 @@ void sms_send_data_request(char *number) {
 	} else {
 		strcat(data, "CHARGING");
 	}
-	iOffset = strlen(data);
 
+#ifdef _DEBUG
+	strcat(data, ",UPTIME:");
+	strcat(data, itoa_nopadding(iMinuteTick));
+#endif
+
+	iOffset = strlen(data);
 	sms_send_message_number(number, data);
 }
 
@@ -129,7 +134,7 @@ int8_t sms_process_memory_message(int8_t index) {
 		break;
 
 	default:
-		config_process_configuration(token);
+		config_parse_configuration(msg);
 		break;
 	}
 
@@ -182,7 +187,7 @@ int8_t sms_process_messages() {
 		return UART_SUCCESS;
 	}
 
-	lcd_printf(LINEC, "%d cfg", usedr);
+	lcd_printf(LINEC, "%d SMS Fetch", usedr);
 	lcd_printl(LINE2, "Msg Processing..");
 
 	uart_tx("+CSDH=0"); // Disable extended output
@@ -266,7 +271,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 
 	uart_setSMSPromptMode();
 	if (uart_tx_waitForPrompt(szCmd, TIMEOUT_CMGS_PROMPT)) {
-		uart_tx_timeout(pData, TIMEOUT_CMGS, 1);
+		uart_tx_data(pData, TIMEOUT_CMGS, 1);
 
 		token = strstr(uart_getRXHead(), "ERROR");
 		if (token == NULL) {

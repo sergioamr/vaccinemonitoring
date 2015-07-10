@@ -109,9 +109,9 @@ void rtc_get(struct tm* pTime, struct tm* tempDate) {
 	memcpy(tempDate, pTime, sizeof(struct tm));
 	tempDate->tm_year -= 1900;
 	tempDate->tm_mon -= 1;
-
 	timeSec = mktime(tempDate);
 	memcpy(tempDate, gmtime(&timeSec), sizeof(struct tm));
+	tempDate->tm_mon += 1;
 }
 
 #define ROLLBACK    	0x01

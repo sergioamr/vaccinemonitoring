@@ -187,6 +187,9 @@ void temperature_trigger_capture() {
 	USE_TEMPERATURE
 
 	// SUBSAMPLING TOO CLOSE FOR THE TRIGGER TO WORK
+
+	// We have to capture all the sensors to relaunch the sampling interruption
+	// iCapturing will be incremented per sensor captured
 	if (tem->iCapturing > 0 && tem->iCapturing <= SYSTEM_NUM_SENSORS)
 		return;
 
