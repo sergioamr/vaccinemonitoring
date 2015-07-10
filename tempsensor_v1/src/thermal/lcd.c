@@ -371,6 +371,7 @@ void lcd_display_config() {
 	getFloatNumber2Text(pAlertParams->threshHot, num2);
 
 #ifdef _DEBUG
+	checkStack();
 	lcd_printf(LINEC, "%x %d %s %d %s", g_pSysCfg->stackLeft, (int) pAlertParams->maxSecondsCold / 60,
 			&num1[0], (int) pAlertParams->maxSecondsHot / 60, &num2[0]);
 #else
