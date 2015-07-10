@@ -16,7 +16,9 @@ char g_szFatFileName[32];
 char g_bFatInitialized = false;
 char g_bLogDisabled = false;
 
+#pragma SET_DATA_SECTION(".aggregate_vars")
 const char *g_szLastSD_CardError = NULL;
+#pragma SET_DATA_SECTION()
 
 const char * const FR_ERRORS[20] = { "OK", "DISK_ERR", "INT_ERR", "NOT_READY",
 		"NO_FILE", "NO_PATH", "INVALID_NAME", "DENIED", "EXIST",

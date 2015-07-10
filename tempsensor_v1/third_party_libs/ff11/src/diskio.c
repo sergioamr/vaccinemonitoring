@@ -12,8 +12,9 @@
 #include "diskio.h"		/* FatFs lower layer API */
 #include "MMC.h"	    /* Header file of MMC SD card control module */
 
-
+#pragma SET_DATA_SECTION(".aggregate_vars")
 DSTATUS stat;
+#pragma SET_DATA_SECTION()
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/

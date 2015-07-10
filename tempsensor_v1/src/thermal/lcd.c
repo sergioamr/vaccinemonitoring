@@ -317,7 +317,10 @@ void lcd_bldisable() {
 	PJOUT &= ~BIT7;
 }
 
+#pragma SET_DATA_SECTION(".aggregate_vars")
 int g_iLCDVerbose = VERBOSE_DISABLED; // Disable debug
+#pragma SET_DATA_SECTION()
+
 void lcd_disable_verbose() {
 	g_iLCDVerbose = VERBOSE_DISABLED;
 }
