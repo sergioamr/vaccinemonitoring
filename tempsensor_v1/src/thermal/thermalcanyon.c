@@ -100,9 +100,6 @@ void thermal_canyon_loop(void) {
 	lcd_show();
 
 	while (1) {
-		// Checks if the current sim is the selected one.
-		modem_check_sim_active();
-
 		currentTime = rtc_update_time();
 #ifdef _DEBUG
 		events_debug(rtc_get_second_tick());

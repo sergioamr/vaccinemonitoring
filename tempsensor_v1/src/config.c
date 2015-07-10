@@ -322,7 +322,6 @@ void config_init() {
 // First run
 	g_pSysCfg->numberConfigurationRuns = 1;
 	g_pSysState->lastSeek = 0;
-	g_pSysState->lastTransMethod = NONE;
 
 // Value to check to make sure the structure is still the same size;
 	g_pSysCfg->configStructureSize = sizeof(CONFIG_SYSTEM);
@@ -390,7 +389,7 @@ int config_parse_configuration_ST1(char *token) {
 	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
 
 	// gateway
-	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewaySMS[0], sizeof(g_pDevCfg->cfgGatewaySMS),
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgGatewaySMS, sizeof(g_pDevCfg->cfgGatewaySMS),
 			delimiter, UART_FAILED); // GATEWAY NUM
 
 	//upload_mode
@@ -404,23 +403,23 @@ int config_parse_configuration_ST1(char *token) {
 			g_pDevCfg->cfgUploadMode = MODE_GSM + MODE_GPRS;
 
 	//ip address
-	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgGatewayIP, sizeof(g_pDevCfg->cfgGatewayIP),
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgGatewayIP, sizeof(g_pDevCfg->cfgGatewayIP),
 				delimiter, UART_FAILED); // GATEWAY NUM
 
 	//APN
 	//get APN for both sim
-	PARSE_NEXTSTRING(token, &g_pDevCfg->SIM[0].cfgAPN, sizeof(g_pDevCfg->SIM[0].cfgAPN), delimiter,
+	PARSE_NEXTSTRING(token, g_pDevCfg->SIM[0].cfgAPN, sizeof(g_pDevCfg->SIM[0].cfgAPN), delimiter,
 			UART_FAILED); //APN1
 
-	PARSE_NEXTSTRING(token, &g_pDevCfg->SIM[1].cfgAPN, sizeof(g_pDevCfg->SIM[1].cfgAPN), delimiter,
+	PARSE_NEXTSTRING(token, g_pDevCfg->SIM[1].cfgAPN, sizeof(g_pDevCfg->SIM[1].cfgAPN), delimiter,
 			UART_FAILED); //APN2
 
 	//upload URL
-	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgUpload_URL, sizeof(g_pDevCfg->cfgUpload_URL), delimiter,
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgUpload_URL, sizeof(g_pDevCfg->cfgUpload_URL), delimiter,
 					UART_FAILED);
 
 	//config URL
-	PARSE_NEXTSTRING(token, &g_pDevCfg->cfgConfig_URL, sizeof(g_pDevCfg->cfgConfig_URL), delimiter,
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgConfig_URL, sizeof(g_pDevCfg->cfgConfig_URL), delimiter,
 				UART_FAILED);
 
 	//load intervals
@@ -640,7 +639,9 @@ void config_save_ini() {
 FRESULT config_read_ini_file() {
 	FRESULT fr;
 	FILINFO fno;
-	long n;
+
+	long n = 0;
+
 	LOGGING_COMPONENTS *cfg;
 	INTERVAL_PARAM *intervals;
 	SYSTEM_SWITCHES *system; //pointer to system_switches struct
@@ -662,6 +663,7 @@ FRESULT config_read_ini_file() {
 			sizearray(g_pDevCfg->cfgVersion), CONFIG_INI_FILE);
 	if (n == 0)
 		return FR_NO_FILE;
+
 #endif
 
 	cfg = &g_pDevCfg->cfg;
@@ -685,6 +687,9 @@ FRESULT config_read_ini_file() {
 	n = ini_gets(SECTION_SERVER, "GatewaySMS", NEXLEAF_SMS_GATEWAY,
 			g_pDevCfg->cfgGatewaySMS, sizearray(g_pDevCfg->cfgGatewaySMS),
 			CONFIG_INI_FILE);
+
+	if (n == 0)
+		return FR_NO_FILE;
 
 	n = ini_gets(SECTION_SERVER, "ReportSMS", REPORT_PHONE_NUMBER,
 			g_pDevCfg->cfgReportSMS, sizearray(g_pDevCfg->cfgReportSMS),

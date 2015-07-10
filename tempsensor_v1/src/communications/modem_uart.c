@@ -414,8 +414,6 @@ uint8_t uart_tx(const char *cmd) {
 	if (!state_isSimOperational())
 		return UART_FAILED;
 
-	uart_reset_headers();
-
 	transaction_completed = uart_tx_timeout(cmd, g_iModemMaxWait, 5);
 	if (uart.iRXHeadIdx > uart.iRXTailIdx)
 		return transaction_completed;

@@ -16,7 +16,9 @@ char g_szFatFileName[32];
 char g_bFatInitialized = false;
 char g_bLogDisabled = false;
 
+#pragma SET_DATA_SECTION(".aggregate_vars")
 const char *g_szLastSD_CardError = NULL;
+#pragma SET_DATA_SECTION()
 
 const char * const FR_ERRORS[20] = { "OK", "DISK_ERR", "INT_ERR", "NOT_READY",
 		"NO_FILE", "NO_PATH", "INVALID_NAME", "DENIED", "EXIST",
@@ -520,6 +522,8 @@ FRESULT log_sample_web_format(UINT *tbw) {
 
 #ifdef _DEBUG
 	lcd_print("Saving sample");
+#else
+	lcd_print_progress();
 #endif
 
 	rtc_getlocal(&g_tmCurrTime);
@@ -551,6 +555,8 @@ FRESULT log_sample_web_format(UINT *tbw) {
 
 #ifdef _DEBUG
 		lcd_printf(LINE2, "OK %d bytes", *tbw);
+#else
+		event_force_event_by_id(EVT_DISPLAY, 0);
 #endif
 
 		f_sync(&fobj);
@@ -632,12 +638,10 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 
 	//log sample period, battery level, power plugged, temperature values
 	memset(szLog, 0, sizeof(szLog));
-#if defined(SYSTEM_NUM_SENSORS) && SYSTEM_NUM_SENSORS == 5
 	sprintf(szLog, "%s,%d,%s,%s,%s,%s,%s\n", itoa_pad(iBatteryLevel),
 			!(P4IN & BIT4), temperature_getString(0), temperature_getString(1),
 			temperature_getString(2), temperature_getString(3),
 			temperature_getString(4));
-#endif
 
 	fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
 

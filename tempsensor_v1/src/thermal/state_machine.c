@@ -206,6 +206,13 @@ uint8_t state_isGPRS() {
 	return false;
 }
 
+uint8_t state_isGSM() {
+	if (modem_getNetworkService() == NETWORK_GSM)
+		return true;
+
+	return false;
+}
+
 /***********************************************************************************************************************/
 /* GENERATE ALARMS */
 /***********************************************************************************************************************/
@@ -311,6 +318,14 @@ void state_SMS_lastMessageACK(SIM_CARD_CONFIG *sim, int8_t msgNumber) {
 	sim->last_SMS_message = msgNumber;
 }
 
+void state_reset_network_errors() {
+	uint8_t i;
+	for (i = 0; i < SYSTEM_NUM_SIM_CARDS; i++) {
+		g_pSysState->simState[i].failsGPRS = 0;
+		g_pSysState->simState[i].failsGSM = 0;
+	}
+}
+
 void state_network_status(int presentation_mode, int net_status) {
 	NETWORK_SERVICE *service = state_getCurrentService();
 	service->network_presentation_mode = presentation_mode;
@@ -356,11 +371,6 @@ void state_failed_gsm(uint8_t sim) {
 		return;
 
 	g_pSysState->simState[sim].failsGSM++;
-}
-
-void state_http_transfer(uint8_t sim, uint8_t success) {
-	if (success)
-		state_network_success(sim);
 }
 
 /***********************************************************************************************************************/
@@ -464,7 +474,7 @@ void state_check_power() {
 
 	// Check the power down time to generate an alert
 
-	if (STATE_ALARM.poweroutage || g_pDevCfg->stBattPowerAlertParam.minutesPower == 0)
+	if (STATE_ALARM.poweroutage == STATE_ON || g_pDevCfg->stBattPowerAlertParam.minutesPower == 0)
 		return;
 
 	time_t currentTime = rtc_get_second_tick();

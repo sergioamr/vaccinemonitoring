@@ -446,66 +446,25 @@ void event_subsample_temperature(void *event, time_t currentTime) {
 }
 
 void event_network_check(void *event, time_t currentTime) {
-	int res;
-	uint8_t *failures;
-	int service;
-
 	config_setLastCommand(COMMAND_EVENT_CHECK_NETWORK);
 
 	// Network is totally broken for this SIM
 	// Change SIM card and don't failover anything.
 	if (!state_isSimOperational()) {
-		modem_swap_SIM();
+		modem_swap_SIM(); // Should we swap sim?
 		return;
 	}
 
-	/*
-	// Try to failover into different modes
-	// Only swaps sim if it's not already on the chosen SIM
-	switch (g_pSysState->lastTransMethod) {
-		case HTTP_SIM1:
-		case SMS_SIM1:
-			config_setLastCommand(COMMAND_SWAP_SIM0);
-			res = modem_swap_to_SIM(0);
-			break;
-		case HTTP_SIM2:
-		case SMS_SIM2:
-			config_setLastCommand(COMMAND_SWAP_SIM1);
-			res = modem_swap_to_SIM(1);
-			break;
-		case NONE:
-		default:
-			modem_network_sequence();
-			return;
-	}
-	*/
-
-	service = modem_getNetworkService();
-	failures = &g_pSysState->net_service[service].network_failures;
+	// XXX this already checks if signal in range
+    modem_network_sequence();
 
 	if (state_isNetworkRegistered()) {
 		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(10));
 	} else {
 		// Try to connect in 1 minute
-		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(1));
+		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(2));
 		event_force_event_by_id(EVT_DISPLAY, 0);
 		return;
-	}
-
-	modem_getSignal();
-	if (state_isSignalInRange()) {
-		res = modem_connect_network(1);
-	} else {
-		res = UART_FAILED;
-	}
-
-	if (res == UART_FAILED) {
-		// No signal on this SIM
-		g_pSysState->lastTransMethod = NONE;
-		*failures++;
-		log_appendf("[%d] NETDOWN %d", config_getSelectedSIM(), *failures);
-	} else {
-		*failures = 0;
 	}
 
 	event_force_event_by_id(EVT_DISPLAY, 0);
@@ -528,9 +487,9 @@ void event_upload_samples(void *event, time_t currentTime) {
 
 		if (config_is_SIM_configurable(slot)) {
 			if (slot == 0) {
-				g_pSysState->lastTransMethod = HTTP_SIM1;
+				g_pDevCfg->cfgSelectedSIM_slot = 0;
 			} else {
-				g_pSysState->lastTransMethod = HTTP_SIM2;
+				g_pDevCfg->cfgSelectedSIM_slot = 1;
 			}
 		}
 
@@ -578,7 +537,7 @@ void event_fetch_configuration(void *event, time_t currentTime) {
 }
 
 void event_reset_trans(void *event, time_t currentTime) {
-	g_pSysState->lastTransMethod = NONE;
+	state_reset_network_errors();
 }
 
 // Sleeping state

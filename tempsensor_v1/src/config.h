@@ -167,7 +167,7 @@
 #define PERIOD_UPLOAD			10		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
 #define PERIOD_TRANS_RESET 		6*60   //in minutes
-#define PERIOD_LCD_OFF			0
+#define PERIOD_LCD_OFF			10
 #define PERIOD_ALARMS_CHECK	    2
 #define PERIOD_CONFIGURATION_FETCH 5
 #define PERIOD_SMS_CHECK   	    3		//poll interval in minutes for sms msg TODO change back
@@ -195,6 +195,7 @@
 /*****************************************************************************************************************/
 #define MODE_GSM 1
 #define MODE_GPRS 2
+
 typedef struct {
 	char cfgSMSCenter[GW_MAX_LEN + 1]; // Service Message Center number
 	char cfgPhoneNum[GW_MAX_LEN + 1];
@@ -222,7 +223,7 @@ typedef struct {
 #define MAX_IP_SIZE 3*4+3+1
 
 // Careful with exceeding the size of the URL
-#define MAX_URL_PATH 35
+#define MAX_URL_PATH 37
 
 typedef struct {
 	float threshCold;
@@ -391,7 +392,7 @@ typedef union {
 typedef union {
 	struct {
 		unsigned char sms_process_messages :1; // Clear SMS
-		unsigned char data_transmit :1;	// Delete old files since are crashing the software (corruption?)
+		unsigned char data_transmit :1;	// Delete old files since we are crashing the software (corruption?)
 		unsigned char bit3 :1;
 		unsigned char bit4 :1;
 		unsigned char bit5 :1;
@@ -435,11 +436,12 @@ typedef struct {
 	SYSTEM_SWITCHES system;
 	SYSTEM_ALARMS state;
 
+	// If transmission wasn't fully completed this will
+	// contain the last line we didn't transmit
 	uint32_t lastSeek;
 
 	// GSM or GPRS
 	int network_mode;
-	TRANSMISSION_TYPE lastTransMethod;
 	NETWORK_SERVICE net_service[2];
 
 	SAFEBOOT_STATUS safeboot;
