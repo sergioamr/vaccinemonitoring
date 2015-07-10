@@ -237,7 +237,7 @@ int http_get_configuration() {
 	uart_setCheckMsg(HTTP_OK, HTTP_ERROR);
 
 	while (retry == 1 && attempts > 0) {
-		if (uart_tx_timeout("#HTTPRCV=1", TIMEOUT_HTTPRCV, 5) == UART_SUCCESS) {
+		if (uart_tx_timeout("#HTTPRCV=1", TIMEOUT_HTTPRCV, 1) == UART_SUCCESS) {
 			uart_state = uart_getTransactionState();
 			if (uart_state == UART_SUCCESS) {
 				retry = 0; 	// Found a configuration, lets parse it.

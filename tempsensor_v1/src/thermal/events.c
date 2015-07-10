@@ -204,7 +204,8 @@ void events_find_next_event(time_t currentTime) {
 	for (t = 0; t < g_sEvents.registeredEvents; t++) {
 		pEvent = &g_sEvents.events[t];
 
-		if (pEvent->nextEventRun < nextEventTime) {
+		// 0 seconds events are disabled
+		if (pEvent->interval_secs!=0 && pEvent->nextEventRun < nextEventTime) {
 			nextEventTime = pEvent->nextEventRun;
 			nextEvent = t;
 		}
@@ -291,8 +292,8 @@ void events_debug() {
 	time_t currentTime = events_getTick();
 
 	EVENT *pEvent = &g_sEvents.events[g_sEvents.nextEvent];
-	//if (pEvent->id == EVT_DISPLAY)
-	//	return;
+	if (pEvent->id == EVT_DISPLAY)
+		return;
 
 	time_t nextEventTime = pEvent->nextEventRun - currentTime;
 	int test = nextEventTime % 10;

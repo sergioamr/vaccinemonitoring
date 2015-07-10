@@ -52,7 +52,7 @@ typedef struct {
 	void (*callback)(void *, time_t);
 	uint32_t nextEventRun;
 	uint32_t lastEventRun;
-	uint32_t interval_secs; // Interval between events in seconds
+	uint32_t interval_secs; // Interval between events in seconds, 0 seconds events are disabled events
 	uint16_t offset_secs;   // Seconds to offset the start of this event
 } EVENT;
 

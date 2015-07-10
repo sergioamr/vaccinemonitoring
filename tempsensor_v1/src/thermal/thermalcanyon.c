@@ -82,7 +82,7 @@ void thermal_low_battery_hibernate() {
 
 		thermal_low_battery_message();
 		//power plugged in
-		if (!(P4IN & BIT4)) {
+		if (POWER_ON) {
 			lcd_turn_on();
 			lcd_print("Recovery...");
 			modem_init();
