@@ -223,6 +223,7 @@ void process_batch() {
 		sprintf(path, "%s/%s", FOLDER_TEXT, fili.fname);
 		fr = f_open(&filr, path, FA_READ | FA_OPEN_ALWAYS);
 		if (fr != FR_OK) {
+			http_deactivate();
 			break;
 		}
 

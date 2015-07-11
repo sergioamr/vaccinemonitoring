@@ -235,6 +235,7 @@ void modem_network_sequence() {
 
 		// This means we already checked the network
 		if (networkSwapped == 1) {
+			http_deactivate();
 			return;
 		}
 

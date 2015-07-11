@@ -455,7 +455,6 @@ void event_network_check(void *event, time_t currentTime) {
 		return;
 	}
 
-	// XXX this already checks if signal in range
     modem_network_sequence();
 
 	if (state_isNetworkRegistered()) {
