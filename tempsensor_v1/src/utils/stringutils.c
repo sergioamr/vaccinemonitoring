@@ -172,9 +172,8 @@ char* replace_character(char* string, char charToFind, char charToReplace) {
 	int i = 0;
 
 	while (string[i] != '\0') {
-		if (string[i] == charToFind) {
+		if (string[i] == charToFind)
 			string[i] = charToReplace;
-		}
 		i++;
 	}
 

@@ -184,6 +184,10 @@
 #define NETWORK_CONNECTION_DELAY 2000
 #endif
 
+#define ST1_NUM_PARAMS			12
+#define ST2_NUM_PARAMS 			25
+#define ST3_NUM_PARAMS			0
+
 //Display contants
 #define LCD_DISPLAY_LEN			32
 #define LCD_INIT_PARAM_SIZE		9
