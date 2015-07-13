@@ -445,6 +445,8 @@ int8_t modem_first_init() {
 #endif
 
 		for (t = 0; t < nsims; t++) {
+			//force SIM 2 before we call swap. this ensures we start on SIM1
+			g_pDevCfg->cfgSIM_slot = 1;
 			modem_swap_SIM(); // Send hearbeat from SIM
 			/*
 			 * We have to check which parameters are fatal to disable the SIM

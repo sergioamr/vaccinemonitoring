@@ -193,7 +193,7 @@ void state_init() {
 	memset(g_pSysState, 0, sizeof(SYSTEM_STATE));
 
 	g_pSysState->network_mode = NETWORK_NOT_SELECTED;
-	SYSTEM_SWITCH.buzzer_disabled = BUZZER_DISABLE;
+	//SYSTEM_SWITCH.buzzer_disabled = BUZZER_DISABLE;
 
 	// Set the power to connected, if it is disconnected on first boot it will be detected
 	SYSTEM_SWITCH.power_connected = true;

@@ -102,9 +102,6 @@
 #define TEMP_CUTOFF				-800		//-80 deg C
 
 
-// Disable buttons sounds
-#define BUZZER_DISABLE_FEEDBACK 1
-
 /**************************************************************************************************************************/
 /* END FACTORY CONFIGURATION 																							  */
 /**************************************************************************************************************************/
@@ -177,7 +174,7 @@
 #define PERIOD_SMS_TEST			30
 
 #define HTTP_COMMAND_ATTEMPTS 2
-#define NETWORK_CONNECTION_ATTEMPTS 100
+#define NETWORK_CONNECTION_ATTEMPTS 5 // lower connection attempts
 #define NETWORK_CONNECTION_DELAY 2000
 #endif
 

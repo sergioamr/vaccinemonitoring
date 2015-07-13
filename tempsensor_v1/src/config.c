@@ -707,9 +707,9 @@ FRESULT config_read_ini_file() {
 			CONFIG_INI_FILE);
 
 	n = ini_gets("SIM1", "APN", NEXLEAF_DEFAULT_APN, g_pDevCfg->SIM[0].cfgAPN,
-			sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
+			sizearray( g_pDevCfg->SIM[0].cfgAPN), CONFIG_INI_FILE);
 	n = ini_gets("SIM2", "APN", NEXLEAF_DEFAULT_APN, g_pDevCfg->SIM[1].cfgAPN,
-			sizearray(g_pDevCfg->cfgConfig_URL), CONFIG_INI_FILE);
+			sizearray( g_pDevCfg->SIM[1].cfgAPN), CONFIG_INI_FILE);
 
 	intervals = &g_pDevCfg->sIntervalsMins;
 	intervals->sampling = ini_getl(SECTION_INTERVALS, "Sampling",
