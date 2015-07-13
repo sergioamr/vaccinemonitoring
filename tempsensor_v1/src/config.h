@@ -101,9 +101,6 @@
 //Temperature cut off
 #define TEMP_CUTOFF				-800		//-80 deg C
 
-// 1 will disable the buzzer when there is an Alarm
-// Buzzer will still work on button feedback
-#define BUZZER_DISABLE 1
 
 // Disable buttons sounds
 #define BUZZER_DISABLE_FEEDBACK 1
