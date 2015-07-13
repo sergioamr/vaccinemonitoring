@@ -92,7 +92,7 @@
 #endif
 
 // Network signal quality values
-#define NETWORK_DOWN_SS		14.0
+#define NETWORK_DOWN_SS		2.0
 #define NETWORK_UP_SS		NETWORK_DOWN_SS + 2 //2 points above the network down signal level
 #define NETWORK_MAX_SS		31.0
 
