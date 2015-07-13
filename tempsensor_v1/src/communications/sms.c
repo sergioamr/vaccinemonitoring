@@ -90,7 +90,7 @@ int8_t sms_process_memory_message(int8_t index) {
 
 	PARSE_SKIP(token, "\n", UART_FAILED);
 
-	PARSE_NEXTSTRING(token, msg, sizeof(msg), "\n", UART_FAILED);
+	PARSE_NEXTSTRING(token, msg, MAX_SMS_SIZE, "\n", UART_FAILED);
 
 	// Jump first \n to get the OK
 	PARSE_SKIP(token, "\n", UART_FAILED);
