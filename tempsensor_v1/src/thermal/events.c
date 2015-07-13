@@ -40,9 +40,6 @@ void event_run_deferred_commands() {
 	if (g_sEvents.defer.command.send_config) {
 		g_sEvents.defer.command.send_config=0;
 		config_display_config();
-#ifdef _DEBUG
-		//config_send_configuration(g_pDevCfg->cfgReportSMS);
-#endif
 		return;
 	}
 
