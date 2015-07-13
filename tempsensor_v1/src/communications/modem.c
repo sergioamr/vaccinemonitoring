@@ -294,6 +294,7 @@ int modem_connect_network(uint8_t attempts) {
 					&& (net_status == NETWORK_STATUS_REGISTERED_HOME_NETWORK
 							|| net_status == NETWORK_STATUS_REGISTERED_ROAMING)) {
 
+				// TODO: If network is roaming don't connect
 				state_network_success(nsim);
 
 				// We tested more than once, lets show a nice we are connected message

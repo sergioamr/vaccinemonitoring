@@ -96,7 +96,7 @@
 #define NETWORK_UP_SS		NETWORK_DOWN_SS + 2 //2 points above the network down signal level
 #define NETWORK_MAX_SS		31.0
 
-#define NETWORK_ZERO 10.0
+#define NETWORK_ZERO 2.0
 
 //Temperature cut off
 #define TEMP_CUTOFF				-800		//-80 deg C
