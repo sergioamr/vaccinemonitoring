@@ -165,6 +165,11 @@ int http_check_error(int *retry) {
 		g_sEvents.defer.command.display_http_error=1;
 	}
 
+	// Check if we got the right prof_id
+	if (prof_id == 0) {
+		_NOP();
+	}
+
 /*
 #ifdef _DEBUG
 	log_appendf("HTTP %i[%d] %d", prof_id, http_status_code, data_size);

@@ -12,6 +12,15 @@
 #define zeroString(dest) dest[0]=0;
 #define zeroTerminateCopy(dest, org) strncpy(dest, org, sizeof(dest)-2); dest[sizeof(dest)-1]=0;
 
+char *getFloatNumber2Text(float number, char *ret);
+
+// Everytime you get this buffer you have to release it!
+char *getStringBufferHelper(uint16_t *size);
+void releaseStringBufferHelper();
+
+char *getEncodedLineHelper();
+char *getSMSBufferHelper();
+
 extern char* itoa_pad(int num);
 extern char* itoa_nopadding(int num);
 extern char* replace_character(char* string, char charToFind, char charToReplace);

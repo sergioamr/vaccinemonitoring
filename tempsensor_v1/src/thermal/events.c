@@ -134,7 +134,7 @@ time_t events_getTick() {
 
 void events_send_data(char *phone) {
 #ifdef _DEBUG_OUTPUT
-	char msg[MAX_SMS_SIZE_FULL];
+	char *msg=getSMSBufferHelper();
 	EVENT *pEvent;
 	int t;
 	size_t length;

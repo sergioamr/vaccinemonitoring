@@ -389,19 +389,23 @@ uint8_t isTransactionOK() {
 }
 
 uint8_t uart_txf(const char *_format, ...) {
-	char szTemp[80];
+	uint16_t size = 0;
+	uint16_t res = 0;
+	char *szTemp = getStringBufferHelper(&size);
 	va_list _ap;
 	char *fptr = (char *) _format;
 	char *out_end = szTemp;
 
 	va_start(_ap, _format);
-	if (__TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs) > 80) {
+	if (__TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs) > size) {
 		_NOP();
 	}
 	va_end(_ap);
 
 	*out_end = '\0';
-	return uart_tx(szTemp);
+	res = uart_tx(szTemp);
+	releaseStringBufferHelper();
+	return res;
 }
 
 uint8_t uart_tx(const char *cmd) {

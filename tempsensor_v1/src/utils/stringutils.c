@@ -8,10 +8,45 @@
 #include "stdint.h"
 #include "string.h"
 #include "globals.h"
+#include "sms.h"
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
+char g_iStringCaptured = 0;
+static char g_szStringTemp[160];
+static char g_smsMsg[MAX_SMS_SIZE_FULL];
+static char g_szEncodedLine[80];
 static char g_szItoa[16];
 #pragma SET_DATA_SECTION()
+
+// Always release this buffer so you are sure to not use it more than once!!
+char *getStringBufferHelper(uint16_t *size) {
+	if (size!=NULL)
+		*size = sizeof(g_szStringTemp);
+
+	if (g_iStringCaptured) {
+		__no_operation();
+	}
+	g_iStringCaptured = 1;
+	memset(g_szStringTemp, 0, sizeof(g_szStringTemp));
+	return g_szStringTemp;
+}
+
+void releaseStringBufferHelper() {
+	if (!g_iStringCaptured) {
+		__no_operation();
+	}
+	g_iStringCaptured = 0;
+}
+
+char *getEncodedLineHelper() {
+	memset(g_szEncodedLine, 0, sizeof(g_szEncodedLine));
+	return g_szEncodedLine;
+}
+
+char *getSMSBufferHelper() {
+	memset(g_smsMsg, 0, sizeof(g_smsMsg));
+	return g_smsMsg;
+}
 
 char *getFloatNumber2Text(float number, char *ret) {
 	int i = 0;
