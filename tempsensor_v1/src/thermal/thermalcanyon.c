@@ -85,7 +85,7 @@ void thermal_low_battery_hibernate() {
 		// TODO: perhaps shut down the modem?
 		firstWarning = 0;
 		//power plugged in
-		if (SYSTEM_SWITCH.power_connected) {
+		if (g_pSysState->system.switches.power_connected) {
 			lcd_turn_on();
 			lcd_print("Recovering...");
 			modem_init();
