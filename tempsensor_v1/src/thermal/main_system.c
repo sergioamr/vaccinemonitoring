@@ -212,6 +212,10 @@ void checkStack() {
 		stack_empty++;
 	}
 	g_pSysCfg->stackLeft = stack_empty;
+
+	if (g_pSysCfg->stackLeft<64) {
+		_NOP();
+	}
 }
 
 void clearStack() {
