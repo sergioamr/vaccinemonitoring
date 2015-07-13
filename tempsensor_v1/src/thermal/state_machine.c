@@ -165,7 +165,7 @@ uint8_t state_getSignalLevel() {
 
 int state_isSignalInRange() {
 	int iSignalLevel = g_pSysState->signal_level;
-	if ((iSignalLevel < NETWORK_DOWN_SS) || (iSignalLevel > NETWORK_MAX_SS)) {
+	if ((iSignalLevel < NETWORK_UP_SS) || (iSignalLevel > NETWORK_MAX_SS)) {
 		return 0;
 	}
 	return 1;

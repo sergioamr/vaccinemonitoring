@@ -134,7 +134,7 @@ time_t events_getTick() {
 
 void events_send_data(char *phone) {
 #ifdef _DEBUG_OUTPUT
-	char msg[MAX_SMS_SIZE_FULL];
+	char *msg=getSMSBufferHelper();
 	EVENT *pEvent;
 	int t;
 	size_t length;
@@ -455,7 +455,6 @@ void event_network_check(void *event, time_t currentTime) {
 		return;
 	}
 
-	// XXX this already checks if signal in range
     modem_network_sequence();
 
 	if (state_isNetworkRegistered()) {

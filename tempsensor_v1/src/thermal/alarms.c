@@ -19,7 +19,8 @@
 
 /*************************************************************************************************************/
 void alarm_sms_battery_level() {
-	char msg[MAX_SMS_SIZE];
+	char *msg = getSMSBufferHelper();
+
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
 		return;
 
@@ -30,7 +31,7 @@ void alarm_sms_battery_level() {
 }
 
 void alarm_sms_sensor(uint8_t sensorId, int elapsed) {
-	char msg[MAX_SMS_SIZE];
+	char *msg = getSMSBufferHelper();
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
 		return;
 

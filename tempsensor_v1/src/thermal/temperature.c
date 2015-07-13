@@ -14,6 +14,7 @@
 #include "stdio.h"
 #include "string.h"
 #include "events.h"
+#include "stringutils.h"
 
 void ADC_setupIO() {
 
