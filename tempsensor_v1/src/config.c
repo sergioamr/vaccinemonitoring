@@ -446,7 +446,9 @@ int config_parse_configuration_ST1(char *token) {
 	PARSE_NEXTSTRING(token, g_pDevCfg->cfgUpload_URL,
 			sizeof(g_pDevCfg->cfgUpload_URL), delimiter, UART_FAILED);
 
-	// strcpy(g_pDevCfg->cfgUpload_URL, "/coldtrace/intel/upload/");
+#ifdef _DEBUG
+	strcpy(g_pDevCfg->cfgUpload_URL, "/coldtrace/intel/upload/");
+#endif
 
 	//config URL
 	PARSE_NEXTSTRING(token, g_pDevCfg->cfgConfig_URL,

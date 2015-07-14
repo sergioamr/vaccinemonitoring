@@ -290,8 +290,8 @@ void events_debug() {
 	time_t currentTime = events_getTick();
 
 	EVENT *pEvent = &g_sEvents.events[g_sEvents.nextEvent];
-	if (pEvent->id == EVT_DISPLAY)
-		return;
+	//if (pEvent->id == EVT_DISPLAY)
+	//	return;
 
 	time_t nextEventTime = pEvent->nextEventRun - currentTime;
 	int test = nextEventTime % 10;
