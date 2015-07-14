@@ -201,9 +201,10 @@ int8_t sms_process_messages() {
 	uart_tx("+CSDH=0"); // Disable extended output
 
 	for (iIdx = 1; iIdx <= totalr; iIdx++) {
-		if (sms_process_memory_message(iIdx) == UART_SUCCESS)
+		if (sms_process_memory_message(iIdx) == UART_SUCCESS) {
 			usedr--;
-		else
+			delmsg(iIdx);
+		} else
 			_NOP();
 	}
 
@@ -231,10 +232,9 @@ void sms_send_heart_beat() {
 		}
 	}
 
-	sprintf(msg, SMS_HB_MSG_TYPE "%s,%d,%s,%s,%s%d,%d,%s", g_pDevCfg->cfgIMEI,
+	sprintf(msg, SMS_HB_MSG_TYPE "%s,%d,%s,%s,%s%d,%d", g_pDevCfg->cfgIMEI,
 			config_getSelectedSIM(), g_pDevCfg->cfgGatewaySMS,
-			sim->cfgSMSCenter, sensors, batt_getlevel(), !(P4IN & BIT4),
-			g_pSysCfg->firmwareVersion);
+			sim->cfgSMSCenter, sensors, batt_getlevel(), !(P4IN & BIT4));
 
 	sms_send_message(msg);
 }
@@ -322,8 +322,8 @@ void delallmsg() {
 	uart_tx("+CMGD=1,2");	//delete all the sms msgs read or sent successfully
 }
 
-void delmsg(int8_t iMsgIdx, char* pData) {
+void delmsg(int8_t iMsgIdx) {
 	uart_txf("+CMGD=%d,0", iMsgIdx);
-	delay(2000);	//opt
+	lcd_progress_wait(1000);
 }
 

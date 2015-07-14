@@ -212,7 +212,8 @@ void config_incLastCmd() {
 void config_reconfigure() {
 	g_pSysCfg->memoryInitialized = 0xFF;
 	PMM_trigBOR();
-	while (1);
+	while (1)
+		;
 }
 
 // Send back data after an SMS request
@@ -373,8 +374,7 @@ int config_count_delims(char* string, char delim) {
 		return count;
 
 	i++;
-	while (i < RX_LEN && i < stringLen &&
-			string[i] != '\0' && string[i] != '$') {
+	while (i < RX_LEN && i < stringLen && string[i] != '\0' && string[i] != '$') {
 		if (string[i] == delim)
 			count++;
 		i++;
@@ -387,6 +387,8 @@ int config_count_delims(char* string, char delim) {
  NEW config sync $ST1,<GATEWAY NUMBER>,<GPRS/GSM/BOTH>,
  <COLDTRACE IP ADDRESS>,<APN1>,<APN2>,<UPLOADURL>,<CONFIGURL>,
  <UPLOAD INTERVAL>,<SAMPLE INTERVAL>,<SIM CARD>,<ALARM STATE>,$EN
+
+ $ST1,+447482787262,SMS,54.241.2.213,giffgaff.com,giffgaff.com,/coldtrace/uploads/multi/v4/,/coldtrace/configuration/ct5/v2/,45,5,0,0,$EN
  */
 int config_parse_configuration_ST1(char *token) {
 	int iCnt = 0;
@@ -422,7 +424,7 @@ int config_parse_configuration_ST1(char *token) {
 	//(0: force gprs, 1: force sms, 2: DEFAULT: failover mode
 	if (!strncmp(uploadMode, "GPRS", sizeof(uploadMode)))
 		g_pDevCfg->cfgUploadMode = MODE_GPRS;
-	else if (!strncmp(uploadMode, "GSM", sizeof(uploadMode)))
+	else if (!strncmp(uploadMode, "SMS", sizeof(uploadMode)))
 		g_pDevCfg->cfgUploadMode = MODE_GSM;
 	else
 		//default BOTH
@@ -444,7 +446,9 @@ int config_parse_configuration_ST1(char *token) {
 	PARSE_NEXTSTRING(token, g_pDevCfg->cfgUpload_URL,
 			sizeof(g_pDevCfg->cfgUpload_URL), delimiter, UART_FAILED);
 
-	//strcpy(g_pDevCfg->cfgUpload_URL, "/coldtrace/intel/upload/");
+#ifdef _DEBUG
+	strcpy(g_pDevCfg->cfgUpload_URL, "/coldtrace/intel/upload/");
+#endif
 
 	//config URL
 	PARSE_NEXTSTRING(token, g_pDevCfg->cfgConfig_URL,
@@ -490,9 +494,14 @@ int config_parse_configuration_ST1(char *token) {
 	return UART_SUCCESS;
 }
 
+// Example:
+// $ST2,2,1,4,3,6,5,8,7,10,9,12,11,14,13,16,15,18,17,20,19,23,1,22,21,$EN
+// NUM SENSORS { <SENSOR LOW DELAY> <SENSOR LOW TEMP> <SENSOR HIGH DELAY> <SENSOR HIGH TEMP> }
+// 23,1,22,21 <POWER OUTAGE DELAY> <POWER ALARM ACTIVATE> <LOW BATTERY DELAY> <LOW BATTERY LEVEL ALARM>
+
 int config_parse_configuration_ST2(char *token) {
 	int i = 0;
-	int tempValue = 0;
+
 	TEMP_ALERT_PARAM *pAlertParams;
 	BATT_POWER_ALERT_PARAM *pBattPower;
 
@@ -509,15 +518,7 @@ int config_parse_configuration_ST2(char *token) {
 	// Skip $ST2,
 	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
 
-	// Return success if no configuration has changed
-	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED);
-	if (tempValue == 1)
-		_NOP();
-
-	if (g_pDevCfg->cfgServerConfigReceived && g_pDevCfg->cfgSyncId == 0)
-		return UART_SUCCESS;
-
-// Temperature configuration for each sensor
+	// Temperature configuration for each sensor
 	while (i < SYSTEM_NUM_SENSORS) {
 		pAlertParams = &g_pDevCfg->stTempAlertParams[i];
 		PARSE_NEXTVALUE(token, &pAlertParams->maxSecondsCold, delimiter,
@@ -533,12 +534,15 @@ int config_parse_configuration_ST2(char *token) {
 		i++;
 	}
 
-// Battery config info.
-	pBattPower = &g_pDevCfg->stBattPowerAlertParam;
+	// Battery config info.
+	// 23,1,22,21 <POWER OUTAGE DELAY> <POWER ALARM ACTIVATE> <LOW BATTERY DELAY> <LOW BATTERY LEVEL ALARM>
 
+	pBattPower = &g_pDevCfg->stBattPowerAlertParam;
 	PARSE_NEXTVALUE(token, &pBattPower->minutesPower, delimiter, UART_FAILED);
+
 	PARSE_NEXTVALUE(token, &pBattPower->enablePowerAlert, delimiter,
 			UART_FAILED);
+
 	PARSE_NEXTVALUE(token, &pBattPower->minutesBattThresh, delimiter,
 			UART_FAILED);
 
@@ -620,7 +624,7 @@ int config_parse_configuration(char *msg) {
 #endif
 
 	// Order the system to send the config later on.
-	g_sEvents.defer.command.send_config = 1;
+	g_sEvents.defer.command.display_config = 1;
 	return UART_SUCCESS;
 }
 

@@ -38,7 +38,10 @@ void releaseStringBufferHelper() {
 	g_iStringCaptured = 0;
 }
 
-char *getEncodedLineHelper() {
+char *getEncodedLineHelper(uint16_t *size) {
+	if (size!=NULL)
+		*size = sizeof(g_szEncodedLine);
+
 	memset(g_szEncodedLine, 0, sizeof(g_szEncodedLine));
 	return g_szEncodedLine;
 }

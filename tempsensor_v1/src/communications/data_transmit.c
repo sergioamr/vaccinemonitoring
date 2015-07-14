@@ -41,7 +41,7 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 	uint16_t lineSize = 0;
 	struct tm firstDate;
 
-	char *encodedLine = getEncodedLineHelper();
+	char *encodedLine = getEncodedLineHelper(NULL);
 	char *line = getStringBufferHelper(&lineSize);
 	char *smsMsg = getSMSBufferHelper();
 
@@ -125,7 +125,7 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 	f_lseek(file, start);
 
 	// Must get first line before transmitting to calculate the length properly
-	if (f_gets(line, sizeof(line), file) != 0) {
+	if (f_gets(line, lineSize, file) != 0) {
 		parse_time_from_line(&firstDate, line);
 		dateString = get_date_string(&firstDate, "", "", "", 0);
 		sprintf(line, "IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=", g_pDevCfg->cfgIMEI,
@@ -148,7 +148,7 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 
 	// check that the transmitted data equals the size to send
 	while (file->fptr < end) {
-		if (f_gets(line, sizeof(line), file) != 0) {
+		if (f_gets(line, lineSize, file) != 0) {
 			if (file->fptr != end) {
 				replace_character(line, '\n', '|');
 				uart_tx_nowait(line);
@@ -203,7 +203,7 @@ void process_batch() {
 	uint32_t seekFrom = g_pSysState->lastSeek, seekTo = g_pSysState->lastSeek;
 
 	uint16_t lineSize = 0;
-	char *line=getEncodedLineHelper();
+	char *line=getEncodedLineHelper(&lineSize);
 
 	char path[32];
 	char do_not_process_batch = false;
@@ -315,7 +315,7 @@ void process_batch() {
 	if (transactionState == TRANS_SUCCESS) {
 		// Make sure this sim is the one that's first used next time
 		g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;
-		lcd_printl(LINE2, "Complete");
+		lcd_printl(LINE2, "Completed");
 	} else {
 		lcd_printl(LINE2, "Failed");
 	}
