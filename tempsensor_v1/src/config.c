@@ -387,6 +387,8 @@ int config_count_delims(char* string, char delim) {
  NEW config sync $ST1,<GATEWAY NUMBER>,<GPRS/GSM/BOTH>,
  <COLDTRACE IP ADDRESS>,<APN1>,<APN2>,<UPLOADURL>,<CONFIGURL>,
  <UPLOAD INTERVAL>,<SAMPLE INTERVAL>,<SIM CARD>,<ALARM STATE>,$EN
+
+ $ST1,+447482787262,SMS,54.241.2.213,giffgaff.com,giffgaff.com,/coldtrace/uploads/multi/v4/,/coldtrace/configuration/ct5/v2/,45,5,0,0,$EN
  */
 int config_parse_configuration_ST1(char *token) {
 	int iCnt = 0;
@@ -490,6 +492,8 @@ int config_parse_configuration_ST1(char *token) {
 	return UART_SUCCESS;
 }
 
+// Example:
+// $ST2,10,10,30,33,5,2,15,35,20,2,10,35,20,10,20,30,12,15,25,30,300,1,10,30,$EN
 int config_parse_configuration_ST2(char *token) {
 	int i = 0;
 	int tempValue = 0;
