@@ -227,7 +227,7 @@ void fat_check_error(FRESULT fr) {
 
 	event_LCD_turn_on();
 	lcd_printl(LINEC, "SD CARD FAILURE");
-	lcd_printf(LINEE, "%s", FR_ERRORS[fr]);
+	lcd_printf(LINEH, "%s", FR_ERRORS[fr]);
 }
 
 FRESULT fat_create_folders() {
@@ -328,7 +328,6 @@ FRESULT fat_save_config(char *text) {
 	}
 
 	fr = f_write(&fobj, text, len, (UINT *) &bw);
-	f_sync(&fobj);
 	return f_close(&fobj);
 }
 
@@ -398,8 +397,6 @@ FRESULT log_append_(char *text) {
 	}
 	strcpy(szLog, "\r\n");
 	fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
-
-	f_sync(&fobj);
 	return f_close(&fobj);
 }
 
@@ -425,7 +422,6 @@ FRESULT log_modem(const char *text) {
 		return fr;
 
 	fr = f_write(&fobj, text, len, (UINT *) &bw);
-	f_sync(&fobj);
 	return f_close(&fobj);
 }
 
@@ -440,7 +436,7 @@ void log_enable() {
 FRESULT log_appendf(const char *_format, ...) {
 // This function is called with the stack really full. We get this array from the stack for it to not create strange behaviour
 #pragma SET_DATA_SECTION(".aggregate_vars")
-	static char szTemp[80];
+	static char szTemp[40];
 #pragma SET_DATA_SECTION()
 
 	va_list _ap;
@@ -553,15 +549,11 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	*tbw = bw;
 
 	if (fr == FR_OK) {
-		f_sync(&fobj);
-
 #ifdef _DEBUG
 		lcd_printf(LINE2, "OK %d bytes", *tbw);
 #else
 		event_force_event_by_id(EVT_DISPLAY, 0);
 #endif
-
-		f_sync(&fobj);
 	} else {
 		fat_check_error(fr);
 	}
@@ -654,6 +646,5 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 		*tbw += bw;
 	}
 
-	f_sync(&fobj);
 	return f_close(&fobj);
 }

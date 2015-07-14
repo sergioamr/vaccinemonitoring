@@ -63,6 +63,7 @@ void hardware_actions() {
 			event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 5);
 			event_force_event_by_id(EVT_SAVE_SAMPLE_TEMP, 10);
 			event_force_event_by_id(EVT_UPLOAD_SAMPLES, 15);
+			config_display_config();
 			//thermal_handle_system_button();
 			lcd_on = 1;
 			break;
