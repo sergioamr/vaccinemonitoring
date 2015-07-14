@@ -337,11 +337,6 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 
 	// Check the error codes to figure out if the SIM is still functional
 	modem_check_working_SIM();
-
-	//szToken[0] = errorToken;  // Minimal SPRINTF support
-	//szToken[1] = 0;
-	//log_appendf("SIM %d CMD[%s] CM%s ERROR %d", config_getSelectedSIM() + 1, &modem_lastCommand[0], szToken, errorCode);
-
 	return;
 }
 
