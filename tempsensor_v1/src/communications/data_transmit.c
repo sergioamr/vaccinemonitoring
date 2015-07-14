@@ -41,7 +41,7 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 	uint16_t lineSize = 0;
 	struct tm firstDate;
 
-	char *encodedLine = getEncodedLineHelper();
+	char *encodedLine = getEncodedLineHelper(NULL);
 	char *line = getStringBufferHelper(&lineSize);
 	char *smsMsg = getSMSBufferHelper();
 
@@ -203,7 +203,7 @@ void process_batch() {
 	uint32_t seekFrom = g_pSysState->lastSeek, seekTo = g_pSysState->lastSeek;
 
 	uint16_t lineSize = 0;
-	char *line=getEncodedLineHelper();
+	char *line=getEncodedLineHelper(&lineSize);
 
 	char path[32];
 	char do_not_process_batch = false;

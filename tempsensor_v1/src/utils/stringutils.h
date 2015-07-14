@@ -18,7 +18,7 @@ char *getFloatNumber2Text(float number, char *ret);
 char *getStringBufferHelper(uint16_t *size);
 void releaseStringBufferHelper();
 
-char *getEncodedLineHelper();
+char *getEncodedLineHelper(uint16_t *size);
 char *getSMSBufferHelper();
 
 extern char* itoa_pad(int num);
