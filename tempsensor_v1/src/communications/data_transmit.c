@@ -125,7 +125,7 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 	f_lseek(file, start);
 
 	// Must get first line before transmitting to calculate the length properly
-	if (f_gets(line, sizeof(line), file) != 0) {
+	if (f_gets(line, lineSize, file) != 0) {
 		parse_time_from_line(&firstDate, line);
 		dateString = get_date_string(&firstDate, "", "", "", 0);
 		sprintf(line, "IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=", g_pDevCfg->cfgIMEI,
