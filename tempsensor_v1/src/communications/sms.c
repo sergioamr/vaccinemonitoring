@@ -232,10 +232,9 @@ void sms_send_heart_beat() {
 		}
 	}
 
-	sprintf(msg, SMS_HB_MSG_TYPE "%s,%d,%s,%s,%s%d,%d,%s", g_pDevCfg->cfgIMEI,
+	sprintf(msg, SMS_HB_MSG_TYPE "%s,%d,%s,%s,%s%d,%d", g_pDevCfg->cfgIMEI,
 			config_getSelectedSIM(), g_pDevCfg->cfgGatewaySMS,
-			sim->cfgSMSCenter, sensors, batt_getlevel(), !(P4IN & BIT4),
-			g_pSysCfg->firmwareVersion);
+			sim->cfgSMSCenter, sensors, batt_getlevel(), !(P4IN & BIT4));
 
 	sms_send_message(msg);
 }

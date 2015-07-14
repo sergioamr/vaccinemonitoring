@@ -622,7 +622,7 @@ int config_parse_configuration(char *msg) {
 #endif
 
 	// Order the system to send the config later on.
-	g_sEvents.defer.command.send_config = 1;
+	g_sEvents.defer.command.display_config = 1;
 	return UART_SUCCESS;
 }
 

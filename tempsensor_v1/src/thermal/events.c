@@ -32,25 +32,25 @@ EVENT_MANAGER g_sEvents;
 void event_run_deferred_commands() {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	char error[16];
-	if (g_sEvents.defer.status==0)
+	if (g_sEvents.defer.status == 0)
 		return;
 
 	config_setLastCommand(COMMAND_EVENT_DEFERRED);
 
-	if (g_sEvents.defer.command.send_config) {
-		g_sEvents.defer.command.send_config=0;
+	if (g_sEvents.defer.command.display_config) {
+		g_sEvents.defer.command.display_config = 0;
 		config_display_config();
 		return;
 	}
 
 	if (g_sEvents.defer.command.swap_sim) {
-		g_sEvents.defer.command.swap_sim=0;
+		g_sEvents.defer.command.swap_sim = 0;
 		return;
 	}
 
 	if (g_sEvents.defer.command.display_http_error) {
 		zeroString(error);
-		g_sEvents.defer.command.display_http_error=0;
+		g_sEvents.defer.command.display_http_error = 0;
 		if (sim->http_last_status_code != 200
 				&& sim->http_last_status_code > 0) {
 #ifdef USE_MININI
@@ -137,7 +137,7 @@ void events_send_data(char *phone) {
 	size_t length;
 
 	if (g_sEvents.registeredEvents == 0)
-		return;
+	return;
 
 	size_t currentTime = events_getTick();
 	sprintf(msg, "[%s] Events start",
@@ -162,28 +162,28 @@ void events_send_data(char *phone) {
 }
 
 /*
-void event_sanity_check(EVENT *pEvent, time_t currentTime) {
+ void event_sanity_check(EVENT *pEvent, time_t currentTime) {
 
-	time_t maxRunTime = currentTime + pEvent->offset_secs
-			+ event_getIntervalSeconds(pEvent);
+ time_t maxRunTime = currentTime + pEvent->offset_secs
+ + event_getIntervalSeconds(pEvent);
 
-	if (pEvent->nextEventRun <= maxRunTime)
-		return;
+ if (pEvent->nextEventRun <= maxRunTime)
+ return;
 
-	event_init(pEvent, currentTime);
-	_NOP();
-}
+ event_init(pEvent, currentTime);
+ _NOP();
+ }
 
-void events_sanity(time_t currentTime) {
-	int t;
-	EVENT *pEvent = NULL;
+ void events_sanity(time_t currentTime) {
+ int t;
+ EVENT *pEvent = NULL;
 
-	for (t = 0; t < g_sEvents.registeredEvents; t++) {
-		pEvent = &g_sEvents.events[t];
-		event_sanity_check(pEvent, currentTime);
-	}
-}
-*/
+ for (t = 0; t < g_sEvents.registeredEvents; t++) {
+ pEvent = &g_sEvents.events[t];
+ event_sanity_check(pEvent, currentTime);
+ }
+ }
+ */
 
 // Populates the next event index depending on event times
 void events_find_next_event(time_t currentTime) {
@@ -202,7 +202,8 @@ void events_find_next_event(time_t currentTime) {
 		pEvent = &g_sEvents.events[t];
 
 		// 0 seconds events are disabled
-		if (pEvent->interval_secs!=0 && pEvent->nextEventRun < nextEventTime) {
+		if (pEvent->interval_secs != 0
+				&& pEvent->nextEventRun < nextEventTime) {
 			nextEventTime = pEvent->nextEventRun;
 			nextEvent = t;
 		}
@@ -234,9 +235,9 @@ void events_register(EVENT_IDS id, char *name, time_t offset_time_secs,
 	strncpy(pEvent->name, name, sizeof(pEvent->name));
 
 #ifdef _DEBUG
-	intervalDefault/=2;
-	offset_time_secs/=2;
-	intervalMinutes/=2;
+	intervalDefault /= 2;
+	offset_time_secs /= 2;
+	intervalMinutes /= 2;
 #endif
 
 	if (intervalDefault != 0)
@@ -452,7 +453,7 @@ void event_network_check(void *event, time_t currentTime) {
 		return;
 	}
 
-    modem_network_sequence();
+	modem_network_sequence();
 
 	if (state_isNetworkRegistered()) {
 		event_setInterval_by_id_secs(EVT_CHECK_NETWORK, MINUTES_(10));
@@ -564,9 +565,9 @@ void event_main_sleep() {
 	else
 	// If we are disconnected, lets check every 5 seconds for the power to be back.
 	if (g_pSysState->system.switches.power_connected)
-			delay(MAIN_SLEEP_POWER_OUTAGE);
+		delay(MAIN_SLEEP_POWER_OUTAGE);
 	else
-	// Deep sleep
+		// Deep sleep
 		delay(MAIN_LCD_OFF_SLEEP_TIME);
 
 	iMainSleep = 0;
@@ -593,13 +594,15 @@ void events_init() {
 			NULL);
 #endif
 	events_register(EVT_BATTERY_CHECK, "BAT", 0, &events_check_battery,
-			MINUTES_(PERIOD_BATTERY_CHECK), g_pDevCfg->sIntervalsMins.batteryCheck);
+			MINUTES_(PERIOD_BATTERY_CHECK),
+			g_pDevCfg->sIntervalsMins.batteryCheck);
 
 	events_register(EVT_PULLTIME, "TME", 0, &event_pull_time,
 			MINUTES_(PERIOD_PULLTIME), g_pDevCfg->sIntervalsMins.modemPullTime);
 
 	events_register(EVT_CHECK_NETWORK, "NET", 1, &event_network_check,
-			MINUTES_(PERIOD_NETWORK_CHECK),  g_pDevCfg->sIntervalsMins.networkCheck);
+			MINUTES_(PERIOD_NETWORK_CHECK),
+			g_pDevCfg->sIntervalsMins.networkCheck);
 
 	// Check every 30 seconds until we get the configuration message from server;
 	events_register(EVT_SMSCHECK, "SMS", 0, &event_SIM_check_incoming_msgs,
@@ -609,17 +612,17 @@ void events_init() {
 			MINUTES_(PERIOD_LCD_OFF), g_pDevCfg->sIntervalsMins.lcdOff);
 
 	events_register(EVT_ALARMS_CHECK, "ALR", 1, &events_health_check,
-			MINUTES_(PERIOD_ALARMS_CHECK),  g_pDevCfg->sIntervalsMins.alarmsCheck);
+			MINUTES_(PERIOD_ALARMS_CHECK),
+			g_pDevCfg->sIntervalsMins.alarmsCheck);
 
 	events_register(EVT_DISPLAY, "DIS", 0, &event_update_display,
 			MINUTES_(PERIOD_LCD_REFRESH), NULL);
 
-	events_register(EVT_DISPLAY_ALARM, "LAR", PERIOD_LCD_REFRESH/2, &events_display_alarm,
-			MINUTES_(PERIOD_LCD_REFRESH*2), NULL);
+	events_register(EVT_DISPLAY_ALARM, "LAR", PERIOD_LCD_REFRESH / 2,
+			&events_display_alarm, MINUTES_(PERIOD_LCD_REFRESH*2), NULL);
 
-	events_register(EVT_SUBSAMPLE_TEMP, "SUB", 0,
-			&event_subsample_temperature, MINUTES_(PERIOD_SAMPLING),
-			g_pDevCfg->sIntervalsMins.sampling);
+	events_register(EVT_SUBSAMPLE_TEMP, "SUB", 0, &event_subsample_temperature,
+			MINUTES_(PERIOD_SAMPLING), g_pDevCfg->sIntervalsMins.sampling);
 
 	// Offset the save N seconds from the subsample taking
 	events_register(EVT_SAVE_SAMPLE_TEMP, "SAV", 15, &event_save_samples,
@@ -636,7 +639,8 @@ void events_init() {
 			g_pDevCfg->sIntervalsMins.configurationFetch);
 
 	events_register(EVT_RESET_FAILOVER, "RST", 0, &event_reset_trans,
-			MINUTES_(PERIOD_TRANS_RESET), g_pDevCfg->sIntervalsMins.transmissionReset);
+			MINUTES_(PERIOD_TRANS_RESET),
+			g_pDevCfg->sIntervalsMins.transmissionReset);
 
 	events_sync();
 }
