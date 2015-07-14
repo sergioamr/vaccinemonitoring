@@ -514,8 +514,10 @@ int config_parse_configuration_ST2(char *token) {
 	if (tempValue == 1)
 		_NOP();
 
+	/*
 	if (g_pDevCfg->cfgServerConfigReceived && g_pDevCfg->cfgSyncId == 0)
 		return UART_SUCCESS;
+	 */
 
 // Temperature configuration for each sensor
 	while (i < SYSTEM_NUM_SENSORS) {

@@ -31,7 +31,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData);
 void delreadmsg();
 
 void delallmsg();
-void delmsg(int8_t iMsgIdx, char* pData);
+void delmsg(int8_t iMsgIdx);
 
 void sms_send_heart_beat();
 int8_t sms_process_messages();
