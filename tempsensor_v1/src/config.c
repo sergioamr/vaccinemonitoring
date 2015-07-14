@@ -537,10 +537,10 @@ int config_parse_configuration_ST2(char *token) {
 
 // Battery config info.
 	pBattPower = &g_pDevCfg->stBattPowerAlertParam;
-
-	PARSE_NEXTVALUE(token, &pBattPower->minutesPower, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &pBattPower->enablePowerAlert, delimiter,
 			UART_FAILED);
+
+	PARSE_NEXTVALUE(token, &pBattPower->minutesPower, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &pBattPower->minutesBattThresh, delimiter,
 			UART_FAILED);
 
