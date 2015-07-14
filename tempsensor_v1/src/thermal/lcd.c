@@ -133,8 +133,6 @@ void lcd_show() {
 	if (g_bLCD_state == 0)
 		return;
 
-	memset(lcdBuffer, 0, sizeof(lcdBuffer));
-
 	if (iItemId == g_iDisplayId &&
 		lastRefresh == rtc_get_second_tick())
 		return;
@@ -144,7 +142,7 @@ void lcd_show() {
 
 	lcd_clear();
 
-	memset(lcdBuffer, 0, LCD_DISPLAY_LEN);
+	memset(lcdBuffer, 0, sizeof(lcdBuffer));
 	lcd_setDate(lcdBuffer);
 	//get local time
 	iIdx = strlen(lcdBuffer); //marker
@@ -207,13 +205,22 @@ void lcd_show() {
 			lcd_append_signal_info(lcdBuffer);
 		break;
 
-	case 9:
+#ifdef _DEBUG
+	case 9+5:
 		lcd_display_config();
 		return;
+#endif
+
 	default:
 		break;
 	}
 
+#ifdef _DEBUG
+	if (iItemId>=9 && iItemId<9+5) {
+		lcd_display_config_sensor(iItemId-9);
+		return;
+	} else
+#endif
 	if (iCnt != 0xff) {
 		if (g_pSysState->temp.state[iCnt].status != 0) {
 			sprintf(&lcdBuffer[iIdx], "ALERT %s %sC", SensorName[iCnt],
@@ -362,6 +369,12 @@ void lcd_print_boot(const char* pcData, int line) {
 #else
 	lcd_print_progress();
 #endif
+}
+
+void lcd_display_config_sensor(int id) {
+	TEMP_ALERT_PARAM *pAlertParams = &g_pDevCfg->stTempAlertParams[id];
+	lcd_printf(LINEC, "%s Cold %dm %d", SensorName[id], (int) pAlertParams->maxSecondsCold / 60, (int) pAlertParams->threshCold);
+	lcd_printf(LINE2, "Hot %dm %d", (int) pAlertParams->maxSecondsHot / 60, (int) pAlertParams->threshHot);
 }
 
 void lcd_display_config() {
