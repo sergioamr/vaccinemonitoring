@@ -295,9 +295,6 @@ void lcd_printl(int8_t iLine, const char* pcData) {
 	i2c_write(0x3e, 0x40, len, (uint8_t *) pcData);
 
 	if (iLine == LINEE) {
-#ifdef _DEBUG
-		log_appendf("ERROR [%s] ", pcData);
-#endif
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	}
 
