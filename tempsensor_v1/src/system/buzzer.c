@@ -18,10 +18,12 @@ void buzzer_start() {
 
 	TA2CCTL0 = CCIE;
 
+	//TODO change buzzer sound here
 	if (!g_pSysState->system.switches.buzzer_sound && g_pSysState->buzzerFeedback>0)
 		TA2CCR0 = 8000;						  // 0.5khz
 	else
 		TA2CCR0 = 1000;						  // 4khz
+
 	TA2CTL = TASSEL__SMCLK | MC__UP | ID__2;  // SMCLK/2 (4MHz), UP mode
 
 }

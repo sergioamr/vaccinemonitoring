@@ -219,6 +219,7 @@ void sms_send_heart_beat() {
 	char sensors[16];
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
+	SYSTEM_ALARMS *s = state_getAlarms(); //pointer to alarm states
 
 	int i = 0;
 
@@ -231,7 +232,8 @@ void sms_send_heart_beat() {
 			strcat(sensors, "1,");
 		}
 	}
-
+	//current: SENSORS, BATTERY, CHARGING_STATUS, UPTIME (what time unit?)
+	//new: SENSORS, SD_CARD_ERROR, UPLOAD_FAILURES, BATTERY, CHARGING_STATUS, UPTIME
 	sprintf(msg, SMS_HB_MSG_TYPE "%s,%d,%s,%s,%s%d,%d", g_pDevCfg->cfgIMEI,
 			config_getSelectedSIM(), g_pDevCfg->cfgGatewaySMS,
 			sim->cfgSMSCenter, sensors, batt_getlevel(), !(P4IN & BIT4));

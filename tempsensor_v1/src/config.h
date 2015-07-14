@@ -158,14 +158,14 @@
 
 #define PERIOD_UNDEFINED		60
 #define PERIOD_SAMPLING			1		//in minutes
-#define PERIOD_UPLOAD			10		//in minutes
+#define PERIOD_UPLOAD			5		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
 #define PERIOD_TRANS_RESET 		6*60   //in minutes
 #define PERIOD_LCD_OFF			0
 #define PERIOD_ALARMS_CHECK	    2
 #define PERIOD_CONFIGURATION_FETCH 5
 #define PERIOD_SMS_CHECK   	    3		//poll interval in minutes for sms msg TODO change back
-#define PERIOD_NETWORK_CHECK	2
+#define PERIOD_NETWORK_CHECK	10
 #define PERIOD_LCD_REFRESH		1
 #define PERIOD_PULLTIME			2
 #define PERIOD_BATTERY_CHECK 	2
