@@ -902,9 +902,7 @@ void modem_init() {
 	// Have to call twice to guarantee a genuine result
 	modem_getSignal();
 
-#ifndef _DEBUG
 	modem_getOwnNumber();
-#endif
 
 	http_setup();
 }
