@@ -11,7 +11,7 @@
 #define MAX_SMS_SIZE 160
 
 // + MODEM EXTRA DATA FOR SENDING + END
-#define MAX_SMS_SIZE_FULL MAX_SMS_SIZE
+#define MAX_SMS_SIZE_FULL MAX_SMS_SIZE + 4
 
 void sms_send_data_request(char *number);
 int8_t sms_process_msg(char* pSMSmsg);
@@ -31,7 +31,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData);
 void delreadmsg();
 
 void delallmsg();
-void delmsg(int8_t iMsgIdx, char* pData);
+void delmsg(int8_t iMsgIdx);
 
 void sms_send_heart_beat();
 int8_t sms_process_messages();

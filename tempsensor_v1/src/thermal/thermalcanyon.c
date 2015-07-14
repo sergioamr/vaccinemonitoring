@@ -63,28 +63,31 @@ void thermal_handle_system_button() {
 */
 }
 
-void thermal_low_battery_message() {
+void thermal_low_battery_message(uint8_t firstWarning) {
 	lcd_turn_on();
-	lcd_printl(LINEC, "Low Battery");
-	lcd_printl(LINEC, "Hibernating...");
-	delay(HUMAN_DISPLAY_INFO_DELAY);
+	if (firstWarning) {
+		lcd_printl(LINEC, "Low Battery");
+		lcd_printl(LINE2, "Hibernating...");
+	}
+	delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 	lcd_turn_off();
 	delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 }
 
 void thermal_low_battery_hibernate() {
-
+	uint8_t firstWarning = 1;
 	// If we have more than 10% of battery,
 	// or we are connected to power, stay here until power is resumed.
 
 	//Wait until battery is
 	while (batt_check_level() <= BATTERY_HIBERNATE_THRESHOLD) {
-
-		thermal_low_battery_message();
+		thermal_low_battery_message(firstWarning);
+		// TODO: perhaps shut down the modem?
+		firstWarning = 0;
 		//power plugged in
-		if (POWER_ON) {
+		if (g_pSysState->system.switches.power_connected) {
 			lcd_turn_on();
-			lcd_print("Recovery...");
+			lcd_print("Recovering...");
 			modem_init();
 			lcd_show();
 			return;
@@ -96,7 +99,6 @@ void thermal_canyon_loop(void) {
 	time_t currentTime = 0;
 
 	events_sync(rtc_update_time());
-	event_force_event_by_id(EVT_CHECK_NETWORK, 0);
 	lcd_show();
 
 	while (1) {

@@ -165,7 +165,7 @@ uint8_t state_getSignalLevel() {
 
 int state_isSignalInRange() {
 	int iSignalLevel = g_pSysState->signal_level;
-	if ((iSignalLevel < NETWORK_DOWN_SS) || (iSignalLevel > NETWORK_MAX_SS)) {
+	if ((iSignalLevel < NETWORK_UP_SS) || (iSignalLevel > NETWORK_MAX_SS)) {
 		return 0;
 	}
 	return 1;
@@ -402,7 +402,7 @@ void state_battery_level(uint8_t battery_level) {
 		return;
 
 	state_low_battery_alert();
-	if (battery_level<BATTERY_HIBERNATE_THRESHOLD)
+	if (battery_level < BATTERY_HIBERNATE_THRESHOLD)
 		thermal_low_battery_hibernate();
 }
 

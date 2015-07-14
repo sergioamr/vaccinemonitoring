@@ -481,7 +481,7 @@ const char *getPowerStateString() {
 }
 
 FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
-	char szLog[120];
+	char *szLog;
 	UINT bw = 0;
 	char *date;
 	FRESULT fr;
@@ -500,12 +500,14 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 	iSignalLevel = state_getSignalPercentage();
 	network_state = state_getNetworkState();
 
+	szLog = getStringBufferHelper(NULL);
 	sprintf(szLog, ",\"%d%%\",\"%s\",%s,%s,%s,%s,%s,%d,%s\r\n",
 			(int) iBatteryLevel, getPowerStateString(),
 			temperature_getString(0), temperature_getString(1),
 			temperature_getString(2), temperature_getString(3),
 			temperature_getString(4), (int) iSignalLevel, network_state);
 	fr = f_write(fobj, szLog, strlen(szLog), &bw);
+	releaseStringBufferHelper();
 	return fr;
 }
 
@@ -569,8 +571,9 @@ FRESULT log_sample_web_format(UINT *tbw) {
 FRESULT log_sample_to_disk(UINT *tbw) {
 	FIL fobj;
 	struct tm tempDate;
-	char szLog[64];
+	char *szLog = NULL;
 	int iBatteryLevel;
+	char* fn;
 	FRESULT fr = FR_OK;
 	EVENT *evt;
 	uint16_t iSamplePeriod = 0;
@@ -579,7 +582,7 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 		return FR_NOT_READY;
 
 	int bw = 0;	//bytes written
-	char* fn = get_current_fileName(&g_tmCurrTime, FOLDER_TEXT, EXTENSION_TEXT);
+	fn = get_current_fileName(&g_tmCurrTime, FOLDER_TEXT, EXTENSION_TEXT);
 
 	evt = events_find(EVT_SAVE_SAMPLE_TEMP);
 	iSamplePeriod = event_getIntervalMinutes(evt);
@@ -608,7 +611,7 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 	// Log time stamp when it's a new day or when
 	// time gets pulled.
 	if (g_iStatus & LOG_TIME_STAMP) {
-		memset(szLog, 0, sizeof(szLog));
+		szLog = getStringBufferHelper(NULL);
 		strcat(szLog, "$TS=");
 		strcat(szLog, itoa_pad((tempDate.tm_year + 1900)));
 		strcat(szLog, itoa_pad(tempDate.tm_mon));
@@ -627,6 +630,7 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 			*tbw += bw;
 			g_iStatus &= ~LOG_TIME_STAMP;
 		}
+		releaseStringBufferHelper();
 	}
 
 	//get battery level
@@ -637,13 +641,14 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 #endif
 
 	//log sample period, battery level, power plugged, temperature values
-	memset(szLog, 0, sizeof(szLog));
+	szLog = getStringBufferHelper(NULL);
 	sprintf(szLog, "%s,%d,%s,%s,%s,%s,%s\n", itoa_pad(iBatteryLevel),
 			!(P4IN & BIT4), temperature_getString(0), temperature_getString(1),
 			temperature_getString(2), temperature_getString(3),
 			temperature_getString(4));
 
 	fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
+	releaseStringBufferHelper();
 
 	if (bw > 0) {
 		*tbw += bw;

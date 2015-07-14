@@ -8,8 +8,6 @@
 #include "thermalcanyon.h"
 #include "buzzer.h"
 
-#define MAX_LINE_UPLOAD_TEXT 46
-
 #define TRANS_FAILED		   -1
 #define TRANS_SUCCESS			0
 
@@ -21,7 +19,7 @@ char *getSensorTemp(int sensorID) {
 }
 
 uint8_t data_send_temperatures_sms() {
-	char data[MAX_SMS_SIZE_FULL];
+	char *data=getSMSBufferHelper();
 	int t = 0;
 
 	rtc_getlocal(&g_tmCurrTime);
@@ -40,14 +38,19 @@ uint8_t data_send_temperatures_sms() {
 }
 
 int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
-	char line[MAX_LINE_UPLOAD_TEXT], encodedLine[40];
-	int lineSize = sizeof(line) / sizeof(char);
-	char* dateString = NULL;
+	uint16_t lineSize = 0;
 	struct tm firstDate;
-	char smsMsg[MAX_SMS_SIZE];
+
+	char *encodedLine = getEncodedLineHelper(NULL);
+	char *line = getStringBufferHelper(&lineSize);
+	char *smsMsg = getSMSBufferHelper();
+
+	char* dateString = NULL;
 	uint8_t splitSend = 0;
 	uint16_t linesParsed = 0;
-	uint8_t length = strlen(smsMsg);
+	uint8_t length = 0;
+
+	int res = TRANS_FAILED;
 
 	f_lseek(file, start);
 
@@ -66,9 +69,9 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 				dateString = get_date_string(&firstDate, "", "", "", 0);
 				sprintf(smsMsg, "%d,%s,%d,%d,", 11, dateString,
 						g_pDevCfg->sIntervalsMins.sampling, 5);
-			} else {
-				return TRANS_FAILED;
-			}
+			} else
+				goto release;
+
 		} else {
 			break; //done
 		}
@@ -88,17 +91,19 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 				} else {
 					strcat(smsMsg, encodedLine);
 				}
-			} else {
-				return TRANS_FAILED;
-			}
+			} else
+				goto release;
 		}
 
-		if (sms_send_message(smsMsg) != UART_SUCCESS) {
-			return TRANS_FAILED;
-		}
+		if (sms_send_message(smsMsg) != UART_SUCCESS)
+			goto release;
+
 	} while (splitSend);
 
-	return TRANS_SUCCESS;
+	res = TRANS_SUCCESS;
+	release:
+		releaseStringBufferHelper();
+	return res;
 }
 
 // 11,20150303:082208,interval,sensorid,DATADATADATAT,sensorid,DATADATADATA,
@@ -106,9 +111,12 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
 int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 	int uart_state;
-	char line[MAX_LINE_UPLOAD_TEXT];
+	uint16_t lineSize = 0;
+	char *line = getStringBufferHelper(&lineSize);
 	int retry = 0;
+	uint32_t length = 0;
 
+	int res = TRANS_FAILED;
 	char* dateString = NULL;
 	struct tm firstDate;
 
@@ -117,34 +125,36 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 	f_lseek(file, start);
 
 	// Must get first line before transmitting to calculate the length properly
-	if (f_gets(line, sizeof(line), file) != 0) {
+	if (f_gets(line, lineSize, file) != 0) {
 		parse_time_from_line(&firstDate, line);
 		dateString = get_date_string(&firstDate, "", "", "", 0);
-		sprintf(line, "IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=",
-				g_pDevCfg->cfgIMEI, sim->cfgPhoneNum, "0.1pa", dateString,
+		sprintf(line, "IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=", g_pDevCfg->cfgIMEI,
+				sim->cfgPhoneNum, "0.1pa", dateString,
 				g_pDevCfg->sIntervalsMins.sampling);
 	} else {
-		return TRANS_FAILED;
+		goto release;
 	}
 
-	uint32_t length = strlen(line) + (end - file->fptr);
+	length = strlen(line) + (end - file->fptr);
 	http_open_connection_upload(length);
 
 	// Send the date line
 	uart_tx_nowait(line);
-	if (uart_getTransactionState()!=UART_SUCCESS)
-		return TRANS_FAILED;
+	if (uart_getTransactionState() != UART_SUCCESS) {
+		goto release;
+	}
 
 	lcd_progress_wait(300);
 
 	// check that the transmitted data equals the size to send
 	while (file->fptr < end) {
-		if (f_gets(line, sizeof(line), file) != 0) {
+		if (f_gets(line, lineSize, file) != 0) {
 			if (file->fptr != end) {
 				replace_character(line, '\n', '|');
 				uart_tx_nowait(line);
-				if (uart_getTransactionState()!=UART_SUCCESS)
-					return TRANS_FAILED;
+				if (uart_getTransactionState() != UART_SUCCESS) {
+					goto release;
+				}
 				lcd_print_progress();
 			} else {
 				// Last line! Wait for OK
@@ -155,16 +165,22 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 				uart_state = uart_getTransactionState();
 				uart_setOKMode();
 				http_check_error(&retry);
-				if (sim->http_last_status_code != 200 || uart_state == UART_FAILED) {
-					return TRANS_FAILED;
+				if (sim->http_last_status_code
+						!= 200|| uart_state == UART_FAILED) {
+					goto release;
 				}
 			}
 		} else {
-			return TRANS_FAILED;
+			goto release;
 		}
 	}
 
-	return TRANS_SUCCESS;
+	res = TRANS_SUCCESS;
+
+	// EXIT
+	release:
+		releaseStringBufferHelper();
+	return res;
 }
 
 int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
@@ -185,10 +201,12 @@ int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
 void process_batch() {
 	int8_t canSend = 0, transactionState = 0;
 	uint32_t seekFrom = g_pSysState->lastSeek, seekTo = g_pSysState->lastSeek;
-	char line[MAX_LINE_UPLOAD_TEXT];
+
+	uint16_t lineSize = 0;
+	char *line=getEncodedLineHelper(&lineSize);
+
 	char path[32];
 	char do_not_process_batch = false;
-	int lineSize = sizeof(line) / sizeof(char);
 
 	FILINFO fili;
 	DIR dir;
@@ -198,8 +216,9 @@ void process_batch() {
 
 	log_disable();
 
-	if (!state_isSimOperational())
+	if (!state_isSimOperational()) {
  		return;
+	}
 
 	if (g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS == 0 && state_isGPRS()) {
 		if (http_enable() != UART_SUCCESS) {
@@ -223,6 +242,7 @@ void process_batch() {
 		sprintf(path, "%s/%s", FOLDER_TEXT, fili.fname);
 		fr = f_open(&filr, path, FA_READ | FA_OPEN_ALWAYS);
 		if (fr != FR_OK) {
+			http_deactivate();
 			break;
 		}
 
@@ -295,7 +315,7 @@ void process_batch() {
 	if (transactionState == TRANS_SUCCESS) {
 		// Make sure this sim is the one that's first used next time
 		g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;
-		lcd_printl(LINE2, "Complete");
+		lcd_printl(LINE2, "Completed");
 	} else {
 		lcd_printl(LINE2, "Failed");
 	}

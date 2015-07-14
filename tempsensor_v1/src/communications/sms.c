@@ -12,12 +12,12 @@
 // Send back data after an SMS request
 void sms_send_data_request(char *number) {
 	uint32_t iOffset;
-	char data[MAX_SMS_SIZE_FULL];
-	if (number==NULL || strlen(number)==0)
+	char *data = getSMSBufferHelper();
+
+	if (number == NULL || strlen(number) == 0)
 		return;
 
 	//get temperature values
-	memset(data, 0, MAX_SMS_SIZE_FULL);
 	rtc_update_time();
 	strcat(data, get_simplified_date_string(&g_tmCurrTime));
 	strcat(data, " ");
@@ -65,7 +65,7 @@ extern const char AT_MSG_OK[];
 int8_t sms_process_memory_message(int8_t index) {
 	int t = 0, len = 0;
 	char *token;
-	char msg[MAX_SMS_SIZE_FULL];
+	char *msg = getSMSBufferHelper();
 	char state[16];
 	char ok[8];
 	char phoneNumber[32];
@@ -90,7 +90,7 @@ int8_t sms_process_memory_message(int8_t index) {
 
 	PARSE_SKIP(token, "\n", UART_FAILED);
 
-	PARSE_NEXTSTRING(token, msg, sizeof(msg), "\n", UART_FAILED);
+	PARSE_NEXTSTRING(token, msg, MAX_SMS_SIZE, "\n", UART_FAILED);
 
 	// Jump first \n to get the OK
 	PARSE_SKIP(token, "\n", UART_FAILED);
@@ -134,7 +134,15 @@ int8_t sms_process_memory_message(int8_t index) {
 		break;
 
 	default:
-		config_parse_configuration(msg);
+		if (msg[0] != '$')
+			return UART_SUCCESS;
+
+		if (config_parse_configuration(msg) == UART_SUCCESS)
+			answer = 1;
+		else {
+			sms_send_message_number(phone, "FAILED");
+			return UART_SUCCESS;
+		}
 		break;
 	}
 
@@ -193,9 +201,10 @@ int8_t sms_process_messages() {
 	uart_tx("+CSDH=0"); // Disable extended output
 
 	for (iIdx = 1; iIdx <= totalr; iIdx++) {
-		if (sms_process_memory_message(iIdx) == UART_SUCCESS)
+		if (sms_process_memory_message(iIdx) == UART_SUCCESS) {
 			usedr--;
-		else
+			delmsg(iIdx);
+		} else
 			_NOP();
 	}
 
@@ -206,7 +215,7 @@ int8_t sms_process_messages() {
 }
 
 void sms_send_heart_beat() {
-	char msg[MAX_SMS_SIZE_FULL];
+	char *msg = getSMSBufferHelper();
 	char sensors[16];
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
@@ -214,7 +223,7 @@ void sms_send_heart_beat() {
 	int i = 0;
 
 	//send heart beat
-	sensors[0]=0;
+	sensors[0] = 0;
 	for (i = 0; i < SYSTEM_NUM_SENSORS; i++) {
 		if (temperature_getString(i)[0] == '-') {
 			strcat(sensors, "0,");
@@ -223,13 +232,9 @@ void sms_send_heart_beat() {
 		}
 	}
 
-	sprintf(msg, SMS_HB_MSG_TYPE "%s,%d,%s,%s,%s%d,%d,%s",
-			g_pDevCfg->cfgIMEI, config_getSelectedSIM(),
-			g_pDevCfg->cfgGatewaySMS, sim->cfgSMSCenter,
-			sensors,
-			batt_getlevel(), !(P4IN & BIT4),
-			g_pSysCfg->firmwareVersion
-	);
+	sprintf(msg, SMS_HB_MSG_TYPE "%s,%d,%s,%s,%s%d,%d", g_pDevCfg->cfgIMEI,
+			config_getSelectedSIM(), g_pDevCfg->cfgGatewaySMS,
+			sim->cfgSMSCenter, sensors, batt_getlevel(), !(P4IN & BIT4));
 
 	sms_send_message(msg);
 }
@@ -245,10 +250,10 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 
 	state_SMS_lastMessageACK(sim, -1);
 
-	if (szPhoneNumber==NULL || strlen(szPhoneNumber)==0)
+	if (szPhoneNumber == NULL || strlen(szPhoneNumber) == 0)
 		return UART_SUCCESS;
 
-	if (pData==NULL || strlen(pData)==0)
+	if (pData == NULL || strlen(pData) == 0)
 		return UART_SUCCESS;
 
 	if (g_iLCDVerbose == VERBOSE_BOOTING) {
@@ -276,7 +281,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 		token = strstr(uart_getRXHead(), "ERROR");
 		if (token == NULL) {
 			token = strstr(uart_getRXHead(), "+CMGS:");
-			if (token!=NULL) {
+			if (token != NULL) {
 				msgNumber = atoi(token + 6);
 				state_SMS_lastMessageACK(sim, msgNumber);
 			}
@@ -317,8 +322,8 @@ void delallmsg() {
 	uart_tx("+CMGD=1,2");	//delete all the sms msgs read or sent successfully
 }
 
-void delmsg(int8_t iMsgIdx, char* pData) {
+void delmsg(int8_t iMsgIdx) {
 	uart_txf("+CMGD=%d,0", iMsgIdx);
-	delay(2000);	//opt
+	lcd_progress_wait(1000);
 }
 

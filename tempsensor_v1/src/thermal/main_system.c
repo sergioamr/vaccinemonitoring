@@ -212,6 +212,13 @@ void checkStack() {
 		stack_empty++;
 	}
 	g_pSysCfg->stackLeft = stack_empty;
+
+	if (stack_empty<64)
+		sms_send_message_number(g_pDevCfg->cfgReportSMS, "Low Stack!");
+
+	if (g_pSysCfg->stackLeft<64) {
+		_NOP();
+	}
 }
 
 void clearStack() {

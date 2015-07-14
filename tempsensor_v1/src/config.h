@@ -54,9 +54,9 @@
 #define PERIOD_UPLOAD			20		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
 #define PERIOD_TRANS_RESET		6*60   //in minutes
-#define PERIOD_LCD_OFF			5
+#define PERIOD_LCD_OFF			30
 #define PERIOD_ALARMS_CHECK	    5
-#define PERIOD_CONFIGURATION_FETCH 5
+#define PERIOD_CONFIGURATION_FETCH 15
 #define PERIOD_SMS_CHECK   	    16		//poll interval in minutes for sms msg TODO change back
 #define PERIOD_NETWORK_CHECK	10
 #define PERIOD_LCD_REFRESH		5
@@ -92,11 +92,11 @@
 #endif
 
 // Network signal quality values
-#define NETWORK_DOWN_SS		14.0
+#define NETWORK_DOWN_SS		2.0
 #define NETWORK_UP_SS		NETWORK_DOWN_SS + 2 //2 points above the network down signal level
 #define NETWORK_MAX_SS		31.0
 
-#define NETWORK_ZERO 10.0
+#define NETWORK_ZERO 2.0
 
 //Temperature cut off
 #define TEMP_CUTOFF				-800		//-80 deg C
@@ -167,7 +167,7 @@
 #define PERIOD_UPLOAD			10		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
 #define PERIOD_TRANS_RESET 		6*60   //in minutes
-#define PERIOD_LCD_OFF			10
+#define PERIOD_LCD_OFF			0
 #define PERIOD_ALARMS_CHECK	    2
 #define PERIOD_CONFIGURATION_FETCH 5
 #define PERIOD_SMS_CHECK   	    3		//poll interval in minutes for sms msg TODO change back
@@ -183,6 +183,10 @@
 #define NETWORK_CONNECTION_ATTEMPTS 100
 #define NETWORK_CONNECTION_DELAY 2000
 #endif
+
+#define ST1_NUM_PARAMS			12
+#define ST2_NUM_PARAMS 			25
+#define ST3_NUM_PARAMS			0
 
 //Display contants
 #define LCD_DISPLAY_LEN			32

@@ -121,13 +121,14 @@ void config_setSIMError(SIM_CARD_CONFIG *sim, char errorToken, uint16_t errorID,
 	// 69 - "Requested facility not implemented"
 	// This cause indicates that the network is unable to provide the requested short message service.
 
-	if (errorID==0)
+	if (errorID == 0)
 		return;
 
 	CM[2] = errorToken;
-	ini_gets(CM, itoa_nopadding(errorID), error, sim->simLastError, sizeof(sim->simLastError), "errors.ini");
+	ini_gets(CM, itoa_nopadding(errorID), error, sim->simLastError,
+			sizeof(sim->simLastError), "errors.ini");
 
-	if (errorID==69)
+	if (errorID == 69)
 		state_setSMS_notSupported(sim);
 
 	state_sim_failure(sim);
@@ -203,7 +204,7 @@ void config_incLastCmd() {
 	g_pSysCfg->lastCommand++;
 #ifdef EXTREME_DEBUG
 	if (g_pDevCfg->cfg.logs.commmands)
-		config_setLastCommand(g_pSysCfg->lastCommand);
+	config_setLastCommand(g_pSysCfg->lastCommand);
 #endif
 }
 
@@ -211,7 +212,8 @@ void config_incLastCmd() {
 void config_reconfigure() {
 	g_pSysCfg->memoryInitialized = 0xFF;
 	PMM_trigBOR();
-	while (1);
+	while (1)
+		;
 }
 
 // Send back data after an SMS request
@@ -219,16 +221,18 @@ void config_send_configuration(char *number) {
 #ifdef DEBUG_SEND_CONFIG
 	TEMP_ALERT_PARAM *alert;
 	BATT_POWER_ALERT_PARAM *power;
-	char msg[MAX_SMS_SIZE_FULL];
-	char temp[64];
+	uint16_t maxSize = 0;
+	char *msg = getSMSBufferHelper();
+	char *temp = getStringBufferHelper(&maxSize);
 	int i;
 
 	zeroString(msg);
 	for (i = 0; i < SYSTEM_NUM_SENSORS; i++) {
 		alert = &g_pDevCfg->stTempAlertParams[i];
 		sprintf(temp, "%s(C%dm H%dm tC %d tH %d)\r\n", SensorName[i],
-				(int) alert->maxSecondsCold/60, (int) alert->maxSecondsHot/60,
-				(int) alert->threshCold, (int) alert->threshHot);
+				(int) alert->maxSecondsCold / 60,
+				(int) alert->maxSecondsHot / 60, (int) alert->threshCold,
+				(int) alert->threshHot);
 		strcat(msg, temp);
 	}
 	sms_send_message_number(number, msg);
@@ -249,16 +253,13 @@ void config_send_configuration(char *number) {
 			"SIM1APN [%s]\r\n"
 			"LASTERR [%s]\r\n"
 			"SIM2APN [%s]\r\n"
-			"LASTERR [%s]\r\n",
-			g_pDevCfg->cfgGatewaySMS,
-			g_pDevCfg->SIM[0].cfgAPN,
-			g_pDevCfg->SIM[0].simLastError,
+			"LASTERR [%s]\r\n", g_pDevCfg->cfgGatewaySMS,
+			g_pDevCfg->SIM[0].cfgAPN, g_pDevCfg->SIM[0].simLastError,
 
-			g_pDevCfg->SIM[1].cfgAPN,
-			g_pDevCfg->SIM[1].simLastError
-	);
+			g_pDevCfg->SIM[1].cfgAPN, g_pDevCfg->SIM[1].simLastError);
 
 	sms_send_message_number(number, msg);
+	releaseStringBufferHelper();
 #endif
 }
 
@@ -360,17 +361,35 @@ void config_update_system_time() {
 // http://54.241.2.213/coldtrace/uploads/multi/v3/358072043112124/1/
 // $ST2,7,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,20,20,20,30,600,1,600,15,$ST1,919243100142,both,airtelgprs.com,10,1,0,0,$EN
 
-const char CHUNK_ST1[5]="$ST1";
-const char CHUNK_ST2[5]="$ST2";
-const char CHUNK_ST3[5]="$ST3";
-const char CHUNK_END[3]="$EN";
+const char CHUNK_ST1[5] = "$ST1";
+const char CHUNK_ST2[5] = "$ST2";
+const char CHUNK_ST3[5] = "$ST3";
+const char CHUNK_END[3] = "$EN";
 const char delimiter[2] = ",";
 
+int config_count_delims(char* string, char delim) {
+	int i = 0, count = 0, stringLen = strlen(string);
+
+	if (string[0] != '$')
+		return count;
+
+	i++;
+	while (i < RX_LEN && i < stringLen && string[i] != '\0' && string[i] != '$') {
+		if (string[i] == delim)
+			count++;
+		i++;
+	}
+
+	return count;
+}
+
 /*
-NEW config sync $ST1,<GATEWAY NUMBER>,<GPRS/GSM/BOTH>,
-<COLDTRACE IP ADDRESS>,<APN1>,<APN2>,<UPLOADURL>,<CONFIGURL>,
-<UPLOAD INTERVAL>,<SAMPLE INTERVAL>,<SIM CARD>,<ALARM STATE>,$EN
-*/
+ NEW config sync $ST1,<GATEWAY NUMBER>,<GPRS/GSM/BOTH>,
+ <COLDTRACE IP ADDRESS>,<APN1>,<APN2>,<UPLOADURL>,<CONFIGURL>,
+ <UPLOAD INTERVAL>,<SAMPLE INTERVAL>,<SIM CARD>,<ALARM STATE>,$EN
+
+ $ST1,+447482787262,SMS,54.241.2.213,giffgaff.com,giffgaff.com,/coldtrace/uploads/multi/v4/,/coldtrace/configuration/ct5/v2/,45,5,0,0,$EN
+ */
 int config_parse_configuration_ST1(char *token) {
 	int iCnt = 0;
 	int tempValue = 0;
@@ -378,9 +397,16 @@ int config_parse_configuration_ST1(char *token) {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	//SYSTEM_SWITCHES *system; //pointer to system_switches struct
-
 	char uploadMode[6];
-	memset(uploadMode,0,sizeof(uploadMode));
+
+	if (config_count_delims(token, ',') != ST1_NUM_PARAMS) {
+#ifdef _DEBUG
+		log_append_("ST1 WRONG FORMAT");
+#endif
+		return UART_SUCCESS;
+	}
+
+	memset(uploadMode, 0, sizeof(uploadMode));
 
 	config_setLastCommand(COMMAND_PARSE_CONFIG_ST1);
 	lcd_printl(LINEH, (char *) CHUNK_ST1);
@@ -389,41 +415,47 @@ int config_parse_configuration_ST1(char *token) {
 	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
 
 	// gateway
-	PARSE_NEXTSTRING(token, g_pDevCfg->cfgGatewaySMS, sizeof(g_pDevCfg->cfgGatewaySMS),
-			delimiter, UART_FAILED); // GATEWAY NUM
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgGatewaySMS,
+			sizeof(g_pDevCfg->cfgGatewaySMS), delimiter, UART_FAILED); // GATEWAY NUM
 
 	//upload_mode
-	PARSE_NEXTSTRING(token, uploadMode, sizeof(uploadMode), delimiter, UART_FAILED); //parse network type
+	PARSE_NEXTSTRING(token, uploadMode, sizeof(uploadMode), delimiter,
+			UART_FAILED); //parse network type
 	//(0: force gprs, 1: force sms, 2: DEFAULT: failover mode
-		if (!strncmp(uploadMode, "GPRS", sizeof(uploadMode)))
-			g_pDevCfg->cfgUploadMode = MODE_GPRS;
-		else if (!strncmp(uploadMode, "GSM", sizeof(uploadMode)))
-			g_pDevCfg->cfgUploadMode = MODE_GSM;
-		else //default BOTH
-			g_pDevCfg->cfgUploadMode = MODE_GSM + MODE_GPRS;
+	if (!strncmp(uploadMode, "GPRS", sizeof(uploadMode)))
+		g_pDevCfg->cfgUploadMode = MODE_GPRS;
+	else if (!strncmp(uploadMode, "SMS", sizeof(uploadMode)))
+		g_pDevCfg->cfgUploadMode = MODE_GSM;
+	else
+		//default BOTH
+		g_pDevCfg->cfgUploadMode = MODE_GSM + MODE_GPRS;
 
 	//ip address
-	PARSE_NEXTSTRING(token, g_pDevCfg->cfgGatewayIP, sizeof(g_pDevCfg->cfgGatewayIP),
-				delimiter, UART_FAILED); // GATEWAY NUM
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgGatewayIP,
+			sizeof(g_pDevCfg->cfgGatewayIP), delimiter, UART_FAILED); // GATEWAY NUM
 
 	//APN
 	//get APN for both sim
-	PARSE_NEXTSTRING(token, g_pDevCfg->SIM[0].cfgAPN, sizeof(g_pDevCfg->SIM[0].cfgAPN), delimiter,
-			UART_FAILED); //APN1
+	PARSE_NEXTSTRING(token, g_pDevCfg->SIM[0].cfgAPN,
+			sizeof(g_pDevCfg->SIM[0].cfgAPN), delimiter, UART_FAILED); //APN1
 
-	PARSE_NEXTSTRING(token, g_pDevCfg->SIM[1].cfgAPN, sizeof(g_pDevCfg->SIM[1].cfgAPN), delimiter,
-			UART_FAILED); //APN2
+	PARSE_NEXTSTRING(token, g_pDevCfg->SIM[1].cfgAPN,
+			sizeof(g_pDevCfg->SIM[1].cfgAPN), delimiter, UART_FAILED); //APN2
 
 	//upload URL
-	PARSE_NEXTSTRING(token, g_pDevCfg->cfgUpload_URL, sizeof(g_pDevCfg->cfgUpload_URL), delimiter,
-					UART_FAILED);
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgUpload_URL,
+			sizeof(g_pDevCfg->cfgUpload_URL), delimiter, UART_FAILED);
+
+#ifdef _DEBUG
+	strcpy(g_pDevCfg->cfgUpload_URL, "/coldtrace/intel/upload/");
+#endif
 
 	//config URL
-	PARSE_NEXTSTRING(token, g_pDevCfg->cfgConfig_URL, sizeof(g_pDevCfg->cfgConfig_URL), delimiter,
-				UART_FAILED);
+	PARSE_NEXTSTRING(token, g_pDevCfg->cfgConfig_URL,
+			sizeof(g_pDevCfg->cfgConfig_URL), delimiter, UART_FAILED);
 
 	//load intervals
-    pInterval = &g_pDevCfg->sIntervalsMins;
+	pInterval = &g_pDevCfg->sIntervalsMins;
 	//upload interval
 	PARSE_NEXTVALUE(token, &pInterval->upload, delimiter, UART_FAILED);
 
@@ -433,7 +465,6 @@ int config_parse_configuration_ST1(char *token) {
 	//sim_force
 	//(0,1,2)... apply directly to config param using reference
 	PARSE_NEXTVALUE(token, &g_pDevCfg->cfgSIM_force, delimiter, UART_FAILED);
-
 
 	// reset_alarm
 	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED); // Reset alert
@@ -445,16 +476,14 @@ int config_parse_configuration_ST1(char *token) {
 		}
 	}
 
-
 	//TODO add disable timer config?
 	// disable/enable buzzer
 	// Currently set up to take 0 or 1 for off or on, can be changed if needed
 	/*
-	system = &g_pSysState->system; //switches initialized in system_states
-	PARSE_NEXTVALUE(token, &tempValue , delimiter, UART_FAILED); //read a value
-	system->switches.buzzer_disabled = tempValue; //set to buzzer disabled param
-	*/
-
+	 system = &g_pSysState->system; //switches initialized in system_states
+	 PARSE_NEXTVALUE(token, &tempValue , delimiter, UART_FAILED); //read a value
+	 system->switches.buzzer_disabled = tempValue; //set to buzzer disabled param
+	 */
 
 	// TODO CHECK IF THE SIM CARD IS OPPERATIONAL
 	g_pDevCfg->cfgSelectedSIM_slot = tempValue;
@@ -465,11 +494,23 @@ int config_parse_configuration_ST1(char *token) {
 	return UART_SUCCESS;
 }
 
+// Example:
+// $ST2,2,1,4,3,6,5,8,7,10,9,12,11,14,13,16,15,18,17,20,19,23,1,22,21,$EN
+// NUM SENSORS { <SENSOR LOW DELAY> <SENSOR LOW TEMP> <SENSOR HIGH DELAY> <SENSOR HIGH TEMP> }
+// 23,1,22,21 <POWER OUTAGE DELAY> <POWER ALARM ACTIVATE> <LOW BATTERY DELAY> <LOW BATTERY LEVEL ALARM>
+
 int config_parse_configuration_ST2(char *token) {
 	int i = 0;
-	int tempValue = 0;
+
 	TEMP_ALERT_PARAM *pAlertParams;
 	BATT_POWER_ALERT_PARAM *pBattPower;
+
+	if (config_count_delims(token, ',') != ST2_NUM_PARAMS) {
+#ifdef _DEBUG
+		log_append_("ST2 WRONG FORMAT");
+#endif
+		return UART_SUCCESS;
+	}
 
 	config_setLastCommand(COMMAND_PARSE_CONFIG_ST2);
 	lcd_printl(LINEH, CHUNK_ST2);
@@ -477,15 +518,7 @@ int config_parse_configuration_ST2(char *token) {
 	// Skip $ST2,
 	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
 
-	// Return success if no configuration has changed
-	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED);
-	if (tempValue==1)
-		_NOP();
-
-	if (g_pDevCfg->cfgServerConfigReceived && g_pDevCfg->cfgSyncId == 0)
-		return UART_SUCCESS;
-
-// Temperature configuration for each sensor
+	// Temperature configuration for each sensor
 	while (i < SYSTEM_NUM_SENSORS) {
 		pAlertParams = &g_pDevCfg->stTempAlertParams[i];
 		PARSE_NEXTVALUE(token, &pAlertParams->maxSecondsCold, delimiter,
@@ -501,12 +534,15 @@ int config_parse_configuration_ST2(char *token) {
 		i++;
 	}
 
-// Battery config info.
-	pBattPower = &g_pDevCfg->stBattPowerAlertParam;
+	// Battery config info.
+	// 23,1,22,21 <POWER OUTAGE DELAY> <POWER ALARM ACTIVATE> <LOW BATTERY DELAY> <LOW BATTERY LEVEL ALARM>
 
+	pBattPower = &g_pDevCfg->stBattPowerAlertParam;
 	PARSE_NEXTVALUE(token, &pBattPower->minutesPower, delimiter, UART_FAILED);
+
 	PARSE_NEXTVALUE(token, &pBattPower->enablePowerAlert, delimiter,
 			UART_FAILED);
+
 	PARSE_NEXTVALUE(token, &pBattPower->minutesBattThresh, delimiter,
 			UART_FAILED);
 
@@ -520,6 +556,13 @@ int config_parse_configuration_ST2(char *token) {
 }
 
 int config_parse_configuration_ST3(char *token) {
+	if (config_count_delims(token, ',') != ST3_NUM_PARAMS) {
+#ifdef _DEBUG
+		log_append_("ST3 WRONG FORMAT");
+#endif
+		return UART_SUCCESS;
+	}
+
 	config_setLastCommand(COMMAND_PARSE_CONFIG_ST3);
 	lcd_printl(LINEH, CHUNK_ST3);
 
@@ -544,24 +587,24 @@ int config_parse_configuration(char *msg) {
 	fat_save_config(msg);
 
 	// Try to see if we have an end for the config
-	tokenEND =strstr((const char *) msg, "$EN");
-	if (tokenEND==NULL)
+	tokenEND = strstr((const char *) msg, "$EN");
+	if (tokenEND == NULL)
 		return UART_FAILED;
 
-	tokenST1=strstr((const char *) msg, CHUNK_ST1);
-	tokenST2=strstr((const char *) msg, CHUNK_ST2);
-	tokenST3=strstr((const char *) msg, CHUNK_ST3);
+	tokenST1 = strstr((const char *) msg, CHUNK_ST1);
+	tokenST2 = strstr((const char *) msg, CHUNK_ST2);
+	tokenST3 = strstr((const char *) msg, CHUNK_ST3);
 
-	if (tokenST1!=NULL)
-		if (config_parse_configuration_ST1(tokenST1)==UART_FAILED)
+	if (tokenST1 != NULL)
+		if (config_parse_configuration_ST1(tokenST1) == UART_FAILED)
 			return UART_FAILED;
 
-	if (tokenST2!=NULL)
-		if (config_parse_configuration_ST2(tokenST2)==UART_FAILED)
+	if (tokenST2 != NULL)
+		if (config_parse_configuration_ST2(tokenST2) == UART_FAILED)
 			return UART_FAILED;
 
-	if (tokenST3!=NULL)
-		if (config_parse_configuration_ST3(tokenST3)==UART_FAILED)
+	if (tokenST3 != NULL)
+		if (config_parse_configuration_ST3(tokenST3) == UART_FAILED)
 			return UART_FAILED;
 
 	g_pDevCfg->cfgServerConfigReceived = 1;
@@ -581,7 +624,7 @@ int config_parse_configuration(char *msg) {
 #endif
 
 	// Order the system to send the config later on.
-	g_sEvents.defer.command.send_config = 1;
+	g_sEvents.defer.command.display_config = 1;
 	return UART_SUCCESS;
 }
 
@@ -612,7 +655,7 @@ void config_save_ini() {
 
 	n = ini_puts(SECTION_SERVER, "GatewaySMS", g_pDevCfg->cfgGatewaySMS, CONFIG_INI_FILE);
 	n = ini_puts(SECTION_SERVER, "ReportSMS", g_pDevCfg->cfgReportSMS, CONFIG_INI_FILE);
-	n = ini_puts(SECTION_SERVER, "GatewayIP", g_pDevCfg->cfgGatewayIP, 	CONFIG_INI_FILE);
+	n = ini_puts(SECTION_SERVER, "GatewayIP", g_pDevCfg->cfgGatewayIP, CONFIG_INI_FILE);
 	n = ini_puts(SECTION_SERVER, "Config_URL", g_pDevCfg->cfgConfig_URL, CONFIG_INI_FILE);
 	n = ini_puts(SECTION_SERVER, "Upload_URL", g_pDevCfg->cfgUpload_URL, CONFIG_INI_FILE);
 
@@ -622,7 +665,7 @@ void config_save_ini() {
 	intervals = &g_pDevCfg->sIntervalsMins;
 	n = ini_putl(SECTION_INTERVALS, "Sampling", intervals->sampling, CONFIG_INI_FILE);
 	if (n == 0)
-		return;
+	return;
 
 	n = ini_putl(SECTION_INTERVALS, "Upload", intervals->upload, CONFIG_INI_FILE);
 	n = ini_putl(SECTION_INTERVALS, "Reboot", intervals->systemReboot, CONFIG_INI_FILE);
@@ -668,20 +711,21 @@ FRESULT config_read_ini_file() {
 
 	cfg = &g_pDevCfg->cfg;
 	cfg->logs.system_log = ini_getbool(SECTION_LOGS, "SystemLog", 0,
-			CONFIG_INI_FILE);
+	CONFIG_INI_FILE);
 	cfg->logs.web_csv = ini_getbool(SECTION_LOGS, "WebCSV", 0, CONFIG_INI_FILE);
 	cfg->logs.server_config = ini_getbool(SECTION_LOGS, "ServerConfig", 0,
-			CONFIG_INI_FILE);
+	CONFIG_INI_FILE);
 	cfg->logs.modem_transactions = ini_getbool(SECTION_LOGS, "Modem", 0,
-			CONFIG_INI_FILE);
+	CONFIG_INI_FILE);
 	cfg->logs.sms_alerts = ini_getbool(SECTION_LOGS, "SMS_Alerts", 0,
-			CONFIG_INI_FILE);
+	CONFIG_INI_FILE);
 	cfg->logs.sms_reports = ini_getbool(SECTION_LOGS, "SMS_Reports", 0,
-			CONFIG_INI_FILE);
+	CONFIG_INI_FILE);
 
 	// Currently in [LOGS] section
 	system = &g_pSysState->system; //switches initialized in system_states
-	system->switches.buzzer_disabled = ini_getbool(SECTION_LOGS, "Buzzer_Off", 0,
+	system->switches.buzzer_disabled = ini_getbool(SECTION_LOGS, "Buzzer_Off",
+			0,
 			CONFIG_INI_FILE);
 
 	n = ini_gets(SECTION_SERVER, "GatewaySMS", NEXLEAF_SMS_GATEWAY,
@@ -713,26 +757,26 @@ FRESULT config_read_ini_file() {
 
 	intervals = &g_pDevCfg->sIntervalsMins;
 	intervals->sampling = ini_getl(SECTION_INTERVALS, "Sampling",
-			PERIOD_SAMPLING, CONFIG_INI_FILE);
+	PERIOD_SAMPLING, CONFIG_INI_FILE);
 	intervals->upload = ini_getl(SECTION_INTERVALS, "Upload", PERIOD_UPLOAD,
-			CONFIG_INI_FILE);
+	CONFIG_INI_FILE);
 	;
 	intervals->systemReboot = ini_getl(SECTION_INTERVALS, "Reboot",
-			PERIOD_REBOOT, CONFIG_INI_FILE);
+	PERIOD_REBOOT, CONFIG_INI_FILE);
 	intervals->configurationFetch = ini_getl(SECTION_INTERVALS, "Configuration",
-			PERIOD_CONFIGURATION_FETCH, CONFIG_INI_FILE);
+	PERIOD_CONFIGURATION_FETCH, CONFIG_INI_FILE);
 	intervals->smsCheck = ini_getl(SECTION_INTERVALS, "SMS_Check",
-			PERIOD_SMS_CHECK, CONFIG_INI_FILE);
+	PERIOD_SMS_CHECK, CONFIG_INI_FILE);
 	intervals->networkCheck = ini_getl(SECTION_INTERVALS, "Network_Check",
-			PERIOD_NETWORK_CHECK, CONFIG_INI_FILE);
+	PERIOD_NETWORK_CHECK, CONFIG_INI_FILE);
 	intervals->lcdOff = ini_getl(SECTION_INTERVALS, "LCD_off", PERIOD_LCD_OFF,
-			CONFIG_INI_FILE);
+	CONFIG_INI_FILE);
 	intervals->alarmsCheck = ini_getl(SECTION_INTERVALS, "Alarms",
-			PERIOD_ALARMS_CHECK, CONFIG_INI_FILE);
+	PERIOD_ALARMS_CHECK, CONFIG_INI_FILE);
 	intervals->modemPullTime = ini_getl(SECTION_INTERVALS, "ModemPullTime",
-			PERIOD_PULLTIME, CONFIG_INI_FILE);
+	PERIOD_PULLTIME, CONFIG_INI_FILE);
 	intervals->batteryCheck = ini_getl(SECTION_INTERVALS, "BatteryCheck",
-			PERIOD_BATTERY_CHECK, CONFIG_INI_FILE);
+	PERIOD_BATTERY_CHECK, CONFIG_INI_FILE);
 
 	if (g_bServiceMode) {
 		config_display_config();

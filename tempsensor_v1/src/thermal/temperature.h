@@ -18,7 +18,6 @@ void temperature_single_capture();
 
 char *temperature_getString(uint8_t id);
 float resistance_to_temperature(float R);
-char *getFloatNumber2Text(float number, char *ret);
 
 void temperature_process_ADC_values();
 void ADC_setupIO();

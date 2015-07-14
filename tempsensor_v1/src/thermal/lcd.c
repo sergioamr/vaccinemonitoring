@@ -26,7 +26,6 @@ void lcd_init() {
 
 	lcd_turn_on();
 
-	config_setLastCommand(COMMAND_LCDINIT);
 	memset(lcdBuffer, 0, LCD_INIT_PARAM_SIZE);
 
 	lcdBuffer[0] = 0x38; // Basic
@@ -242,7 +241,10 @@ void lcd_progress_wait(uint16_t delayTime) {
 }
 
 int lcd_printf(int line, const char *_format, ...) {
-	char szTemp[32];
+#pragma SET_DATA_SECTION(".aggregate_vars")
+	static char szTemp[33];
+#pragma SET_DATA_SECTION()
+
 	va_list _ap;
 	int rval;
 	if (g_bLCD_state == 0)

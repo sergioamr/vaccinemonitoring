@@ -133,7 +133,7 @@ uint8_t http_deactivate() {
 */
 	g_pSysState->system.switches.http_enabled = 0;
 	config_setLastCommand(COMMAND_HTTP_DISABLE);
-	return uart_tx("AT#SGACT=1,0\r\n");	//deactivate GPRS context
+	return uart_tx("#SGACT=1,0");	//deactivate GPRS context
 }
 
 const char HTTP_INCOMING_DATA[] = { 0x0D, 0x0A, '<', '<', '<', 0 };
@@ -165,6 +165,11 @@ int http_check_error(int *retry) {
 		g_sEvents.defer.command.display_http_error=1;
 	}
 
+	// Check if we got the right prof_id
+	if (prof_id == 0) {
+		_NOP();
+	}
+
 /*
 #ifdef _DEBUG
 	log_appendf("HTTP %i[%d] %d", prof_id, http_status_code, data_size);
@@ -194,7 +199,7 @@ int http_open_connection_upload(int data_length) {
 		return UART_ERROR;
 
 	// Test post URL
-	sprintf(cmd, "AT#HTTPSND=1,0,\"%s/\",%d,0\r\n", g_pDevCfg->cfgUpload_URL,
+	sprintf(cmd, "AT#HTTPSND=1,0,\"%s\",%d,0\r\n", g_pDevCfg->cfgUpload_URL,
 			data_length);
 
 	// Wait for prompt
@@ -221,7 +226,7 @@ int http_get_configuration() {
 	// <command>: Numeric parameter indicating the command requested to HTTP server:
 	// 0 GET 1 HEAD 2 DELETE
 
-	sprintf(szTemp, "AT#HTTPQRY=1,0,\"%s/%s/\"\r\n", g_pDevCfg->cfgConfig_URL,
+	sprintf(szTemp, "AT#HTTPQRY=1,0,\"%s%s/\"\r\n", g_pDevCfg->cfgConfig_URL,
 			g_pDevCfg->cfgIMEI);
 	uart_tx_timeout(szTemp, 5000, 1);
 	if (uart_getTransactionState() != UART_SUCCESS) {
