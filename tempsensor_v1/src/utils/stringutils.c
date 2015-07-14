@@ -12,10 +12,10 @@
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 char g_iStringCaptured = 0;
-static char g_szStringTemp[160];
-static char g_smsMsg[MAX_SMS_SIZE_FULL];
-static char g_szEncodedLine[80];
-static char g_szItoa[16];
+char g_szStringTemp[160];
+char g_smsMsg[MAX_SMS_SIZE_FULL];
+char g_szEncodedLine[80];
+char g_szItoa[16];
 #pragma SET_DATA_SECTION()
 
 // Always release this buffer so you are sure to not use it more than once!!
@@ -172,9 +172,8 @@ char* replace_character(char* string, char charToFind, char charToReplace) {
 	int i = 0;
 
 	while (string[i] != '\0') {
-		if (string[i] == charToFind) {
+		if (string[i] == charToFind)
 			string[i] = charToReplace;
-		}
 		i++;
 	}
 

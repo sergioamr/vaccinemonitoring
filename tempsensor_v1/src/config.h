@@ -54,9 +54,9 @@
 #define PERIOD_UPLOAD			20		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
 #define PERIOD_TRANS_RESET		6*60   //in minutes
-#define PERIOD_LCD_OFF			5
+#define PERIOD_LCD_OFF			30
 #define PERIOD_ALARMS_CHECK	    5
-#define PERIOD_CONFIGURATION_FETCH 5
+#define PERIOD_CONFIGURATION_FETCH 15
 #define PERIOD_SMS_CHECK   	    16		//poll interval in minutes for sms msg TODO change back
 #define PERIOD_NETWORK_CHECK	10
 #define PERIOD_LCD_REFRESH		5
@@ -161,7 +161,7 @@
 #define PERIOD_UPLOAD			10		//in minutes
 #define PERIOD_REBOOT 			24*60   //in minutes
 #define PERIOD_TRANS_RESET 		6*60   //in minutes
-#define PERIOD_LCD_OFF			10
+#define PERIOD_LCD_OFF			0
 #define PERIOD_ALARMS_CHECK	    2
 #define PERIOD_CONFIGURATION_FETCH 5
 #define PERIOD_SMS_CHECK   	    3		//poll interval in minutes for sms msg TODO change back
@@ -177,6 +177,10 @@
 #define NETWORK_CONNECTION_ATTEMPTS 5 // lower connection attempts
 #define NETWORK_CONNECTION_DELAY 2000
 #endif
+
+#define ST1_NUM_PARAMS			12
+#define ST2_NUM_PARAMS 			25
+#define ST3_NUM_PARAMS			0
 
 //Display contants
 #define LCD_DISPLAY_LEN			32

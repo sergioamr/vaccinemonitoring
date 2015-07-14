@@ -27,9 +27,9 @@ void __attribute__ ((interrupt(TIMER0_A0_VECTOR))) Timer0_A0_ISR (void)
 
 void delay(uint32_t time) {
 	iTick = 0;
-	if (time>180000 || time<=10) {
+	if (time > 180000 || time <= 10) {
 		_NOP();
-		time=180000;
+		time = 180000;
 	}
 	delay_count = time / 10;
 	TA0CCTL0 = CCIE;                          // TACCR0 interrupt enabled

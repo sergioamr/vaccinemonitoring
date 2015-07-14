@@ -402,7 +402,7 @@ void state_battery_level(uint8_t battery_level) {
 		return;
 
 	state_low_battery_alert();
-	if (battery_level<BATTERY_HIBERNATE_THRESHOLD)
+	if (battery_level < BATTERY_HIBERNATE_THRESHOLD)
 		thermal_low_battery_hibernate();
 }
 

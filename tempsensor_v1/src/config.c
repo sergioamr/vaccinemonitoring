@@ -366,6 +366,23 @@ const char CHUNK_ST3[5] = "$ST3";
 const char CHUNK_END[3] = "$EN";
 const char delimiter[2] = ",";
 
+int config_count_delims(char* string, char delim) {
+	int i = 0, count = 0, stringLen = strlen(string);
+
+	if (string[0] != '$')
+		return count;
+
+	i++;
+	while (i < RX_LEN && i < stringLen &&
+			string[i] != '\0' && string[i] != '$') {
+		if (string[i] == delim)
+			count++;
+		i++;
+	}
+
+	return count;
+}
+
 /*
  NEW config sync $ST1,<GATEWAY NUMBER>,<GPRS/GSM/BOTH>,
  <COLDTRACE IP ADDRESS>,<APN1>,<APN2>,<UPLOADURL>,<CONFIGURL>,
@@ -378,8 +395,15 @@ int config_parse_configuration_ST1(char *token) {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	//SYSTEM_SWITCHES *system; //pointer to system_switches struct
-
 	char uploadMode[6];
+
+	if (config_count_delims(token, ',') != ST1_NUM_PARAMS) {
+#ifdef _DEBUG
+		log_append_("ST1 WRONG FORMAT");
+#endif
+		return UART_SUCCESS;
+	}
+
 	memset(uploadMode, 0, sizeof(uploadMode));
 
 	config_setLastCommand(COMMAND_PARSE_CONFIG_ST1);
@@ -419,6 +443,8 @@ int config_parse_configuration_ST1(char *token) {
 	//upload URL
 	PARSE_NEXTSTRING(token, g_pDevCfg->cfgUpload_URL,
 			sizeof(g_pDevCfg->cfgUpload_URL), delimiter, UART_FAILED);
+
+	//strcpy(g_pDevCfg->cfgUpload_URL, "/coldtrace/intel/upload/");
 
 	//config URL
 	PARSE_NEXTSTRING(token, g_pDevCfg->cfgConfig_URL,
@@ -470,6 +496,13 @@ int config_parse_configuration_ST2(char *token) {
 	TEMP_ALERT_PARAM *pAlertParams;
 	BATT_POWER_ALERT_PARAM *pBattPower;
 
+	if (config_count_delims(token, ',') != ST2_NUM_PARAMS) {
+#ifdef _DEBUG
+		log_append_("ST2 WRONG FORMAT");
+#endif
+		return UART_SUCCESS;
+	}
+
 	config_setLastCommand(COMMAND_PARSE_CONFIG_ST2);
 	lcd_printl(LINEH, CHUNK_ST2);
 
@@ -519,6 +552,13 @@ int config_parse_configuration_ST2(char *token) {
 }
 
 int config_parse_configuration_ST3(char *token) {
+	if (config_count_delims(token, ',') != ST3_NUM_PARAMS) {
+#ifdef _DEBUG
+		log_append_("ST3 WRONG FORMAT");
+#endif
+		return UART_SUCCESS;
+	}
+
 	config_setLastCommand(COMMAND_PARSE_CONFIG_ST3);
 	lcd_printl(LINEH, CHUNK_ST3);
 
