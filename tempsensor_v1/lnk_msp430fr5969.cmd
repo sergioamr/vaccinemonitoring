@@ -132,9 +132,9 @@ SECTIONS
 {
     GROUP(READ_WRITE_MEMORY)
     {
-       .TI.persistent : {}                  /* For #pragma PERSISTENT            */
-       .cio           : {} > FRAM                  /* C I/O BUFFER                      */
-       .sysmem        : {} > FRAM           /* DYNAMIC MEMORY ALLOCATION AREA    */
+       .TI.persistent : {}            /* For #pragma PERSISTENT            */
+       .cio           : {}  		  /* C I/O BUFFER                      */
+       .sysmem        : {}            /* DYNAMIC MEMORY ALLOCATION AREA    */
        .ConfigurationArea : {}
     } PALIGN(0x0400), RUN_END(fram_rx_start) > 0x4400
 
