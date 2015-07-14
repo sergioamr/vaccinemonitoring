@@ -212,7 +212,8 @@ void config_incLastCmd() {
 void config_reconfigure() {
 	g_pSysCfg->memoryInitialized = 0xFF;
 	PMM_trigBOR();
-	while (1);
+	while (1)
+		;
 }
 
 // Send back data after an SMS request
@@ -373,8 +374,7 @@ int config_count_delims(char* string, char delim) {
 		return count;
 
 	i++;
-	while (i < RX_LEN && i < stringLen &&
-			string[i] != '\0' && string[i] != '$') {
+	while (i < RX_LEN && i < stringLen && string[i] != '\0' && string[i] != '$') {
 		if (string[i] == delim)
 			count++;
 		i++;
@@ -493,10 +493,13 @@ int config_parse_configuration_ST1(char *token) {
 }
 
 // Example:
-// $ST2,10,10,30,33,5,2,15,35,20,2,10,35,20,10,20,30,12,15,25,30,300,1,10,30,$EN
+// $ST2,2,1,4,3,6,5,8,7,10,9,12,11,14,13,16,15,18,17,20,19,23,1,22,21,$EN
+// NUM SENSORS { <SENSOR LOW DELAY> <SENSOR LOW TEMP> <SENSOR HIGH DELAY> <SENSOR HIGH TEMP> }
+// 23,1,22,21 <POWER OUTAGE DELAY> <POWER ALARM ACTIVATE> <LOW BATTERY DELAY> <LOW BATTERY LEVEL ALARM>
+
 int config_parse_configuration_ST2(char *token) {
 	int i = 0;
-	int tempValue = 0;
+
 	TEMP_ALERT_PARAM *pAlertParams;
 	BATT_POWER_ALERT_PARAM *pBattPower;
 
@@ -513,17 +516,7 @@ int config_parse_configuration_ST2(char *token) {
 	// Skip $ST2,
 	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
 
-	// Return success if no configuration has changed
-	PARSE_NEXTVALUE(token, &tempValue, delimiter, UART_FAILED);
-	if (tempValue == 1)
-		_NOP();
-
-	/*
-	if (g_pDevCfg->cfgServerConfigReceived && g_pDevCfg->cfgSyncId == 0)
-		return UART_SUCCESS;
-	 */
-
-// Temperature configuration for each sensor
+	// Temperature configuration for each sensor
 	while (i < SYSTEM_NUM_SENSORS) {
 		pAlertParams = &g_pDevCfg->stTempAlertParams[i];
 		PARSE_NEXTVALUE(token, &pAlertParams->maxSecondsCold, delimiter,
@@ -539,12 +532,15 @@ int config_parse_configuration_ST2(char *token) {
 		i++;
 	}
 
-// Battery config info.
+	// Battery config info.
+	// 23,1,22,21 <POWER OUTAGE DELAY> <POWER ALARM ACTIVATE> <LOW BATTERY DELAY> <LOW BATTERY LEVEL ALARM>
+
 	pBattPower = &g_pDevCfg->stBattPowerAlertParam;
+	PARSE_NEXTVALUE(token, &pBattPower->minutesPower, delimiter, UART_FAILED);
+
 	PARSE_NEXTVALUE(token, &pBattPower->enablePowerAlert, delimiter,
 			UART_FAILED);
 
-	PARSE_NEXTVALUE(token, &pBattPower->minutesPower, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(token, &pBattPower->minutesBattThresh, delimiter,
 			UART_FAILED);
 
