@@ -424,7 +424,7 @@ int config_parse_configuration_ST1(char *token) {
 	//(0: force gprs, 1: force sms, 2: DEFAULT: failover mode
 	if (!strncmp(uploadMode, "GPRS", sizeof(uploadMode)))
 		g_pDevCfg->cfgUploadMode = MODE_GPRS;
-	else if (!strncmp(uploadMode, "GSM", sizeof(uploadMode)))
+	else if (!strncmp(uploadMode, "SMS", sizeof(uploadMode)))
 		g_pDevCfg->cfgUploadMode = MODE_GSM;
 	else
 		//default BOTH
