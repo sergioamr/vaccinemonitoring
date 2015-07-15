@@ -19,6 +19,9 @@ char *getSensorTemp(int sensorID) {
 }
 
 uint8_t data_send_temperatures_sms() {
+
+	config_setLastCommand(COMMAND_SEND_TEMPERATURES_SMS);
+
 	char *data=getSMSBufferHelper();
 	int t = 0;
 
@@ -51,6 +54,8 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 	uint8_t length = 0;
 
 	int res = TRANS_FAILED;
+
+	config_setLastCommand(COMMAND_SEND_DATA_SMS);
 
 	f_lseek(file, start);
 
@@ -127,7 +132,7 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 
 	f_lseek(file, start);
 
-	checkStack();
+	config_setLastCommand(COMMAND_SEND_DATA_HTTP);
 
 	// Must get first line before transmitting to calculate the length properly
 	if (f_gets(line, lineSize, file) != 0) {
@@ -207,6 +212,9 @@ int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
 // If the last file was corrupted and forced a reboot we remove the extension
 void cancel_batch(char *path, char *name) {
 	uint16_t lineSize = 0;
+
+	config_setLastCommand(COMMAND_CANCEL_BATCH);
+
 	char *line=getEncodedLineHelper(&lineSize);
 	sprintf(path, "%s/%s", FOLDER_TEXT, name);
 
@@ -230,6 +238,8 @@ void process_batch() {
 
 	char path[32];
 	char *line=NULL;
+
+	config_setLastCommand(COMMAND_PROCESS_BATCH);
 
 #ifdef _DEBUG
 	checkStack();
@@ -296,6 +306,8 @@ void process_batch() {
 				canSend = 1;
 				seekTo = filr->fptr;
 			}
+
+			config_incLastCmd();
 		}
 
 		if(canSend) {
@@ -338,4 +350,7 @@ void process_batch() {
 	g_pSysState->safeboot.disable.data_transmit = 0;
 	g_iStatus |= LOG_TIME_STAMP; // Uploads may take a long time and might require offset to be reset
 	log_enable();
+
+	// End of transmit, lets save that we were successful
+	config_setLastCommand(COMMAND_PROCESS_BATCH+99);
 }

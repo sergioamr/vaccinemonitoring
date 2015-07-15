@@ -466,8 +466,6 @@ void event_upload_samples(void *event, time_t currentTime) {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	int slot = g_pDevCfg->cfgSelectedSIM_slot;
 
-	checkStack();
-
 	// Swap SIM on next network check is APN and Phone num has not
 	// been initialized ATM this may not be requires as
 	// 1 unconfigured APN means both won't be parsed correctly
@@ -489,8 +487,6 @@ void event_upload_samples(void *event, time_t currentTime) {
 
 		return; // no SIM configurable or SIM requires switch
 	}
-
-	checkStack();
 
 	process_batch();
 }

@@ -208,6 +208,10 @@ void config_incLastCmd() {
 	if (g_pDevCfg->cfg.logs.commmands)
 	config_setLastCommand(g_pSysCfg->lastCommand);
 #endif
+
+#ifdef ___CHECK_STACK___
+	checkStack();
+#endif
 }
 
 // Runs the system in configuration/calibration mode

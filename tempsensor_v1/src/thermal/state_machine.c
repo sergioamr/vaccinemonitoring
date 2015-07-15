@@ -520,9 +520,11 @@ void state_process() {
 		return;
 	last_check = rtc_get_second_tick();
 
+#ifdef __CHECK_STACK__
 	if (g_pSysCfg->stackLeft<64) {
 		alarm_low_memory();
 	}
+#endif
 
 	state_check_SD_card();
 
