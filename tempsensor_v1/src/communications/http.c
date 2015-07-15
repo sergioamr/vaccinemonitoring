@@ -195,7 +195,8 @@ int http_check_error(int *retry) {
 int http_open_connection_upload(int data_length) {
 	char *cmd = getSMSBufferHelper();
 
-	checkStack();
+	config_setLastCommand(COMMAND_OPEN_UPLOAD);
+
 	if (!state_isSimOperational())
 		return UART_ERROR;
 
@@ -220,6 +221,8 @@ int http_get_configuration() {
 
 	if (!state_isSimOperational())
 		return UART_ERROR;
+
+	config_setLastCommand(COMMAND_GET_CONFIGURATION);
 
 	// #HTTPQRY send HTTP GET, HEAD or DELETE request
 	// Execution command performs a GET, HEAD or DELETE request to HTTP server.

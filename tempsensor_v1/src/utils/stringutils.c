@@ -10,8 +10,6 @@
 #include "globals.h"
 #include "sms.h"
 
-extern void checkStack();
-
 #pragma SET_DATA_SECTION(".aggregate_vars")
 char g_iStringCaptured = 0;
 char g_szStringTemp[80];

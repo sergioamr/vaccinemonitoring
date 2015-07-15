@@ -240,11 +240,6 @@ void process_batch() {
 	char *line=NULL;
 
 	config_setLastCommand(COMMAND_PROCESS_BATCH);
-
-#ifdef _DEBUG
-	checkStack();
-#endif
-
 	FRESULT fr;
 
 	line = getSMSBufferHelper();
