@@ -44,6 +44,8 @@ void sms_send_data_request(char *number) {
 #ifdef _DEBUG
 	strcat(data, ",UPTIME:");
 	strcat(data, itoa_nopadding(iMinuteTick));
+	strcat(data, ",STACK:");
+	strcat(data, itoa_nopadding(g_pSysCfg->stackLeft));
 #endif
 
 	iOffset = strlen(data);
