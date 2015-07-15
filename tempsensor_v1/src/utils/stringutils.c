@@ -14,7 +14,7 @@ extern void checkStack();
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 char g_iStringCaptured = 0;
-char g_szStringTemp[160];
+char g_szStringTemp[80];
 char g_smsMsg[MAX_SMS_SIZE_FULL];
 char g_szEncodedLine[80];
 char g_szItoa[16];
