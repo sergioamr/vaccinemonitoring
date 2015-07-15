@@ -420,7 +420,7 @@ typedef struct {
 
 typedef struct {
 	// Last alarm message
-	char alarm_message[16];
+	char alarm_message[32];
 
 	// Current battery level
 	uint8_t battery_level;

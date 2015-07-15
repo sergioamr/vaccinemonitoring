@@ -328,6 +328,11 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	if (config_getSimLastError(&token) == errorCode)
 		return;
 
+	// Sim busy (we just have to try again, sim is busy... you know?)
+	if (errorCode==14)
+		return;
+
+	// Activation failed
 	if (errorCode==555)
 		return;
 
