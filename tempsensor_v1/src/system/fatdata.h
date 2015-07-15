@@ -9,7 +9,7 @@
 #define TEMPSENSOR_V1_FATDATA_H_
 
 extern FATFS FatFs;
-
+extern char g_bLogDisabled;
 extern char g_bFatInitialized;
 extern const char *g_szLastSD_CardError;
 

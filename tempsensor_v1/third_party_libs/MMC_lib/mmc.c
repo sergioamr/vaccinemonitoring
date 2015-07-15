@@ -87,7 +87,9 @@ char mmcCheckBusy(void);
 char mmcGoIdle();
 
 // Varialbes
+#pragma SET_DATA_SECTION(".aggregate_vars")
 char mmc_buffer[512] = { 0 };               // Buffer for mmc i/o for data and registers
+#pragma SET_DATA_SECTION()
 
 // Initialize MMC card
 char mmcInit(void)

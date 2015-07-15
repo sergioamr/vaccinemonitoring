@@ -1,3 +1,4 @@
+#include "thermalcanyon.h"
 #include "msp430.h"
 #include "config.h"
 #include "common.h"
@@ -189,7 +190,7 @@ void modem_send_command(const char *cmd) {
 
 	uart.iTxLen = strlen(cmd);
 
-	if (g_pDevCfg->cfg.logs.modem_transactions) {
+	if (!g_bLogDisabled && g_pDevCfg->cfg.logs.modem_transactions) {
 		log_modem("---");
 		log_modem(get_simplified_date_string(NULL));
 		log_modem("---\r\n");
@@ -249,7 +250,7 @@ int waitForReady(uint32_t timeoutTimeMs) {
 		delay(delayTime);
 		if (uart.switches.b.transmissionEnd == 1) {
 			delay(100);  // Documentation specifies 30 ms delay between commands
-			if (g_pDevCfg->cfg.logs.modem_transactions)
+			if (!g_bLogDisabled && g_pDevCfg->cfg.logs.modem_transactions)
 				log_modem(uart_getRXHead());
 
 			return UART_SUCCESS; // There was a transaction, you have to check the state of the uart transaction to check if it was successful
@@ -257,7 +258,7 @@ int waitForReady(uint32_t timeoutTimeMs) {
 		count--;
 	}
 
-	if (g_pDevCfg->cfg.logs.modem_transactions) {
+	if (!g_bLogDisabled && g_pDevCfg->cfg.logs.modem_transactions) {
 		log_modem("FAILED\r\n");
 		log_modem(uart_getRXHead());
 	}
@@ -368,6 +369,10 @@ void uart_tx_nowait(const char *cmd) {
 }
 
 uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime) {
+#ifdef _DEBUG
+	checkStack();
+#endif
+
 	modem_send_command(cmd);
 	if (!waitForReady(promptTime)) {
 		uart_setOKMode();
@@ -388,21 +393,22 @@ uint8_t isTransactionOK() {
 	return uart.ErrorIdx;
 }
 
-uint8_t uart_txf(const char *_format, ...) {
-	uint16_t size = 0;
-	uint16_t res = 0;
-	char *szTemp = getStringBufferHelper(&size);
-	va_list _ap;
-	char *fptr = (char *) _format;
-	char *out_end = szTemp;
 
+uint8_t uart_txf(const char *_format, ...) {
+	va_list _ap;
+
+	uint16_t res = 0;
+	uint16_t size = 0;
+
+#ifdef _DEBUG
+	checkStack();
+#endif
+
+	char *szTemp = getStringBufferHelper(&size);
 	va_start(_ap, _format);
-	if (__TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs) > size) {
-		_NOP();
-	}
+	vsnprintf(szTemp, size, _format, _ap);
 	va_end(_ap);
 
-	*out_end = '\0';
 	res = uart_tx(szTemp);
 	releaseStringBufferHelper();
 	return res;

@@ -91,16 +91,25 @@ void config_reset_error(SIM_CARD_CONFIG *sim) {
 void config_display_config() {
 	int t;
 
-	lcd_printf(LINEC, "SMS Gateway");
-	lcd_printf(LINEH, g_pDevCfg->cfgGatewaySMS);
+	lcd_printf(LINEC, "UPTIME");
+	lcd_printf(LINEH, "[%d:%d:%d]", iMinuteTick/60, iMinuteTick%60, iSecondTick%60);
 
-	lcd_printf(LINEC, "Gateway IP");
-	lcd_printf(LINEH, g_pDevCfg->cfgGatewayIP);
+	lcd_printl(LINEC, "SMS Gateway");
+	lcd_printl(LINEH, g_pDevCfg->cfgGatewaySMS);
+
+	lcd_printl(LINEC, "Gateway IP");
+	lcd_printl(LINEH, g_pDevCfg->cfgGatewayIP);
 
 	for (t = 0; t < 2; t++) {
 		lcd_printf(LINEC, "APN %d", t + 1);
-		lcd_printf(LINEH, g_pDevCfg->SIM[t].cfgAPN);
+		lcd_printl(LINEH, g_pDevCfg->SIM[t].cfgAPN);
 	}
+
+	lcd_printl(LINEC, "CONFIG URL");
+	lcd_printl(LINEH, g_pDevCfg->cfgConfig_URL);
+
+	lcd_printl(LINEC, "UPLOAD URL ");
+	lcd_printl(LINEH, g_pDevCfg->cfgUpload_URL);
 
 	lcd_display_config();
 }
@@ -159,11 +168,13 @@ uint8_t config_getSelectedSIM() {
 }
 
 uint8_t config_is_SIM_configurable(int simSlot) {
+	SIM_CARD_CONFIG *sim;
+
 	if (simSlot >= SYSTEM_NUM_SIM_CARDS) {
 		return 0;
 	}
 
-	SIM_CARD_CONFIG *sim = &g_pDevCfg->SIM[simSlot];
+	sim = &g_pDevCfg->SIM[simSlot];
 
 	if (sim->cfgAPN[0] == '\0' && sim->cfgPhoneNum[0] == '\0') {
 		return 0;
@@ -205,6 +216,10 @@ void config_incLastCmd() {
 #ifdef EXTREME_DEBUG
 	if (g_pDevCfg->cfg.logs.commmands)
 	config_setLastCommand(g_pSysCfg->lastCommand);
+#endif
+
+#ifdef ___CHECK_STACK___
+	checkStack();
 #endif
 }
 
@@ -262,8 +277,6 @@ void config_send_configuration(char *number) {
 	releaseStringBufferHelper();
 #endif
 }
-
-extern int main_test();
 
 char g_bServiceMode = false;
 
@@ -401,7 +414,7 @@ int config_parse_configuration_ST1(char *token) {
 
 	if (config_count_delims(token, ',') != ST1_NUM_PARAMS) {
 #ifdef _DEBUG
-		log_append_("ST1 WRONG FORMAT");
+		log_append_("ST1 WRONG");
 #endif
 		return UART_SUCCESS;
 	}
@@ -507,7 +520,7 @@ int config_parse_configuration_ST2(char *token) {
 
 	if (config_count_delims(token, ',') != ST2_NUM_PARAMS) {
 #ifdef _DEBUG
-		log_append_("ST2 WRONG FORMAT");
+		log_append_("ST2 WRONG");
 #endif
 		return UART_SUCCESS;
 	}
@@ -558,7 +571,7 @@ int config_parse_configuration_ST2(char *token) {
 int config_parse_configuration_ST3(char *token) {
 	if (config_count_delims(token, ',') != ST3_NUM_PARAMS) {
 #ifdef _DEBUG
-		log_append_("ST3 WRONG FORMAT");
+		log_append_("ST3 WRONG");
 #endif
 		return UART_SUCCESS;
 	}

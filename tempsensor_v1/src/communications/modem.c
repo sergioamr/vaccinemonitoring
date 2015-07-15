@@ -29,10 +29,8 @@
 #include "state_machine.h"
 #include "main_system.h"
 
-#pragma SET_DATA_SECTION(".aggregate_vars")
-char ctrlZ[2] = { 0x1A, 0 };
-char ESC[2] = { 0x1B, 0 };
-#pragma SET_DATA_SECTION()
+const char ctrlZ[2] = { 0x1A, 0 };
+const char ESC[2] = { 0x1B, 0 };
 
 /*
  * AT Commands Reference Guide 80000ST10025a Rev. 9 2010-10-04
@@ -173,10 +171,8 @@ int modem_getNetworkStatus(int *mode, int *status) {
 /* Network cellular service */
 /**********************************************************************************************************************/
 
-#pragma SET_DATA_SECTION(".aggregate_vars")
-static char NETWORK_GPRS_COMMAND[] = "CGREG";
-static char NETWORK_GSM_COMMAND[] = "CREG";
-#pragma SET_DATA_SECTION()
+const char NETWORK_GPRS_COMMAND[] = "CGREG";
+const char NETWORK_GSM_COMMAND[] = "CREG";
 
 const char inline *modem_getNetworkServiceCommand() {
 	if (g_pSysState->network_mode == NETWORK_GPRS)
@@ -332,16 +328,14 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	if (config_getSimLastError(&token) == errorCode)
 		return;
 
+	if (errorCode==555)
+		return;
+
 	sprintf(szCode, "ERROR %d", errorCode);
 	config_setSIMError(sim, errorToken, errorCode, szCode);
 
 	// Check the error codes to figure out if the SIM is still functional
 	modem_check_working_SIM();
-
-	//szToken[0] = errorToken;  // Minimal SPRINTF support
-	//szToken[1] = 0;
-	//log_appendf("SIM %d CMD[%s] CM%s ERROR %d", config_getSelectedSIM() + 1, &modem_lastCommand[0], szToken, errorCode);
-
 	return;
 }
 
@@ -495,9 +489,9 @@ int modem_swap_to_SIM(int sim) {
 }
 
 int modem_swap_SIM() {
-
+#ifdef EXTREME_DEBUG
 	log_appendf("SWP [%d]", config_getSelectedSIM());
-
+#endif
 	int res = UART_FAILED;
 	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
 	g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;

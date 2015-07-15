@@ -60,8 +60,6 @@ const char COMMAND_RESULT_CMGR[] = "+CMGR: ";
 // 2 - stored message not yet sent
 // 3 - stored message already sent
 
-extern const char AT_MSG_OK[];
-
 int8_t sms_process_memory_message(int8_t index) {
 	int t = 0, len = 0;
 	char *token;

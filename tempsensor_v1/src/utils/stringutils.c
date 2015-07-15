@@ -12,9 +12,9 @@
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 char g_iStringCaptured = 0;
-char g_szStringTemp[160];
+char g_szStringTemp[80];
 char g_smsMsg[MAX_SMS_SIZE_FULL];
-char g_szEncodedLine[80];
+char g_szEncodedLine[45];
 char g_szItoa[16];
 #pragma SET_DATA_SECTION()
 
@@ -27,7 +27,10 @@ char *getStringBufferHelper(uint16_t *size) {
 		__no_operation();
 	}
 	g_iStringCaptured = 1;
-	memset(g_szStringTemp, 0, sizeof(g_szStringTemp));
+#ifdef _DEBUG
+	memset(g_szStringTemp, 0x10, sizeof(g_szStringTemp));
+#endif
+	g_szStringTemp[0] = 0;
 	return g_szStringTemp;
 }
 
@@ -42,12 +45,18 @@ char *getEncodedLineHelper(uint16_t *size) {
 	if (size!=NULL)
 		*size = sizeof(g_szEncodedLine);
 
-	memset(g_szEncodedLine, 0, sizeof(g_szEncodedLine));
+#ifdef _DEBUG
+	memset(g_szEncodedLine, 0x12, sizeof(g_szEncodedLine));
+#endif
+	g_szEncodedLine[0] = 0;
 	return g_szEncodedLine;
 }
 
 char *getSMSBufferHelper() {
-	memset(g_smsMsg, 0, sizeof(g_smsMsg));
+#ifdef _DEBUG
+	memset(g_smsMsg, 0x12, sizeof(g_smsMsg));
+#endif
+	g_smsMsg[0] = 0;
 	return g_smsMsg;
 }
 

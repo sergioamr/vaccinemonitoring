@@ -80,7 +80,11 @@ extern "C"
  * Constants for different uses
  */
 
-#define MAX_DISPLAY_ID		10
+#ifdef _DEBUG
+#define MAX_DISPLAY_ID		15
+#else
+#define MAX_DISPLAY_ID		9
+#endif
 
 //iStatus contants
 #define MODEM_POWERED_ON 	0x0001

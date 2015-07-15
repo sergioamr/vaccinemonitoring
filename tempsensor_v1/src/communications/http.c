@@ -193,7 +193,9 @@ int http_check_error(int *retry) {
 }
 
 int http_open_connection_upload(int data_length) {
-	char cmd[120];
+	char *cmd = getSMSBufferHelper();
+
+	config_setLastCommand(COMMAND_OPEN_UPLOAD);
 
 	if (!state_isSimOperational())
 		return UART_ERROR;
@@ -207,6 +209,7 @@ int http_open_connection_upload(int data_length) {
 	if (uart_tx_waitForPrompt(cmd, TIMEOUT_HTTPSND_PROMPT)) {
 		return UART_SUCCESS;
 	}
+
 	return uart_getTransactionState();
 }
 
@@ -218,6 +221,8 @@ int http_get_configuration() {
 
 	if (!state_isSimOperational())
 		return UART_ERROR;
+
+	config_setLastCommand(COMMAND_GET_CONFIGURATION);
 
 	// #HTTPQRY send HTTP GET, HEAD or DELETE request
 	// Execution command performs a GET, HEAD or DELETE request to HTTP server.

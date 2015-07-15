@@ -120,10 +120,9 @@ void lcd_setDate(char *buffer) {
 }
 
 void lcd_show() {
-#pragma SET_DATA_SECTION(".aggregate_vars")
+
 	static int8_t iItemId = -1;
 	static time_t lastRefresh = 0;
-#pragma SET_DATA_SECTION()
 
 	char lcdBuffer[LCD_DISPLAY_LEN + 1];
 	int iIdx = 0;
@@ -132,8 +131,6 @@ void lcd_show() {
 	// LCD is off
 	if (g_bLCD_state == 0)
 		return;
-
-	memset(lcdBuffer, 0, sizeof(lcdBuffer));
 
 	if (iItemId == g_iDisplayId &&
 		lastRefresh == rtc_get_second_tick())
@@ -144,7 +141,7 @@ void lcd_show() {
 
 	lcd_clear();
 
-	memset(lcdBuffer, 0, LCD_DISPLAY_LEN);
+	memset(lcdBuffer, 0, sizeof(lcdBuffer));
 	lcd_setDate(lcdBuffer);
 	//get local time
 	iIdx = strlen(lcdBuffer); //marker
@@ -207,13 +204,22 @@ void lcd_show() {
 			lcd_append_signal_info(lcdBuffer);
 		break;
 
-	case 9:
+#ifdef _DEBUG
+	case 9+5:
 		lcd_display_config();
 		return;
+#endif
+
 	default:
 		break;
 	}
 
+#ifdef _DEBUG
+	if (iItemId>=9 && iItemId<9+5) {
+		lcd_display_config_sensor(iItemId-9);
+		return;
+	} else
+#endif
 	if (iCnt != 0xff) {
 		if (g_pSysState->temp.state[iCnt].status != 0) {
 			sprintf(&lcdBuffer[iIdx], "ALERT %s %sC", SensorName[iCnt],
@@ -234,32 +240,28 @@ void lcd_progress_wait(uint16_t delayTime) {
 	int t;
 	int count = delayTime / 100;
 
+#ifdef _DEBUG
+	checkStack();
+#endif
 	for (t = 0; t < count; t++) {
 		delay(50);
 		lcd_print_progress();
 	}
 }
 
-int lcd_printf(int line, const char *_format, ...) {
-#pragma SET_DATA_SECTION(".aggregate_vars")
-	static char szTemp[33];
-#pragma SET_DATA_SECTION()
-
+void lcd_printf(int line, const char *_format, ...) {
 	va_list _ap;
-	int rval;
-	if (g_bLCD_state == 0)
-		return 0;
+	char szTemp[33];
 
-	char *fptr = (char *) _format;
-	char *out_end = szTemp;
+#ifdef _DEBUG
+	checkStack();
+#endif
 
 	va_start(_ap, _format);
-	rval = __TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs);
+	vsnprintf(szTemp, sizeof(szTemp), _format, _ap);
 	va_end(_ap);
 
-	*out_end = '\0';
 	lcd_printl(line, szTemp);
-	return (rval);
 }
 
 void lcd_print(char* pcData) {
@@ -295,9 +297,6 @@ void lcd_printl(int8_t iLine, const char* pcData) {
 	i2c_write(0x3e, 0x40, len, (uint8_t *) pcData);
 
 	if (iLine == LINEE) {
-#ifdef _DEBUG
-		log_appendf("ERROR [%s] ", pcData);
-#endif
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	}
 
@@ -319,9 +318,7 @@ void lcd_bldisable() {
 	PJOUT &= ~BIT7;
 }
 
-#pragma SET_DATA_SECTION(".aggregate_vars")
 int g_iLCDVerbose = VERBOSE_DISABLED; // Disable debug
-#pragma SET_DATA_SECTION()
 
 void lcd_disable_verbose() {
 	g_iLCDVerbose = VERBOSE_DISABLED;
@@ -339,13 +336,12 @@ void lcd_enable_verbose() {
 	g_iLCDVerbose = VERBOSE_BOOTING;
 }
 
+const char display[4] = { '*', '|', '/', '-' };
 void lcd_print_progress() {
-
 	if (g_bLCD_state == 0)
 		return;
 
 	static char pos = 0;
-	char display[4] = { '*', '|', '/', '-' };
 	lcd_setaddr(0x4F);
 	i2c_write(0x3e, 0x40, 1, (uint8_t *) &display[(++pos) & 0x3]);
 }
@@ -365,6 +361,12 @@ void lcd_print_boot(const char* pcData, int line) {
 #else
 	lcd_print_progress();
 #endif
+}
+
+void lcd_display_config_sensor(int id) {
+	TEMP_ALERT_PARAM *pAlertParams = &g_pDevCfg->stTempAlertParams[id];
+	lcd_printf(LINEC, "%s Cold %dm %d", SensorName[id], (int) pAlertParams->maxSecondsCold / 60, (int) pAlertParams->threshCold);
+	lcd_printf(LINE2, "Hot %dm %d", (int) pAlertParams->maxSecondsHot / 60, (int) pAlertParams->threshHot);
 }
 
 void lcd_display_config() {

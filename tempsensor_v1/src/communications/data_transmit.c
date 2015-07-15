@@ -12,13 +12,14 @@
 #define TRANS_SUCCESS			0
 
 char *getSensorTemp(int sensorID) {
-#pragma SET_DATA_SECTION(".aggregate_vars")
 	static char sensorData[4];
-#pragma SET_DATA_SECTION()
 	return sensorData;
 }
 
 uint8_t data_send_temperatures_sms() {
+
+	config_setLastCommand(COMMAND_SEND_TEMPERATURES_SMS);
+
 	char *data=getSMSBufferHelper();
 	int t = 0;
 
@@ -51,6 +52,8 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 	uint8_t length = 0;
 
 	int res = TRANS_FAILED;
+
+	config_setLastCommand(COMMAND_SEND_DATA_SMS);
 
 	f_lseek(file, start);
 
@@ -115,14 +118,16 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 	char *line = getStringBufferHelper(&lineSize);
 	int retry = 0;
 	uint32_t length = 0;
+	struct tm firstDate;
 
 	int res = TRANS_FAILED;
 	char* dateString = NULL;
-	struct tm firstDate;
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
 
 	f_lseek(file, start);
+
+	config_setLastCommand(COMMAND_SEND_DATA_HTTP);
 
 	// Must get first line before transmitting to calculate the length properly
 	if (f_gets(line, lineSize, file) != 0) {
@@ -184,7 +189,8 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 }
 
 int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
-	if (g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS > 0 || state_isGSM()) {
+	if (g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS > 0 ||
+			state_isGSM() || g_pDevCfg->cfgUploadMode == MODE_GSM) {
 		if (data_send_sms(file, start, end) != TRANS_SUCCESS) {
 			state_failed_gsm(g_pDevCfg->cfgSIM_slot);
 			return TRANS_FAILED;
@@ -198,23 +204,40 @@ int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
 	return TRANS_SUCCESS;
 }
 
+// If the last file was corrupted and forced a reboot we remove the extension
+void cancel_batch(char *path, char *name) {
+	uint16_t lineSize = 0;
+
+	config_setLastCommand(COMMAND_CANCEL_BATCH);
+
+	char *line=getEncodedLineHelper(&lineSize);
+	sprintf(path, "%s/%s", FOLDER_TEXT, name);
+
+	strcpy(line,path);
+	lineSize = strlen(line);
+	line[lineSize-3]=0;
+
+	f_rename(path, line);
+	http_deactivate();
+	g_pSysState->safeboot.disable.data_transmit = 0;
+	return;
+}
+
 void process_batch() {
 	int8_t canSend = 0, transactionState = 0;
 	uint32_t seekFrom = g_pSysState->lastSeek, seekTo = g_pSysState->lastSeek;
 
-	uint16_t lineSize = 0;
-	char *line=getEncodedLineHelper(&lineSize);
+	FIL *filr = fat_getFile();
+	FILINFO *fili = fat_getInfo();
+	DIR *dir = fat_getDirectory();
 
 	char path[32];
-	char do_not_process_batch = false;
+	char *line=NULL;
 
-	FILINFO fili;
-	DIR dir;
-	FIL filr;
+	config_setLastCommand(COMMAND_PROCESS_BATCH);
 	FRESULT fr;
-	int len;
 
-	log_disable();
+	line = getSMSBufferHelper();
 
 	if (!state_isSimOperational()) {
  		return;
@@ -227,73 +250,68 @@ void process_batch() {
 	}
 
 	// Cycle through all files using f_findfirst, f_findnext.
-	fr = f_findfirst(&dir, &fili, FOLDER_TEXT, "*." EXTENSION_TEXT);
+	fr = f_findfirst(dir, fili, FOLDER_TEXT, "*." EXTENSION_TEXT);
 	if (fr != FR_OK) {
 		return;
 	}
 
+	// If the last file was corrupted and forced a reboot we remove the extension
 	if (g_pSysState->safeboot.disable.data_transmit) {
-		do_not_process_batch = true; // TODO remove old corrupted file
+		cancel_batch(path, fili->fname);
+		return;
 	}
 
+	log_disable();
 	g_pSysState->safeboot.disable.data_transmit = 1;
 
 	while (fr == FR_OK) {
-		sprintf(path, "%s/%s", FOLDER_TEXT, fili.fname);
-		fr = f_open(&filr, path, FA_READ | FA_OPEN_ALWAYS);
+		sprintf(path, "%s/%s", FOLDER_TEXT, fili->fname);
+		fr = fat_open(&filr, path, FA_READ | FA_OPEN_ALWAYS);
 		if (fr != FR_OK) {
 			http_deactivate();
 			break;
 		}
 
-		// If the last file was corrupted and forced a reboot we remove the extension
-		if (do_not_process_batch) {
-			sprintf(line, "%s/%s", FOLDER_TEXT, fili.fname);
-			len = strlen(line);
-			line[len-3]=0;
-			f_close(&filr);
-			f_rename(path, line);
-			http_deactivate();
-			g_pSysState->safeboot.disable.data_transmit = 0;
-			return;
-		}
-
 		lcd_printl(LINEC, "Transmitting...");
-		lcd_printl(LINE2, fili.fname);
+		lcd_printl(LINE2, fili->fname);
 
 		if (g_pSysState->lastSeek > 0) {
-			f_lseek(&filr, g_pSysState->lastSeek);
+			f_lseek(filr, g_pSysState->lastSeek);
 		}
 
-		while (f_gets(line, lineSize, &filr) != 0) {
-			if (filr.fptr == 0 || strstr(line, "$TS") != NULL) {
+		// We reuse the temporal for the SMS to parse the line
+		// otherwise we might run out of stack inside the sending function
+		while (f_gets(line, MAX_SMS_SIZE, filr) != 0) {
+			if (filr->fptr == 0 || strstr(line, "$TS") != NULL) {
 				if (canSend) {
 					canSend = 0;
-					transactionState = data_send_method(&filr, seekFrom, seekTo);
+					transactionState = data_send_method(filr, seekFrom, seekTo);
 					if (transactionState != TRANS_SUCCESS) {
 						break;
 					}
-					seekFrom = seekTo = filr.fptr;
+					seekFrom = seekTo = filr->fptr;
 					// Found next time stamp - Move to next batch now
 				}
 			} else {
 				canSend = 1;
-				seekTo = filr.fptr;
+				seekTo = filr->fptr;
 			}
+
+			config_incLastCmd();
 		}
 
 		if(canSend) {
-			transactionState = data_send_method(&filr, seekFrom, seekTo);
+			transactionState = data_send_method(filr, seekFrom, seekTo);
 			seekFrom = canSend = 0;
 		}
 
-		if (seekTo < filr.fsize && transactionState == TRANS_SUCCESS) {
-			g_pSysState->lastSeek = filr.fptr;
+		if (seekTo < filr->fsize && transactionState == TRANS_SUCCESS) {
+			g_pSysState->lastSeek = filr->fptr;
 		} else if (transactionState == TRANS_SUCCESS) {
 			g_pSysState->lastSeek = 0;
 		}
 
-		if (f_close(&filr) == FR_OK && transactionState == TRANS_SUCCESS) {
+		if (fat_close() == FR_OK && transactionState == TRANS_SUCCESS) {
 			if (g_pSysState->lastSeek == 0) {
 				fr = f_unlink(path); // Delete the file
 			}
@@ -301,8 +319,8 @@ void process_batch() {
 			break; // Tranmission failed
 		}
 
-		fr = f_findnext(&dir, &fili);
-		if (strlen(fili.fname) == 0) {
+		fr = f_findnext(dir, fili);
+		if (strlen(fili->fname) == 0) {
 			break;
 		}
 	}
@@ -322,4 +340,7 @@ void process_batch() {
 	g_pSysState->safeboot.disable.data_transmit = 0;
 	g_iStatus |= LOG_TIME_STAMP; // Uploads may take a long time and might require offset to be reset
 	log_enable();
+
+	// End of transmit, lets save that we were successful
+	config_setLastCommand(COMMAND_PROCESS_BATCH+99);
 }

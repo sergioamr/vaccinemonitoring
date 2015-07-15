@@ -13,7 +13,7 @@ extern void buzzer_feedback();
 
 void state_alarm_disable_buzzer_override();
 void state_alarm_enable_buzzer_override();
-void thermal_handle_system_button();
+
 // Interrupt services
 
 uint8_t inline switch_check_service_pressed() {
@@ -63,6 +63,7 @@ void hardware_actions() {
 			event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 5);
 			event_force_event_by_id(EVT_SAVE_SAMPLE_TEMP, 10);
 			event_force_event_by_id(EVT_UPLOAD_SAMPLES, 15);
+			config_display_config();
 			//thermal_handle_system_button();
 			lcd_on = 1;
 			break;

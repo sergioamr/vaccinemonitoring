@@ -56,6 +56,12 @@ void alarm_SD_card_failure(char *msg) {
 	sms_send_message_number(g_pDevCfg->cfgReportSMS, msg);
 }
 
+#ifdef _DEBUG
+void alarm_low_memory() {
+	sms_send_message_number(g_pDevCfg->cfgReportSMS, "Low Stack!");
+}
+#endif
+
 SENSOR_STATUS *getAlarmsSensor(int id) {
 	USE_TEMPERATURE
 	return &tem->state[id];
