@@ -490,9 +490,9 @@ int modem_swap_to_SIM(int sim) {
 }
 
 int modem_swap_SIM() {
-
+#ifdef EXTREME_DEBUG
 	log_appendf("SWP [%d]", config_getSelectedSIM());
-
+#endif
 	int res = UART_FAILED;
 	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
 	g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;

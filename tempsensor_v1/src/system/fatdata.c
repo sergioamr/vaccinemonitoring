@@ -1,9 +1,9 @@
 #include "thermalcanyon.h"
 #include "state_machine.h"
 
-extern FRESULT sync_fs( /* FR_OK: successful, FR_DISK_ERR: failed */
-FATFS* fs /* File system object */
-);
+//extern FRESULT sync_fs( /* FR_OK: successful, FR_DISK_ERR: failed */
+// FATFS* fs /* File system object */
+//);
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 FATFS FatFs; /* Work area (file system object) for logical drive */
@@ -19,6 +19,55 @@ char g_bLogDisabled = false;
 #pragma SET_DATA_SECTION(".aggregate_vars")
 const char *g_szLastSD_CardError = NULL;
 #pragma SET_DATA_SECTION()
+
+#pragma SET_DATA_SECTION(".aggregate_vars")
+uint8_t g_fatFileCaptured = 0;
+FILINFO g_fatFili;
+DIR g_fatDir;
+FIL g_fatFilr;
+#pragma SET_DATA_SECTION()
+
+//-------------------------------------------------------------------------------------------
+
+DIR *fat_getDirectory() {
+	return &g_fatDir;
+}
+
+FILINFO *fat_getInfo() {
+	return &g_fatFili;
+}
+
+FIL *fat_getFile() {
+	return &g_fatFilr;
+}
+
+FRESULT fat_open(FIL **fobj, char *path, BYTE mode) {
+	FRESULT res;
+
+	if (g_fatFileCaptured == 1) {
+		_NOP();
+	}
+
+	res = f_open(&g_fatFilr, path, mode);
+	*fobj = &g_fatFilr;
+
+	if (res == FR_OK) {
+		g_fatFileCaptured = 1;
+	}
+	return res;
+}
+
+FRESULT fat_close() {
+	if (g_fatFileCaptured == 0) {
+		_NOP();
+		return FR_INT_ERR;
+	}
+
+	g_fatFileCaptured = 0;
+	return f_close(&g_fatFilr);
+}
+
+//-------------------------------------------------------------------------------------------
 
 const char * const FR_ERRORS[20] = { "OK", "DISK_ERR", "INT_ERR", "NOT_READY",
 		"NO_FILE", "NO_PATH", "INVALID_NAME", "DENIED", "EXIST",
@@ -99,8 +148,8 @@ char* get_simplified_date_string(struct tm* timeData) {
 	static char g_szDateString[26]; // "YYYY-MM-DD HH:MM:S IST"
 #pragma SET_DATA_SECTION()
 
-	if (timeData==NULL)
-		timeData=&g_tmCurrTime;
+	if (timeData == NULL)
+		timeData = &g_tmCurrTime;
 
 	g_szDateString[0] = 0;
 	if (timeData->tm_year < 1900 || timeData->tm_year > 3000) // Working for 1000 years?
@@ -153,9 +202,11 @@ void parse_time_from_line(struct tm* timeToConstruct, char* formattedLine) {
 void offset_timestamp(struct tm* dateToOffset, int intervalMultiplier) {
 	int timeVal;
 
-	if (dateToOffset == NULL) return;
+	if (dateToOffset == NULL)
+		return;
 
-	timeVal = dateToOffset->tm_min + (intervalMultiplier * g_pDevCfg->sIntervalsMins.sampling);
+	timeVal = dateToOffset->tm_min
+			+ (intervalMultiplier * g_pDevCfg->sIntervalsMins.sampling);
 	if (timeVal >= 60) {
 		while (timeVal >= 60) {
 			timeVal -= 60;
@@ -290,7 +341,7 @@ FRESULT fat_init_drive() {
 }
 
 FRESULT fat_save_config(char *text) {
-	FIL fobj;
+	FIL *fobj;
 	FRESULT fr;
 	size_t len;
 	int bw = 0;
@@ -308,31 +359,30 @@ FRESULT fat_save_config(char *text) {
 	if (len == 0)
 		return FR_OK;
 
-	fr = f_open(&fobj, CONFIG_LOG_FILE_PATH,
-	FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
+	fr = fat_open(&fobj, CONFIG_LOG_FILE_PATH, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
 	if (fr != FR_OK) {
 		fat_check_error(fr);
 		return fr;
 	}
 
-	if (fobj.fsize) {
+	if (fobj->fsize) {
 		//append to the file
-		f_lseek(&fobj, fobj.fsize);
+		f_lseek(fobj, fobj->fsize);
 	}
 
-	fr = f_write(&fobj, text, len, (UINT *) &bw);
+	fr = f_write(fobj, text, len, (UINT *) &bw);
 	if (fr != FR_OK || bw != len) {
 		lcd_print("Failed writing SD");
-		f_close(&fobj);
+		fat_close();
 		return fr;
 	}
 
-	fr = f_write(&fobj, text, len, (UINT *) &bw);
-	return f_close(&fobj);
+	fr = f_write(fobj, text, len, (UINT *) &bw);
+	return fat_close();
 }
 
 FRESULT log_append_(char *text) {
-	FIL fobj;
+	FIL *fobj;
 	int t = 0;
 	int len = 0;
 	int bw = 0;
@@ -351,12 +401,12 @@ FRESULT log_append_(char *text) {
 	if (text == NULL)
 		return FR_OK;
 
-	fr = f_open(&fobj, LOG_FILE_PATH,
-	FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
+	fr = fat_open(&fobj, LOG_FILE_PATH, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
+
 	if (fr == FR_OK) {
-		if (fobj.fsize) {
+		if (fobj->fsize) {
 			//append to the file
-			f_lseek(&fobj, fobj.fsize);
+			f_lseek(fobj, fobj->fsize);
 		}
 	} else {
 		fat_check_error(fr);
@@ -379,10 +429,10 @@ FRESULT log_append_(char *text) {
 	strcat(szLog, "] ");
 
 	len = strlen(szLog);
-	fr = f_write(&fobj, szLog, len, (UINT *) &bw);
+	fr = f_write(fobj, szLog, len, (UINT *) &bw);
 	if (fr != FR_OK || bw != len) {
 		lcd_print("Failed writing SD");
-		f_close(&fobj);
+		fat_close();
 		return fr;
 	}
 
@@ -393,15 +443,15 @@ FRESULT log_append_(char *text) {
 				text[t] = ' ';
 		}
 
-		fr = f_write(&fobj, text, len, (UINT *) &bw);
+		fr = f_write(fobj, text, len, (UINT *) &bw);
 	}
 	strcpy(szLog, "\r\n");
-	fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
-	return f_close(&fobj);
+	fr = f_write(fobj, szLog, strlen(szLog), (UINT *) &bw);
+	return fat_close();
 }
 
 FRESULT log_modem(const char *text) {
-	FIL fobj;
+	FIL *fobj;
 	int len = 0;
 	int bw = 0;
 	FRESULT fr;
@@ -409,20 +459,20 @@ FRESULT log_modem(const char *text) {
 	if (g_bLogDisabled || !g_bFatInitialized)
 		return FR_NOT_READY;
 
-	len=strlen(text);
-	if (len==0)
+	len = strlen(text);
+	if (len == 0)
 		return FR_NOT_READY;
 
-	fr = f_open(&fobj, LOG_MODEM_PATH,
-	FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
+	fr = fat_open(&fobj, LOG_MODEM_PATH, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
+
 	if (fr == FR_OK) {
-		if (fobj.fsize)
-			f_lseek(&fobj, fobj.fsize);
+		if (fobj->fsize)
+			f_lseek(fobj, fobj->fsize);
 	} else
 		return fr;
 
-	fr = f_write(&fobj, text, len, (UINT *) &bw);
-	return f_close(&fobj);
+	fr = f_write(fobj, text, len, (UINT *) &bw);
+	return fat_close();
 }
 
 void log_disable() {
@@ -433,31 +483,29 @@ void log_enable() {
 	g_bLogDisabled = true;
 }
 
-FRESULT log_appendf(const char *_format, ...) {
 // This function is called with the stack really full. We get this array from the stack for it to not create strange behaviour
 #pragma SET_DATA_SECTION(".aggregate_vars")
-	static char szTemp[40];
+static char szTemp[40];
 #pragma SET_DATA_SECTION()
 
+FRESULT log_appendf(const char *_format, ...) {
 	va_list _ap;
-	char *fptr = (char *) _format;
-	char *out_end = szTemp;
 
+#ifdef _DEBUG
+	checkStack();
+#endif
+	va_start(_ap, _format);
+	vsnprintf(szTemp, sizeof(szTemp), _format, _ap);
+	va_end(_ap);
 	if (g_bLogDisabled)
 		return FR_NOT_READY;
 
-	va_start(_ap, _format);
-	__TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs);
-	va_end(_ap);
-
-	*out_end = '\0';
 	return log_append_(szTemp);
 }
 
-const char HEADER_CSV[] =
-		"\"Date\",\"Batt\",\"Power\","
-				"\"Sensor A\",\"Sensor B\",\"Sensor C\",\"Sensor D\",\"Sensor E\","
-				"\"Signal\",\"Net\"\r\n";
+const char HEADER_CSV[] = "\"Date\",\"Batt\",\"Power\","
+		"\"Sensor A\",\"Sensor B\",\"Sensor C\",\"Sensor D\",\"Sensor E\","
+		"\"Signal\",\"Net\"\r\n";
 
 FRESULT log_write_header(FIL *fobj, UINT *pBw) {
 	return f_write(fobj, HEADER_CSV, sizeof(HEADER_CSV) - 1, pBw);
@@ -508,7 +556,7 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 }
 
 FRESULT log_sample_web_format(UINT *tbw) {
-	FIL fobj;
+	FIL *fobj;
 	UINT bw = 0;	//bytes written
 	FRESULT fr;
 
@@ -527,16 +575,16 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	rtc_getlocal(&g_tmCurrTime);
 	char* fn = get_current_fileName(&g_tmCurrTime, FOLDER_DATA, EXTENSION_DATA);
 
-	fr = f_open(&fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
+	fr = fat_open(&fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
 	if (fr == FR_OK) {
-		if (fobj.fsize) {
+		if (fobj->fsize) {
 			//append to the file
-			f_lseek(&fobj, fobj.fsize);
+			f_lseek(fobj, fobj->fsize);
 		} else {
-			fr = log_write_header(&fobj, &bw);
+			fr = log_write_header(fobj, &bw);
 			if (fr != FR_OK) {
 				fat_check_error(fr);
-				f_close(&fobj);
+				fat_close();
 				return fr;
 			}
 		}
@@ -545,7 +593,7 @@ FRESULT log_sample_web_format(UINT *tbw) {
 		return fr;
 	}
 
-	fr = log_write_temperature(&fobj, &bw);
+	fr = log_write_temperature(fobj, &bw);
 	*tbw = bw;
 
 	if (fr == FR_OK) {
@@ -557,11 +605,11 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	} else {
 		fat_check_error(fr);
 	}
-	return f_close(&fobj);
+	return fat_close();
 }
 
 FRESULT log_sample_to_disk(UINT *tbw) {
-	FIL fobj;
+	FIL *fobj;
 	struct tm tempDate;
 	char *szLog = NULL;
 	int iBatteryLevel;
@@ -579,11 +627,11 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 	evt = events_find(EVT_SAVE_SAMPLE_TEMP);
 	iSamplePeriod = event_getIntervalMinutes(evt);
 
-	fr = f_open(&fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
+	fr = fat_open(&fobj, fn, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
 	if (fr == FR_OK) {
-		if (fobj.fsize) {
+		if (fobj->fsize) {
 			//append to the file
-			f_lseek(&fobj, fobj.fsize);
+			f_lseek(fobj, fobj->fsize);
 		}
 	} else {
 		fat_check_error(fr);
@@ -594,8 +642,7 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 
 	// If current time is out of previous interval, log a new time stamp
 	// to avoid time offset issues
-	if (!date_within_interval(&tempDate, &g_lastSampleTime,
-			iSamplePeriod)) {
+	if (!date_within_interval(&tempDate, &g_lastSampleTime, iSamplePeriod)) {
 		g_iStatus |= LOG_TIME_STAMP;
 	}
 	memcpy(&g_lastSampleTime, &tempDate, sizeof(struct tm));
@@ -616,7 +663,7 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 		strcat(szLog, itoa_pad(iSamplePeriod));
 		strcat(szLog, ",");
 		strcat(szLog, "\n");
-		fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
+		fr = f_write(fobj, szLog, strlen(szLog), (UINT *) &bw);
 
 		if (bw > 0) {
 			*tbw += bw;
@@ -639,12 +686,12 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 			temperature_getString(2), temperature_getString(3),
 			temperature_getString(4));
 
-	fr = f_write(&fobj, szLog, strlen(szLog), (UINT *) &bw);
+	fr = f_write(fobj, szLog, strlen(szLog), (UINT *) &bw);
 	releaseStringBufferHelper();
 
 	if (bw > 0) {
 		*tbw += bw;
 	}
 
-	return f_close(&fobj);
+	return fat_close();
 }

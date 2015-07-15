@@ -344,18 +344,15 @@ EVENT inline *events_getNextEvent() {
 }
 
 void events_run() {
-	time_t currentTime;
 	EVENT *pEvent;
 	EVENT *pOldEvent = NULL;
-	uint8_t nextEvent = g_sEvents.nextEvent;
 
 	event_run_deferred_commands();
 
-	currentTime = events_getTick();
 	state_check_power();
 
-	pEvent = &g_sEvents.events[nextEvent];
-	while (currentTime >= pEvent->nextEventRun && pEvent != NULL) {
+	pEvent = &g_sEvents.events[g_sEvents.nextEvent];
+	while (events_getTick() >= pEvent->nextEventRun && pEvent != NULL) {
 		if (g_iDebug)
 			buzzer_feedback_value(5);
 
@@ -367,9 +364,7 @@ void events_run() {
 
 		pOldEvent = pEvent;
 		event_run_now(pEvent);
-		nextEvent = g_sEvents.nextEvent;
-		pEvent = &g_sEvents.events[nextEvent];
-		currentTime = events_getTick();
+		pEvent = &g_sEvents.events[g_sEvents.nextEvent];
 	}
 
 	//events_sanity(currentTime);
@@ -471,6 +466,8 @@ void event_upload_samples(void *event, time_t currentTime) {
 	SIM_CARD_CONFIG *sim = config_getSIM();
 	int slot = g_pDevCfg->cfgSelectedSIM_slot;
 
+	checkStack();
+
 	// Swap SIM on next network check is APN and Phone num has not
 	// been initialized ATM this may not be requires as
 	// 1 unconfigured APN means both won't be parsed correctly
@@ -492,6 +489,8 @@ void event_upload_samples(void *event, time_t currentTime) {
 
 		return; // no SIM configurable or SIM requires switch
 	}
+
+	checkStack();
 
 	process_batch();
 }

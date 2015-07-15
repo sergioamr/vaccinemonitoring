@@ -193,8 +193,9 @@ int http_check_error(int *retry) {
 }
 
 int http_open_connection_upload(int data_length) {
-	char cmd[120];
+	char *cmd = getSMSBufferHelper();
 
+	checkStack();
 	if (!state_isSimOperational())
 		return UART_ERROR;
 
@@ -207,6 +208,7 @@ int http_open_connection_upload(int data_length) {
 	if (uart_tx_waitForPrompt(cmd, TIMEOUT_HTTPSND_PROMPT)) {
 		return UART_SUCCESS;
 	}
+
 	return uart_getTransactionState();
 }
 

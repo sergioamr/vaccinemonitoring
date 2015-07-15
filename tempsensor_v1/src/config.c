@@ -159,11 +159,13 @@ uint8_t config_getSelectedSIM() {
 }
 
 uint8_t config_is_SIM_configurable(int simSlot) {
+	SIM_CARD_CONFIG *sim;
+
 	if (simSlot >= SYSTEM_NUM_SIM_CARDS) {
 		return 0;
 	}
 
-	SIM_CARD_CONFIG *sim = &g_pDevCfg->SIM[simSlot];
+	sim = &g_pDevCfg->SIM[simSlot];
 
 	if (sim->cfgAPN[0] == '\0' && sim->cfgPhoneNum[0] == '\0') {
 		return 0;
@@ -262,8 +264,6 @@ void config_send_configuration(char *number) {
 	releaseStringBufferHelper();
 #endif
 }
-
-extern int main_test();
 
 char g_bServiceMode = false;
 

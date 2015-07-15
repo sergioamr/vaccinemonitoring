@@ -13,7 +13,7 @@ extern void buzzer_feedback();
 
 void state_alarm_disable_buzzer_override();
 void state_alarm_enable_buzzer_override();
-void thermal_handle_system_button();
+
 // Interrupt services
 
 uint8_t inline switch_check_service_pressed() {

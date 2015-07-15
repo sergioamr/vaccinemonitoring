@@ -241,32 +241,31 @@ void lcd_progress_wait(uint16_t delayTime) {
 	int t;
 	int count = delayTime / 100;
 
+#ifdef _DEBUG
+	checkStack();
+#endif
 	for (t = 0; t < count; t++) {
 		delay(50);
 		lcd_print_progress();
 	}
 }
 
-int lcd_printf(int line, const char *_format, ...) {
 #pragma SET_DATA_SECTION(".aggregate_vars")
 	static char szTemp[33];
 #pragma SET_DATA_SECTION()
 
+void lcd_printf(int line, const char *_format, ...) {
 	va_list _ap;
-	int rval;
-	if (g_bLCD_state == 0)
-		return 0;
 
-	char *fptr = (char *) _format;
-	char *out_end = szTemp;
+#ifdef _DEBUG
+	checkStack();
+#endif
 
 	va_start(_ap, _format);
-	rval = __TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs);
+	vsnprintf(szTemp, sizeof(szTemp), _format, _ap);
 	va_end(_ap);
 
-	*out_end = '\0';
 	lcd_printl(line, szTemp);
-	return (rval);
 }
 
 void lcd_print(char* pcData) {
@@ -343,13 +342,12 @@ void lcd_enable_verbose() {
 	g_iLCDVerbose = VERBOSE_BOOTING;
 }
 
+char display[4] = { '*', '|', '/', '-' };
 void lcd_print_progress() {
-
 	if (g_bLCD_state == 0)
 		return;
 
 	static char pos = 0;
-	char display[4] = { '*', '|', '/', '-' };
 	lcd_setaddr(0x4F);
 	i2c_write(0x3e, 0x40, 1, (uint8_t *) &display[(++pos) & 0x3]);
 }
