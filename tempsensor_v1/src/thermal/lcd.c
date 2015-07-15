@@ -120,10 +120,9 @@ void lcd_setDate(char *buffer) {
 }
 
 void lcd_show() {
-#pragma SET_DATA_SECTION(".aggregate_vars")
+
 	static int8_t iItemId = -1;
 	static time_t lastRefresh = 0;
-#pragma SET_DATA_SECTION()
 
 	char lcdBuffer[LCD_DISPLAY_LEN + 1];
 	int iIdx = 0;
@@ -250,12 +249,9 @@ void lcd_progress_wait(uint16_t delayTime) {
 	}
 }
 
-#pragma SET_DATA_SECTION(".aggregate_vars")
-	static char szTemp[33];
-#pragma SET_DATA_SECTION()
-
 void lcd_printf(int line, const char *_format, ...) {
 	va_list _ap;
+	char szTemp[33];
 
 #ifdef _DEBUG
 	checkStack();
@@ -322,9 +318,7 @@ void lcd_bldisable() {
 	PJOUT &= ~BIT7;
 }
 
-#pragma SET_DATA_SECTION(".aggregate_vars")
 int g_iLCDVerbose = VERBOSE_DISABLED; // Disable debug
-#pragma SET_DATA_SECTION()
 
 void lcd_disable_verbose() {
 	g_iLCDVerbose = VERBOSE_DISABLED;
@@ -342,7 +336,7 @@ void lcd_enable_verbose() {
 	g_iLCDVerbose = VERBOSE_BOOTING;
 }
 
-char display[4] = { '*', '|', '/', '-' };
+const char display[4] = { '*', '|', '/', '-' };
 void lcd_print_progress() {
 	if (g_bLCD_state == 0)
 		return;

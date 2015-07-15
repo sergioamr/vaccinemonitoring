@@ -5,10 +5,6 @@
 // FATFS* fs /* File system object */
 //);
 
-#pragma SET_DATA_SECTION(".aggregate_vars")
-FATFS FatFs; /* Work area (file system object) for logical drive */
-#pragma SET_DATA_SECTION()
-
 #pragma SET_DATA_SECTION(".helpers")
 char g_szFatFileName[32];
 #pragma SET_DATA_SECTION()
@@ -17,10 +13,8 @@ char g_bFatInitialized = false;
 char g_bLogDisabled = false;
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
+FATFS FatFs; /* Work area (file system object) for logical drive */
 const char *g_szLastSD_CardError = NULL;
-#pragma SET_DATA_SECTION()
-
-#pragma SET_DATA_SECTION(".aggregate_vars")
 uint8_t g_fatFileCaptured = 0;
 FILINFO g_fatFili;
 DIR g_fatDir;
@@ -90,10 +84,7 @@ DWORD get_fattime(void) {
 }
 
 char* get_YMD_String(struct tm* timeData) {
-
-#pragma SET_DATA_SECTION(".aggregate_vars")
 	static char g_szYMDString[16];
-#pragma SET_DATA_SECTION()
 
 	g_szYMDString[0] = 0;
 	if (timeData->tm_year < 1900 || timeData->tm_year > 3000) // Working for 1000 years?
@@ -109,10 +100,7 @@ char* get_YMD_String(struct tm* timeData) {
 char* get_date_string(struct tm* timeData, const char* dateSeperator,
 		const char* dateTimeSeperator, const char* timeSeparator,
 		uint8_t includeTZ) {
-
-#pragma SET_DATA_SECTION(".aggregate_vars")
 	static char g_szDateString[24]; // "YYYY-MM-DD HH:MM:SS IST"
-#pragma SET_DATA_SECTION()
 
 	g_szDateString[0] = 0;
 	if (timeData->tm_year < 1900 || timeData->tm_year > 3000) // Working for 1000 years?
@@ -143,10 +131,7 @@ char* get_date_string(struct tm* timeData, const char* dateSeperator,
 
 // FORMAT IN FORMAT [YYYYMMDD:HHMMSS] Used for SMS timestamp
 char* get_simplified_date_string(struct tm* timeData) {
-
-#pragma SET_DATA_SECTION(".aggregate_vars")
 	static char g_szDateString[26]; // "YYYY-MM-DD HH:MM:S IST"
-#pragma SET_DATA_SECTION()
 
 	if (timeData == NULL)
 		timeData = &g_tmCurrTime;
@@ -484,12 +469,9 @@ void log_enable() {
 }
 
 // This function is called with the stack really full. We get this array from the stack for it to not create strange behaviour
-#pragma SET_DATA_SECTION(".aggregate_vars")
-static char szTemp[40];
-#pragma SET_DATA_SECTION()
-
 FRESULT log_appendf(const char *_format, ...) {
 	va_list _ap;
+	char szTemp[40];
 
 #ifdef _DEBUG
 	checkStack();
@@ -503,9 +485,13 @@ FRESULT log_appendf(const char *_format, ...) {
 	return log_append_(szTemp);
 }
 
+#ifndef _DEBUG
 const char HEADER_CSV[] = "\"Date\",\"Batt\",\"Power\","
 		"\"Sensor A\",\"Sensor B\",\"Sensor C\",\"Sensor D\",\"Sensor E\","
 		"\"Signal\",\"Net\"\r\n";
+#else
+const char HEADER_CSV[] = "D,B,P,A,B,C,D,E,S,N\r\n";
+#endif
 
 FRESULT log_write_header(FIL *fobj, UINT *pBw) {
 	return f_write(fobj, HEADER_CSV, sizeof(HEADER_CSV) - 1, pBw);
@@ -598,7 +584,7 @@ FRESULT log_sample_web_format(UINT *tbw) {
 
 	if (fr == FR_OK) {
 #ifdef _DEBUG
-		lcd_printf(LINE2, "OK %d bytes", *tbw);
+		lcd_printf(LINE2, "OK %d", *tbw);
 #else
 		event_force_event_by_id(EVT_DISPLAY, 0);
 #endif

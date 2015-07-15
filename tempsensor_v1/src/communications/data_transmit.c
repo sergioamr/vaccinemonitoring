@@ -12,9 +12,7 @@
 #define TRANS_SUCCESS			0
 
 char *getSensorTemp(int sensorID) {
-#pragma SET_DATA_SECTION(".aggregate_vars")
 	static char sensorData[4];
-#pragma SET_DATA_SECTION()
 	return sensorData;
 }
 
@@ -111,10 +109,6 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 	return res;
 }
 
-#pragma SET_DATA_SECTION(".aggregate_vars")
-struct tm firstDate;
-#pragma SET_DATA_SECTION()
-
 // 11,20150303:082208,interval,sensorid,DATADATADATAT,sensorid,DATADATADATA,
 // sensorid,dATADATADA,sensorID,DATADATADATADATAT, sensorID,DATADATADATADATAT,batt level,battplugged.
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
@@ -124,6 +118,7 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 	char *line = getStringBufferHelper(&lineSize);
 	int retry = 0;
 	uint32_t length = 0;
+	struct tm firstDate;
 
 	int res = TRANS_FAILED;
 	char* dateString = NULL;

@@ -29,10 +29,8 @@
 #include "state_machine.h"
 #include "main_system.h"
 
-#pragma SET_DATA_SECTION(".aggregate_vars")
-char ctrlZ[2] = { 0x1A, 0 };
-char ESC[2] = { 0x1B, 0 };
-#pragma SET_DATA_SECTION()
+const char ctrlZ[2] = { 0x1A, 0 };
+const char ESC[2] = { 0x1B, 0 };
 
 /*
  * AT Commands Reference Guide 80000ST10025a Rev. 9 2010-10-04
@@ -173,10 +171,8 @@ int modem_getNetworkStatus(int *mode, int *status) {
 /* Network cellular service */
 /**********************************************************************************************************************/
 
-#pragma SET_DATA_SECTION(".aggregate_vars")
-static char NETWORK_GPRS_COMMAND[] = "CGREG";
-static char NETWORK_GSM_COMMAND[] = "CREG";
-#pragma SET_DATA_SECTION()
+const char NETWORK_GPRS_COMMAND[] = "CGREG";
+const char NETWORK_GSM_COMMAND[] = "CREG";
 
 const char inline *modem_getNetworkServiceCommand() {
 	if (g_pSysState->network_mode == NETWORK_GPRS)
@@ -330,6 +326,9 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	config_setLastCommand(COMMAND_SIM_ERROR);
 
 	if (config_getSimLastError(&token) == errorCode)
+		return;
+
+	if (errorCode==555)
 		return;
 
 	sprintf(szCode, "ERROR %d", errorCode);
