@@ -223,7 +223,6 @@ void cancel_batch(char *path, char *name) {
 void process_batch() {
 	int8_t canSend = 0, transactionState = 0;
 	uint32_t seekFrom = g_pSysState->lastSeek, seekTo = g_pSysState->lastSeek;
-	uint16_t lineSize = 0;
 
 	FIL *filr = fat_getFile();
 	FILINFO *fili = fat_getInfo();
@@ -236,9 +235,9 @@ void process_batch() {
 	checkStack();
 #endif
 
-	line = getEncodedLineHelper(&lineSize);
-
 	FRESULT fr;
+
+	line = getSMSBufferHelper();
 
 	if (!state_isSimOperational()) {
  		return;
@@ -280,7 +279,9 @@ void process_batch() {
 			f_lseek(filr, g_pSysState->lastSeek);
 		}
 
-		while (f_gets(line, lineSize, filr) != 0) {
+		// We reuse the temporal for the SMS to parse the line
+		// otherwise we might run out of stack inside the sending function
+		while (f_gets(line, MAX_SMS_SIZE, filr) != 0) {
 			if (filr->fptr == 0 || strstr(line, "$TS") != NULL) {
 				if (canSend) {
 					canSend = 0;
