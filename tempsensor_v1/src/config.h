@@ -322,6 +322,8 @@ typedef struct {
 } CONFIG_SYSTEM;
 
 typedef struct {
+	uint8_t failedTransmissionsGPRS; //
+	uint8_t failedTransmissionsGSM;  // Keep track of total failed transmission
 	uint8_t modemErrors;
 	uint8_t failsGPRS;
 	uint8_t failsGSM;
