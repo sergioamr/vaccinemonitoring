@@ -334,8 +334,9 @@ void process_batch() {
 	} else {
 		lcd_printl(LINE2, "Failed");
 	}
-	g_pSysState->safeboot.disable.data_transmit = 0;
 
+	g_pSysState->safeboot.disable.data_transmit = 0;
+	g_pSysState->system.switches.timestamp_on = 1;
 	log_enable();
 
 	// End of transmit, lets save that we were successful

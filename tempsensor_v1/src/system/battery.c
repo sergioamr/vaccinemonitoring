@@ -50,8 +50,7 @@ uint8_t batt_check_level() {
 	return iBatteryLevel;
 }
 
-void batt_init()
-{
+void batt_init() {
 	uint16_t 	flags = 0;
 	uint16_t 	designenergy = 0;
 	uint16_t 	terminalvolt = 0;
@@ -191,23 +190,6 @@ void batt_init()
 	data = 0x00;
 	i2c_write(SLAVE_ADDR_BATTERY, BATT_CONTROL_2, 1, &data);
 
-#if 0
-//calibration experiment
-
-	data = 0x59;
-	i2c_write(SLAVE_ADDR_BATTERY, BATT_DATA_BLOCK_CLASS, 1, &data);
-
-	data = 0x00;
-	i2c_write(SLAVE_ADDR_BATTERY, BATT_DATA_BLOCK, 1, &data);
-
-	iIdx = 0;
-	while (iIdx < 28)
-	{
-		i2c_read(SLAVE_ADDR_BATTERY, iIdx, 5, &reg[iIdx]);
-		iIdx += 5;
-	}
-#endif
-
 	delay(1000);
 }
 
@@ -227,13 +209,9 @@ uint8_t batt_getlevel()
 
 	adjustedlevel = level*1.15;
 	if(adjustedlevel > 100.0)
-	{
 		level = 100;
-	}
 	else
-	{
 		level = (int8_t)adjustedlevel;
-	}
 
 	g_pSysState->battery_level = level;
 	return level;

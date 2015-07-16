@@ -391,6 +391,7 @@ typedef union {
 		unsigned char button_buzzer_override :1;
 		unsigned char buzzer_sound :1;
 		unsigned char http_enabled :1;
+		unsigned char timestamp_on :1;
 	} switches;
 	unsigned char status;
 } SYSTEM_SWITCHES;

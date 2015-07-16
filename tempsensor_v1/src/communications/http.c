@@ -125,12 +125,6 @@ int8_t http_setup() {
 }
 
 uint8_t http_deactivate() {
-	// LONG TIMEOUT
-/*
-	if (!g_pSysState->system.switches.http_enabled) {
-		_NOP();
-	}
-*/
 	g_pSysState->system.switches.http_enabled = 0;
 	config_setLastCommand(COMMAND_HTTP_DISABLE);
 	return uart_tx("#SGACT=1,0");	//deactivate GPRS context
