@@ -247,7 +247,6 @@ void state_alarm_enable_buzzer_override() {
 void state_alarm_turnoff_buzzer() {
 	SYSTEM_SWITCHES *s = state_getSwitches();
 	s->switches.buzzer_sound = STATE_OFF;
-	g_iStatus &= ~BUZZER_ON;
 }
 
 void state_alarm_turnon_buzzer() {
@@ -414,9 +413,6 @@ uint8_t state_isBuzzerOn() {
 	// Manual override by the button
 	if (SYSTEM_SWITCH.button_buzzer_override == true)
 		return false;
-
-	if (g_iStatus & BUZZER_ON)
-		return true;
 
 	return SYSTEM_SWITCH.buzzer_sound;
 }

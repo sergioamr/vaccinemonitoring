@@ -1,16 +1,3 @@
-#include "stdint.h"
-#include "i2c.h"
-#include "config.h"
-#include "lcd.h"
-#include "time.h"
-#include "stdio.h"
-#include "string.h"
-#include "timer.h"
-#include "globals.h"
-#include "rtc.h"
-#include "stringutils.h"
-#include "temperature.h"
-#include "fatdata.h"
 #include "thermalcanyon.h"
 
 char g_bLCD_state = 0;
@@ -157,7 +144,7 @@ void lcd_show() {
 		strcat(lcdBuffer, itoa_pad(batt_getlevel()));
 		strcat(lcdBuffer, "% ");
 		if (state_isSignalInRange()) {
-			if (g_iSignal_gprs == 1) {
+			if (modem_getNetworkService() == NETWORK_GPRS) {
 				strcat(lcdBuffer, "G");
 			} else {
 				strcat(lcdBuffer, "S");

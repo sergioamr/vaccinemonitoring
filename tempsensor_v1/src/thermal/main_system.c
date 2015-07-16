@@ -192,6 +192,7 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 /*  MAIN                                                                    */
 /****************************************************************************/
 
+// Paints the stack in a value to check for anomalies
 #define EMPTY_STACK_VALUE 0x69
 
 uint8_t stackClear = EMPTY_STACK_VALUE;
@@ -224,9 +225,7 @@ void checkStack() {
 
 	stackClear++;
 }
-
 #endif
-
 
 int main(void) {
 

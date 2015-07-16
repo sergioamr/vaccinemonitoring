@@ -136,7 +136,7 @@
 #define NETWORK_CONNECTION_DELAY 3000
 #endif
 
-#define MODEM_CHECK_RETRY 	3
+#define MODEM_CHECK_RETRY 	10
 #define NETWORK_PULLTIME_ATTEMPTS 3
 
 /**************************************************************************************************************************/
@@ -228,6 +228,9 @@ typedef struct {
 
 // Careful with exceeding the size of the URL
 #define MAX_URL_PATH 37
+
+// FOLDERxx/FILENAME.TXT\0
+#define MAX_PATH 8+1+8+1+3+1
 
 typedef struct {
 	float threshCold;

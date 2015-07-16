@@ -293,8 +293,11 @@ void events_debug() {
 	//if (pEvent->id == EVT_DISPLAY)
 	//	return;
 
-	time_t nextEventTime = pEvent->nextEventRun - currentTime;
+	int nextEventTime = pEvent->nextEventRun - currentTime;
 	int test = nextEventTime % 10;
+
+	if (nextEventTime< 0)
+		nextEventTime = 0;
 	if (test == 0 || nextEventTime < 10 || 1)
 		lcd_printf(LINE1, "[%s %d]   ", pEvent->name, nextEventTime);
 #endif
