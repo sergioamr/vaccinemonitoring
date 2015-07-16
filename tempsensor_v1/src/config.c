@@ -94,6 +94,7 @@ void config_display_config() {
 	lcd_printf(LINEC, "UPTIME");
 	lcd_printf(LINEH, "[%d:%d:%d]", iMinuteTick/60, iMinuteTick%60, iSecondTick%60);
 
+#ifdef _DEBUG
 	lcd_printl(LINEC, "SMS Gateway");
 	lcd_printl(LINEH, g_pDevCfg->cfgGatewaySMS);
 
@@ -110,7 +111,7 @@ void config_display_config() {
 
 	lcd_printl(LINEC, "UPLOAD URL ");
 	lcd_printl(LINEH, g_pDevCfg->cfgUpload_URL);
-
+#endif
 	lcd_display_config();
 }
 

@@ -5,16 +5,12 @@
  *      Author: sergioam
  */
 
-#include "stdint.h"
-#include "string.h"
-#include "globals.h"
-#include "sms.h"
+#include "thermalcanyon.h"
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 char g_iStringCaptured = 0;
 char g_szStringTemp[80];
 char g_smsMsg[MAX_SMS_SIZE_FULL];
-char g_szEncodedLine[45];
 char g_szItoa[16];
 #pragma SET_DATA_SECTION()
 
@@ -39,17 +35,6 @@ void releaseStringBufferHelper() {
 		__no_operation();
 	}
 	g_iStringCaptured = 0;
-}
-
-char *getEncodedLineHelper(uint16_t *size) {
-	if (size!=NULL)
-		*size = sizeof(g_szEncodedLine);
-
-#ifdef _DEBUG
-	memset(g_szEncodedLine, 0x12, sizeof(g_szEncodedLine));
-#endif
-	g_szEncodedLine[0] = 0;
-	return g_szEncodedLine;
 }
 
 char *getSMSBufferHelper() {
