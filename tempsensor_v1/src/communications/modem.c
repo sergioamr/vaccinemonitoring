@@ -1,33 +1,4 @@
-/*
- * modem.c
- *
- *  Created on: May 18, 2015
- *      Author: sergioam
- */
-
-#include <msp430.h>
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-
-#include "driverlib.h"
-#include "config.h"
-#include "modem.h"
-#include "common.h"
-#include "modem_uart.h"
-#include "MMC.h"
-#include "pmm.h"
-#include "lcd.h"
-#include "globals.h"
-#include "sms.h"
-#include "timer.h"
-#include "time.h"
-#include "rtc.h"
-#include "http.h"
-#include "temperature.h"
-#include "fatdata.h"
-#include "state_machine.h"
-#include "main_system.h"
+#include "thermalcanyon.h"
 
 const char ctrlZ[2] = { 0x1A, 0 };
 const char ESC[2] = { 0x1B, 0 };
@@ -409,8 +380,7 @@ int8_t modem_check_network() {
 
 int8_t modem_first_init() {
 	int t = 0;
-	int iIdx;
-	int iStatus = 0;
+	int attempts = MODEM_CHECK_RETRY;
 	int iSIM_Error = 0;
 
 	config_setLastCommand(COMMAND_FIRST_INIT);
@@ -418,65 +388,56 @@ int8_t modem_first_init() {
 	lcd_printl(LINEC, "Power on");
 	delay(500);
 
-	//check Modem is powered on
-	for (iIdx = 0; iIdx < MODEM_CHECK_RETRY; iIdx++) {
-		if ((P4IN & BIT0) == 0) {
-			iStatus |= MODEM_POWERED_ON;
-			break;
-		} else {
-			iStatus &= ~MODEM_POWERED_ON;
-			delay(100);
-		}
-	}
+	//check Modem is powered on.
+	while (!POWER_ON && --attempts>0)
+		delay(100);
 
-	if (iStatus & MODEM_POWERED_ON) {
-		uart_setOKMode();
+	if (!POWER_ON)
+		return 0;
 
-		lcd_disable_verbose();
-		//uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted (not used anymore)
-		uart_tx_timeout("AT", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
-		lcd_enable_verbose();
+	uart_setOKMode();
 
-		uint8_t nsims = SYSTEM_NUM_SIM_CARDS;
+	lcd_disable_verbose();
+	//uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted (not used anymore)
+	uart_tx_timeout("AT", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
+	lcd_enable_verbose();
+
+	uint8_t nsims = SYSTEM_NUM_SIM_CARDS;
 
 #ifdef _DEBUG
-		nsims = 1;
+	nsims = 1;
 #endif
 
-		for (t = 0; t < nsims; t++) {
-			modem_swap_SIM(); // Send hearbeat from SIM
-			/*
-			 * We have to check which parameters are fatal to disable the SIM
-			 *
-			 */
+	for (t = 0; t < nsims; t++) {
+		modem_swap_SIM(); // Send hearbeat from SIM
+		/*
+		 * We have to check which parameters are fatal to disable the SIM
+		 *
+		 */
 
-			if (!state_isSimOperational()) {
-				iSIM_Error++;
-			}
+		if (!state_isSimOperational()) {
+			iSIM_Error++;
 		}
-
-		// One or more of the sims had a catastrofic failure on init, set the device
-		switch (iSIM_Error) {
-		case 1:
-			for (t = 0; t < SYSTEM_NUM_SIM_CARDS; t++)
-				if (config_getSIMError(t) == NO_ERROR) {
-					if (config_getSelectedSIM() != t) {
-						g_pDevCfg->cfgSIM_slot = t;
-						g_pDevCfg->cfgSelectedSIM_slot = t;
-						modem_init();
-					}
-				}
-			break;
-		case 2:
-			lcd_printf(LINEE, "SIMS FAILED");
-			break;
-		}
-
-	} else {
-		lcd_printl(LINEE, "Failed Power On");
 	}
 
-	return iStatus;
+	// One or more of the sims had a catastrofic failure on init, set the device
+	switch (iSIM_Error) {
+	case 1:
+		for (t = 0; t < SYSTEM_NUM_SIM_CARDS; t++)
+			if (config_getSIMError(t) == NO_ERROR) {
+				if (config_getSelectedSIM() != t) {
+					g_pDevCfg->cfgSIM_slot = t;
+					g_pDevCfg->cfgSelectedSIM_slot = t;
+					modem_init();
+				}
+			}
+		break;
+	case 2:
+		lcd_printf(LINEE, "SIMS FAILED");
+		break;
+	}
+
+	return POWER_ON;
 }
 
 void modem_check_sim_active() {
