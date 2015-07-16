@@ -594,6 +594,8 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	return fat_close();
 }
 
+struct tm g_lastSampleTime;
+
 FRESULT log_sample_to_disk(UINT *tbw) {
 	FIL *fobj;
 	struct tm tempDate;

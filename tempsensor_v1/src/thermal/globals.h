@@ -19,5 +19,4 @@ extern SYSTEM_STATE *g_pSysState;
 extern const char SensorName[SYSTEM_NUM_SENSORS][NAME_LEN];
 extern struct tm g_tmCurrTime;
 extern struct tm g_lastSampleTime;
-
 #endif /* TEMPSENSOR_V1_GLOBALS_H_ */
