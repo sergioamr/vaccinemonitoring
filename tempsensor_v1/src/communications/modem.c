@@ -223,7 +223,6 @@ int modem_connect_network(uint8_t attempts) {
 	int net_status = 0;
 	int net_mode = 0;
 	int tests = 0;
-	int networkCommand = 0;
 	int nsim = config_getSelectedSIM();
 
 	/* PIN TO CHECK IF THE SIM IS INSERTED IS NOT CONNECTED, CPIN WILL NOT RETURN SIM NOT INSERTED */
@@ -243,8 +242,7 @@ int modem_connect_network(uint8_t attempts) {
 
 	config_setLastCommand(COMMAND_NETWORK_CONNECT);
 
-	networkCommand = modem_getNetworkServiceCommand();
-	uart_txf("+%s=2", networkCommand);
+	uart_txf("+%s=2", modem_getNetworkServiceCommand());
 	do {
 		if (modem_getNetworkStatus(&net_mode, &net_status) == UART_SUCCESS) {
 
@@ -271,7 +269,7 @@ int modem_connect_network(uint8_t attempts) {
 					delay(HUMAN_DISPLAY_INFO_DELAY);
 				return UART_SUCCESS;
 			} else {
-				if (networkCommand == NETWORK_GPRS_COMMAND) {
+				if (g_pSysState->network_mode == NETWORK_GPRS) {
 					state_failed_gprs(g_pDevCfg->cfgSIM_slot);
 				} else {
 					state_failed_gsm(g_pDevCfg->cfgSIM_slot);
