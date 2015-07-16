@@ -393,10 +393,10 @@ int8_t modem_first_init() {
 	delay(500);
 
 	//check Modem is powered on.
-	while (!POWER_ON && --attempts>0)
+	while (!(P4IN & BIT0) && --attempts>0)
 		delay(100);
 
-	if (!POWER_ON)
+	if ((P4IN & BIT0))
 		return 0;
 
 	uart_setOKMode();
