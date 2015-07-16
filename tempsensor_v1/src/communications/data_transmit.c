@@ -61,8 +61,8 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 		if (splitSend) {
 			offset_timestamp(&firstDate, linesParsed);
 			dateString = get_date_string(&firstDate, "", "", "", 0);
-			sprintf(smsMsg, "%d,%s,%d,%d,", 11, dateString,
-					g_pDevCfg->sIntervalsMins.sampling, 5);
+			sprintf(smsMsg, SMS_DATA_MSG_TYPE "%s,%d,%d,", dateString,
+					g_pDevCfg->sIntervalsMins.sampling, SYSTEM_NUM_SENSORS);
 			strcat(smsMsg, encodedLine);
 			linesParsed = splitSend = 0;
 		} else if (file->fptr == start) {
@@ -70,8 +70,8 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 			if (f_gets(line, lineSize, file) != 0) {
 				parse_time_from_line(&firstDate, line);
 				dateString = get_date_string(&firstDate, "", "", "", 0);
-				sprintf(smsMsg, "%d,%s,%d,%d,", 11, dateString,
-						g_pDevCfg->sIntervalsMins.sampling, 5);
+				sprintf(smsMsg, SMS_DATA_MSG_TYPE "%s,%d,%d,", dateString,
+						g_pDevCfg->sIntervalsMins.sampling, SYSTEM_NUM_SENSORS);
 			} else
 				goto release;
 
