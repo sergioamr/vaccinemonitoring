@@ -89,7 +89,9 @@ void config_reset_error(SIM_CARD_CONFIG *sim) {
 }
 
 void config_display_config() {
-	int t;
+#ifdef _DEBUG
+	int t = 0;
+#endif
 
 	lcd_printf(LINEC, "UPTIME");
 	lcd_printf(LINEH, "[%d:%d:%d]", iMinuteTick/60, iMinuteTick%60, iSecondTick%60);
