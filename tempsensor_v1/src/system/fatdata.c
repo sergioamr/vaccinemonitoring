@@ -594,6 +594,8 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	return fat_close();
 }
 
+struct tm g_lastSampleTime;
+
 FRESULT log_sample_to_disk(UINT *tbw) {
 	FIL *fobj;
 	struct tm tempDate;
@@ -603,6 +605,7 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 	FRESULT fr = FR_OK;
 	EVENT *evt;
 	uint16_t iSamplePeriod = 0;
+	uint8_t logTimestamp = 0;
 
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
@@ -629,13 +632,13 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 	// If current time is out of previous interval, log a new time stamp
 	// to avoid time offset issues
 	if (!date_within_interval(&tempDate, &g_lastSampleTime, iSamplePeriod)) {
-		g_iStatus |= LOG_TIME_STAMP;
+		logTimestamp = 1;
 	}
 	memcpy(&g_lastSampleTime, &tempDate, sizeof(struct tm));
 
 	// Log time stamp when it's a new day or when
 	// time gets pulled.
-	if (g_iStatus & LOG_TIME_STAMP) {
+	if (logTimestamp) {
 		szLog = getStringBufferHelper(NULL);
 		strcat(szLog, "$TS=");
 		strcat(szLog, itoa_pad((tempDate.tm_year + 1900)));
@@ -653,7 +656,6 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 
 		if (bw > 0) {
 			*tbw += bw;
-			g_iStatus &= ~LOG_TIME_STAMP;
 		}
 		releaseStringBufferHelper();
 	}
