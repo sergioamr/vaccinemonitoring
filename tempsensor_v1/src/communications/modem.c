@@ -196,7 +196,8 @@ void modem_network_sequence() {
 		}
 	}
 
-	if (state_isGPRS() && http_enable() != UART_SUCCESS) {
+	if (g_pDevCfg->cfgUploadMode != MODE_GSM && state_isGPRS()
+			&& http_enable() != UART_SUCCESS) {
 		config_setLastCommand(COMMAND_FAILOVER_HTTP_FAILED);
 		state_failed_gprs(config_getSelectedSIM());
 
@@ -781,6 +782,8 @@ void modem_init() {
 
 	config_setLastCommand(COMMAND_MODEMINIT);
 	config_getSelectedSIM(); // Init the SIM and check boundaries
+
+	g_pSysState->system.switches.timestamp_on = 1;
 
 	// Reset error states so we try to initialize the modem.
 	// Reset the SIM flag if not operational
