@@ -187,12 +187,12 @@ int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
 	if (g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS > 0 ||
 			state_isGSM() || g_pDevCfg->cfgUploadMode == MODE_GSM) {
 		if (data_send_sms(file, start, end) != TRANS_SUCCESS) {
-			state_failed_gsm(g_pDevCfg->cfgSIM_slot);
+			state_transmission_failed_gsm(g_pDevCfg->cfgSIM_slot);
 			return TRANS_FAILED;
 		}
 	} else {
 		if (data_send_http(file, start, end) != TRANS_SUCCESS) {
-			state_failed_gprs(g_pDevCfg->cfgSIM_slot);
+			state_transmission_failed_gprs(g_pDevCfg->cfgSIM_slot);
 			return TRANS_FAILED;
 		}
 	}
