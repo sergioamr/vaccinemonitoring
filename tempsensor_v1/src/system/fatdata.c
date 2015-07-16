@@ -594,7 +594,9 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	return fat_close();
 }
 
+#pragma SET_DATA_SECTION(".helper_vars")
 struct tm g_lastSampleTime;
+#pragma SET_DATA_SECTION()
 
 FRESULT log_sample_to_disk(UINT *tbw) {
 	FIL *fobj;
