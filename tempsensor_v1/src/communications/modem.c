@@ -330,11 +330,11 @@ void modem_check_uart_error() {
 	char *pToken1;
 	char errorToken;
 
-	config_setLastCommand(COMMAND_UART_ERROR);
-
 	int uart_state = uart_getTransactionState();
 	if (uart_state != UART_ERROR)
 		return;
+
+	config_setLastCommand(COMMAND_UART_ERROR);
 
 	pToken1 = strstr(uart_getRXHead(), (const char *) AT_ERROR);
 	if (pToken1 != NULL) { // ERROR FOUND;

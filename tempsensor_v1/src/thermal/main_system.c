@@ -214,10 +214,8 @@ void checkStack() {
 		stack_empty++;
 	}
 
-	if (stack_empty<1250) {
-		if (g_pSysCfg->stackLeft==0 || stack_empty < g_pSysCfg->stackLeft)
-			g_pSysCfg->stackLeft = stack_empty;
-	}
+	if (g_pSysCfg->stackLeft==0 || stack_empty < g_pSysCfg->stackLeft)
+		g_pSysCfg->stackLeft = stack_empty;
 
 	if (stack_empty == 0) {
 		*current_SP = 0;

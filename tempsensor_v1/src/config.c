@@ -26,7 +26,7 @@ FRESULT config_read_ini_file();
 #endif
 
 #ifdef _DEBUG
-#define DEBUG_SEND_CONFIG
+//#define DEBUG_SEND_CONFIG
 #endif
 
 // Setup mode in which we are at the moment
@@ -91,12 +91,6 @@ void config_reset_error(SIM_CARD_CONFIG *sim) {
 void config_display_config() {
 #ifdef _DEBUG
 	int t = 0;
-#endif
-
-	lcd_printf(LINEC, "UPTIME");
-	lcd_printf(LINEH, "[%d:%d:%d]", iMinuteTick/60, iMinuteTick%60, iSecondTick%60);
-
-#ifdef _DEBUG
 	lcd_printl(LINEC, "SMS Gateway");
 	lcd_printl(LINEH, g_pDevCfg->cfgGatewaySMS);
 

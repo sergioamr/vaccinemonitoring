@@ -92,7 +92,6 @@ void lcd_append_signal_info(char *lcdBuffer) {
 }
 
 void lcd_setDate(char *buffer) {
-
 	rtc_getlocal(&g_tmCurrTime);
 	strcat(buffer, itoa_pad(g_tmCurrTime.tm_year));
 	strcat(buffer, "/");
@@ -101,6 +100,20 @@ void lcd_setDate(char *buffer) {
 	strcat(buffer, itoa_pad(g_tmCurrTime.tm_mday));
 	strcat(buffer, " ");
 
+	strcat(buffer, itoa_pad(g_tmCurrTime.tm_hour));
+	strcat(buffer, ":");
+	strcat(buffer, itoa_pad(g_tmCurrTime.tm_min));
+}
+
+void lcd_setUptime(char *buffer) {
+	strcat(buffer, "[");
+	strcat(buffer, itoa_pad(iMinuteTick/60));
+	strcat(buffer, ":");
+	strcat(buffer, itoa_pad(iMinuteTick%60));
+	strcat(buffer, ":");
+	strcat(buffer, itoa_pad(iSecondTick%60));
+	strcat(buffer, "]");
+	strcat(buffer, " ");
 	strcat(buffer, itoa_pad(g_tmCurrTime.tm_hour));
 	strcat(buffer, ":");
 	strcat(buffer, itoa_pad(g_tmCurrTime.tm_min));
@@ -129,7 +142,12 @@ void lcd_show() {
 	lcd_clear();
 
 	memset(lcdBuffer, 0, sizeof(lcdBuffer));
+
+#ifdef _DEBUG
+	lcd_setUptime(lcdBuffer);
+#else
 	lcd_setDate(lcdBuffer);
+#endif
 	//get local time
 	iIdx = strlen(lcdBuffer); //marker
 

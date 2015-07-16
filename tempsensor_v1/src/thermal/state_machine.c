@@ -354,10 +354,6 @@ void state_network_fail(uint8_t sim, uint16_t error) {
 
 }
 
-void state_modem_timeout(uint8_t sim) {
-
-}
-
 void state_failed_gprs(uint8_t sim) {
 	if (sim > 1)
 		return;

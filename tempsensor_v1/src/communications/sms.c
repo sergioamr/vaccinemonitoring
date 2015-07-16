@@ -116,6 +116,7 @@ int8_t sms_process_memory_message(int8_t index) {
 
 		//reset the board by issuing a SW BOR
 		system_reboot("NET_COMMAND");
+		return UART_SUCCESS;
 	case 'E':
 		events_send_data(phone);
 		break;
