@@ -69,8 +69,7 @@ uint8_t http_enable() {
 		uart_state = uart_getTransactionState();
 
 		if (uart_state != UART_SUCCESS) {
-
-			if (sim->simErrorState != 0 && sim->simErrorState!=555) {
+			if (sim->simErrorState != 0 && sim->simErrorState != 555) {
 				state_failed_gprs(config_getSelectedSIM());
 				return UART_FAILED;
 			}
