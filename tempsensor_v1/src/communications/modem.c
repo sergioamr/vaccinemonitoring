@@ -708,9 +708,10 @@ int modem_parse_time(struct tm* pTime) {
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_mday, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_hour, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_min, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(pToken1, &tmTime.tm_sec, delimiter, UART_FAILED);
+	// Find the character before the next parse as it will be replaced by \0
 	if (strchr(pToken1, '-') == NULL)
 		negateTz = 1;
+	PARSE_NEXTVALUE(pToken1, &tmTime.tm_sec, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &timeZoneOffset, delimiter, UART_FAILED);
 
 	if (negateTz == 1) {

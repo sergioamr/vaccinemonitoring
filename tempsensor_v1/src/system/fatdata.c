@@ -119,7 +119,7 @@ char* get_date_string(struct tm* timeData, const char* dateSeperator,
 	strcat(g_szDateString, timeSeparator);
 	strcat(g_szDateString, itoa_pad(timeData->tm_sec));
 
-	//[TODO] Check timezone it doesnt work
+	//[TODO] Check daylight saving time it doesnt work?
 
 	/*
 	 if (includeTZ && timeData->tm_isdst) {
