@@ -198,7 +198,6 @@ void state_init() {
 
 	g_pSysState->temp.firstSample = true;
 	SYSTEM_SWITCH.buzzer_disabled = BUZZER_DISABLE;
-
 	// Set the power to connected, if it is disconnected on first boot it will be detected
 	SYSTEM_SWITCH.power_connected = true;
 }
