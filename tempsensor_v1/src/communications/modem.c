@@ -423,6 +423,7 @@ int8_t modem_first_init() {
 			 * We have to check which parameters are fatal to disable the SIM
 			 *
 			 */
+		}
 
 	for (t = 0; t < nsims; t++) {
 		modem_swap_SIM(); // Send hearbeat from SIM
