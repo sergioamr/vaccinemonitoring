@@ -8,6 +8,7 @@
 #ifndef HARDWARE_BUTTONS_H_
 #define HARDWARE_BUTTONS_H_
 
+#define MODEM_ON !(P4IN & BIT0)
 #define POWER_ON !(P4IN & BIT4)
 
 void switchers_setupIO();

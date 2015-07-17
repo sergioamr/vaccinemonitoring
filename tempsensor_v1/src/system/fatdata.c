@@ -501,13 +501,8 @@ const char * const POWER_STATE[] = { "Power Outage", "Power Available" };
 
 // 0 Power outage
 //  Power available
-char getPowerState() {
-	return !(P4IN & BIT4);
-}
-
 const char *getPowerStateString() {
-	char pos = getPowerState();
-	return POWER_STATE[pos];
+	return POWER_STATE[!(P4IN & BIT4)];
 }
 
 FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {

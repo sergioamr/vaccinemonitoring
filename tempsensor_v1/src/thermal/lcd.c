@@ -181,9 +181,11 @@ void lcd_show() {
 		strcat(lcdBuffer, "% ");
 		if (state_getAlarms()->alarms.battery) {
 			strcat(lcdBuffer, "BATT ALERT");
-		} else if (P4IN & BIT4)	//power not plugged
-		{
+		} else
+		//power not plugged
+		if (!POWER_ON) {
 			strcat(lcdBuffer, "POWER OUT");
+		// (P4IN & BIT6) = LED2 ON
 		} else if (((P4IN & BIT6)) && (batt_getlevel() == 100)) {
 			strcat(lcdBuffer, "FULL CHARGE");
 		} else {

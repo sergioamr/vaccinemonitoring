@@ -382,6 +382,7 @@ int8_t modem_check_network() {
 	return res;
 }
 
+
 int8_t modem_first_init() {
 	int t = 0;
 	int attempts = MODEM_CHECK_RETRY;
@@ -392,12 +393,14 @@ int8_t modem_first_init() {
 	lcd_printl(LINEC, "Power on");
 	delay(500);
 
-	//check Modem is powered on.
-	while (!(P4IN & BIT0) && --attempts>0)
+	//check Modem is powered on. Otherwise wait for a second
+	while (!MODEM_ON && --attempts>0)
 		delay(100);
 
-	if ((P4IN & BIT0))
-		return 0;
+	if (!MODEM_ON) {
+		lcd_printl(LINEC, "Modem failed");
+		lcd_printl(LINEE, "Power on");
+	}
 
 	uart_setOKMode();
 
@@ -441,7 +444,7 @@ int8_t modem_first_init() {
 		break;
 	}
 
-	return POWER_ON;
+	return MODEM_ON;
 }
 
 void modem_check_sim_active() {
