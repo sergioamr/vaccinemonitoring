@@ -192,60 +192,46 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 /*  MAIN                                                                    */
 /****************************************************************************/
 
+// Paints the stack in a value to check for anomalies
 #define EMPTY_STACK_VALUE 0x69
 
+uint8_t stackClear = EMPTY_STACK_VALUE;
 #ifdef ___CHECK_STACK___
 // Used to check the stack for leaks
 extern char __STACK_END;
 extern char __STACK_SIZE;
 
 void checkStack() {
-	size_t stack_size = (size_t) (&__STACK_SIZE);
 	char *pStack = (void*) (&__STACK_END - &__STACK_SIZE);
-	size_t t;
 	size_t stack_empty = 0;
+	char *current_SP;
 
-	for (t = 0; t < stack_size; t++, pStack++) {
-		if (*pStack != EMPTY_STACK_VALUE)
-			break;
+	current_SP = (char *) _get_SP_register();
 
+	while (current_SP > pStack) {
+		current_SP --;
+		*current_SP = stackClear;
 		stack_empty++;
 	}
-	g_pSysCfg->stackLeft = stack_empty;
 
-	if (stack_empty<64)
-		sms_send_message_number(g_pDevCfg->cfgReportSMS, "Low Stack!");
+	if (g_pSysCfg->stackLeft==0 || stack_empty < g_pSysCfg->stackLeft)
+		g_pSysCfg->stackLeft = stack_empty;
 
-	if (g_pSysCfg->stackLeft<64) {
-		_NOP();
+	if (stack_empty == 0) {
+		*current_SP = 0;
 	}
-}
 
-void clearStack() {
-	register char *pStack = (void*) (&__STACK_END);
-	register size_t t;
-	for (t = 0; t < (size_t) (&__STACK_SIZE); t++) {
-		pStack--;
-		*pStack = EMPTY_STACK_VALUE;
-	}
-	_NOP();
+	stackClear++;
 }
 #endif
 
 int main(void) {
-#ifdef ___CHECK_STACK___
-	clearStack();
-#endif
 
 	// Disable for init since we are not going to be able to respond to it.
 	watchdog_disable();
 
 	state_init();  // Clean the state machine
 	system_boot();
-
-#ifdef ___CHECK_STACK___
-	checkStack();
-#endif
 
 	events_init();
 	state_process();
@@ -258,5 +244,22 @@ int main(void) {
 		sms_send_message_number(g_pDevCfg->cfgReportSMS, "Boot completed");
 #endif
 
-	thermal_canyon_loop();
+	events_sync(rtc_update_time());
+	lcd_show();
+
+	while (1) {
+#ifdef ___CHECK_STACK___
+		checkStack();
+#endif
+#ifdef _DEBUG
+		events_debug(rtc_get_second_tick());
+#endif
+		hardware_actions();
+		// Checks all the events that we have and runs the right one.
+		events_run(rtc_update_time());
+
+		// Wait here behind the interruption to check for a change on display.
+		// If a hardware button is pressed it will resume CPU
+		event_main_sleep();
+	}
 }

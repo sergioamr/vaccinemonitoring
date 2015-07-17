@@ -1,38 +1,7 @@
-/*
- * modem.c
- *
- *  Created on: May 18, 2015
- *      Author: sergioam
- */
+#include "thermalcanyon.h"
 
-#include <msp430.h>
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-
-#include "driverlib.h"
-#include "config.h"
-#include "modem.h"
-#include "common.h"
-#include "modem_uart.h"
-#include "MMC.h"
-#include "pmm.h"
-#include "lcd.h"
-#include "globals.h"
-#include "sms.h"
-#include "timer.h"
-#include "time.h"
-#include "rtc.h"
-#include "http.h"
-#include "temperature.h"
-#include "fatdata.h"
-#include "state_machine.h"
-#include "main_system.h"
-
-#pragma SET_DATA_SECTION(".aggregate_vars")
-char ctrlZ[2] = { 0x1A, 0 };
-char ESC[2] = { 0x1B, 0 };
-#pragma SET_DATA_SECTION()
+const char ctrlZ[2] = { 0x1A, 0 };
+const char ESC[2] = { 0x1B, 0 };
 
 /*
  * AT Commands Reference Guide 80000ST10025a Rev. 9 2010-10-04
@@ -173,10 +142,8 @@ int modem_getNetworkStatus(int *mode, int *status) {
 /* Network cellular service */
 /**********************************************************************************************************************/
 
-#pragma SET_DATA_SECTION(".aggregate_vars")
-static char NETWORK_GPRS_COMMAND[] = "CGREG";
-static char NETWORK_GSM_COMMAND[] = "CREG";
-#pragma SET_DATA_SECTION()
+const char NETWORK_GPRS_COMMAND[] = "CGREG";
+const char NETWORK_GSM_COMMAND[] = "CREG";
 
 const char inline *modem_getNetworkServiceCommand() {
 	if (g_pSysState->network_mode == NETWORK_GPRS)
@@ -229,12 +196,12 @@ void modem_network_sequence() {
 		}
 	}
 
-	if (state_isGPRS() && http_enable() != UART_SUCCESS) {
+	if (g_pDevCfg->cfgUploadMode != MODE_GSM && state_isGPRS()
+			&& http_enable() != UART_SUCCESS) {
 		config_setLastCommand(COMMAND_FAILOVER_HTTP_FAILED);
-		state_failed_gprs(config_getSelectedSIM());
 
 		// This means we already checked the network
-		if (networkSwapped == 1) {
+		if (networkSwapped) {
 			http_deactivate();
 			return;
 		}
@@ -302,7 +269,11 @@ int modem_connect_network(uint8_t attempts) {
 					delay(HUMAN_DISPLAY_INFO_DELAY);
 				return UART_SUCCESS;
 			} else {
-				state_network_fail(nsim, STATE_CONNECTION);
+				if (g_pSysState->network_mode == NETWORK_GPRS) {
+					state_failed_gprs(g_pDevCfg->cfgSIM_slot);
+				} else {
+					state_failed_gsm(g_pDevCfg->cfgSIM_slot);
+				}
 			}
 
 			tests++;
@@ -332,6 +303,14 @@ void modem_setNumericError(char errorToken, int16_t errorCode) {
 	if (config_getSimLastError(&token) == errorCode)
 		return;
 
+	// Sim busy (we just have to try again, sim is busy... you know?)
+	if (errorCode==14)
+		return;
+
+	// Activation failed
+	if (errorCode==555)
+		return;
+
 	sprintf(szCode, "ERROR %d", errorCode);
 	config_setSIMError(sim, errorToken, errorCode, szCode);
 
@@ -351,11 +330,11 @@ void modem_check_uart_error() {
 	char *pToken1;
 	char errorToken;
 
-	config_setLastCommand(COMMAND_UART_ERROR);
-
 	int uart_state = uart_getTransactionState();
 	if (uart_state != UART_ERROR)
 		return;
+
+	config_setLastCommand(COMMAND_UART_ERROR);
 
 	pToken1 = strstr(uart_getRXHead(), (const char *) AT_ERROR);
 	if (pToken1 != NULL) { // ERROR FOUND;
@@ -403,10 +382,10 @@ int8_t modem_check_network() {
 	return res;
 }
 
+
 int8_t modem_first_init() {
 	int t = 0;
-	int iIdx;
-	int iStatus = 0;
+	int attempts = MODEM_CHECK_RETRY;
 	int iSIM_Error = 0;
 
 	config_setLastCommand(COMMAND_FIRST_INIT);
@@ -414,29 +393,26 @@ int8_t modem_first_init() {
 	lcd_printl(LINEC, "Power on");
 	delay(500);
 
-	//check Modem is powered on
-	for (iIdx = 0; iIdx < MODEM_CHECK_RETRY; iIdx++) {
-		if ((P4IN & BIT0) == 0) {
-			iStatus |= MODEM_POWERED_ON;
-			break;
-		} else {
-			iStatus &= ~MODEM_POWERED_ON;
-			delay(100);
-		}
+	//check Modem is powered on. Otherwise wait for a second
+	while (!MODEM_ON && --attempts>0)
+		delay(100);
+
+	if (!MODEM_ON) {
+		lcd_printl(LINEC, "Modem failed");
+		lcd_printl(LINEE, "Power on");
 	}
 
-	if (iStatus & MODEM_POWERED_ON) {
-		uart_setOKMode();
+	uart_setOKMode();
 
-		lcd_disable_verbose();
-		//uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted (not used anymore)
-		uart_tx_timeout("AT", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
-		lcd_enable_verbose();
+	lcd_disable_verbose();
+	//uart_tx_nowait(ESC); // Cancel any previous command in case we were reseted (not used anymore)
+	uart_tx_timeout("AT", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
+	lcd_enable_verbose();
 
-		uint8_t nsims = SYSTEM_NUM_SIM_CARDS;
+	uint8_t nsims = SYSTEM_NUM_SIM_CARDS;
 
 #ifdef _DEBUG
-		nsims = 1;
+	nsims = 1;
 #endif
 
 		for (t = 0; t < nsims; t++) {
@@ -448,33 +424,36 @@ int8_t modem_first_init() {
 			 *
 			 */
 
-			if (!state_isSimOperational()) {
-				iSIM_Error++;
-			}
-		}
+	for (t = 0; t < nsims; t++) {
+		modem_swap_SIM(); // Send hearbeat from SIM
+		/*
+		 * We have to check which parameters are fatal to disable the SIM
+		 *
+		 */
 
-		// One or more of the sims had a catastrofic failure on init, set the device
-		switch (iSIM_Error) {
-		case 1:
-			for (t = 0; t < SYSTEM_NUM_SIM_CARDS; t++)
-				if (config_getSIMError(t) == NO_ERROR) {
-					if (config_getSelectedSIM() != t) {
-						g_pDevCfg->cfgSIM_slot = t;
-						g_pDevCfg->cfgSelectedSIM_slot = t;
-						modem_init();
-					}
-				}
-			break;
-		case 2:
-			lcd_printf(LINEE, "SIMS FAILED");
-			break;
+		if (!state_isSimOperational()) {
+			iSIM_Error++;
 		}
-
-	} else {
-		lcd_printl(LINEE, "Failed Power On");
 	}
 
-	return iStatus;
+	// One or more of the sims had a catastrofic failure on init, set the device
+	switch (iSIM_Error) {
+	case 1:
+		for (t = 0; t < SYSTEM_NUM_SIM_CARDS; t++)
+			if (config_getSIMError(t) == NO_ERROR) {
+				if (config_getSelectedSIM() != t) {
+					g_pDevCfg->cfgSIM_slot = t;
+					g_pDevCfg->cfgSelectedSIM_slot = t;
+					modem_init();
+				}
+			}
+		break;
+	case 2:
+		lcd_printf(LINEE, "SIMS FAILED");
+		break;
+	}
+
+	return MODEM_ON;
 }
 
 void modem_check_sim_active() {
@@ -492,9 +471,9 @@ int modem_swap_to_SIM(int sim) {
 }
 
 int modem_swap_SIM() {
-
+#ifdef EXTREME_DEBUG
 	log_appendf("SWP [%d]", config_getSelectedSIM());
-
+#endif
 	int res = UART_FAILED;
 	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
 	g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;
@@ -738,9 +717,10 @@ int modem_parse_time(struct tm* pTime) {
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_mday, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_hour, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_min, delimiter, UART_FAILED);
-	PARSE_NEXTVALUE(pToken1, &tmTime.tm_sec, delimiter, UART_FAILED);
+	// Find the character before the next parse as it will be replaced by \0
 	if (strchr(pToken1, '-') == NULL)
 		negateTz = 1;
+	PARSE_NEXTVALUE(pToken1, &tmTime.tm_sec, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &timeZoneOffset, delimiter, UART_FAILED);
 
 	if (negateTz == 1) {
@@ -818,6 +798,8 @@ void modem_init() {
 
 	config_setLastCommand(COMMAND_MODEMINIT);
 	config_getSelectedSIM(); // Init the SIM and check boundaries
+
+	g_pSysState->system.switches.timestamp_on = 1;
 
 	// Reset error states so we try to initialize the modem.
 	// Reset the SIM flag if not operational

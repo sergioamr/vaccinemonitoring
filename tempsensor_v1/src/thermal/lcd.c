@@ -1,16 +1,3 @@
-#include "stdint.h"
-#include "i2c.h"
-#include "config.h"
-#include "lcd.h"
-#include "time.h"
-#include "stdio.h"
-#include "string.h"
-#include "timer.h"
-#include "globals.h"
-#include "rtc.h"
-#include "stringutils.h"
-#include "temperature.h"
-#include "fatdata.h"
 #include "thermalcanyon.h"
 
 char g_bLCD_state = 0;
@@ -105,7 +92,6 @@ void lcd_append_signal_info(char *lcdBuffer) {
 }
 
 void lcd_setDate(char *buffer) {
-
 	rtc_getlocal(&g_tmCurrTime);
 	strcat(buffer, itoa_pad(g_tmCurrTime.tm_year));
 	strcat(buffer, "/");
@@ -119,11 +105,24 @@ void lcd_setDate(char *buffer) {
 	strcat(buffer, itoa_pad(g_tmCurrTime.tm_min));
 }
 
+void lcd_setUptime(char *buffer) {
+	strcat(buffer, "[");
+	strcat(buffer, itoa_pad(iMinuteTick/60));
+	strcat(buffer, ":");
+	strcat(buffer, itoa_pad(iMinuteTick%60));
+	strcat(buffer, ":");
+	strcat(buffer, itoa_pad(iSecondTick%60));
+	strcat(buffer, "]");
+	strcat(buffer, " ");
+	strcat(buffer, itoa_pad(g_tmCurrTime.tm_hour));
+	strcat(buffer, ":");
+	strcat(buffer, itoa_pad(g_tmCurrTime.tm_min));
+}
+
 void lcd_show() {
-#pragma SET_DATA_SECTION(".aggregate_vars")
+
 	static int8_t iItemId = -1;
 	static time_t lastRefresh = 0;
-#pragma SET_DATA_SECTION()
 
 	char lcdBuffer[LCD_DISPLAY_LEN + 1];
 	int iIdx = 0;
@@ -143,7 +142,12 @@ void lcd_show() {
 	lcd_clear();
 
 	memset(lcdBuffer, 0, sizeof(lcdBuffer));
+
+#ifdef _DEBUG
+	lcd_setUptime(lcdBuffer);
+#else
 	lcd_setDate(lcdBuffer);
+#endif
 	//get local time
 	iIdx = strlen(lcdBuffer); //marker
 
@@ -158,7 +162,7 @@ void lcd_show() {
 		strcat(lcdBuffer, itoa_pad(batt_getlevel()));
 		strcat(lcdBuffer, "% ");
 		if (state_isSignalInRange()) {
-			if (g_iSignal_gprs == 1) {
+			if (modem_getNetworkService() == NETWORK_GPRS) {
 				strcat(lcdBuffer, "G");
 			} else {
 				strcat(lcdBuffer, "S");
@@ -177,9 +181,11 @@ void lcd_show() {
 		strcat(lcdBuffer, "% ");
 		if (state_getAlarms()->alarms.battery) {
 			strcat(lcdBuffer, "BATT ALERT");
-		} else if (P4IN & BIT4)	//power not plugged
-		{
+		} else
+		//power not plugged
+		if (!POWER_ON) {
 			strcat(lcdBuffer, "POWER OUT");
+		// (P4IN & BIT6) = LED2 ON
 		} else if (((P4IN & BIT6)) && (batt_getlevel() == 100)) {
 			strcat(lcdBuffer, "FULL CHARGE");
 		} else {
@@ -240,33 +246,33 @@ void lcd_show() {
 void lcd_progress_wait(uint16_t delayTime) {
 	int t;
 	int count = delayTime / 100;
+	if (count <= 0) {
+		lcd_print_progress();
+		return;
+	}
 
+#ifdef _DEBUG
+	checkStack();
+#endif
 	for (t = 0; t < count; t++) {
 		delay(50);
 		lcd_print_progress();
 	}
 }
 
-int lcd_printf(int line, const char *_format, ...) {
-#pragma SET_DATA_SECTION(".aggregate_vars")
-	static char szTemp[33];
-#pragma SET_DATA_SECTION()
-
+void lcd_printf(int line, const char *_format, ...) {
 	va_list _ap;
-	int rval;
-	if (g_bLCD_state == 0)
-		return 0;
+	char szTemp[33];
 
-	char *fptr = (char *) _format;
-	char *out_end = szTemp;
+#ifdef _DEBUG
+	checkStack();
+#endif
 
 	va_start(_ap, _format);
-	rval = __TI_printfi(&fptr, _ap, (void *) &out_end, _outc, _outs);
+	vsnprintf(szTemp, sizeof(szTemp), _format, _ap);
 	va_end(_ap);
 
-	*out_end = '\0';
 	lcd_printl(line, szTemp);
-	return (rval);
 }
 
 void lcd_print(char* pcData) {
@@ -323,9 +329,7 @@ void lcd_bldisable() {
 	PJOUT &= ~BIT7;
 }
 
-#pragma SET_DATA_SECTION(".aggregate_vars")
 int g_iLCDVerbose = VERBOSE_DISABLED; // Disable debug
-#pragma SET_DATA_SECTION()
 
 void lcd_disable_verbose() {
 	g_iLCDVerbose = VERBOSE_DISABLED;
@@ -343,13 +347,12 @@ void lcd_enable_verbose() {
 	g_iLCDVerbose = VERBOSE_BOOTING;
 }
 
+const char display[4] = { '*', '|', '/', '-' };
 void lcd_print_progress() {
-
 	if (g_bLCD_state == 0)
 		return;
 
 	static char pos = 0;
-	char display[4] = { '*', '|', '/', '-' };
 	lcd_setaddr(0x4F);
 	i2c_write(0x3e, 0x40, 1, (uint8_t *) &display[(++pos) & 0x3]);
 }

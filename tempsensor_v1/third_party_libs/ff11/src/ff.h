@@ -251,8 +251,11 @@ TCHAR* f_gets (TCHAR* buff, int len, FIL* fp);						/* Get a string from the fil
 #define EOF (-1)
 #endif
 
-
-
+DIR *fat_getDirectory();
+FILINFO *fat_getInfo();
+FIL *fat_getFile();
+FRESULT fat_open(FIL **fobj, char *path, BYTE mode);
+FRESULT fat_close();
 
 /*--------------------------------------------------------------*/
 /* Additional user defined functions                            */

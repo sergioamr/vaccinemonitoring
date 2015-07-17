@@ -44,6 +44,8 @@ void sms_send_data_request(char *number) {
 #ifdef _DEBUG
 	strcat(data, ",UPTIME:");
 	strcat(data, itoa_nopadding(iMinuteTick));
+	strcat(data, ",STACK:");
+	strcat(data, itoa_nopadding(g_pSysCfg->stackLeft));
 #endif
 
 	iOffset = strlen(data);
@@ -59,8 +61,6 @@ const char COMMAND_RESULT_CMGR[] = "+CMGR: ";
 // 1 - read message
 // 2 - stored message not yet sent
 // 3 - stored message already sent
-
-extern const char AT_MSG_OK[];
 
 int8_t sms_process_memory_message(int8_t index) {
 	int t = 0, len = 0;
@@ -116,6 +116,7 @@ int8_t sms_process_memory_message(int8_t index) {
 
 		//reset the board by issuing a SW BOR
 		system_reboot("NET_COMMAND");
+		return UART_SUCCESS;
 	case 'E':
 		events_send_data(phone);
 		break;

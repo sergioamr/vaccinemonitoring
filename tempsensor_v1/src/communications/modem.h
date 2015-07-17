@@ -11,8 +11,8 @@
 #include "command_timeout.h"
 #include "modem_errors.h"
 
-extern char ctrlZ[2];
-extern char ESC[2];
+extern const char ctrlZ[2];
+extern const char ESC[2];
 
 /*********************************************************************************/
 /* NETWORK STATUS 															     */

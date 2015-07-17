@@ -54,14 +54,25 @@ void __attribute__ ((interrupt(TIMER2_A0_VECTOR))) Timer2_A0_ISR (void)
 #error Compiler not supported!
 #endif
 {
-    GPIO_toggleOutputOnPin(
-        GPIO_PORT_P3,
-        GPIO_PIN4);
+	static uint8_t count = 0;
 
 	if (g_pSysState->buzzerFeedback>0) {
+	    GPIO_toggleOutputOnPin(
+	        GPIO_PORT_P3,
+	        GPIO_PIN4);
 		g_pSysState->buzzerFeedback--;
 		return;
 	}
+
+	if (count < 2) {
+		GPIO_setOutputLowOnPin(GPIO_PORT_P3, GPIO_PIN4);
+	} else
+	if (count == 3) {
+		GPIO_setOutputHighOnPin(GPIO_PORT_P3, GPIO_PIN4);
+		count = 0;
+	}
+
+	count++;
 
 	if (!state_isBuzzerOn()) {
 		TA2CTL = MC__STOP;

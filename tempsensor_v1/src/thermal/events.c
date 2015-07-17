@@ -293,8 +293,11 @@ void events_debug() {
 	//if (pEvent->id == EVT_DISPLAY)
 	//	return;
 
-	time_t nextEventTime = pEvent->nextEventRun - currentTime;
+	int nextEventTime = pEvent->nextEventRun - currentTime;
 	int test = nextEventTime % 10;
+
+	if (nextEventTime< 0)
+		nextEventTime = 0;
 	if (test == 0 || nextEventTime < 10 || 1)
 		lcd_printf(LINE1, "[%s %d]   ", pEvent->name, nextEventTime);
 #endif
@@ -344,18 +347,15 @@ EVENT inline *events_getNextEvent() {
 }
 
 void events_run() {
-	time_t currentTime;
 	EVENT *pEvent;
 	EVENT *pOldEvent = NULL;
-	uint8_t nextEvent = g_sEvents.nextEvent;
 
 	event_run_deferred_commands();
 
-	currentTime = events_getTick();
 	state_check_power();
 
-	pEvent = &g_sEvents.events[nextEvent];
-	while (currentTime >= pEvent->nextEventRun && pEvent != NULL) {
+	pEvent = &g_sEvents.events[g_sEvents.nextEvent];
+	while (events_getTick() >= pEvent->nextEventRun && pEvent != NULL) {
 		if (g_iDebug)
 			buzzer_feedback_value(5);
 
@@ -367,9 +367,7 @@ void events_run() {
 
 		pOldEvent = pEvent;
 		event_run_now(pEvent);
-		nextEvent = g_sEvents.nextEvent;
-		pEvent = &g_sEvents.events[nextEvent];
-		currentTime = events_getTick();
+		pEvent = &g_sEvents.events[g_sEvents.nextEvent];
 	}
 
 	//events_sanity(currentTime);

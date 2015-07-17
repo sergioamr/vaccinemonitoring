@@ -47,8 +47,6 @@ void state_network_status(int net_mode, int net_status);
 void state_network_fail(uint8_t sim, uint16_t error);
 void state_network_success(uint8_t sim);
 
-void state_modem_timeout(uint8_t sim);
-
 void state_failed_sdcard(uint16_t error);
 
 void state_failed_gprs(uint8_t sim);

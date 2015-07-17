@@ -59,7 +59,7 @@ void lcd_show();
 void lcd_turn_on();
 void lcd_turn_off();
 void lcd_print(char* pcData);
-int lcd_printf(int line, const char *_format, ...);
+void lcd_printf(int line, const char *_format, ...);
 void lcd_printl(int8_t iLine, const char* pcData);
 void lcd_print_boot(const char* pcData, int line);
 void lcd_bldisable();

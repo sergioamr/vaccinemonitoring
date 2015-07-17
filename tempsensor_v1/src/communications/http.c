@@ -69,8 +69,7 @@ uint8_t http_enable() {
 		uart_state = uart_getTransactionState();
 
 		if (uart_state != UART_SUCCESS) {
-
-			if (sim->simErrorState != 0 && sim->simErrorState!=555) {
+			if (sim->simErrorState != 0 && sim->simErrorState != 555) {
 				state_failed_gprs(config_getSelectedSIM());
 				return UART_FAILED;
 			}
@@ -125,12 +124,6 @@ int8_t http_setup() {
 }
 
 uint8_t http_deactivate() {
-	// LONG TIMEOUT
-/*
-	if (!g_pSysState->system.switches.http_enabled) {
-		_NOP();
-	}
-*/
 	g_pSysState->system.switches.http_enabled = 0;
 	config_setLastCommand(COMMAND_HTTP_DISABLE);
 	return uart_tx("#SGACT=1,0");	//deactivate GPRS context
@@ -193,7 +186,9 @@ int http_check_error(int *retry) {
 }
 
 int http_open_connection_upload(int data_length) {
-	char cmd[120];
+	char *cmd = getSMSBufferHelper();
+
+	config_setLastCommand(COMMAND_OPEN_UPLOAD);
 
 	if (!state_isSimOperational())
 		return UART_ERROR;
@@ -207,6 +202,7 @@ int http_open_connection_upload(int data_length) {
 	if (uart_tx_waitForPrompt(cmd, TIMEOUT_HTTPSND_PROMPT)) {
 		return UART_SUCCESS;
 	}
+
 	return uart_getTransactionState();
 }
 
@@ -218,6 +214,8 @@ int http_get_configuration() {
 
 	if (!state_isSimOperational())
 		return UART_ERROR;
+
+	config_setLastCommand(COMMAND_GET_CONFIGURATION);
 
 	// #HTTPQRY send HTTP GET, HEAD or DELETE request
 	// Execution command performs a GET, HEAD or DELETE request to HTTP server.

@@ -15,7 +15,6 @@ void checkStack();
 
 #include <msp430.h>
 #include "stdint.h"
-
 #include "buzzer.h"
 #include "config.h"
 #include "common.h"
@@ -23,6 +22,7 @@ void checkStack();
 #include "stdint.h"
 #include "stdlib.h"
 #include "stdio.h"
+#include "ff.h"
 #include "string.h"
 #include "time.h"
 #include "i2c.h"
@@ -30,7 +30,6 @@ void checkStack();
 #include "modem_uart.h"
 #include "battery.h"
 #include "rtc.h"
-#include "ff.h"
 #include "diskio.h"
 #include "signal.h"
 #include "encode.h"
@@ -49,7 +48,6 @@ void checkStack();
 #include "time.h"
 #include "state_machine.h"
 #include "main_system.h"
-#include "timer.h"
 #include "data_transmit.h"
 #include "hardware_buttons.h"
 
