@@ -54,13 +54,13 @@ char *getFloatNumber2Text(float number, char *ret) {
 	//Round to one digit after decimal point
 	int32_t fixedPoint = (int32_t) (number * 10);
 
-	if (fixedPoint < TEMP_CUTOFF) {
+	if (number < TEMP_CUTOFF) {
 		for (i = 0; i < 4; i++)
 			ret[i] = '-';
 		return ret;
 	}
 
-	if (fixedPoint < 0) {
+	if (number < 0) {
 		count = 1;
 		ret[0] = '-';
 		fixedPoint = abs(fixedPoint);

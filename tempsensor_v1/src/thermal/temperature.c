@@ -14,6 +14,7 @@
 #include "stdio.h"
 #include "string.h"
 #include "events.h"
+#include "alarms.h"
 #include "stringutils.h"
 
 void ADC_setupIO() {
@@ -138,6 +139,8 @@ void temperature_subsampling_calculate(int8_t iSensorIdx) {
 	float *calibration;
 
 	TEMPERATURE_SENSOR *sensor = sensor_get(iSensorIdx);
+	SENSOR_STATUS *sensorState = getAlarmsSensor(iSensorIdx);
+
 	if (sensor->iSamplesRead == 0)
 		return;
 
@@ -157,7 +160,13 @@ void temperature_subsampling_calculate(int8_t iSensorIdx) {
 		A0tempdegC = A0tempdegC * calibration[1] + calibration[0];
 	}
 
-	sensor->fTemperature = A0tempdegC;
+	if (A0tempdegC > TEMP_CUTOFF) {
+		sensor->fTemperature = A0tempdegC;
+		// If this is the inital test before booting
+		if (g_pSysState->temp.firstSample)
+			sensorState->state.connectedOnBoot = 1;
+	}
+
 	getFloatNumber2Text(A0tempdegC, TemperatureVal);
 }
 
@@ -172,6 +181,9 @@ void temperature_analog_to_digital_conversion() {
 	// convert the current sensor ADC value to temperature
 	for (iIdx = 0; iIdx < SYSTEM_NUM_SENSORS; iIdx++)
 		temperature_subsampling_calculate(iIdx);
+
+	if (g_pSysState->temp.firstSample)
+		g_pSysState->temp.firstSample = 0;
 }
 
 void temperature_subsamples(uint8_t samples)  {

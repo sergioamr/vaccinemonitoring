@@ -99,7 +99,7 @@
 #define NETWORK_ZERO 2.0
 
 //Temperature cut off
-#define TEMP_CUTOFF				-800		//-80 deg C
+#define TEMP_CUTOFF				-80		//-80 deg C
 
 // 1 will disable the buzzer when there is an Alarm
 // Buzzer will still work on button feedback
@@ -344,7 +344,7 @@ typedef union {
 		unsigned char lowAlarm :1;    // Temperature below minimum
 		unsigned char highAlarm :1;   // Temperature above maximum
 		unsigned char disconnected :1;   // Sensor not connected
-		unsigned char bit5 :1;
+		unsigned char connectedOnBoot :1; // Check if the device was plugged in initially
 		unsigned char bit6 :1;
 		unsigned char bit7 :1;
 		unsigned char bit8 :1;
@@ -365,7 +365,8 @@ typedef struct {
 
 typedef struct {
 	// Raw voltage values
-	uint16_t iCapturing;
+	uint8_t firstSample;
+	uint8_t iCapturing;
 	uint16_t iSamplesRequired;
 	uint16_t iSamplesRead;
 
