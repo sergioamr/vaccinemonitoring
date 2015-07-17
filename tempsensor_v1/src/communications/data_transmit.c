@@ -149,7 +149,7 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 		goto release;
 	}
 
-	lcd_progress_wait(300);
+	lcd_print_progress();
 
 	// check that the transmitted data equals the size to send
 	while (file->fptr < end) {

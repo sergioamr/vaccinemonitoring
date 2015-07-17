@@ -246,6 +246,10 @@ void lcd_show() {
 void lcd_progress_wait(uint16_t delayTime) {
 	int t;
 	int count = delayTime / 100;
+	if (count <= 0) {
+		lcd_print_progress();
+		return;
+	}
 
 #ifdef _DEBUG
 	checkStack();
