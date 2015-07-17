@@ -162,9 +162,10 @@ void temperature_subsampling_calculate(int8_t iSensorIdx) {
 
 	if (A0tempdegC > TEMP_CUTOFF) {
 		sensor->fTemperature = A0tempdegC;
-		// If this is the inital test before booting
-		if (g_pSysState->temp.firstSample)
-			sensorState->state.connectedOnBoot = 1;
+
+		// If this is the inital test before booting or was disconnect but now not
+		if (g_pSysState->temp.firstSample || sensorState->state.disconnected)
+			sensorState->state.wasConnected = 1;
 	} else {
 		sensor->fTemperature = 0;
 	}

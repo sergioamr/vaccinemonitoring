@@ -344,7 +344,7 @@ typedef union {
 		unsigned char lowAlarm :1;    // Temperature below minimum
 		unsigned char highAlarm :1;   // Temperature above maximum
 		unsigned char disconnected :1;   // Sensor not connected
-		unsigned char connectedOnBoot :1; // Check if the device was plugged in initially
+		unsigned char wasConnected :1; // Check if the device was plugged in initially
 		unsigned char bit6 :1;
 		unsigned char bit7 :1;
 		unsigned char bit8 :1;
