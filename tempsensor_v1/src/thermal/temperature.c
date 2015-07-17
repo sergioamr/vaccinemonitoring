@@ -165,6 +165,8 @@ void temperature_subsampling_calculate(int8_t iSensorIdx) {
 		// If this is the inital test before booting
 		if (g_pSysState->temp.firstSample)
 			sensorState->state.connectedOnBoot = 1;
+	} else {
+		sensor->fTemperature = 0;
 	}
 
 	getFloatNumber2Text(A0tempdegC, TemperatureVal);
