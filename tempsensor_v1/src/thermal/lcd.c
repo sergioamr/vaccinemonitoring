@@ -1,16 +1,3 @@
-#include "stdint.h"
-#include "i2c.h"
-#include "config.h"
-#include "lcd.h"
-#include "time.h"
-#include "stdio.h"
-#include "string.h"
-#include "timer.h"
-#include "globals.h"
-#include "rtc.h"
-#include "stringutils.h"
-#include "temperature.h"
-#include "fatdata.h"
 #include "thermalcanyon.h"
 
 char g_bLCD_state = 0;
@@ -105,7 +92,6 @@ void lcd_append_signal_info(char *lcdBuffer) {
 }
 
 void lcd_setDate(char *buffer) {
-
 	rtc_getlocal(&g_tmCurrTime);
 	strcat(buffer, itoa_pad(g_tmCurrTime.tm_year));
 	strcat(buffer, "/");
@@ -114,6 +100,20 @@ void lcd_setDate(char *buffer) {
 	strcat(buffer, itoa_pad(g_tmCurrTime.tm_mday));
 	strcat(buffer, " ");
 
+	strcat(buffer, itoa_pad(g_tmCurrTime.tm_hour));
+	strcat(buffer, ":");
+	strcat(buffer, itoa_pad(g_tmCurrTime.tm_min));
+}
+
+void lcd_setUptime(char *buffer) {
+	strcat(buffer, "[");
+	strcat(buffer, itoa_pad(iMinuteTick/60));
+	strcat(buffer, ":");
+	strcat(buffer, itoa_pad(iMinuteTick%60));
+	strcat(buffer, ":");
+	strcat(buffer, itoa_pad(iSecondTick%60));
+	strcat(buffer, "]");
+	strcat(buffer, " ");
 	strcat(buffer, itoa_pad(g_tmCurrTime.tm_hour));
 	strcat(buffer, ":");
 	strcat(buffer, itoa_pad(g_tmCurrTime.tm_min));
@@ -142,7 +142,12 @@ void lcd_show() {
 	lcd_clear();
 
 	memset(lcdBuffer, 0, sizeof(lcdBuffer));
+
+#ifdef _DEBUG
+	lcd_setUptime(lcdBuffer);
+#else
 	lcd_setDate(lcdBuffer);
+#endif
 	//get local time
 	iIdx = strlen(lcdBuffer); //marker
 
@@ -157,7 +162,7 @@ void lcd_show() {
 		strcat(lcdBuffer, itoa_pad(batt_getlevel()));
 		strcat(lcdBuffer, "% ");
 		if (state_isSignalInRange()) {
-			if (g_iSignal_gprs == 1) {
+			if (modem_getNetworkService() == NETWORK_GPRS) {
 				strcat(lcdBuffer, "G");
 			} else {
 				strcat(lcdBuffer, "S");
@@ -176,9 +181,11 @@ void lcd_show() {
 		strcat(lcdBuffer, "% ");
 		if (state_getAlarms()->alarms.battery) {
 			strcat(lcdBuffer, "BATT ALERT");
-		} else if (P4IN & BIT4)	//power not plugged
-		{
+		} else
+		//power not plugged
+		if (!POWER_ON) {
 			strcat(lcdBuffer, "POWER OUT");
+		// (P4IN & BIT6) = LED2 ON
 		} else if (((P4IN & BIT6)) && (batt_getlevel() == 100)) {
 			strcat(lcdBuffer, "FULL CHARGE");
 		} else {
@@ -239,6 +246,10 @@ void lcd_show() {
 void lcd_progress_wait(uint16_t delayTime) {
 	int t;
 	int count = delayTime / 100;
+	if (count <= 0) {
+		lcd_print_progress();
+		return;
+	}
 
 #ifdef _DEBUG
 	checkStack();

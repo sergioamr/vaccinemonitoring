@@ -99,7 +99,7 @@
 #define NETWORK_ZERO 2.0
 
 //Temperature cut off
-#define TEMP_CUTOFF				-800		//-80 deg C
+#define TEMP_CUTOFF				-80		//-80 deg C
 
 // 1 will disable the buzzer when there is an Alarm
 // Buzzer will still work on button feedback
@@ -136,7 +136,7 @@
 #define NETWORK_CONNECTION_DELAY 3000
 #endif
 
-#define MODEM_CHECK_RETRY 	3
+#define MODEM_CHECK_RETRY 	10
 #define NETWORK_PULLTIME_ATTEMPTS 3
 
 /**************************************************************************************************************************/
@@ -228,6 +228,9 @@ typedef struct {
 
 // Careful with exceeding the size of the URL
 #define MAX_URL_PATH 37
+
+// FOLDERxx/FILENAME.TXT\0
+#define MAX_PATH 8+1+8+1+3+1
 
 typedef struct {
 	float threshCold;
@@ -341,7 +344,7 @@ typedef union {
 		unsigned char lowAlarm :1;    // Temperature below minimum
 		unsigned char highAlarm :1;   // Temperature above maximum
 		unsigned char disconnected :1;   // Sensor not connected
-		unsigned char bit5 :1;
+		unsigned char wasConnected :1; // Check if the device was plugged in initially
 		unsigned char bit6 :1;
 		unsigned char bit7 :1;
 		unsigned char bit8 :1;
@@ -362,7 +365,8 @@ typedef struct {
 
 typedef struct {
 	// Raw voltage values
-	uint16_t iCapturing;
+	uint8_t firstSample;
+	uint8_t iCapturing;
 	uint16_t iSamplesRequired;
 	uint16_t iSamplesRead;
 
@@ -388,6 +392,7 @@ typedef union {
 		unsigned char button_buzzer_override :1;
 		unsigned char buzzer_sound :1;
 		unsigned char http_enabled :1;
+		unsigned char timestamp_on :1;
 	} switches;
 	unsigned char status;
 } SYSTEM_SWITCHES;

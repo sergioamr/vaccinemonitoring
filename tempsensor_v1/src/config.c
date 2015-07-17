@@ -26,7 +26,7 @@ FRESULT config_read_ini_file();
 #endif
 
 #ifdef _DEBUG
-#define DEBUG_SEND_CONFIG
+//#define DEBUG_SEND_CONFIG
 #endif
 
 // Setup mode in which we are at the moment
@@ -89,11 +89,8 @@ void config_reset_error(SIM_CARD_CONFIG *sim) {
 }
 
 void config_display_config() {
-	int t;
-
-	lcd_printf(LINEC, "UPTIME");
-	lcd_printf(LINEH, "[%d:%d:%d]", iMinuteTick/60, iMinuteTick%60, iSecondTick%60);
-
+#ifdef _DEBUG
+	int t = 0;
 	lcd_printl(LINEC, "SMS Gateway");
 	lcd_printl(LINEH, g_pDevCfg->cfgGatewaySMS);
 
@@ -110,7 +107,7 @@ void config_display_config() {
 
 	lcd_printl(LINEC, "UPLOAD URL ");
 	lcd_printl(LINEH, g_pDevCfg->cfgUpload_URL);
-
+#endif
 	lcd_display_config();
 }
 

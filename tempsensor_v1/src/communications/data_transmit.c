@@ -42,7 +42,7 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 	uint16_t lineSize = 0;
 	struct tm firstDate;
 
-	char *encodedLine = getEncodedLineHelper(NULL);
+	char encodedLine[MAX_ENCODED_LINE_SIZE];
 	char *line = getStringBufferHelper(&lineSize);
 	char *smsMsg = getSMSBufferHelper();
 
@@ -61,8 +61,8 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 		if (splitSend) {
 			offset_timestamp(&firstDate, linesParsed);
 			dateString = get_date_string(&firstDate, "", "", "", 0);
-			sprintf(smsMsg, "%d,%s,%d,%d,", 11, dateString,
-					g_pDevCfg->sIntervalsMins.sampling, 5);
+			sprintf(smsMsg, SMS_DATA_MSG_TYPE "%s,%d,%d,", dateString,
+					g_pDevCfg->sIntervalsMins.sampling, SYSTEM_NUM_SENSORS);
 			strcat(smsMsg, encodedLine);
 			linesParsed = splitSend = 0;
 		} else if (file->fptr == start) {
@@ -70,8 +70,8 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 			if (f_gets(line, lineSize, file) != 0) {
 				parse_time_from_line(&firstDate, line);
 				dateString = get_date_string(&firstDate, "", "", "", 0);
-				sprintf(smsMsg, "%d,%s,%d,%d,", 11, dateString,
-						g_pDevCfg->sIntervalsMins.sampling, 5);
+				sprintf(smsMsg, SMS_DATA_MSG_TYPE "%s,%d,%d,", dateString,
+						g_pDevCfg->sIntervalsMins.sampling, SYSTEM_NUM_SENSORS);
 			} else
 				goto release;
 
@@ -149,7 +149,7 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 		goto release;
 	}
 
-	lcd_progress_wait(300);
+	lcd_print_progress();
 
 	// check that the transmitted data equals the size to send
 	while (file->fptr < end) {
@@ -189,8 +189,9 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 }
 
 int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
-	if (g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS > 0 ||
-			state_isGSM() || g_pDevCfg->cfgUploadMode == MODE_GSM) {
+	if ((g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS > 0 ||
+			state_isGSM() || g_pDevCfg->cfgUploadMode == MODE_GSM) &&
+			g_pDevCfg->cfgUploadMode != MODE_GPRS) {
 		if (data_send_sms(file, start, end) != TRANS_SUCCESS) {
 			state_failed_gsm(g_pDevCfg->cfgSIM_slot);
 			return TRANS_FAILED;
@@ -206,16 +207,13 @@ int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
 
 // If the last file was corrupted and forced a reboot we remove the extension
 void cancel_batch(char *path, char *name) {
-	uint16_t lineSize = 0;
-
+	char line[MAX_PATH];
 	config_setLastCommand(COMMAND_CANCEL_BATCH);
 
-	char *line=getEncodedLineHelper(&lineSize);
 	sprintf(path, "%s/%s", FOLDER_TEXT, name);
 
 	strcpy(line,path);
-	lineSize = strlen(line);
-	line[lineSize-3]=0;
+	line[strlen(line)-3]=0;
 
 	f_rename(path, line);
 	http_deactivate();
@@ -337,8 +335,9 @@ void process_batch() {
 	} else {
 		lcd_printl(LINE2, "Failed");
 	}
+
 	g_pSysState->safeboot.disable.data_transmit = 0;
-	g_iStatus |= LOG_TIME_STAMP; // Uploads may take a long time and might require offset to be reset
+	g_pSysState->system.switches.timestamp_on = 1;
 	log_enable();
 
 	// End of transmit, lets save that we were successful

@@ -193,8 +193,8 @@ void state_init() {
 	memset(g_pSysState, 0, sizeof(SYSTEM_STATE));
 
 	g_pSysState->network_mode = NETWORK_NOT_SELECTED;
+	g_pSysState->temp.firstSample = true;
 	SYSTEM_SWITCH.buzzer_disabled = BUZZER_DISABLE;
-
 	// Set the power to connected, if it is disconnected on first boot it will be detected
 	SYSTEM_SWITCH.power_connected = true;
 }
@@ -247,7 +247,6 @@ void state_alarm_enable_buzzer_override() {
 void state_alarm_turnoff_buzzer() {
 	SYSTEM_SWITCHES *s = state_getSwitches();
 	s->switches.buzzer_sound = STATE_OFF;
-	g_iStatus &= ~BUZZER_ON;
 }
 
 void state_alarm_turnon_buzzer() {
@@ -355,10 +354,6 @@ void state_network_fail(uint8_t sim, uint16_t error) {
 
 }
 
-void state_modem_timeout(uint8_t sim) {
-
-}
-
 void state_failed_gprs(uint8_t sim) {
 	if (sim > 1)
 		return;
@@ -414,9 +409,6 @@ uint8_t state_isBuzzerOn() {
 	// Manual override by the button
 	if (SYSTEM_SWITCH.button_buzzer_override == true)
 		return false;
-
-	if (g_iStatus & BUZZER_ON)
-		return true;
 
 	return SYSTEM_SWITCH.buzzer_sound;
 }

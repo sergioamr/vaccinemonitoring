@@ -5,16 +5,12 @@
  *      Author: sergioam
  */
 
-#include "stdint.h"
-#include "string.h"
-#include "globals.h"
-#include "sms.h"
+#include "thermalcanyon.h"
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 char g_iStringCaptured = 0;
 char g_szStringTemp[80];
 char g_smsMsg[MAX_SMS_SIZE_FULL];
-char g_szEncodedLine[45];
 char g_szItoa[16];
 #pragma SET_DATA_SECTION()
 
@@ -41,17 +37,6 @@ void releaseStringBufferHelper() {
 	g_iStringCaptured = 0;
 }
 
-char *getEncodedLineHelper(uint16_t *size) {
-	if (size!=NULL)
-		*size = sizeof(g_szEncodedLine);
-
-#ifdef _DEBUG
-	memset(g_szEncodedLine, 0x12, sizeof(g_szEncodedLine));
-#endif
-	g_szEncodedLine[0] = 0;
-	return g_szEncodedLine;
-}
-
 char *getSMSBufferHelper() {
 #ifdef _DEBUG
 	memset(g_smsMsg, 0x12, sizeof(g_smsMsg));
@@ -69,13 +54,13 @@ char *getFloatNumber2Text(float number, char *ret) {
 	//Round to one digit after decimal point
 	int32_t fixedPoint = (int32_t) (number * 10);
 
-	if (fixedPoint < TEMP_CUTOFF) {
+	if (number < TEMP_CUTOFF) {
 		for (i = 0; i < 4; i++)
 			ret[i] = '-';
 		return ret;
 	}
 
-	if (fixedPoint < 0) {
+	if (number < 0) {
 		count = 1;
 		ret[0] = '-';
 		fixedPoint = abs(fixedPoint);

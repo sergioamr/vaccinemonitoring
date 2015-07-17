@@ -119,7 +119,7 @@ char* get_date_string(struct tm* timeData, const char* dateSeperator,
 	strcat(g_szDateString, timeSeparator);
 	strcat(g_szDateString, itoa_pad(timeData->tm_sec));
 
-	//[TODO] Check timezone it doesnt work
+	//[TODO] Check daylight saving time it doesnt work?
 
 	/*
 	 if (includeTZ && timeData->tm_isdst) {
@@ -501,13 +501,8 @@ const char * const POWER_STATE[] = { "Power Outage", "Power Available" };
 
 // 0 Power outage
 //  Power available
-char getPowerState() {
-	return !(P4IN & BIT4);
-}
-
 const char *getPowerStateString() {
-	char pos = getPowerState();
-	return POWER_STATE[pos];
+	return POWER_STATE[!(P4IN & BIT4)];
 }
 
 FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
@@ -594,6 +589,10 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	return fat_close();
 }
 
+#pragma SET_DATA_SECTION(".helper_vars")
+struct tm g_lastSampleTime;
+#pragma SET_DATA_SECTION()
+
 FRESULT log_sample_to_disk(UINT *tbw) {
 	FIL *fobj;
 	struct tm tempDate;
@@ -629,13 +628,14 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 	// If current time is out of previous interval, log a new time stamp
 	// to avoid time offset issues
 	if (!date_within_interval(&tempDate, &g_lastSampleTime, iSamplePeriod)) {
-		g_iStatus |= LOG_TIME_STAMP;
+		g_pSysState->system.switches.timestamp_on = 1;
 	}
+
 	memcpy(&g_lastSampleTime, &tempDate, sizeof(struct tm));
 
 	// Log time stamp when it's a new day or when
 	// time gets pulled.
-	if (g_iStatus & LOG_TIME_STAMP) {
+	if (g_pSysState->system.switches.timestamp_on) {
 		szLog = getStringBufferHelper(NULL);
 		strcat(szLog, "$TS=");
 		strcat(szLog, itoa_pad((tempDate.tm_year + 1900)));
@@ -653,9 +653,9 @@ FRESULT log_sample_to_disk(UINT *tbw) {
 
 		if (bw > 0) {
 			*tbw += bw;
-			g_iStatus &= ~LOG_TIME_STAMP;
 		}
 		releaseStringBufferHelper();
+		g_pSysState->system.switches.timestamp_on = 0;
 	}
 
 	//get battery level

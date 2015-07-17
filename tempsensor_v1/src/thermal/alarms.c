@@ -84,8 +84,10 @@ void alarm_test_sensor(int id) {
 		if (s->state.disconnected == false) {
 			s->state.disconnected = true;
 			sprintf(msg, "%s disconnected", SensorName[id]);
-			goto alarm_error;
-		};
+			if (s->state.wasConnected == true) {
+				goto alarm_error;
+			}
+		}
 		return;
 	}
 
