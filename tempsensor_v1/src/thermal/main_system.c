@@ -90,9 +90,11 @@ static void setup_IO() {
 	// previously configured port settings
 	PM5CTL0 &= ~LOCKLPM5;
 
+
 	system_setupIO_clock();
 	uart_setupIO_clock();
 	ADC_setupIO();
+
 
 #ifndef I2C_DISABLED
 	//i2c_init(EUSCI_B_I2C_SET_DATA_RATE_400KBPS);
@@ -100,6 +102,11 @@ static void setup_IO() {
 #endif
 
 	__bis_SR_register(GIE);		//enable interrupt globally
+
+	//missing transistor, set high to turn off
+	//TODO make led state a parameter
+	GPIO_setOutputHighOnPin(GPIO_PORT_P4, GPIO_PIN7);
+
 }
 
 /****************************************************************************/

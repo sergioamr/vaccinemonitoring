@@ -701,6 +701,7 @@ FRESULT config_read_ini_file() {
 
 	//TODO: SYSTEM_SWITCHES for buzzer from ini file
 
+
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
 
