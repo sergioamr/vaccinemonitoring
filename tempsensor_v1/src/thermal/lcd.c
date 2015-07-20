@@ -143,11 +143,15 @@ void lcd_show() {
 
 	memset(lcdBuffer, 0, sizeof(lcdBuffer));
 
+	/*
 #ifdef _DEBUG
 	lcd_setUptime(lcdBuffer);
 #else
 	lcd_setDate(lcdBuffer);
 #endif
+    */
+	lcd_setDate(lcdBuffer);
+
 	//get local time
 	iIdx = strlen(lcdBuffer); //marker
 
