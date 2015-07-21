@@ -103,9 +103,10 @@ static void setup_IO() {
 
 	__bis_SR_register(GIE);		//enable interrupt globally
 
-	//missing transistor, set high to turn off
-	//TODO make led state a parameter
-	GPIO_setOutputHighOnPin(GPIO_PORT_P4, GPIO_PIN7);
+	//theres a problem with the LED hardware
+	GPIO_setOutputLowOnPin(GPIO_PORT_P4, GPIO_PIN5);
+	//GPIO_setOutputLowOnPin(GPIO_PORT_P4, GPIO_PIN6);
+	//GPIO_setOutputHighOnPin(GPIO_PORT_P4, GPIO_PIN7);
 
 }
 
