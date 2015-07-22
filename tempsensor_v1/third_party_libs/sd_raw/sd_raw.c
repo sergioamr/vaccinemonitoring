@@ -172,14 +172,22 @@ static uint8_t sd_raw_send_command(uint8_t command, uint32_t arg);
 uint8_t sd_raw_init()
 {
     /* enable inputs for reading card status */
+
+	/*
     configure_pin_available();
     configure_pin_locked();
+    */
 
     /* enable outputs for MOSI, SCK, SS, input for MISO */
+    //not needed
+    //SPI pins set in main_system.c
+
+    /*
     configure_pin_mosi();
     configure_pin_sck();
     configure_pin_ss();
     configure_pin_miso();
+    */
 
     unselect_card();
 
@@ -338,7 +346,8 @@ uint8_t sd_raw_init()
  */
 uint8_t sd_raw_available()
 {
-    return get_pin_available() == 0x00;
+    //return get_pin_available() == 0x00;
+    return 1;
 }
 
 /**
@@ -349,7 +358,8 @@ uint8_t sd_raw_available()
  */
 uint8_t sd_raw_locked()
 {
-    return get_pin_locked() == 0x00;
+    //return get_pin_locked() == 0x00;
+    return 0;
 }
 
 /**

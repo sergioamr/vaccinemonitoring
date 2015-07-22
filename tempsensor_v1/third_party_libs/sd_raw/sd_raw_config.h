@@ -12,6 +12,8 @@
 #define SD_RAW_CONFIG_H
 
 #include <stdint.h>
+//use on MSP340FR5969
+#include <msp430.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -73,19 +75,40 @@ extern "C"
 
 /* defines for customisation of sd/mmc port access */
 
-#define configure_pin_mosi() DDRB |= (1 << DDB3)
-#define configure_pin_sck() DDRB |= (1 << DDB5)
-#define configure_pin_ss() DDRB |= (1 << DDB2)
-#define configure_pin_miso() DDRB &= ~(1 << DDB4)
+//msp430
+// SPI port definitions
+#define SPI_PxSEL         P2SEL1
+#define SPI_PxDIR         P2DIR
+#define SPI_PxIN          P2IN
+#define SPI_PxOUT         P2OUT
+#define SPI_SIMO          BIT5
+#define SPI_SOMI          BIT6
+#define SPI_UCLK          BIT4
 
-#define select_card() PORTB &= ~(1 << PORTB2)
-#define unselect_card() PORTB |= (1 << PORTB2)
+//original
+//#define configure_pin_mosi() DDRB |= (1 << DDB3)
+//#define configure_pin_sck() DDRB |= (1 << DDB5)
+//#define configure_pin_ss() DDRB |= (1 << DDB2)
+//#define configure_pin_miso() DDRB &= ~(1 << DDB4)
 
+//msp430
+// Chip Select define
+#define CS_PxOUT      P2OUT
+#define CS_PxDIR      P2DIR
+#define CS            BIT3
+
+#define select_card() CS_PxOUT &= ~CS               // Card Select
+#define unselect_card() while(halSPITXDONE); CS_PxOUT |= CS  // Card Deselect
+//#define select_card() PORTB &= ~(1 << PORTB2)
+//#define unselect_card() PORTB |= (1 << PORTB2)
+
+/*
 #define configure_pin_available() DDRC &= ~(1 << DDC4)
 #define configure_pin_locked() DDRC &= ~(1 << DDC5)
 
 #define get_pin_available() (PINC & (1 << PINC4))
 #define get_pin_locked() (PINC & (1 << PINC5))
+*/
 
 #if SD_RAW_SDHC
     typedef uint64_t offset_t;

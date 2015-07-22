@@ -19,6 +19,11 @@ extern "C"
 {
 #endif
 
+//set sector size
+#define SECTOR_SIZE 	512
+//set total sectors based on SD size
+#define SECTOR_COUNT 	8388608				//4GB/512
+//#define SECTOR_COUNT 	16777216		    //8GB/512
 /**
  * \addtogroup sd_raw
  *
