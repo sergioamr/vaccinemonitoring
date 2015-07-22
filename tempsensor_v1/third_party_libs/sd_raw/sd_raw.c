@@ -183,16 +183,13 @@ uint8_t sd_raw_init()
     //SPI pins set in main_system.c
 
     /*
-	 configure_pin_mosi();
-	 configure_pin_sck();
-	 configure_pin_ss();
-	 configure_pin_miso();
-	 */
+    configure_pin_mosi();
+    configure_pin_sck();
+    configure_pin_ss();
+    configure_pin_miso();
+    */
 
-	unselect_card()
-	;
-
-	//MSP430 init SPI
+    unselect_card();
 
 	// Configure USCI_A1 for SPI operation
 	UCA1CTLW0 = UCSWRST;                      // **Put state machine in reset**
@@ -207,11 +204,25 @@ uint8_t sd_raw_init()
 	UCA1MCTLW = 0;                            // No modulation
 	UCA1CTLW0 &= ~UCSWRST;                  // **Initialize USCI state machine**
 
-	/* initialization procedure */
-	sd_raw_card_type = 0;
 
-	if (!sd_raw_available())
-		return 0;
+    //atmel code
+    /* initialize SPI with lowest frequency; max. 400kHz during identification mode of card
+    SPCR = (0 << SPIE) |  SPI Interrupt Enable
+           (1 << SPE)  |  SPI Enable
+           (0 << DORD) |  Data Order: MSB first
+           (1 << MSTR) |  Master mode
+           (0 << CPOL) |  Clock Polarity: SCK low when idle
+           (0 << CPHA) |  Clock Phase: sample on rising SCK edge
+           (1 << SPR1) |  Clock Frequency: f_OSC / 128
+           (1 << SPR0);
+    SPSR &= ~(1 << SPI2X); /* No doubled clock frequency */
+
+
+    /* initialization procedure */
+    sd_raw_card_type = 0;
+
+    if(!sd_raw_available())
+        return 0;
 
     /* card needs 74 cycles minimum to start up */
     for(uint8_t i = 0; i < 10; ++i)
@@ -326,8 +337,12 @@ uint8_t sd_raw_init()
     /* deaddress card */
     unselect_card();
 
-    /* switch to highest SPI frequency possible */
-    SPCR &= ~((1 << SPR1) | (1 << SPR0)); /* Clock Frequency: f_OSC / 4 */
+    //TODO set MSP clock freq to * MHz
+    UCA1BR0 = 0x00;                           //  SPI clk - 8MHz
+    UCA1BR1 = 0;
+
+    /* switch to highest SPI frequency possible
+    SPCR &= ~((1 << SPR1) | (1 << SPR0)); /* Clock Frequency: f_OSC / 4
     SPSR |= (1 << SPI2X); /* Doubled Clock Frequency: f_OSC / 2 */
 
 #if !SD_RAW_SAVE_RAM
