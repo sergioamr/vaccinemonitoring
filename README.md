@@ -1,6 +1,4 @@
-# Thermal_Canyon_v0.10
-## MSPRecovery 
-BSL flashing code
+# Thermal_Canyon_v0.50
 
 ## tempsensor_v1
 MSP430 Project for Thermal Canyon
