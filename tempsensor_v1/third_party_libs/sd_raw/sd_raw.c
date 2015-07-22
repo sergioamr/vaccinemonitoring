@@ -38,6 +38,31 @@
  * @}
  */
 
+//from MSP 430 mmc
+//----------------------------------------------------------------------------
+//  These constants are used to identify the chosen SPI and UART
+//  interfaces.
+//----------------------------------------------------------------------------
+#define SER_INTF_NULL    0
+#define SER_INTF_USART0  1
+#define SER_INTF_USART1  2
+#define SER_INTF_USCIA0  3
+#define SER_INTF_USCIA1  4
+#define SER_INTF_USCIB0  5
+#define SER_INTF_USCIB1  6
+#define SER_INTF_USI     7
+#define SER_INTF_BITBANG 8
+
+//from MSP 430 mmc
+ #elif SPI_SER_INTF == SER_INTF_USCIA1
+ #define halSPIRXBUF  UCA1RXBUF
+ #define halSPI_SEND(x) UCA1TXBUF=x
+ #define halSPITXREADY  (UCA1IFG & UCTXIFG)         /* Wait for TX to be ready */
+ #define halSPITXDONE  (UCA1STATW & UCBUSY)       /* Wait for TX to finish */
+ #define halSPIRXREADY (UCA1IFG & UCRXIFG)          /* Wait for TX to be ready */
+ #define halSPIRXFG_CLR UCA1IFG &= ~UCRXIFG
+
+
 /* commands available in SPI mode */
 
 /* CMD0: response R1 */
