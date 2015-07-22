@@ -183,30 +183,35 @@ uint8_t sd_raw_init()
     //SPI pins set in main_system.c
 
     /*
-    configure_pin_mosi();
-    configure_pin_sck();
-    configure_pin_ss();
-    configure_pin_miso();
-    */
+	 configure_pin_mosi();
+	 configure_pin_sck();
+	 configure_pin_ss();
+	 configure_pin_miso();
+	 */
 
-    unselect_card();
+	unselect_card()
+	;
 
-    /* initialize SPI with lowest frequency; max. 400kHz during identification mode of card */
-    SPCR = (0 << SPIE) | /* SPI Interrupt Enable */
-           (1 << SPE)  | /* SPI Enable */
-           (0 << DORD) | /* Data Order: MSB first */
-           (1 << MSTR) | /* Master mode */
-           (0 << CPOL) | /* Clock Polarity: SCK low when idle */
-           (0 << CPHA) | /* Clock Phase: sample on rising SCK edge */
-           (1 << SPR1) | /* Clock Frequency: f_OSC / 128 */
-           (1 << SPR0);
-    SPSR &= ~(1 << SPI2X); /* No doubled clock frequency */
+	//MSP430 init SPI
 
-    /* initialization procedure */
-    sd_raw_card_type = 0;
-    
-    if(!sd_raw_available())
-        return 0;
+	// Configure USCI_A1 for SPI operation
+	UCA1CTLW0 = UCSWRST;                      // **Put state machine in reset**
+	//UCA1CTLW0 |= UCMST | UCSYNC | UCCKPH | UCMSB; //Mode0 3-pin, 8-bit SPI master, clock polarity=0, clock phase=1 (captured on first edge and sampled in next)
+	// MSB
+	UCA1CTLW0 |= UCMST | UCSYNC | UCCKPL | UCMSB; //Mode3 3-pin, 8-bit SPI master, clock polarity=1, clock phase=0 (changed on first edge and captured in next)
+	// MSB
+	UCA1CTLW0 |= UCSSEL__SMCLK;                // SMCLK - 8MHz
+	//UCA1BR0 = 0x00;                           //  SPI clk - 8MHz
+	//UCA1BR1 = 0;
+	UCA1BRW = 20;                           //  SPI clk - 400KHz
+	UCA1MCTLW = 0;                            // No modulation
+	UCA1CTLW0 &= ~UCSWRST;                  // **Initialize USCI state machine**
+
+	/* initialization procedure */
+	sd_raw_card_type = 0;
+
+	if (!sd_raw_available())
+		return 0;
 
     /* card needs 74 cycles minimum to start up */
     for(uint8_t i = 0; i < 10; ++i)
