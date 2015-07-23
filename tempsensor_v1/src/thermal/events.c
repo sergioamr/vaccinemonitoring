@@ -591,9 +591,9 @@ void event_main_sleep() {
 	else
 	// If we are disconnected, lets check every 5 seconds for the power to be back.
 	if (g_pSysState->system.switches.power_connected)
-			delay(MAIN_SLEEP_POWER_OUTAGE);
+		delay(MAIN_SLEEP_POWER_OUTAGE);
 	else
-	// Deep sleep
+		// Deep sleep
 		delay(MAIN_LCD_OFF_SLEEP_TIME);
 
 	iMainSleep = 0;

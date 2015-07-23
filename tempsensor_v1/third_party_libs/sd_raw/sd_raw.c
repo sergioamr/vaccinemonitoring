@@ -53,7 +53,7 @@
 #define SER_INTF_USI     7
 #define SER_INTF_BITBANG 8
 
-//from MSP 430 mmc
+//from MSP 430 mmc defines
  #elif SPI_SER_INTF == SER_INTF_USCIA1
  #define halSPIRXBUF  UCA1RXBUF
  #define halSPI_SEND(x) UCA1TXBUF=x
@@ -416,10 +416,16 @@ uint8_t sd_raw_locked()
  */
 void sd_raw_send_byte(uint8_t b)
 {
+	/* atmel code
     SPDR = b;
-    /* wait for byte to be shifted out */
+    // wait for byte to be shifted out
     while(!(SPSR & (1 << SPIF)));
     SPSR &= ~(1 << SPIF);
+	*/
+
+    while (halSPITXREADY ==0);    // wait while not ready for TX
+    halSPI_SEND(b);            // write
+    while (halSPIRXREADY ==0);    // wait for RX buffer (full)
 }
 
 /**
@@ -429,14 +435,22 @@ void sd_raw_send_byte(uint8_t b)
  * \returns The byte which should be read.
  * \see sd_raw_send_byte
  */
+
 uint8_t sd_raw_rec_byte()
 {
-    /* send dummy data for receiving some */
+	/* atmel code
+    // send dummy data for receiving some
     SPDR = 0xff;
     while(!(SPSR & (1 << SPIF)));
     SPSR &= ~(1 << SPIF);
 
     return SPDR;
+    */
+
+    while (halSPITXREADY ==0);   // wait while not ready for TX
+    halSPI_SEND(DUMMY_CHAR);     // dummy write
+    while (halSPIRXREADY ==0);   // wait for RX buffer (full)
+    return halSPIRXBUF;
 }
 
 /**
