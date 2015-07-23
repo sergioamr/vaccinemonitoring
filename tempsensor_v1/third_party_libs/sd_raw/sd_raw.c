@@ -9,7 +9,7 @@
  */
 
 #include <string.h>
-#include <avr/io.h>
+//#include <avr/io.h>
 #include "sd_raw.h"
 
 /**
@@ -54,7 +54,6 @@
 #define SER_INTF_BITBANG 8
 
 //from MSP 430 mmc defines
- #elif SPI_SER_INTF == SER_INTF_USCIA1
  #define halSPIRXBUF  UCA1RXBUF
  #define halSPI_SEND(x) UCA1TXBUF=x
  #define halSPITXREADY  (UCA1IFG & UCTXIFG)         /* Wait for TX to be ready */
@@ -196,6 +195,7 @@ static uint8_t sd_raw_send_command(uint8_t command, uint32_t arg);
  */
 uint8_t sd_raw_init()
 {
+	uint16_t i;
     /* enable inputs for reading card status */
 
 	/*
@@ -240,17 +240,19 @@ uint8_t sd_raw_init()
            (0 << CPHA) |  Clock Phase: sample on rising SCK edge
            (1 << SPR1) |  Clock Frequency: f_OSC / 128
            (1 << SPR0);
-    SPSR &= ~(1 << SPI2X); /* No doubled clock frequency */
+    SPSR &= ~(1 << SPI2X); No doubled clock frequency */
 
 
     /* initialization procedure */
     sd_raw_card_type = 0;
 
+    /*
     if(!sd_raw_available())
         return 0;
+        */
 
     /* card needs 74 cycles minimum to start up */
-    for(uint8_t i = 0; i < 10; ++i)
+    for(i = 0; i < 10; ++i)
     {
         /* wait 8 clock cycles */
         sd_raw_rec_byte();
@@ -261,7 +263,7 @@ uint8_t sd_raw_init()
 
     /* reset card */
     uint8_t response;
-    for(uint16_t i = 0; ; ++i)
+    for(i = 0; ; ++i)
     {
         response = sd_raw_send_command(CMD_GO_IDLE_STATE, 0);
         if(response == (1 << R1_IDLE_STATE))
@@ -307,7 +309,7 @@ uint8_t sd_raw_init()
     }
 
     /* wait for card to get ready */
-    for(uint16_t i = 0; ; ++i)
+    for(i = 0; ; ++i)
     {
         if(sd_raw_card_type & ((1 << SD_RAW_SPEC_1) | (1 << SD_RAW_SPEC_2)))
         {
@@ -367,8 +369,8 @@ uint8_t sd_raw_init()
     UCA1BR1 = 0;
 
     /* switch to highest SPI frequency possible
-    SPCR &= ~((1 << SPR1) | (1 << SPR0)); /* Clock Frequency: f_OSC / 4
-    SPSR |= (1 << SPI2X); /* Doubled Clock Frequency: f_OSC / 2 */
+    SPCR &= ~((1 << SPR1) | (1 << SPR0)); // Clock Frequency: f_OSC / 4
+    SPSR |= (1 << SPI2X); // Doubled Clock Frequency: f_OSC / 2 */
 
 #if !SD_RAW_SAVE_RAM
     /* the first block is likely to be accessed first, so precache it here */
@@ -448,7 +450,7 @@ uint8_t sd_raw_rec_byte()
     */
 
     while (halSPITXREADY ==0);   // wait while not ready for TX
-    halSPI_SEND(DUMMY_CHAR);     // dummy write
+    halSPI_SEND(0xFF);     // dummy write
     while (halSPIRXREADY ==0);   // wait for RX buffer (full)
     return halSPIRXBUF;
 }
@@ -463,6 +465,7 @@ uint8_t sd_raw_rec_byte()
  */
 uint8_t sd_raw_send_command(uint8_t command, uint32_t arg)
 {
+	uint16_t i;
     uint8_t response;
 
     /* wait some clock cycles */
@@ -488,7 +491,7 @@ uint8_t sd_raw_send_command(uint8_t command, uint32_t arg)
     }
     
     /* receive response */
-    for(uint8_t i = 0; i < 10; ++i)
+    for(i = 0; i < 10; ++i)
     {
         response = sd_raw_rec_byte();
         if(response != 0xff)
@@ -510,6 +513,7 @@ uint8_t sd_raw_send_command(uint8_t command, uint32_t arg)
  */
 uint8_t sd_raw_read(offset_t offset, uint8_t* buffer, uintptr_t length)
 {
+	uint16_t i;
     offset_t block_address;
     uint16_t block_offset;
     uint16_t read_length;
@@ -561,7 +565,7 @@ uint8_t sd_raw_read(offset_t offset, uint8_t* buffer, uintptr_t length)
 #else
             /* read byte block */
             uint8_t* cache = raw_block;
-            for(uint16_t i = 0; i < 512; ++i)
+            for(i = 0; i < 512; ++i)
                 *cache++ = sd_raw_rec_byte();
             raw_block_address = block_address;
 
@@ -737,6 +741,7 @@ uint8_t sd_raw_write(offset_t offset, const uint8_t* buffer, uintptr_t length)
     if(sd_raw_locked())
         return 0;
 
+    uint16_t i;
     offset_t block_address;
     uint16_t block_offset;
     uint16_t write_length;
@@ -798,7 +803,7 @@ uint8_t sd_raw_write(offset_t offset, const uint8_t* buffer, uintptr_t length)
 
         /* write byte block */
         uint8_t* cache = raw_block;
-        for(uint16_t i = 0; i < 512; ++i)
+        for(i = 0; i < 512; ++i)
             sd_raw_send_byte(*cache++);
 
         /* write dummy crc16 */
@@ -923,6 +928,7 @@ uint8_t sd_raw_get_info(struct sd_raw_info* info)
         return 0;
 
     memset(info, 0, sizeof(*info));
+    uint16_t i;
 
     select_card();
 
@@ -933,7 +939,7 @@ uint8_t sd_raw_get_info(struct sd_raw_info* info)
         return 0;
     }
     while(sd_raw_rec_byte() != 0xfe);
-    for(uint8_t i = 0; i < 18; ++i)
+    for(i = 0; i < 18; ++i)
     {
         uint8_t b = sd_raw_rec_byte();
 
@@ -987,7 +993,7 @@ uint8_t sd_raw_get_info(struct sd_raw_info* info)
         return 0;
     }
     while(sd_raw_rec_byte() != 0xfe);
-    for(uint8_t i = 0; i < 18; ++i)
+    for(i = 0; i < 18; ++i)
     {
         uint8_t b = sd_raw_rec_byte();
 
