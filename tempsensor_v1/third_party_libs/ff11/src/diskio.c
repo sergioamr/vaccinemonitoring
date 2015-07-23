@@ -168,7 +168,7 @@ DRESULT disk_ioctl (
 		stat = RES_OK; //as write is Write-around cache
 		break;
 	case GET_SECTOR_COUNT :	/* Get number of sectors on the disk (WORD) */
-		*(DWORD*)buff = SECTOR_COUNT;
+		*(DWORD*)buff = SECTOR_COUNT; //TODO write get function for sector count
 		stat = RES_OK;
 		break;
 	case GET_BLOCK_SIZE:

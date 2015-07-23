@@ -187,6 +187,8 @@ static void sd_raw_send_byte(uint8_t b);
 static uint8_t sd_raw_rec_byte();
 static uint8_t sd_raw_send_command(uint8_t command, uint32_t arg);
 
+// variable to get SD size
+static uint32_t sector_count;
 /**
  * \ingroup sd_raw
  * Initializes memory card communication.
@@ -290,6 +292,9 @@ uint8_t sd_raw_init()
 
         /* card conforms to SD 2 card specification */
         sd_raw_card_type |= (1 << SD_RAW_SPEC_2);
+
+        //is SDHC, set to 4GB sector count
+        sector_count = 8388608;
     }
     else
 #endif
@@ -301,6 +306,9 @@ uint8_t sd_raw_init()
         {
             /* card conforms to SD 1 card specification */
             sd_raw_card_type |= (1 << SD_RAW_SPEC_1);
+
+            //is NOT SDHC, set to 2GB sector count
+            sector_count = 4194304;
         }
         else
         {
