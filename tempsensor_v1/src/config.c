@@ -709,7 +709,7 @@ int config_default_configuration() {
 	power->battThreshold = BATTERY_HIBERNATE_THRESHOLD;
 
 // TODO: default values for own number & sms center?
-
+//TODO crashing here?
 	g_pDevCfg->sIntervalsMins.sampling = PERIOD_SAMPLING;
 	g_pDevCfg->sIntervalsMins.upload = PERIOD_UPLOAD;
 	g_pDevCfg->sIntervalsMins.systemReboot = PERIOD_REBOOT;
