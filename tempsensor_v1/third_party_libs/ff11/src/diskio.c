@@ -69,7 +69,7 @@ DRESULT disk_read (
 	for(iIdx = 0; ((iIdx < count) && (stat == RES_OK)); iIdx++)
 	{
 		//sd_raw_read(offset_t offset, uint8_t* buffer, uintptr_t length)
-		result = sd_raw_read(sector, buff, SECTOR_SIZE);
+		result = sd_raw_read(sector*SECTOR_SIZE, buff, SECTOR_SIZE);
 		if(result == 1) //success on 1
 		{
 			stat = RES_OK;
@@ -96,7 +96,7 @@ DRESULT disk_read_ex (
 
 	//for(iIdx = 0; ((iIdx < count) && (stat == RES_OK)); iIdx++)
 	{
-		result = sd_raw_read(sector, buff, SECTOR_SIZE);
+		result = sd_raw_read(sector*SECTOR_SIZE, buff, SECTOR_SIZE);
 		if(result == 1)
 		{
 			stat = RES_OK;
@@ -132,7 +132,7 @@ DRESULT disk_write (
 	{
 		//sd_raw_write(offset_t offset, const uint8_t* buffer, uintptr_t length)
 		//result = mmcWriteBlock(sector*SECTOR_SIZE, SECTOR_SIZE, (unsigned char *) buff);
-		result = sd_raw_write(sector, buff, SECTOR_SIZE);
+		result = sd_raw_write(sector*SECTOR_SIZE, buff, SECTOR_SIZE);
 		if(result == 1)
 		{
 			stat = RES_OK;
