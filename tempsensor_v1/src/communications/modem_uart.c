@@ -162,11 +162,12 @@ const char *uart_getRXHead() {
 
 // Reset all buffers, headers, and counters for transmission
 void uart_reset_headers() {
-#ifdef _DEBUG
-	memset((char *) RXBuffer, 0, sizeof(RXBuffer));
-#else
+
+//#ifdef _DEBUG
+	//memset((char *) RXBuffer, 0, sizeof(RXBuffer));
+//#else
 	RXBuffer[0] = 0;
-#endif
+//#endif
 
 	uart.iTXIdx = 0;
 	uart.iRXHeadIdx = uart.iRXTailIdx = 0;
@@ -197,21 +198,17 @@ void modem_send_command(const char *cmd) {
 	}
 
 	// Store the maximum size used from this buffer
-#ifdef _DEBUG_COUNT_BUFFERS
-	if (uart.iTxLen > g_pSysCfg->maxTXBuffer)
-	g_pSysCfg->maxTXBuffer = uart.iTxLen;
-#endif
 	if (uart.iTxLen > sizeof(TXBuffer)) {
 		lcd_print("TXERR");
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	}
 
 	if (cmd != TXBuffer) {
-#ifdef _DEBUG
-		memset((char *) TXBuffer, 0, sizeof(TXBuffer));
-#else
+//#ifdef _DEBUG
+		//memset((char *) TXBuffer, 0, sizeof(TXBuffer));
+//#else
 		TXBuffer[0] = 0;
-#endif
+//#endif
 		memcpy((char *) TXBuffer, cmd, uart.iTxLen);
 	}
 

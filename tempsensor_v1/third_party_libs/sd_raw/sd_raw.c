@@ -168,6 +168,8 @@
 #define SD_RAW_SPEC_2 1
 #define SD_RAW_SPEC_SDHC 2
 
+//put this in FRAM
+#pragma SET_DATA_SECTION(".aggregate_vars")
 #if !SD_RAW_SAVE_RAM
 /* static data buffer for acceleration */
 static uint8_t raw_block[512];
@@ -179,16 +181,18 @@ static uint8_t raw_block_written;
 #endif
 #endif
 
+// variable to get SD size
+static uint32_t sector_count;
+
 /* card type state */
 static uint8_t sd_raw_card_type;
+#pragma SET_DATA_SECTION()
 
 /* private helper functions */
 static void sd_raw_send_byte(uint8_t b);
 static uint8_t sd_raw_rec_byte();
 static uint8_t sd_raw_send_command(uint8_t command, uint32_t arg);
 
-// variable to get SD size
-static uint32_t sector_count;
 /**
  * \ingroup sd_raw
  * Initializes memory card communication.
