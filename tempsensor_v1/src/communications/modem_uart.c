@@ -352,9 +352,11 @@ void uart_tx_nowait(const char *cmd) {
 }
 
 uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime) {
+	/*
 #ifdef _DEBUG
 	checkStack();
 #endif
+*/
 
 	modem_send_command(cmd);
 	if (!waitForReady(promptTime)) {
@@ -383,9 +385,11 @@ uint8_t uart_txf(const char *_format, ...) {
 	uint16_t res = 0;
 	uint16_t size = 0;
 
+	/*
 #ifdef _DEBUG
 	checkStack();
 #endif
+*/
 
 	char *szTemp = getStringBufferHelper(&size);
 	va_start(_ap, _format);

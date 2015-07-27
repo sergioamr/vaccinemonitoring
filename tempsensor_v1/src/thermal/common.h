@@ -47,13 +47,10 @@ extern "C"
  *
  */
 
-#ifdef _DEBUG
+
 #define MODEM_TX_DELAY1		5000
 #define MODEM_TX_DELAY2		10000
-#else
-#define MODEM_TX_DELAY1		5000
-#define MODEM_TX_DELAY2		10000
-#endif
+
 
 /*
  * Defines for data sizes
@@ -80,11 +77,8 @@ extern "C"
  * Constants for different uses
  */
 
-#ifdef _DEBUG
-#define MAX_DISPLAY_ID		15
-#else
-#define MAX_DISPLAY_ID		9
-#endif
+
+#define MAX_DISPLAY_ID		15 //9
 
 //iStatus contants
 #define MODEM_POWERED_ON 	0x0001

@@ -413,9 +413,11 @@ int8_t modem_first_init() {
 
 	uint8_t nsims = SYSTEM_NUM_SIM_CARDS;
 
+	/*
 #ifdef _DEBUG
 	nsims = 1;
 #endif
+*/
 
 	for (t = 0; t < nsims; t++) {
 		//force SIM 2 before we call swap. this ensures we start on SIM1
@@ -770,10 +772,12 @@ void modem_pull_time() {
 			rtc_init(&g_tmCurrTime);
 			config_update_system_time();
 		} else {
+			/*
 #ifdef DEBUG_OUTPUT
 			lcd_printf(LINEC, "WRONG DATE", config_getSelectedSIM());
 			lcd_printf(LINEH, get_YMD_String(&g_tmCurrTime));
 #endif
+*/
 
 			rtc_init(&g_pDevCfg->lastSystemTime);
 			rtc_getlocal(&g_tmCurrTime);

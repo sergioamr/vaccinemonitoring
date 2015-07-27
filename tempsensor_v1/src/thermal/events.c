@@ -130,6 +130,7 @@ time_t events_getTick() {
 }
 
 void events_send_data(char *phone) {
+	/*
 #ifdef _DEBUG_OUTPUT
 	char *msg=getSMSBufferHelper();
 	EVENT *pEvent;
@@ -159,6 +160,7 @@ void events_send_data(char *phone) {
 			get_date_string(&g_tmCurrTime, "-", " ", ":", 1));
 	sms_send_message_number(phone, msg);
 #endif
+*/
 }
 
 /*
@@ -234,11 +236,13 @@ void events_register(EVENT_IDS id, char *name, time_t offset_time_secs,
 	pEvent->id = id;
 	strncpy(pEvent->name, name, sizeof(pEvent->name));
 
+	/*
 #ifdef _DEBUG
 	intervalDefault /= 2;
 	offset_time_secs /= 2;
 	intervalMinutes /= 2;
 #endif
+*/
 
 	if (intervalDefault != 0)
 		pEvent->interval_secs = intervalDefault - offset_time_secs;
@@ -283,6 +287,7 @@ void events_sync() {
 }
 
 void events_debug() {
+	/*
 #ifdef _DEBUG
 	if (!g_iDebug)
 		return;
@@ -301,6 +306,7 @@ void events_debug() {
 	if (test == 0 || nextEventTime < 10 || 1)
 		lcd_printf(LINE1, "[%s %d]   ", pEvent->name, nextEventTime);
 #endif
+*/
 }
 
 void event_run_now(EVENT *pEvent) {
@@ -586,11 +592,13 @@ void events_init() {
 
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
 
+	/*
 #ifdef _DEBUG
 	events_register(EVT_SMS_TEST, "SMS", 0, &event_sms_test,
 			MINUTES_(PERIOD_SMS_TEST),
 			NULL);
 #endif
+*/
 	events_register(EVT_BATTERY_CHECK, "BAT", 0, &events_check_battery,
 			MINUTES_(PERIOD_BATTERY_CHECK),
 			g_pDevCfg->sIntervalsMins.batteryCheck);

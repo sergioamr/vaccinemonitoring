@@ -215,22 +215,26 @@ void lcd_show() {
 			lcd_append_signal_info(lcdBuffer);
 		break;
 
+		/*
 #ifdef _DEBUG
 	case 9+5:
 		lcd_display_config();
 		return;
 #endif
+*/
 
 	default:
 		break;
 	}
 
+	/*
 #ifdef _DEBUG
 	if (iItemId>=9 && iItemId<9+5) {
 		lcd_display_config_sensor(iItemId-9);
 		return;
 	} else
 #endif
+*/
 	if (iCnt != 0xff) {
 		if (g_pSysState->temp.state[iCnt].status != 0) {
 			sprintf(&lcdBuffer[iIdx], "ALERT %s %sC", SensorName[iCnt],
@@ -255,9 +259,12 @@ void lcd_progress_wait(uint16_t delayTime) {
 		return;
 	}
 
+	/*
 #ifdef _DEBUG
 	checkStack();
 #endif
+*/
+
 	for (t = 0; t < count; t++) {
 		delay(50);
 		lcd_print_progress();
@@ -268,9 +275,11 @@ void lcd_printf(int line, const char *_format, ...) {
 	va_list _ap;
 	char szTemp[33];
 
+	/*
 #ifdef _DEBUG
 	checkStack();
 #endif
+*/
 
 	va_start(_ap, _format);
 	vsnprintf(szTemp, sizeof(szTemp), _format, _ap);
@@ -365,17 +374,8 @@ void lcd_print_boot(const char* pcData, int line) {
 	if (g_iLCDVerbose == VERBOSE_DISABLED)
 		return;
 
-#ifdef _DEBUG
-	if (g_bLCD_state == 0)
-	return;
-
-	if (line==1)
-	lcd_clear();
-
-	lcd_printl(line, pcData);
-#else
 	lcd_print_progress();
-#endif
+
 }
 
 void lcd_display_config_sensor(int id) {
@@ -392,14 +392,9 @@ void lcd_display_config() {
 	getFloatNumber2Text(pAlertParams->threshCold, num1);
 	getFloatNumber2Text(pAlertParams->threshHot, num2);
 
-#ifdef _DEBUG
-	checkStack();
-	lcd_printf(LINEC, "%x %d %s %d %s", g_pSysCfg->stackLeft, (int) pAlertParams->maxSecondsCold / 60,
-			&num1[0], (int) pAlertParams->maxSecondsHot / 60, &num2[0]);
-#else
 	lcd_printf(LINEC, "C%d %s H%d %s", (int) pAlertParams->maxSecondsCold / 60,
 			&num1[0], (int) pAlertParams->maxSecondsHot / 60, &num2[0]);
-#endif
+
 	lcd_printf(LINE2, "S%d U%d L%d P%d", g_pDevCfg->cfgSelectedSIM_slot + 1,
 			g_pDevCfg->sIntervalsMins.upload,
 			g_pDevCfg->sIntervalsMins.sampling,
