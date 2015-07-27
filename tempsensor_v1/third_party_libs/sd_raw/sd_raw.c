@@ -799,6 +799,9 @@ uint8_t sd_raw_write(offset_t offset, const uint8_t* buffer, uintptr_t length)
         if(sd_raw_send_command(CMD_WRITE_SINGLE_BLOCK, block_address))
 #endif
         {
+        	// need to sync before disconnect
+        	sd_raw_sync();
+
             unselect_card();
             return 0;
         }
@@ -818,6 +821,9 @@ uint8_t sd_raw_write(offset_t offset, const uint8_t* buffer, uintptr_t length)
         /* wait while card is busy */
         while(sd_raw_rec_byte() != 0xff);
         sd_raw_rec_byte();
+
+        // need to sync before disconnect
+        sd_raw_sync();
 
         /* deaddress card */
         unselect_card();
