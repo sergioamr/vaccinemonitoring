@@ -175,10 +175,6 @@ int http_check_error(int *retry) {
 	// Server didnt return any data
 	if (http_status_code == 200 && data_size == 0) {
 		*retry = 1;
-#ifdef _DEBUG_OUTPUT
-		lcd_printl(LINEC, "HTTP Server");
-		lcd_printl(LINEH, "Empty response");
-#endif
 	}
 
 	// TODO Find non recoverable errors

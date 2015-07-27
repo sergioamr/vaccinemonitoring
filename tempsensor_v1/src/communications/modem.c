@@ -342,6 +342,7 @@ void modem_check_uart_error() {
 		errorToken = *(pToken1 - 1);
 
 		if (uart.switches.b.ignoreError == 0) {
+			/*
 #ifdef _DEBUG_OUTPUT
 			if (errorToken=='S') {
 				lcd_printl(LINEC, "SERVICE ERROR");
@@ -349,6 +350,7 @@ void modem_check_uart_error() {
 				lcd_printl(LINEC, "MODEM ERROR");
 			}
 #endif
+*/
 			modem_setNumericError(errorToken, atoi(error));
 		}
 	}
@@ -464,9 +466,11 @@ int modem_swap_to_SIM(int sim) {
 }
 
 int modem_swap_SIM() {
+	/*
 #ifdef EXTREME_DEBUG
 	log_appendf("SWP [%d]", config_getSelectedSIM());
 #endif
+*/
 	int res = UART_FAILED;
 	g_pDevCfg->cfgSIM_slot = !g_pDevCfg->cfgSIM_slot;
 	g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;
