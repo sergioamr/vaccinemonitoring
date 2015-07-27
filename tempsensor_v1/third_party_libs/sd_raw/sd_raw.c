@@ -221,9 +221,9 @@ uint8_t sd_raw_init()
 
 	// Configure USCI_A1 for SPI operation
 	UCA1CTLW0 = UCSWRST;                      // **Put state machine in reset**
-	//UCA1CTLW0 |= UCMST | UCSYNC | UCCKPH | UCMSB; //Mode0 3-pin, 8-bit SPI master, clock polarity=0, clock phase=1 (captured on first edge and sampled in next)
+	UCA1CTLW0 |= UCMST | UCSYNC | UCCKPH | UCMSB; //Mode0 3-pin, 8-bit SPI master, clock polarity=0, clock phase=1 (captured on first edge and sampled in next)
 	// MSB
-	UCA1CTLW0 |= UCMST | UCSYNC | UCCKPL | UCMSB; //Mode3 3-pin, 8-bit SPI master, clock polarity=1, clock phase=0 (changed on first edge and captured in next)
+	//UCA1CTLW0 |= UCMST | UCSYNC | UCCKPL | UCMSB; //Mode3 3-pin, 8-bit SPI master, clock polarity=1, clock phase=0 (changed on first edge and captured in next)
 	// MSB
 	UCA1CTLW0 |= UCSSEL__SMCLK;                // SMCLK - 8MHz
 	//UCA1BR0 = 0x00;                           //  SPI clk - 8MHz
