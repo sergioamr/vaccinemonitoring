@@ -507,6 +507,8 @@ int config_parse_configuration_ST1(char *token) {
 	// TODO CHECK IF THE SIM CARD IS OPPERATIONAL
 	g_pDevCfg->cfgSelectedSIM_slot = tempValue;
 
+	checkStack();
+
 	/*
 #ifdef _DEBUG
 	log_append_("ST1 OK");

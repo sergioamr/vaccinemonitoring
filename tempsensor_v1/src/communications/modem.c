@@ -607,13 +607,9 @@ void modem_getExtraInfo() {
 // 2 minutes timeout by the TELIT documentation
 #define MAX_CSURV_TIME 120000
 
-#ifdef _DEBUG
-#define NETWORK_WAITING_TIME 5000
+#define NETWORK_WAITING_TIME 5000 //10000
 #define NET_ATTEMPTS 10
-#else
-#define NETWORK_WAITING_TIME 10000
-#define NET_ATTEMPTS 10
-#endif
+
 
 #if defined(CAPTURE_MCC_MNC) && defined(_DEBUG)
 void modem_survey_network() {

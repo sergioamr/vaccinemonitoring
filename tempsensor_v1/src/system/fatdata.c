@@ -301,6 +301,8 @@ FRESULT fat_init_drive() {
 	if (fr != FR_OK)
 		return fr;
 
+	checkStack();
+
 	fr = f_stat(FOLDER_DATA, &fno);
 	if (fr == FR_NO_FILE) {
 		fr = fat_create_folders();
@@ -314,13 +316,17 @@ FRESULT fat_init_drive() {
 	g_bFatInitialized = true;
 	state_SD_card_OK();
 
+	/*
 	// Delete old config files
 	f_unlink(LOG_MODEM_PATH);
 	f_unlink(CONFIG_LOG_FILE_PATH);
+	*/
 
+	/*
 	fr = log_append_(" ");
 	fr = log_appendf("Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
 	fr = log_appendf("Last[%d]", g_pSysCfg->lastCommand);
+	*/
 
 	return fr;
 }

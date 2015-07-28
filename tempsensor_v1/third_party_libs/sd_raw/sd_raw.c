@@ -369,9 +369,11 @@ uint8_t sd_raw_init()
     /* deaddress card */
     unselect_card();
 
+    /*
     //TODO set MSP clock freq to * MHz
     UCA1BR0 = 0x00;                           //  SPI clk - 8MHz
     UCA1BR1 = 0;
+	*/
 
     /* switch to highest SPI frequency possible
     SPCR &= ~((1 << SPR1) | (1 << SPR0)); // Clock Frequency: f_OSC / 4
