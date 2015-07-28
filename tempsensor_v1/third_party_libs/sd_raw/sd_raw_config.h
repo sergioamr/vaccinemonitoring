@@ -102,13 +102,13 @@ extern "C"
 //#define select_card() PORTB &= ~(1 << PORTB2)
 //#define unselect_card() PORTB |= (1 << PORTB2)
 
-/*
-#define configure_pin_available() DDRC &= ~(1 << DDC4)
-#define configure_pin_locked() DDRC &= ~(1 << DDC5)
 
-#define get_pin_available() (PINC & (1 << PINC4))
-#define get_pin_locked() (PINC & (1 << PINC5))
-*/
+#define configure_pin_available() /* nothing */
+#define configure_pin_locked() /* nothing */
+
+#define get_pin_available() 0
+#define get_pin_locked() 1
+
 
 #if SD_RAW_SDHC
     typedef uint64_t offset_t;

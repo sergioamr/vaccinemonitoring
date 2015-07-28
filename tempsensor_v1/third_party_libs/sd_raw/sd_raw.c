@@ -204,10 +204,10 @@ uint8_t sd_raw_init()
 	uint16_t i;
     /* enable inputs for reading card status */
 
-	/*
+
     configure_pin_available();
     configure_pin_locked();
-    */
+
 
     /* enable outputs for MOSI, SCK, SS, input for MISO */
     //not needed
@@ -405,8 +405,7 @@ uint8_t sd_raw_init()
  */
 uint8_t sd_raw_available()
 {
-    //return get_pin_available() == 0x00;
-    return 1;
+    return get_pin_available() == 0x00;
 }
 
 /**
@@ -417,8 +416,8 @@ uint8_t sd_raw_available()
  */
 uint8_t sd_raw_locked()
 {
-    //return get_pin_locked() == 0x00;
-    return 0;
+    return get_pin_locked() == 0x00;
+
 }
 
 /**
@@ -552,6 +551,7 @@ uint8_t sd_raw_read(offset_t offset, uint8_t* buffer, uintptr_t length)
             select_card();
 
             /* send single block request */
+            // TODO GETS STUCK HERE
 #if SD_RAW_SDHC
             if(sd_raw_send_command(CMD_READ_SINGLE_BLOCK, (sd_raw_card_type & (1 << SD_RAW_SPEC_SDHC) ? block_address / 512 : block_address)))
 #else
