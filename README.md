@@ -16,20 +16,20 @@ The binaries can be loaded with a JTAG interface connected to the board. Using C
 Another method as opposed to flashing using a JTAG interface would be to use a BSL interface instead. Connect the BSL interface to the header on the rear of the board ensuring pin 1 on the board is aligned with pin 1 on the interface. Using BSL Scripter (Software and documentation available [here](http://www.ti.com/tool/MSPBSL)) a selection of options is provided to interact with the board in a similar way to JTAG. This includes and is not limited to erasing the device's memory and writing a new binary file to the device. NOTE: This has only been tested using the MSP430-BSL by Olimex.
 
 #### Recommended BSL steps for flashing software
-1. Create a text file with the follwing lines:
+* Create a text file with the follwing lines:
 ```
 MODE 5XX USB
 MASS_ERASE
 RX_DATA_BLOCK binary_file.txt
 ```
 Where 'binary_file.txt' is the TI TXT output from CCS. In order to create a TI TXT file along with the standard output file then it must be enabled in CCS. Right click project, then check the box at *Properties->Build->MSP430 Hex Utility->Enable MSP430 Hex Utility*
-2. Connect the BSL interface to the board and your computer and ensure the that the header labelled 'J16' is shorted throughout the entire process. (Must be done on a machine running Windows)
-3. Switch the device on.
-4. Run BSL Scripter with the text file you just created as an argument in command prompt, this can be made into a batch file to avoid using command prompt.
+* Connect the BSL interface to the board and your computer and ensure the that the header labelled 'J16' is shorted throughout the entire process. (Must be done on a machine running Windows)
+* Switch the device on.
+* Run BSL Scripter with the text file you just created as an argument in command prompt, this can be made into a batch file to avoid using command prompt. 
 ```
 BSL_Scripter.exe <path/to/file.txt>
 ```
-5. Disconnect the header and BSL interface. Reboot is not necessary but is recommended for best results.
+* Disconnect the header and BSL interface. Reboot is not necessary but is recommended for best results.
 
 # Terms and conditions 
 Copyright (c) 2015, Intel Corporation. All rights reserved.
