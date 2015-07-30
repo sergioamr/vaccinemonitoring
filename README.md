@@ -29,7 +29,7 @@ Where 'binary_file.txt' is the TI TXT output from CCS. In order to create a TI T
 ```
 BSL_Scripter.exe <path/to/file.txt>
 ```
-* Disconnect the header and BSL interface. Reboot is not necessary but is recommended for best results.
+* Disconnect the header and BSL interface then proceed to reboot the device.
 
 # Terms and conditions 
 Copyright (c) 2015, Intel Corporation. All rights reserved.
