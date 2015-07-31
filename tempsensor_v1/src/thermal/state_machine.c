@@ -272,11 +272,6 @@ void state_alarm_on(char *alarm_msg) {
 	s->alarms.globalAlarm = STATE_ON;
 	state_alarm_turnon_buzzer();
 
-#ifdef _DEBUG
-	if (g_pDevCfg->cfg.logs.sms_reports)
-		sms_send_message_number(g_pDevCfg->cfgReportSMS, alarm_msg);
-#endif
-
 	display_alarm:
 
 	elapsed = events_getTick() - count;

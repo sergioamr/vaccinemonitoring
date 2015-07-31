@@ -25,9 +25,6 @@
 FRESULT config_read_ini_file();
 #endif
 
-#ifdef _DEBUG
-//#define DEBUG_SEND_CONFIG
-#endif
 
 // Setup mode in which we are at the moment
 // Triggered by the Switch 3 button
@@ -89,25 +86,7 @@ void config_reset_error(SIM_CARD_CONFIG *sim) {
 }
 
 void config_display_config() {
-#ifdef _DEBUG
-	int t = 0;
-	lcd_printl(LINEC, "SMS Gateway");
-	lcd_printl(LINEH, g_pDevCfg->cfgGatewaySMS);
 
-	lcd_printl(LINEC, "Gateway IP");
-	lcd_printl(LINEH, g_pDevCfg->cfgGatewayIP);
-
-	for (t = 0; t < 2; t++) {
-		lcd_printf(LINEC, "APN %d", t + 1);
-		lcd_printl(LINEH, g_pDevCfg->SIM[t].cfgAPN);
-	}
-
-	lcd_printl(LINEC, "CONFIG URL");
-	lcd_printl(LINEH, g_pDevCfg->cfgConfig_URL);
-
-	lcd_printl(LINEC, "UPLOAD URL ");
-	lcd_printl(LINEH, g_pDevCfg->cfgUpload_URL);
-#endif
 	lcd_display_config();
 }
 
@@ -410,9 +389,7 @@ int config_parse_configuration_ST1(char *token) {
 	char uploadMode[6];
 
 	if (config_count_delims(token, ',') != ST1_NUM_PARAMS) {
-#ifdef _DEBUG
-		log_append_("ST1 WRONG");
-#endif
+
 		return UART_SUCCESS;
 	}
 
@@ -456,9 +433,6 @@ int config_parse_configuration_ST1(char *token) {
 	PARSE_NEXTSTRING(token, g_pDevCfg->cfgUpload_URL,
 			sizeof(g_pDevCfg->cfgUpload_URL), delimiter, UART_FAILED);
 
-#ifdef _DEBUG
-	strcpy(g_pDevCfg->cfgUpload_URL, "/coldtrace/intel/upload/");
-#endif
 
 	//config URL
 	PARSE_NEXTSTRING(token, g_pDevCfg->cfgConfig_URL,
@@ -498,9 +472,6 @@ int config_parse_configuration_ST1(char *token) {
 	// TODO CHECK IF THE SIM CARD IS OPPERATIONAL
 	g_pDevCfg->cfgSelectedSIM_slot = tempValue;
 
-#ifdef _DEBUG
-	log_append_("ST1 OK");
-#endif
 	return UART_SUCCESS;
 }
 
@@ -516,9 +487,7 @@ int config_parse_configuration_ST2(char *token) {
 	BATT_POWER_ALERT_PARAM *pBattPower;
 
 	if (config_count_delims(token, ',') != ST2_NUM_PARAMS) {
-#ifdef _DEBUG
-		log_append_("ST2 WRONG");
-#endif
+
 		return UART_SUCCESS;
 	}
 
@@ -558,18 +527,13 @@ int config_parse_configuration_ST2(char *token) {
 
 	PARSE_NEXTVALUE(token, &pBattPower->battThreshold, delimiter, UART_FAILED);
 
-#ifdef _DEBUG
-	log_append_("ST2 OK");
-#endif
 
 	return UART_SUCCESS;
 }
 
 int config_parse_configuration_ST3(char *token) {
 	if (config_count_delims(token, ',') != ST3_NUM_PARAMS) {
-#ifdef _DEBUG
-		log_append_("ST3 WRONG");
-#endif
+
 		return UART_SUCCESS;
 	}
 
@@ -579,9 +543,6 @@ int config_parse_configuration_ST3(char *token) {
 	// Skip $ST3,
 	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
 
-#ifdef _DEBUG
-	log_append_("ST3 OK");
-#endif
 
 	return UART_SUCCESS;
 }
@@ -640,9 +601,7 @@ int config_parse_configuration(char *msg) {
 
 int config_process_configuration() {
 	char *token;
-#ifdef _DEBUG
-	log_append_("cfg process");
-#endif
+
 // FINDSTR uses RXBuffer - There is no need to initialize the data to parse.
 	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
 	return config_parse_configuration((char *) uart_getRXHead());
@@ -711,14 +670,6 @@ FRESULT config_read_ini_file() {
 	}
 
 	log_append_("Read INI");
-
-#ifdef _DEBUG
-	n = ini_gets("SYSTEM", "Version", __DATE__, g_pDevCfg->cfgVersion,
-			sizearray(g_pDevCfg->cfgVersion), CONFIG_INI_FILE);
-	if (n == 0)
-		return FR_NO_FILE;
-
-#endif
 
 	cfg = &g_pDevCfg->cfg;
 	cfg->logs.system_log = ini_getbool(SECTION_LOGS, "SystemLog", 0,
@@ -835,10 +786,6 @@ int config_default_configuration() {
 	g_pDevCfg->sIntervalsMins.smsCheck = PERIOD_SMS_CHECK;
 
 	g_pDevCfg->cfg.logs.sms_alerts = ALERTS_SMS;
-
-#ifdef _DEBUG
-	g_pDevCfg->cfg.logs.commmands = 1;
-#endif
 
 // Battery and power alarms
 	return 1;

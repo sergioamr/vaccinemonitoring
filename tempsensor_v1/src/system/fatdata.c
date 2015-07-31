@@ -314,9 +314,11 @@ FRESULT fat_init_drive() {
 	g_bFatInitialized = true;
 	state_SD_card_OK();
 
+	/*
 	// Delete old config files
 	f_unlink(LOG_MODEM_PATH);
 	f_unlink(CONFIG_LOG_FILE_PATH);
+	*/
 
 	fr = log_append_(" ");
 	fr = log_appendf("Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
@@ -473,9 +475,6 @@ FRESULT log_appendf(const char *_format, ...) {
 	va_list _ap;
 	char szTemp[40];
 
-#ifdef _DEBUG
-	checkStack();
-#endif
 	va_start(_ap, _format);
 	vsnprintf(szTemp, sizeof(szTemp), _format, _ap);
 	va_end(_ap);
@@ -547,11 +546,8 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
 
-#ifdef _DEBUG
-	lcd_print("Saving sample");
-#else
 	lcd_print_progress();
-#endif
+
 
 	rtc_getlocal(&g_tmCurrTime);
 	char* fn = get_current_fileName(&g_tmCurrTime, FOLDER_DATA, EXTENSION_DATA);
@@ -578,11 +574,7 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	*tbw = bw;
 
 	if (fr == FR_OK) {
-#ifdef _DEBUG
-		lcd_printf(LINE2, "OK %d", *tbw);
-#else
 		event_force_event_by_id(EVT_DISPLAY, 0);
-#endif
 	} else {
 		fat_check_error(fr);
 	}

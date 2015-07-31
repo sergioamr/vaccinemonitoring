@@ -197,12 +197,6 @@ void modem_send_command(const char *cmd) {
 		log_modem(cmd);
 	}
 
-	// Store the maximum size used from this buffer
-#ifdef _DEBUG_COUNT_BUFFERS
-	if (uart.iTxLen > g_pSysCfg->maxTXBuffer)
-	g_pSysCfg->maxTXBuffer = uart.iTxLen;
-#endif
-
 	// This problem should not ocurr, if this happens means that you are not zero terminating the string
 	// or you are trying to transmit too much data in one go so you have to split your commands.
 	if (uart.iTxLen > sizeof(TXBuffer)) {
@@ -262,11 +256,6 @@ int waitForReady(uint32_t timeoutTimeMs) {
 		log_modem("FAILED\r\n");
 		log_modem(uart_getRXHead());
 	}
-#ifdef _DEBUG_COUNT_BUFFERS
-	// Store the maximum size used from this buffer
-	if (uart.iRxCountBytes > g_pSysCfg->maxRXBuffer)
-	g_pSysCfg->maxRXBuffer = uart.iRxCountBytes;
-#endif
 
 	delay(100);  // Documentation specifies 30 ms delay between commands
 
@@ -369,9 +358,6 @@ void uart_tx_nowait(const char *cmd) {
 }
 
 uint8_t uart_tx_waitForPrompt(const char *cmd, uint32_t promptTime) {
-#ifdef _DEBUG
-	checkStack();
-#endif
 
 	modem_send_command(cmd);
 	if (!waitForReady(promptTime)) {
@@ -400,10 +386,6 @@ uint8_t uart_txf(const char *_format, ...) {
 	uint16_t res = 0;
 	uint16_t size = 0;
 
-#ifdef _DEBUG
-	checkStack();
-#endif
-
 	char *szTemp = getStringBufferHelper(&size);
 	va_start(_ap, _format);
 	vsnprintf(szTemp, size, _format, _ap);
@@ -415,9 +397,7 @@ uint8_t uart_txf(const char *_format, ...) {
 }
 
 uint8_t uart_tx(const char *cmd) {
-#ifdef _DEBUG_OUTPUT
-	char* pToken1;
-#endif
+
 	int uart_state;
 	int transaction_completed;
 
@@ -429,16 +409,6 @@ uint8_t uart_tx(const char *cmd) {
 		return transaction_completed;
 
 	uart_state = uart_getTransactionState();
-#ifdef _DEBUG_OUTPUT
-	if (transaction_completed == UART_SUCCESS && uart_state != UART_ERROR) {
-		pToken1 = strstr((const char *) &RXBuffer[RXHeadIdx], ": \""); // Display the command returned
-		if (pToken1 != NULL) {
-			lcd_print_boot((char *) pToken1 + 3, LINE2);
-		} else {
-			lcd_print_progress((char *) (const char *) &RXBuffer[RXHeadIdx + 2], LINE2); // Display the OK message
-		}
-	}
-#endif
 	return uart_state;
 }
 

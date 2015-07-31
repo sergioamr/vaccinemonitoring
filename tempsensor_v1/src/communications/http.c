@@ -163,22 +163,13 @@ int http_check_error(int *retry) {
 		_NOP();
 	}
 
-/*
-#ifdef _DEBUG
-	log_appendf("HTTP %i[%d] %d", prof_id, http_status_code, data_size);
-#endif
-*/
-
 	sim->http_last_status_code = http_status_code;
 
 	// Check for recoverable errors
 	// Server didnt return any data
 	if (http_status_code == 200 && data_size == 0) {
 		*retry = 1;
-#ifdef _DEBUG_OUTPUT
-		lcd_printl(LINEC, "HTTP Server");
-		lcd_printl(LINEH, "Empty response");
-#endif
+
 	}
 
 	// TODO Find non recoverable errors

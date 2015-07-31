@@ -143,13 +143,6 @@ void lcd_show() {
 
 	memset(lcdBuffer, 0, sizeof(lcdBuffer));
 
-	/*
-#ifdef _DEBUG
-	lcd_setUptime(lcdBuffer);
-#else
-	lcd_setDate(lcdBuffer);
-#endif
-    */
 	lcd_setDate(lcdBuffer);
 
 	//get local time
@@ -215,22 +208,10 @@ void lcd_show() {
 			lcd_append_signal_info(lcdBuffer);
 		break;
 
-#ifdef _DEBUG
-	case 9+5:
-		lcd_display_config();
-		return;
-#endif
-
 	default:
 		break;
 	}
 
-#ifdef _DEBUG
-	if (iItemId>=9 && iItemId<9+5) {
-		lcd_display_config_sensor(iItemId-9);
-		return;
-	} else
-#endif
 	if (iCnt != 0xff) {
 		if (g_pSysState->temp.state[iCnt].status != 0) {
 			sprintf(&lcdBuffer[iIdx], "ALERT %s %sC", SensorName[iCnt],
@@ -255,9 +236,6 @@ void lcd_progress_wait(uint16_t delayTime) {
 		return;
 	}
 
-#ifdef _DEBUG
-	checkStack();
-#endif
 	for (t = 0; t < count; t++) {
 		delay(50);
 		lcd_print_progress();
@@ -267,10 +245,6 @@ void lcd_progress_wait(uint16_t delayTime) {
 void lcd_printf(int line, const char *_format, ...) {
 	va_list _ap;
 	char szTemp[33];
-
-#ifdef _DEBUG
-	checkStack();
-#endif
 
 	va_start(_ap, _format);
 	vsnprintf(szTemp, sizeof(szTemp), _format, _ap);
@@ -365,17 +339,7 @@ void lcd_print_boot(const char* pcData, int line) {
 	if (g_iLCDVerbose == VERBOSE_DISABLED)
 		return;
 
-#ifdef _DEBUG
-	if (g_bLCD_state == 0)
-	return;
-
-	if (line==1)
-	lcd_clear();
-
-	lcd_printl(line, pcData);
-#else
 	lcd_print_progress();
-#endif
 }
 
 void lcd_display_config_sensor(int id) {

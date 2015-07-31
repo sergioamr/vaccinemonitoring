@@ -57,6 +57,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/third_party_libs/driverlib}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/third_party_libs/ff11}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/third_party_libs/MMC_lib}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/third_party_libs/sd_raw}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/third_party_libs/ff11/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CCS_BASE_ROOT}/msp430/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}&quot;"/>
@@ -115,10 +116,13 @@
 								<option id="com.ti.ccstudio.buildDefinitions.MSP430_4.4.hex.MEMWIDTH.569902668" name="Specify memory width (--memwidth, -memwidth)" superClass="com.ti.ccstudio.buildDefinitions.MSP430_4.4.hex.MEMWIDTH" value="8" valueType="string"/>
 								<option id="com.ti.ccstudio.buildDefinitions.MSP430_4.4.hex.TOOL_ENABLE.326024104" name="Enable tool" superClass="com.ti.ccstudio.buildDefinitions.MSP430_4.4.hex.TOOL_ENABLE" value="true" valueType="boolean"/>
 								<option id="com.ti.ccstudio.buildDefinitions.MSP430_4.4.hex.OUTPUT_FORMAT.1760489496" name="Output format" superClass="com.ti.ccstudio.buildDefinitions.MSP430_4.4.hex.OUTPUT_FORMAT" value="com.ti.ccstudio.buildDefinitions.MSP430_4.4.hex.OUTPUT_FORMAT.TI_TXT" valueType="enumerated"/>
-								<option id="com.ti.ccstudio.buildDefinitions.MSP430_4.4.hex.OUTPUT_FILE.1444325311" superClass="com.ti.ccstudio.buildDefinitions.MSP430_4.4.hex.OUTPUT_FILE" value="firmware.txt" valueType="string"/>
+								<option id="com.ti.ccstudio.buildDefinitions.MSP430_4.4.hex.OUTPUT_FILE.1444325311" name="Specify output file names (--outfile, -o)" superClass="com.ti.ccstudio.buildDefinitions.MSP430_4.4.hex.OUTPUT_FILE" value="firmware.txt" valueType="string"/>
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<sourceEntries>
+						<entry excluding="third_party_libs/MMC_lib/hal_SPI.c|third_party_libs/MMC_lib/mmc.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+					</sourceEntries>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>

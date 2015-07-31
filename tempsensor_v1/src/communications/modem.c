@@ -411,10 +411,6 @@ int8_t modem_first_init() {
 
 	uint8_t nsims = SYSTEM_NUM_SIM_CARDS;
 
-#ifdef _DEBUG
-	nsims = 1;
-#endif
-
 	for (t = 0; t < nsims; t++) {
 		//force SIM 2 before we call swap. this ensures we start on SIM1
 		g_pDevCfg->cfgSIM_slot = 1;

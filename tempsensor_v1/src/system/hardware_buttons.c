@@ -108,9 +108,7 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 		break;
 	case P2IV_P2IFG2:
 		SYSTEM_RUNNING_CHECK
-#ifdef _DEBUG
-		g_iDebug = !g_iDebug;
-#endif
+
 		g_iHardware_actions = HWD_TURN_SCREEN;
 		state_alarm_enable_buzzer_override();
     	// Resume execution if the device is in deep sleep mode
