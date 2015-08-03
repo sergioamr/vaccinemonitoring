@@ -304,8 +304,6 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 		lcd_printf(LINE2, "MSG %d", msgNumber);
 		delay(HUMAN_DISPLAY_INFO_DELAY);
 		_NOP();
-	} else if (res == UART_ERROR) {
-
 	} else {
 		lcd_print("TIMEOUT");
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
