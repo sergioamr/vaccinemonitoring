@@ -439,9 +439,11 @@ int8_t modem_first_init() {
 				}
 			}
 		break;
+#ifndef _DEBUG
 	case 2:
 		lcd_printf(LINEE, "SIMS FAILED");
 		break;
+#endif
 	}
 
 	return MODEM_ON;
