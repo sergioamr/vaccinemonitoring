@@ -1,6 +1,7 @@
 #include "thermalcanyon.h"
 #include "data_transmit.h"
 #include "hardware_buttons.h"
+#include "main_system.h"
 #include "fatdata.h"
 #include "main_system.h"
 #include "alarms.h"
@@ -35,35 +36,36 @@ void thermal_handle_system_button() {
 */
 }
 
-void thermal_low_battery_message(uint8_t firstWarning) {
+void thermal_low_battery_message() {
 	lcd_turn_on();
-	if (firstWarning) {
-		lcd_printl(LINEC, "Low Battery");
-		lcd_printl(LINE2, "Hibernating...");
-	}
+
+	lcd_printl(LINEC, "Low Battery");
+	lcd_printl(LINE2, "Hibernating...");
 	delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 	lcd_turn_off();
 	delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 }
 
 void thermal_low_battery_hibernate() {
-	uint8_t firstWarning = 1;
-	// If we have more than 10% of battery,
-	// or we are connected to power, stay here until power is resumed.
+	thermal_low_battery_message();
 
-	//Wait until battery is
-	while (batt_check_level() <= BATTERY_HIBERNATE_THRESHOLD) {
-		thermal_low_battery_message(firstWarning);
-		// TODO: perhaps shut down the modem?
-		firstWarning = 0;
-		//power plugged in
-		if (g_pSysState->system.switches.power_connected) {
-			lcd_turn_on();
-			lcd_print("Recovering...");
-			modem_init();
-			lcd_show();
-			return;
-		}
+	//kill the modem
+	P4OUT |= BIT0;
+
+	// is power plugged in yet?
+	while (!g_pSysState->system.switches.power_connected) {
+		//sleep device
+		event_main_sleep();
+
+		//check power state while sleeping
+		state_check_power();
 	}
+
+	//recover now
+	lcd_turn_on();
+	lcd_print("Recovering...");
+	modem_init();
+	lcd_show();
+
 }
 

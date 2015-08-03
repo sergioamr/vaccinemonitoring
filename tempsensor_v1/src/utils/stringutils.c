@@ -6,6 +6,7 @@
  */
 
 #include "thermalcanyon.h"
+#include <_isfuncdcl.h>
 
 #pragma SET_DATA_SECTION(".aggregate_vars")
 char g_iStringCaptured = 0;
@@ -175,6 +176,28 @@ char* replace_character(char* string, char charToFind, char charToReplace) {
 	}
 
 	return string;
+}
+
+char* trim_sigma(char *str)
+{
+	int i = 0; //loop variable
+
+	// if empty string
+	if(strlen(str) == 0){
+		*str = 0; //force to zero
+		return str;
+	}
+
+	// check whole array
+	for (i = 0; i < strlen(str); i++)
+	{
+		if(str[i] == (char)0x1A) //if simga char
+		{
+			str[i] = 0; //set 0
+		}
+	}
+
+  return str;
 }
 
 

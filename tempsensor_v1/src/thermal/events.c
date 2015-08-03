@@ -14,6 +14,7 @@
 #include "state_machine.h"
 #include "alarms.h"
 #include "timer.h"
+#include "stringutils.h"
 
 #ifdef USE_MININI
 #include "minIni.h"
@@ -576,7 +577,7 @@ void events_display_alarm(void *event, time_t currentTime) {
 		return;
 
 	lcd_printl(LINEC, "ALARM");
-	lcd_printl(LINEE, g_pSysState->alarm_message);
+	lcd_printl(LINEE, trim_sigma(g_pSysState->alarm_message));
 	iMainSleep = 1;
 	delay(5000);
 	iMainSleep = 0;

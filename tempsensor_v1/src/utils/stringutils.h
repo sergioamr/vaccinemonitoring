@@ -25,6 +25,8 @@ extern char* itoa_pad(int num);
 extern char* itoa_nopadding(int num);
 extern char* replace_character(char* string, char charToFind, char charToReplace);
 
+extern char* trim_sigma(char *str);
+
 extern int _outc(char c, void *_op);
 extern int _outs(char *s, void *_op, int len);
 

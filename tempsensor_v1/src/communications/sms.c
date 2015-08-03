@@ -72,6 +72,8 @@ int8_t sms_process_memory_message(int8_t index) {
 	char *phone;
 	char answer = 0;
 
+	char test;
+
 	uart_txf("+CMGR=%d", index);
 
 	int8_t uart_state = uart_getTransactionState();
@@ -100,7 +102,9 @@ int8_t sms_process_memory_message(int8_t index) {
 		return UART_FAILED;
 
 	phone = &phoneNumber[1];
-	switch (msg[0]) {
+
+	test = msg[0];
+	switch (test) {
 	case '1':
 		sms_send_data_request(phone); // Send the phone without the \"
 		break;
