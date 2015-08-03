@@ -216,7 +216,7 @@ void cancel_batch(char *path, char *name) {
 	line[strlen(line)-3]=0;
 
 	f_rename(path, line);
-	http_deactivate();
+	(void)http_deactivate();
 	g_pSysState->safeboot.disable.data_transmit = 0;
 	return;
 }
@@ -266,7 +266,7 @@ void process_batch() {
 		sprintf(path, "%s/%s", FOLDER_TEXT, fili->fname);
 		fr = fat_open(&filr, path, FA_READ | FA_OPEN_ALWAYS);
 		if (fr != FR_OK) {
-			http_deactivate();
+			(void)http_deactivate();
 			break;
 		}
 
@@ -324,7 +324,7 @@ void process_batch() {
 	}
 
 	if (state_isGPRS()) {
-		http_deactivate();
+		(void)http_deactivate();
 	}
 
 	lcd_printl(LINEC, "Transmission");

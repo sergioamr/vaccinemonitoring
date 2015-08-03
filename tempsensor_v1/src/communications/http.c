@@ -19,9 +19,10 @@
 void backend_get_configuration() {
 	config_setLastCommand(COMMAND_FETCH_CONFIG);
 	lcd_print("PING");
-	http_enable();
-	http_get_configuration();
-	http_deactivate();
+	if (http_enable() == UART_SUCCESS) {
+		http_get_configuration();
+		(void)http_deactivate();
+	}
 }
 
 /*
@@ -119,14 +120,14 @@ int8_t http_setup() {
 	}
 
 	lcd_printl(LINE2, "SUCCESS");
-	http_deactivate();
+	(void)http_deactivate();
 	return UART_SUCCESS;
 }
 
 uint8_t http_deactivate() {
 	g_pSysState->system.switches.http_enabled = 0;
 	config_setLastCommand(COMMAND_HTTP_DISABLE);
-	return uart_tx("#SGACT=1,0");	//deactivate GPRS context
+	return uart_tx("#SGACT=1,0"); //deactivate GPRS context
 }
 
 const char HTTP_INCOMING_DATA[] = { 0x0D, 0x0A, '<', '<', '<', 0 };
@@ -228,7 +229,7 @@ int http_get_configuration() {
 			g_pDevCfg->cfgIMEI);
 	uart_tx_timeout(szTemp, 5000, 1);
 	if (uart_getTransactionState() != UART_SUCCESS) {
-		http_deactivate();
+		(void)http_deactivate();
 		return UART_FAILED;
 	}
 
@@ -253,7 +254,7 @@ int http_get_configuration() {
 		attempts--;
 	};
 
-	http_deactivate();
+	(void)http_deactivate();
 	return uart_state; // TODO return was missing, is it necessary ?
 }
 /* USED FOR TESTING POST
