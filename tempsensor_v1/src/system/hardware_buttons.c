@@ -58,7 +58,7 @@ void hardware_actions() {
 		case HWD_POWER_CHANGE:
 			event_force_event_by_id(EVT_ALARMS_CHECK, 0);
 			lcd_on = 0;
-		break;
+			break;
 		case HWD_THERMAL_SYSTEM:
 			event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 5);
 			event_force_event_by_id(EVT_SAVE_SAMPLE_TEMP, 10);
@@ -74,9 +74,11 @@ void hardware_actions() {
 				lcd_printf(LINE1, "BUZZER ON");
 			}
 			g_iSystemSetup = 0;
+			lcd_on = 1;
+			break;
 		case HWD_TURN_SCREEN:
 			lcd_on = 1;
-		break;
+			break;
 	}
 
 	if (lcd_on) {
