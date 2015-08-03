@@ -178,12 +178,15 @@ void batt_init() {
 	data = 0x00;
 	i2c_write(SLAVE_ADDR_BATTERY, BATT_CONTROL_2, 1, &data);
 
+	/* Don't know why flags is 0 (makes the while loop dead)
 	flags = 0;
 	while((flags & 0x10))
 	{
 		//i2c_read(SLAVE_ADDR_BATTERY, BATT_FLAGS, 2, &flags);
 		i2c_read(SLAVE_ADDR_BATTERY, BATT_FLAGS, 1, (uint8_t *) &flags);
 	}
+	*/
+
 	data = 0x20;
 	i2c_write(SLAVE_ADDR_BATTERY, BATT_CONTROL_1, 1, &data);
 
