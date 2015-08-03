@@ -2211,7 +2211,9 @@ FRESULT find_volume (	/* FR_OK(0): successful, !=0: any error occurred */
 			br[i] = pt[4] ? LD_DWORD(&pt[8]) : 0;
 		}
 		i = LD2PT(vol);						/* Partition number: 0:auto, 1-4:forced */
+#if _MULTI_PARTITION
 		if (i) i--;
+#endif
 		do {								/* Find an FAT volume */
 			bsect = br[i];
 			fmt = bsect ? check_fs(fs, bsect) : 2;	/* Check the partition */
@@ -3599,7 +3601,7 @@ FRESULT f_mkdir (
 			}
 			if (res == FR_OK) res = dir_register(&dj);	/* Register the object to the directoy */
 			if (res != FR_OK) {
-				remove_chain(dj.fs, dcl);			/* Could not register, remove cluster chain */
+				(void)remove_chain(dj.fs, dcl);/* Could not register, remove cluster chain */
 			} else {
 				dir = dj.dir;
 				dir[DIR_Attr] = AM_DIR;				/* Attribute */

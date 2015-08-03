@@ -398,10 +398,12 @@ char mmcSetBlockLength (const unsigned long blocklength)
   mmcSendCmd(MMC_SET_BLOCKLEN, blocklength, 0xFF);
 
   // get response from MMC - make sure that its 0x00 (R1 ok response format)
-  if(mmcGetResponse()!=0x00)
-  { mmcInit();
+  if(mmcGetResponse()!=0x00) {
+	mmcInit();
     mmcSendCmd(MMC_SET_BLOCKLEN, blocklength, 0xFF);
-    mmcGetResponse();
+    if(mmcGetResponse()!=0x00) {
+    	return MMC_RESPONSE_ERROR;
+    };
   }
 
   CS_HIGH ();
