@@ -4616,12 +4616,18 @@ int f_printf (
 			d = (TCHAR)(v % r); v /= r;
 			if (d > 9) d += (c == 'x') ? 0x27 : 0x07;
 			s[i++] = d + '0';
-		} while (v && i < sizeof s / sizeof s[0]);
-		if (f & 8) s[i++] = '-';
-		j = i; d = (f & 1) ? '0' : ' ';
-		while (!(f & 2) && j++ < w) putc_bfd(&pb, d);
-		do putc_bfd(&pb, s[--i]); while (i);
-		while (j++ < w) putc_bfd(&pb, d);
+		} while (v && i < ((sizeof s / sizeof s[0]) - 1));
+		if (f & 8)
+			s[i++] = '-';
+		j = i;
+		d = (f & 1) ? '0' : ' ';
+		while (!(f & 2) && j++ < w)
+			putc_bfd(&pb, d);
+		do {
+			putc_bfd(&pb, s[--i]);
+		}		while (i);
+		while (j++ < w)
+			putc_bfd(&pb, d);
 	}
 
 	va_end(arp);
