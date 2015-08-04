@@ -178,6 +178,7 @@ char* replace_character(char* string, char charToFind, char charToReplace) {
 	return string;
 }
 
+// remove sigma corruption from states being pushed to the LCD
 char* trim_sigma(char *str)
 {
 	int i = 0; //loop variable
@@ -192,6 +193,22 @@ char* trim_sigma(char *str)
 	for (i = 0; i < strlen(str); i++)
 	{
 		if(str[i] == (char)0x1A) //if simga char
+		{
+			str[i] = 0; //set 0
+		}
+	}
+
+  return str;
+}
+
+char* trim_sms(char *str)
+{
+	int i = 0; //loop variable
+
+	// check whole array
+	for (i = 0; i < strlen(str); i++)
+	{
+		if(str[i] == (char)0x0D) //if 0D char
 		{
 			str[i] = 0; //set 0
 		}

@@ -41,13 +41,6 @@ void sms_send_data_request(char *number) {
 		strcat(data, "CHARGING");
 	}
 
-#ifdef _DEBUG
-	strcat(data, ",UPTIME:");
-	strcat(data, itoa_nopadding(iMinuteTick));
-	strcat(data, ",STACK:");
-	strcat(data, itoa_nopadding(g_pSysCfg->stackLeft));
-#endif
-
 	iOffset = strlen(data);
 	sms_send_message_number(number, data);
 }
@@ -63,6 +56,7 @@ const char COMMAND_RESULT_CMGR[] = "+CMGR: ";
 // 3 - stored message already sent
 
 int8_t sms_process_memory_message(int8_t index) {
+	TEMP_ALERT_PARAM *alert;
 	int t = 0, len = 0;
 	char *token;
 	char *msg = getSMSBufferHelper();
@@ -92,6 +86,7 @@ int8_t sms_process_memory_message(int8_t index) {
 
 	PARSE_NEXTSTRING(token, msg, MAX_SMS_SIZE, "\n", UART_FAILED);
 
+
 	// Jump first \n to get the OK
 	PARSE_SKIP(token, "\n", UART_FAILED);
 	ok[0] = 0;
@@ -99,14 +94,80 @@ int8_t sms_process_memory_message(int8_t index) {
 	if (ok[0] != 'O' || ok[1] != 'K')
 		return UART_FAILED;
 
+
 	phone = &phoneNumber[1];
 
-	switch (msg[0]) {
-	case '1':
-		sms_send_data_request(phone); // Send the phone without the \"
-		break;
-	case 'R':
-	case '2':
+
+	trim_sms(msg); //remove sms 0x0D end char
+
+	token = strtok(msg," ,"); //get command from msg if there is any other params
+
+
+	if (strcmp(token,"Status") == 0) {
+		sms_send_data_request(phone); //send status to phone
+		delallmsg();
+	}
+	else if (strcmp(token,"Config") == 0) {
+		sms_send_message_number(phone, "Configuring Alerts...");
+
+		int setting = 0; //keep track of which config params
+		while (token != NULL) //while still more configs in msg
+		{
+			int i; //loop var
+			token = strtok(NULL, " ,"); //get new config
+			for (i = 0; i < SYSTEM_NUM_SENSORS; i++) { //loop all sensors
+
+				alert = &g_pDevCfg->stTempAlertParams[i];
+
+				switch (setting) {
+				case 0:
+					alert->threshCold = strtol(token,NULL,10);
+					break;
+				case 1:
+					alert->maxSecondsCold = MINUTES_(strtol(token,NULL,10));
+					break;
+				case 2:
+					alert->threshHot = strtol(token,NULL,10);
+					break;
+				case 3:
+					alert->maxSecondsHot = MINUTES_(strtol(token,NULL,10));
+					break;
+				default:
+					_NOP(); //nothing
+					break;
+				}
+			}//end forloop
+
+			setting++;
+		}
+		delallmsg();
+	}
+	else if (strcmp(token,"Events") == 0) {
+
+		sms_send_message_number(phone, "Configuring Events...");
+
+		int setting = 0; //keep track of which config params
+		while (token != NULL) //while still more configs in msg
+		{
+			token = strtok(NULL, " ,"); //get new config
+
+				switch (setting) {
+				case 0:
+					event_force_event_by_id(EVT_SUBSAMPLE_TEMP, strtol(token,NULL,10));
+					break;
+				case 1:
+					event_force_event_by_id(EVT_UPLOAD_SAMPLES, strtol(token,NULL,10));
+					break;
+				default:
+					_NOP(); //nothing
+					break;
+				}
+
+			setting++;
+		}
+		delallmsg();
+	}
+	else if (strcmp(token, "Reset") == 0) {
 		sms_send_message_number(phone, "Rebooting...");
 		delallmsg();
 		for (t = 0; t < 10; t++) {
@@ -117,35 +178,13 @@ int8_t sms_process_memory_message(int8_t index) {
 
 		//reset the board by issuing a SW BOR
 		system_reboot("NET_COMMAND");
-		return UART_SUCCESS;
-	case 'E':
-		events_send_data(phone);
-		break;
-	case 'C':
-		config_send_configuration(phone);
-		break;
-	case 'U':
-		event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 5);
-		event_force_event_by_id(EVT_SAVE_SAMPLE_TEMP, 10);
-		event_force_event_by_id(EVT_UPLOAD_SAMPLES, 15);
-		answer = 1;
-		break;
-	case 'A':
-		state_alarm_on("SMS_TRIGGER");
-		answer = 1;
-		break;
 
-	default:
-		if (msg[0] != '$')
-			return UART_SUCCESS;
+	}
 
-		if (config_parse_configuration(msg) == UART_SUCCESS)
-			answer = 1;
-		else {
-			sms_send_message_number(phone, "FAILED");
-			return UART_SUCCESS;
-		}
-		break;
+
+	else {
+		sms_send_message_number(phone, "Command Not Accepted...");
+		delallmsg();
 	}
 
 	if (answer)
