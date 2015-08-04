@@ -355,7 +355,7 @@ void events_run() {
 	state_check_power();
 
 	pEvent = &g_sEvents.events[g_sEvents.nextEvent];
-	while (events_getTick() >= pEvent->nextEventRun && pEvent != NULL) {
+	while (events_getTick() >= pEvent->nextEventRun) {
 		if (g_iDebug)
 			buzzer_feedback_value(5);
 
