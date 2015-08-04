@@ -463,10 +463,10 @@ unsigned long mmcReadCardSize(void)
                  j,      // index
                  b,      // temporary variable
                  response,   // MMC response to command
-                 mmc_C_SIZE;
+                 mmc_C_SIZE = 0;
 
-  unsigned char mmc_READ_BL_LEN,  // Read block length
-                mmc_C_SIZE_MULT;
+  unsigned char mmc_READ_BL_LEN = '\0',  // Read block length
+                mmc_C_SIZE_MULT = '\0';
 
   CS_LOW ();
 
@@ -485,7 +485,7 @@ unsigned long mmcReadCardSize(void)
     while (b != 0xFE) b = spiSendByte(DUMMY_CHAR);
     // bits 127:87
     for(j=5; j>0; j--)          // Host must keep the clock running for at
-      b = spiSendByte(DUMMY_CHAR);
+      (void)spiSendByte(DUMMY_CHAR);
 
     // 4 bits of READ_BL_LEN
     // bits 84:80
@@ -506,15 +506,15 @@ unsigned long mmcReadCardSize(void)
     b = spiSendByte(DUMMY_CHAR);
     mmc_C_SIZE_MULT += b >> 7;
     // bits 41:37
-    b = spiSendByte(DUMMY_CHAR);
-    b = spiSendByte(DUMMY_CHAR);
-    b = spiSendByte(DUMMY_CHAR);
-    b = spiSendByte(DUMMY_CHAR);
-    b = spiSendByte(DUMMY_CHAR);
+    (void)spiSendByte(DUMMY_CHAR);
+    (void)spiSendByte(DUMMY_CHAR);
+    (void)spiSendByte(DUMMY_CHAR);
+    (void)spiSendByte(DUMMY_CHAR);
+    (void)spiSendByte(DUMMY_CHAR);
   }
 
   for(j=4; j>0; j--)          // Host must keep the clock running for at
-    b = spiSendByte(DUMMY_CHAR);  // least Ncr (max = 4 bytes) cycles after
+    (void)spiSendByte(DUMMY_CHAR);  // least Ncr (max = 4 bytes) cycles after
                                // the card response is received
   b = spiSendByte(DUMMY_CHAR);
   CS_LOW ();
