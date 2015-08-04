@@ -61,10 +61,8 @@ void encode_string(char* inputString, char* outputString, char* delimiter) {
 	char *token;
 	char encoded[3];
 	float result;
-	encoded[2] = '\0';
+	encoded[2] = outputString[0] = '\0';
 	token = strtok(inputString, delimiter);
-
-	memset(outputString, 0, sizeof(outputString));
 
 	while (token != NULL) {
 		result = (float) atof(token);
