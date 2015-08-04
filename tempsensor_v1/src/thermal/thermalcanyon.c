@@ -64,7 +64,8 @@ void thermal_low_battery_hibernate() {
 	//recover now
 	lcd_turn_on();
 	lcd_print("Recovering...");
-	modem_init();
+	//soft reboot
+	system_reboot("RECOVERY");
 	lcd_show();
 
 }
