@@ -91,7 +91,7 @@ const char *modem_getNetworkStatusText(int mode, int status) {
 		return NETWORK_MODE_0;
 	}
 
-	if (status >= 0 && status < 7) {
+	if (status >= 0 && status < 6) {
 		state_setNetworkStatus(NETWORK_STATUS[status]);
 		return NETWORK_STATUS[status];
 	}

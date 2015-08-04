@@ -311,7 +311,7 @@ void process_batch() {
 
 		if (fat_close() == FR_OK && transactionState == TRANS_SUCCESS) {
 			if (g_pSysState->lastSeek == 0) {
-				fr = f_unlink(path); // Delete the file
+				(void)f_unlink(path); // Delete the file
 			}
 		} else {
 			break; // Tranmission failed
