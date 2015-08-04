@@ -416,7 +416,6 @@ FRESULT log_append_(char *text) {
 	len = strlen(szLog);
 	fr = f_write(fobj, szLog, len, (UINT *) &bw);
 	if (fr != FR_OK || bw != len) {
-		lcd_print("Failed writing SD");
 		fat_close();
 		return fr;
 	}
@@ -429,9 +428,17 @@ FRESULT log_append_(char *text) {
 		}
 
 		fr = f_write(fobj, text, len, (UINT *) &bw);
+		if(fr != FR_OK) {
+			fat_close();
+			return fr;
+		}
 	}
 	strcpy(szLog, "\r\n");
 	fr = f_write(fobj, szLog, strlen(szLog), (UINT *) &bw);
+	if(fr != FR_OK) {
+		fat_close();
+		return fr;
+	}
 	return fat_close();
 }
 
