@@ -525,6 +525,7 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 	iSignalLevel = state_getSignalPercentage();
 	network_state = state_getNetworkState();
 
+	//TODO: add transmission failure and SD failure here
 	szLog = getStringBufferHelper(NULL);
 	sprintf(szLog, ",\"%d%%\",\"%s\",%s,%s,%s,%s,%s,%d,%s\r\n",
 			(int) iBatteryLevel, getPowerStateString(),
