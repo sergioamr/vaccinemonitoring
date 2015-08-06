@@ -514,8 +514,6 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 	int8_t iSignalLevel;
 	char *network_state;
 
-	SYSTEM_ALARMS *s = &g_pSysState->state; //pointer to alarm states
-
 	date = get_date_string(&g_tmCurrTime, "-", " ", ":", 1);
 	fr = f_write(fobj, date, strlen(date), &bw);
 	if (fr != FR_OK)
@@ -527,13 +525,12 @@ FRESULT log_write_temperature(FIL *fobj, UINT *pBw) {
 	iSignalLevel = state_getSignalPercentage();
 	network_state = state_getNetworkState();
 
-	//TODO: add transmission failure and SD failure here
 	szLog = getStringBufferHelper(NULL);
-	sprintf(szLog, ",\"%d%%\",\"%s\",%s,%s,%s,%s,%s,%d,%s,%d\r\n",
+	sprintf(szLog, ",\"%d%%\",\"%s\",%s,%s,%s,%s,%s,%d,%s\r\n",
 			(int) iBatteryLevel, getPowerStateString(),
 			temperature_getString(0), temperature_getString(1),
 			temperature_getString(2), temperature_getString(3),
-			temperature_getString(4), (int) iSignalLevel, network_state,s->alarms.SD_card_failure);
+			temperature_getString(4), (int) iSignalLevel, network_state);
 	fr = f_write(fobj, szLog, strlen(szLog), &bw);
 	releaseStringBufferHelper();
 	return fr;
