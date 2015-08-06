@@ -52,6 +52,9 @@ void state_failed_sdcard(uint16_t error);
 void state_failed_gprs(uint8_t sim);
 void state_failed_gsm(uint8_t sim);
 
+void state_transmission_failed_gprs(uint8_t sim);
+void state_transmission_failed_gsm(uint8_t sim);
+
 void state_process();
 void state_sensor_temperature(uint8_t sensor, float temp);
 void state_battery_level(uint8_t battery_level);

@@ -193,12 +193,14 @@ int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
 			state_isGSM() || g_pDevCfg->cfgUploadMode == MODE_GSM) &&
 			g_pDevCfg->cfgUploadMode != MODE_GPRS) {
 		if (data_send_sms(file, start, end) != TRANS_SUCCESS) {
-			state_failed_gsm(g_pDevCfg->cfgSIM_slot);
+			//fail data send over sms
+			state_transmission_failed_gsm(g_pDevCfg->cfgSIM_slot);
 			return TRANS_FAILED;
 		}
 	} else {
 		if (data_send_http(file, start, end) != TRANS_SUCCESS) {
-			state_failed_gprs(g_pDevCfg->cfgSIM_slot);
+			//fail data send over http
+			state_transmission_failed_gprs(g_pDevCfg->cfgSIM_slot);
 			return TRANS_FAILED;
 		}
 	}

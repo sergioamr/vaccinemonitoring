@@ -361,6 +361,24 @@ void state_failed_gsm(uint8_t sim) {
 	g_pSysState->simState[sim].failsGSM++;
 }
 
+//transmit failures only
+void state_transmission_failed_gprs(uint8_t sim) {
+	if (sim > 1)
+		return;
+
+	//log all failures
+	g_pSysState->simState[sim].failedTransmissionsGPRS++;
+}
+
+//transmit failures only
+void state_transmission_failed_gsm(uint8_t sim) {
+	if (sim > 1)
+		return;
+
+	//log all failures
+	g_pSysState->simState[sim].failedTransmissionsGSM++;
+}
+
 /***********************************************************************************************************************/
 /* TEMPERATURE CHECKS */
 /***********************************************************************************************************************/
