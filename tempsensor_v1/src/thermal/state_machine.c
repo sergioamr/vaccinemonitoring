@@ -388,13 +388,17 @@ void state_transmission_failed_gsm(uint8_t sim) {
 /***********************************************************************************************************************/
 
 void state_low_battery_alert() {
-
+	int i;
 	if (STATE_ALARM.battery==true)
 		return;
 
 	STATE_ALARM.battery = true;
 
 	// Activate sound alarm
+	for (i = 0; i < MAX_SMS_NUMBERS; i++) {
+		sms_send_message_number(g_pDevCfg->cfgSMSNumbers[i].cfgReportSMS, "LOW BATTERY");
+	}
+
 	state_alarm_on("LOW BATTERY");
 }
 

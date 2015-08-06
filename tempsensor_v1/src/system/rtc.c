@@ -220,9 +220,12 @@ void RTC_B_ISR(void) {
 	case RTCIV_RTCTEVIFG:             //RTCEVIFG
 		//Interrupts every minute
 		iMinuteTick++;
+
+
 		if (--iDeadCountdown<=0) {
 			system_reboot("MAIN_DEATH");
 		}
+
 
 		break;
 	case RTCIV_RTCAIFG:             //RTCAIFG

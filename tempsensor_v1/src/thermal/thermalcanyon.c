@@ -7,6 +7,7 @@
 #include "alarms.h"
 #include "state_machine.h"
 #include "wdt_a.h"
+#include "watchdog.h"
 
 void thermal_handle_system_button() {
 /*
@@ -52,8 +53,12 @@ void thermal_low_battery_hibernate() {
 	//kill the modem
 	P4OUT |= BIT0;
 
+	//stop watchdog
+	watchdog_disable();
+
 	// is power plugged in yet?
 	while (!g_pSysState->system.switches.power_connected) {
+
 		//sleep device
 		event_main_sleep();
 
