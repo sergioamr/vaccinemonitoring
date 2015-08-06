@@ -40,10 +40,10 @@ void thermal_handle_system_button() {
 void thermal_low_battery_message() {
 	lcd_turn_on();
 
-	lcd_printl(LINEC, "Low Battery");
-	lcd_printl(LINE2, "Hibernating...");
+	lcd_printl(LINEC, "Hibernating...");
 	delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 	lcd_turn_off();
+	lcd_clear();
 	delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 }
 
@@ -69,9 +69,9 @@ void thermal_low_battery_hibernate() {
 	//recover now
 	lcd_turn_on();
 	lcd_print("Recovering...");
+	delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 	//soft reboot
 	system_reboot("RECOVERY");
-	lcd_show();
 
 }
 

@@ -109,6 +109,43 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 	return res;
 }
 
+
+
+//$STS,<SD ERRORS>,<FAILURE GPRS>,<FAILURE SMS>,$EN
+int8_t sync_send_http() {
+	int res = TRANS_FAILED;
+	uint16_t lineSize = 0;
+	char *line = getStringBufferHelper(&lineSize);
+	uint32_t length = 0;
+	uint8_t slot;
+
+	SYSTEM_ALARMS *s = &g_pSysState->state; //pointer to alarm states
+
+	slot = config_getSelectedSIM(); //current sim
+
+	sprintf(line, "$STS,%d,%d,%d,$EN",simState[slot].failedTransmissionsGPRS,g_pSysState->simState[slot].failedTransmissionsGSM, s->alarms.SD_card_failure);
+
+	length = strlen(line);
+
+	http_open_connection_upload(length);
+
+	// Send the date line
+	uart_tx_nowait(line);
+	if (uart_getTransactionState() != UART_SUCCESS) {
+		goto release;
+	}
+
+
+	// EXIT
+	release:
+	releaseStringBufferHelper();
+	return res;
+}
+
+
+
+
+
 // 11,20150303:082208,interval,sensorid,DATADATADATAT,sensorid,DATADATADATA,
 // sensorid,dATADATADA,sensorID,DATADATADATADATAT, sensorID,DATADATADATADATAT,batt level,battplugged.
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
