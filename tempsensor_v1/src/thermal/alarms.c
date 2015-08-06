@@ -20,6 +20,7 @@
 /*************************************************************************************************************/
 void alarm_sms_battery_level() {
 	char *msg = getSMSBufferHelper();
+	int i;
 
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
 		return;
@@ -27,40 +28,48 @@ void alarm_sms_battery_level() {
 	strcpy(msg, "LOW Battery: ");
 	strcat(msg, itoa_pad(batt_getlevel()));
 	strcat(msg, "battery left. ");
-	sms_send_message_number(g_pDevCfg->cfgReportSMS, msg);
+
+	// Send to all SMS numbers
+	for (i = 0; i < MAX_SMS_NUMBERS; i++){
+		sms_send_message_number(g_pDevCfg->cfgSMSNumbers[i].cfgReportSMS, msg);
+	}
+
 }
 
 void alarm_sms_sensor(uint8_t sensorId, int elapsed) {
 	char *msg = getSMSBufferHelper();
+	int i;
+
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
 		return;
 
 	sprintf(msg, "Alert Sensor %s at %s degC for %d mins", SensorName[sensorId],
 			temperature_getString(sensorId), elapsed / 60);
 	strcat(msg, " Take ACTION immediately.");
-	sms_send_message_number(g_pDevCfg->cfgReportSMS, msg);
+
+	// Send to all SMS numbers
+	for (i = 0; i < MAX_SMS_NUMBERS; i++){
+		sms_send_message_number(g_pDevCfg->cfgSMSNumbers[i].cfgReportSMS, msg);
+	}
 }
 
 void alarm_sms_power_outage() {
+	int i;
+
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
 		return;
 
-	sms_send_message_number(g_pDevCfg->cfgReportSMS,
-			"Power Outage: ATTENTION!");
+	// Send to all SMS numbers
+	for (i = 0; i < MAX_SMS_NUMBERS; i++){
+		sms_send_message_number(g_pDevCfg->cfgSMSNumbers[i].cfgReportSMS, "Power Outage: ATTENTION!");
+	}
 }
 
 void alarm_SD_card_failure(char *msg) {
+
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
 		return;
-
-	sms_send_message_number(g_pDevCfg->cfgReportSMS, msg);
 }
-
-#ifdef _DEBUG
-void alarm_low_memory() {
-	sms_send_message_number(g_pDevCfg->cfgReportSMS, "Low Stack!");
-}
-#endif
 
 SENSOR_STATUS *getAlarmsSensor(int id) {
 	USE_TEMPERATURE

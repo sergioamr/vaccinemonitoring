@@ -211,11 +211,6 @@ int main(void) {
 	// Done init, start watchdog
 	watchdog_init();
 
-#ifdef _DEBUG
-	if (g_pDevCfg->cfg.logs.sms_reports)
-		sms_send_message_number(g_pDevCfg->cfgReportSMS, "Boot completed");
-#endif
-
 	events_sync(rtc_update_time());
 	lcd_show();
 

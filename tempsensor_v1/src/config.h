@@ -186,7 +186,7 @@
 
 #define ST1_NUM_PARAMS			12
 #define ST2_NUM_PARAMS 			25
-#define ST3_NUM_PARAMS			0
+//#define ST3_NUM_PARAMS			0
 
 //Display contants
 #define LCD_DISPLAY_LEN			32
@@ -274,6 +274,15 @@ typedef union {
 	unsigned char status;
 } LOGGING_COMPONENTS;
 
+#define MAX_SMS_NUMBERS 1
+
+typedef struct {
+
+	// A User that can get messages from the alarms
+	char cfgReportSMS[GW_MAX_LEN + 1];
+
+} REPORT_SMS;
+
 typedef struct {
 #ifdef _DEBUG
 	char cfgVersion[8];
@@ -297,8 +306,8 @@ typedef struct {
 	char cfgConfig_URL[MAX_URL_PATH];
 	char cfgUpload_URL[MAX_URL_PATH];
 
-	// User that can get messages from the alarms
-	char cfgReportSMS[GW_MAX_LEN + 1];
+	// max 5 numbers (probably won't have space for more
+	REPORT_SMS cfgSMSNumbers[MAX_SMS_NUMBERS];
 
 	int8_t cfgUploadMode;
 	SIM_CARD_CONFIG SIM[SYSTEM_NUM_SIM_CARDS];

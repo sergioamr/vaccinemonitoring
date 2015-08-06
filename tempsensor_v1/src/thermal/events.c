@@ -381,8 +381,6 @@ void events_run() {
 void event_sms_test(void *event, time_t currentTime) {
 	if (!g_pDevCfg->cfg.logs.sms_reports)
 		return;
-
-	sms_send_data_request(g_pDevCfg->cfgReportSMS);
 }
 
 void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {

@@ -269,11 +269,6 @@ void state_alarm_on(char *alarm_msg) {
 	s->alarms.globalAlarm = STATE_ON;
 	state_alarm_turnon_buzzer();
 
-#ifdef _DEBUG
-	if (g_pDevCfg->cfg.logs.sms_reports)
-		sms_send_message_number(g_pDevCfg->cfgReportSMS, alarm_msg);
-#endif
-
 	display_alarm:
 
 	elapsed = events_getTick() - count;
@@ -301,8 +296,6 @@ void state_clear_alarm_state() {
 
 	if (g_pDevCfg->cfg.logs.sms_reports) {
 		strcat(g_pSysState->alarm_message, " cleared");
-		sms_send_message_number(g_pDevCfg->cfgReportSMS,
-				g_pSysState->alarm_message);
 	}
 
 	g_pSysState->state.alarms.globalAlarm = STATE_OFF;
@@ -436,7 +429,6 @@ void state_power_on() {
 		return;
 
 	if (STATE_ALARM.poweroutage == STATE_ON) {
-		sms_send_message_number(g_pDevCfg->cfgReportSMS, "POWER RESUMED");
 		STATE_ALARM.poweroutage = STATE_OFF;
 	}
 

@@ -312,7 +312,18 @@ void config_init() {
 	g_pDevCfg->cfgSIM_slot = 0;
 	g_pDevCfg->cfgSelectedSIM_slot = 0;
 
-	strcpy(g_pDevCfg->cfgReportSMS, REPORT_PHONE_NUMBER); // HTTP server nextleaf
+
+
+	// set first to default
+	strcpy(g_pDevCfg->cfgSMSNumbers[0].cfgReportSMS, REPORT_PHONE_NUMBER);
+
+	/*
+	int i; //loop variable
+	//set extras to NULL for now
+	for (i = 1; i < MAX_SMS_NUMBERS; i++){
+		strcpy(g_pDevCfg->cfgSMSNumbers[i].cfgReportSMS, REPORT_PHONE_NUMBER);
+	}
+	*/
 
 	strcpy(g_pDevCfg->cfgGatewayIP, NEXLEAF_DEFAULT_SERVER_IP); // HTTP server nextleaf
 	strcpy(g_pDevCfg->cfgGatewaySMS, NEXLEAF_SMS_GATEWAY); // Gateway to nextleaf
@@ -566,18 +577,24 @@ int config_parse_configuration_ST2(char *token) {
 }
 
 int config_parse_configuration_ST3(char *token) {
-	if (config_count_delims(token, ',') != ST3_NUM_PARAMS) {
-#ifdef _DEBUG
-		log_append_("ST3 WRONG");
-#endif
-		return UART_SUCCESS;
-	}
+	int i = 0;
+
+	// remove num of params, this can change depending on phone numbers
+
+
 
 	config_setLastCommand(COMMAND_PARSE_CONFIG_ST3);
 	lcd_printl(LINEH, CHUNK_ST3);
 
 	// Skip $ST3,
 	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
+
+	//parse each phone number
+	for (i = 0; i < MAX_SMS_NUMBERS; i++){
+		PARSE_NEXTSTRING(token,g_pDevCfg->cfgSMSNumbers[i].cfgReportSMS,
+				sizeof(g_pDevCfg->cfgSMSNumbers[i].cfgReportSMS), delimiter, UART_FAILED);
+	}
+
 
 #ifdef _DEBUG
 	log_append_("ST3 OK");
@@ -745,9 +762,10 @@ FRESULT config_read_ini_file() {
 	if (n == 0)
 		return FR_NO_FILE;
 
+	// set first to one in config
 	n = ini_gets(SECTION_SERVER, "ReportSMS", REPORT_PHONE_NUMBER,
-			g_pDevCfg->cfgReportSMS, sizearray(g_pDevCfg->cfgReportSMS),
-			CONFIG_INI_FILE);
+			g_pDevCfg->cfgSMSNumbers[1].cfgReportSMS, sizearray(g_pDevCfg->cfgSMSNumbers[1].cfgReportSMS),
+				CONFIG_INI_FILE);
 
 	n = ini_gets(SECTION_SERVER, "GatewayIP", NEXLEAF_DEFAULT_SERVER_IP,
 			g_pDevCfg->cfgGatewayIP, sizearray(g_pDevCfg->cfgGatewayIP),
