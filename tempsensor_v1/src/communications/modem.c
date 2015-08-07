@@ -850,7 +850,7 @@ void modem_init() {
 	modem_getSignal();
 
 	uart_tx("+CSDH=1"); // Show Text Mode Parameters - +CSDH  			 Set command controls whether detailed header information is shown in text mode (+CMGF=1) result codes
-	uart_tx_timeout("+CMGF=?", MODEM_TX_DELAY2, 5); // set sms format to text mode
+	uart_tx_timeout("+CMGF=1", MODEM_TX_DELAY2, 5); // set sms format to text mode
 
 #if defined(CAPTURE_MCC_MNC) && defined(_DEBUG)
 	modem_survey_network();
