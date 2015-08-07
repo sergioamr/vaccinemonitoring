@@ -123,7 +123,7 @@ int8_t sync_send_http() {
 
 	slot = config_getSelectedSIM(); //current sim
 
-	sprintf(line, "$STS,%d,%d,%d,$EN",simState[slot].failedTransmissionsGPRS,g_pSysState->simState[slot].failedTransmissionsGSM, s->alarms.SD_card_failure);
+	sprintf(line, "$STS,%d,%d,%d,$EN",g_pSysState->simState[slot].failedTransmissionsGPRS,g_pSysState->simState[slot].failedTransmissionsGSM, s->alarms.SD_card_failure);
 
 	length = strlen(line);
 
@@ -135,6 +135,8 @@ int8_t sync_send_http() {
 		goto release;
 	}
 
+	//succeeded
+	res = TRANS_SUCCESS;
 
 	// EXIT
 	release:

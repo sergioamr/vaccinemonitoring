@@ -25,15 +25,9 @@ void alarm_sms_battery_level() {
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
 		return;
 
-	/*
-	strcpy(msg, "LOW Battery: ");
-	strcat(msg, itoa_pad(batt_getlevel()));
-	strcat(msg, "battery left. ");
-	*/
-
 	// Send to all SMS numbers
 	for (i = 0; i < MAX_SMS_NUMBERS; i++){
-		sms_send_message_number(g_pDevCfg->cfgSMSNumbers[i].cfgReportSMS, msg);
+		sms_send_message_number(g_pDevCfg->cfgSMSNumbers[i].cfgReportSMS, "Low Battery!");
 	}
 
 }
@@ -63,7 +57,7 @@ void alarm_sms_power_outage() {
 
 	// Send to all SMS numbers
 	for (i = 0; i < MAX_SMS_NUMBERS; i++){
-		sms_send_message_number(g_pDevCfg->cfgSMSNumbers[i].cfgReportSMS, "Power Outage: ATTENTION!");
+		sms_send_message_number(g_pDevCfg->cfgSMSNumbers[i].cfgReportSMS, "Power Outage! ATTENTION!");
 	}
 }
 

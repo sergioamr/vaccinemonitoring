@@ -396,7 +396,7 @@ void state_low_battery_alert() {
 
 	// Activate sound alarm
 	for (i = 0; i < MAX_SMS_NUMBERS; i++) {
-		sms_send_message_number(g_pDevCfg->cfgSMSNumbers[i].cfgReportSMS, "LOW BATTERY");
+		sms_send_message_number(g_pDevCfg->cfgSMSNumbers[i].cfgReportSMS, "Low Battery!");
 	}
 
 	state_alarm_on("LOW BATTERY");
