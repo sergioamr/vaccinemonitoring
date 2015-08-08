@@ -471,7 +471,6 @@ int modem_swap_SIM() {
 
 	lcd_printf(LINEC, "SIM %d", g_pDevCfg->cfgSIM_slot + 1);
 	modem_init();
-	modem_getExtraInfo();
 
 	// Wait for the modem to be ready to send messages
 #ifndef _DEBUG
@@ -873,6 +872,8 @@ void modem_init() {
 	modem_getSignal();
 
 	modem_getOwnNumber();
+
+	modem_getExtraInfo();
 
 	http_setup();
 }
