@@ -218,9 +218,11 @@ int main(void) {
 #ifdef ___CHECK_STACK___
 		checkStack();
 #endif
+		/*
 #ifdef _DEBUG
-		events_debug(rtc_get_second_tick());
+		//events_debug(rtc_get_second_tick());
 #endif
+*/
 		hardware_actions();
 		// Checks all the events that we have and runs the right one.
 		events_run(rtc_update_time());

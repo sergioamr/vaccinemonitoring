@@ -411,13 +411,14 @@ int8_t modem_first_init() {
 
 	uint8_t nsims = SYSTEM_NUM_SIM_CARDS;
 
+	/*
 #ifdef _DEBUG
 	nsims = 1;
 #endif
-
+*/
+	//g_pDevCfg->cfgSIM_slot = 1;
 	for (t = 0; t < nsims; t++) {
 		//force sim 2 state so that we run swap onto sim1
-		g_pDevCfg->cfgSIM_slot = 1;
 		modem_swap_SIM(); // swap
 		/*
 		 * We have to check which parameters are fatal to disable the SIM

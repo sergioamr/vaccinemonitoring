@@ -39,7 +39,7 @@ void buzzer_feedback() {
 }
 
 void buzzer_feedback_simple() {
-	buzzer_feedback_value(10);
+	buzzer_feedback_value(50);
 }
 
 // Timer1_A0 interrupt service routine
