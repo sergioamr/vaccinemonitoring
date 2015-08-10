@@ -416,7 +416,9 @@ int8_t modem_first_init() {
 #endif
 
 	for (t = 0; t < nsims; t++) {
-		modem_swap_SIM(); // Send hearbeat from SIM
+		//force sim 2 state so that we run swap onto sim1
+		g_pDevCfg->cfgSIM_slot = 1;
+		modem_swap_SIM(); // swap
 		/*
 		 * We have to check which parameters are fatal to disable the SIM
 		 *
@@ -443,6 +445,9 @@ int8_t modem_first_init() {
 		lcd_printf(LINEE, "SIMS FAILED");
 		break;
 	}
+
+	//success, send a heartbeat
+	sms_send_heart_beat();
 
 	return MODEM_ON;
 }
@@ -479,7 +484,7 @@ int modem_swap_SIM() {
 
 	// Just send the message if we dont have errors.
 	if (state_isSimOperational()) {
-		sms_send_heart_beat(); // Neccessary?
+		//sms_send_heart_beat(); // Neccessary?
 		res = UART_SUCCESS;
 	} else {
 		res = UART_FAILED;
