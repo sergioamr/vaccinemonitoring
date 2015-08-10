@@ -467,6 +467,12 @@ int config_parse_configuration_ST1(char *token) {
 	PARSE_NEXTSTRING(token, g_pDevCfg->cfgUpload_URL,
 			sizeof(g_pDevCfg->cfgUpload_URL), delimiter, UART_FAILED);
 
+
+	#ifdef _DEBUG
+		strcpy(g_pDevCfg->cfgUpload_URL, "/coldtrace/intel/upload/      ");
+	#endif
+
+
 	//config URL
 	PARSE_NEXTSTRING(token, g_pDevCfg->cfgConfig_URL,
 			sizeof(g_pDevCfg->cfgConfig_URL), delimiter, UART_FAILED);
@@ -724,6 +730,7 @@ FRESULT config_read_ini_file() {
 
 	log_append_("Read INI");
 
+	/* saving space
 #ifdef _DEBUG
 	n = ini_gets("SYSTEM", "Version", __DATE__, g_pDevCfg->cfgVersion,
 			sizearray(g_pDevCfg->cfgVersion), CONFIG_INI_FILE);
@@ -731,6 +738,7 @@ FRESULT config_read_ini_file() {
 		return FR_NO_FILE;
 
 #endif
+*/
 
 	cfg = &g_pDevCfg->cfg;
 	cfg->logs.system_log = ini_getbool(SECTION_LOGS, "SystemLog", 0,
