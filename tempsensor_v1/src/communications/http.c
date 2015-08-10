@@ -17,11 +17,16 @@
 #define HTTP_RESPONSE_RETRY	10
 
 void backend_get_configuration() {
+	//sync_send_http();
+
 	config_setLastCommand(COMMAND_FETCH_CONFIG);
 	lcd_print("PING");
 	http_enable();
 	http_get_configuration();
 	http_deactivate();
+
+
+
 }
 
 /*

@@ -487,8 +487,10 @@ void state_check_power() {
 	time_t elapsed = currentTime - g_pSysState->time_powerOutage;
 
 	if (elapsed > (g_pDevCfg->stBattPowerAlertParam.minutesPower) * 60) {
+		//int i;
 		STATE_ALARM.poweroutage = STATE_ON;
 		alarm_sms_power_outage();
+
 		state_alarm_on("POWER OUT");
 	}
 }

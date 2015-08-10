@@ -378,10 +378,12 @@ void events_run() {
 /* Event functions */
 /*******************************************************************************************************/
 
+/*
 void event_sms_test(void *event, time_t currentTime) {
 	if (!g_pDevCfg->cfg.logs.sms_reports)
 		return;
 }
+*/
 
 void event_SIM_check_incoming_msgs(void *event, time_t currentTime) {
 
@@ -585,11 +587,13 @@ void events_init() {
 
 	memset(&g_sEvents, 0, sizeof(g_sEvents));
 
+/*
 #ifdef _DEBUG
 	events_register(EVT_SMS_TEST, "SMS", 0, &event_sms_test,
 			MINUTES_(PERIOD_SMS_TEST),
 			NULL);
 #endif
+*/
 	events_register(EVT_BATTERY_CHECK, "BAT", 0, &events_check_battery,
 			MINUTES_(PERIOD_BATTERY_CHECK),
 			g_pDevCfg->sIntervalsMins.batteryCheck);

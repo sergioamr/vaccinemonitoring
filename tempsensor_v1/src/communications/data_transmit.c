@@ -56,12 +56,12 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 	config_setLastCommand(COMMAND_SEND_DATA_SMS);
 
 	f_lseek(file, start);
-
+	//$STS,<SD ERRORS>,<FAILURE GPRS>,<FAILURE SMS>,$EN
 	do {
 		if (splitSend) {
 			offset_timestamp(&firstDate, linesParsed);
 			dateString = get_date_string(&firstDate, "", "", "", 0);
-			sprintf(smsMsg, SMS_DATA_MSG_TYPE "%s,%d,%d,", dateString,
+			sprintf(smsMsg, SMS_DATA_MSG_TYPE "%s,%d,%d,",dateString,
 					g_pDevCfg->sIntervalsMins.sampling, SYSTEM_NUM_SENSORS);
 			strcat(smsMsg, encodedLine);
 			linesParsed = splitSend = 0;
@@ -70,7 +70,7 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 			if (f_gets(line, lineSize, file) != 0) {
 				parse_time_from_line(&firstDate, line);
 				dateString = get_date_string(&firstDate, "", "", "", 0);
-				sprintf(smsMsg, SMS_DATA_MSG_TYPE "%s,%d,%d,", dateString,
+				sprintf(smsMsg, SMS_DATA_MSG_TYPE "%s,%d,%d,",dateString,
 						g_pDevCfg->sIntervalsMins.sampling, SYSTEM_NUM_SENSORS);
 			} else
 				goto release;
@@ -110,44 +110,7 @@ int8_t data_send_sms(FIL *file, uint32_t start, uint32_t end) {
 }
 
 
-
 //$STS,<SD ERRORS>,<FAILURE GPRS>,<FAILURE SMS>,$EN
-int8_t sync_send_http() {
-	int res = TRANS_FAILED;
-	uint16_t lineSize = 0;
-	char *line = getStringBufferHelper(&lineSize);
-	uint32_t length = 0;
-	uint8_t slot;
-
-	SYSTEM_ALARMS *s = &g_pSysState->state; //pointer to alarm states
-
-	slot = config_getSelectedSIM(); //current sim
-
-	sprintf(line, "$STS,%d,%d,%d,$EN",g_pSysState->simState[slot].failedTransmissionsGPRS,g_pSysState->simState[slot].failedTransmissionsGSM, s->alarms.SD_card_failure);
-
-	length = strlen(line);
-
-	http_open_connection_upload(length);
-
-	// Send the date line
-	uart_tx_nowait(line);
-	if (uart_getTransactionState() != UART_SUCCESS) {
-		goto release;
-	}
-
-	//succeeded
-	res = TRANS_SUCCESS;
-
-	// EXIT
-	release:
-	releaseStringBufferHelper();
-	return res;
-}
-
-
-
-
-
 // 11,20150303:082208,interval,sensorid,DATADATADATAT,sensorid,DATADATADATA,
 // sensorid,dATADATADA,sensorID,DATADATADATADATAT, sensorID,DATADATADATADATAT,batt level,battplugged.
 // FORMAT = IMEI=...&ph=...&v=...&sid=.|.|.&sdt=...&i=.&t=.|.|.&b=...&p=...
@@ -158,6 +121,12 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 	int retry = 0;
 	uint32_t length = 0;
 	struct tm firstDate;
+	uint8_t slot;
+
+	SYSTEM_ALARMS *s = &g_pSysState->state; //pointer to alarm states
+	slot = config_getSelectedSIM(); //current sim
+
+
 
 	int res = TRANS_FAILED;
 	char* dateString = NULL;
@@ -172,9 +141,12 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 	if (f_gets(line, lineSize, file) != 0) {
 		parse_time_from_line(&firstDate, line);
 		dateString = get_date_string(&firstDate, "", "", "", 0);
-		sprintf(line, "IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=", g_pDevCfg->cfgIMEI,
+		sprintf(line, "$STS,%d,%d,%d,$EN,IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=",g_pSysState->simState[slot].failedTransmissionsGPRS,g_pSysState->simState[slot].failedTransmissionsGSM, s->alarms.SD_card_failure, g_pDevCfg->cfgIMEI,
 				sim->cfgPhoneNum, "0.1pa", dateString,
 				g_pDevCfg->sIntervalsMins.sampling);
+		/*
+		sprintf(line, "$STS,%d,%d,%d,$EN",g_pSysState->simState[slot].failedTransmissionsGPRS,g_pSysState->simState[slot].failedTransmissionsGSM, s->alarms.SD_card_failure);
+*/
 	} else {
 		goto release;
 	}
