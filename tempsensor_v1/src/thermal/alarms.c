@@ -39,9 +39,9 @@ void alarm_sms_sensor(uint8_t sensorId, int elapsed) {
 	if (!g_pDevCfg->cfg.logs.sms_alerts)
 		return;
 
-	sprintf(msg, "Alert Sensor %s at %s degC for %d mins", SensorName[sensorId],
+	sprintf(msg, "Alert! Sensor %s at %s degC for %d mins", SensorName[sensorId],
 			temperature_getString(sensorId), elapsed / 60);
-	strcat(msg, " Take ACTION immediately.");
+	strcat(msg, " Take ACTION immediately!");
 
 	// Send to all SMS numbers
 	for (i = 0; i < MAX_SMS_NUMBERS; i++){

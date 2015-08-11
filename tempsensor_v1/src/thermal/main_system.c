@@ -197,7 +197,7 @@ void checkStack() {
 }
 #endif
 
-int main(void) {
+ int main(void) {
 
 	// Disable for init since we are not going to be able to respond to it.
 	watchdog_disable();

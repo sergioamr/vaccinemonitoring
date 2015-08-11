@@ -10,7 +10,7 @@
 #include "state_machine.h"
 
 extern void buzzer_feedback();
-
+void state_alarm_turnoff_buzzer();
 void state_alarm_disable_buzzer_override();
 void state_alarm_enable_buzzer_override();
 
@@ -113,6 +113,7 @@ void __attribute__ ((interrupt(PORT2_VECTOR))) Port_2 (void)
 #endif
 		g_iHardware_actions = HWD_TURN_SCREEN;
 		state_alarm_enable_buzzer_override();
+		state_alarm_turnoff_buzzer(); //resets the buzzer from alarm sound
     	// Resume execution if the device is in deep sleep mode
 		WAKEUP_MAIN
 		break;
