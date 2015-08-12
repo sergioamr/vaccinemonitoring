@@ -168,7 +168,7 @@
 #define PERIOD_REBOOT 			24*60   //in minutes
 #define PERIOD_TRANS_RESET 		6*60   //in minutes
 #define PERIOD_LCD_OFF			0
-#define PERIOD_ALARMS_CHECK	    2
+#define PERIOD_ALARMS_CHECK	    1
 #define PERIOD_CONFIGURATION_FETCH 5
 #define PERIOD_SMS_CHECK   	    3		//poll interval in minutes for sms msg TODO change back
 #define PERIOD_NETWORK_CHECK	2

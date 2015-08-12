@@ -338,6 +338,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 	if (verbose == VERBOSE_BOOTING)
 		lcd_enable_verbose();
 
+	//TODO: this should be debug
 	if (res == UART_SUCCESS) {
 		lcd_clear();
 		lcd_printl(LINE1, "SMS Confirm");

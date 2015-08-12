@@ -432,7 +432,7 @@ void event_save_samples(void *event, time_t currentTime) {
 	config_setLastCommand(COMMAND_MONITOR_ALARM);
 
 	//monitor for temperature alarms
-	alarm_monitor();
+	//alarm_monitor();
 	event_force_event_by_id(EVT_DISPLAY, 0);
 }
 

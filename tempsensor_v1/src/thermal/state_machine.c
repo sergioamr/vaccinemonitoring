@@ -535,7 +535,7 @@ void state_process() {
 #endif
 
 	state_check_SD_card();
-
+	alarm_monitor();
 	// Global check for all the alarms
 	state_check_alarm_states();
 }

@@ -39,9 +39,11 @@ void buzzer_feedback() {
 	buzzer_feedback_value(50);
 }
 
+/*
 void buzzer_feedback_simple() {
 	buzzer_feedback_value(50);
 }
+*/
 
 // Timer1_A0 interrupt service routine
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
