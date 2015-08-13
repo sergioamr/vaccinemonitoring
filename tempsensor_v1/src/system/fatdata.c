@@ -473,9 +473,11 @@ FRESULT log_appendf(const char *_format, ...) {
 	va_list _ap;
 	char szTemp[40];
 
+	/*
 #ifdef _DEBUG
 	checkStack();
 #endif
+*/
 	va_start(_ap, _format);
 	vsnprintf(szTemp, sizeof(szTemp), _format, _ap);
 	va_end(_ap);

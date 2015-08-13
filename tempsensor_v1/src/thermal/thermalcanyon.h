@@ -8,10 +8,12 @@
 #ifndef TEMPSENSOR_V1_THERMALCANYON_H_
 #define TEMPSENSOR_V1_THERMALCANYON_H_
 
+/*
 #ifdef _DEBUG
 #define ___CHECK_STACK___
 void checkStack();
 #endif
+*/
 
 #include <msp430.h>
 #include "stdint.h"
