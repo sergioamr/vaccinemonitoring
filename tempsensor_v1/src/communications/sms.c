@@ -258,8 +258,10 @@ int8_t sms_process_messages() {
 void sms_send_heart_beat() {
 	char *msg = getSMSBufferHelper();
 	char sensors[16];
+	uint8_t slot;
 
 	SIM_CARD_CONFIG *sim = config_getSIM();
+	SYSTEM_ALARMS *s = &g_pSysState->state; //pointer to alarm states
 
 	int i = 0;
 
@@ -273,9 +275,24 @@ void sms_send_heart_beat() {
 		}
 	}
 
+	slot = config_getSelectedSIM(); //current sim
+
+	/*
 	sprintf(msg, SMS_HB_MSG_TYPE "%s,%d,%s,%s,%s%d,%d", g_pDevCfg->cfgIMEI,
 			config_getSelectedSIM(), g_pDevCfg->cfgGatewaySMS,
 			sim->cfgSMSCenter, sensors, batt_getlevel(), !(P4IN & BIT4));
+			*/
+
+	//new: SENSORS,  BATTERY, CHARGING_STATUS, UPTIME, SD_CARD_ERROR, UPLOAD_FAILURES_GPRS, UPLOAD_FAILURES_GSM
+	sprintf(msg, SMS_HB_MSG_TYPE "%s,%d,%s,%s,%s%d,%d,%d,%d,%d",
+			g_pDevCfg->cfgIMEI, config_getSelectedSIM(),
+			g_pDevCfg->cfgGatewaySMS, sim->cfgSMSCenter, sensors,
+			batt_getlevel(), !(P4IN & BIT4),
+			g_pSysState->simState[slot].failedTransmissionsGPRS,
+			g_pSysState->simState[slot].failedTransmissionsGSM,
+			s->alarms.SD_card_failure);
+
+
 
 	sms_send_message(msg);
 }
