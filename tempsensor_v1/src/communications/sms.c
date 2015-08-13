@@ -339,6 +339,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 		lcd_enable_verbose();
 
 	//TODO: this should be debug
+	/*
 	if (res == UART_SUCCESS) {
 		lcd_clear();
 		lcd_printl(LINE1, "SMS Confirm");
@@ -351,6 +352,7 @@ uint8_t sms_send_message_number(char *szPhoneNumber, char* pData) {
 		lcd_print("TIMEOUT");
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 	}
+	*/
 
 	_NOP();
 	return res;

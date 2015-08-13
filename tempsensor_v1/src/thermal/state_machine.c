@@ -267,9 +267,11 @@ void state_alarm_on(char *alarm_msg) {
 	}
 
 	s->alarms.globalAlarm = STATE_ON;
-	state_alarm_turnon_buzzer();
+	//state_alarm_turnon_buzzer();
 
 	display_alarm:
+
+	state_alarm_turnon_buzzer();
 
 	elapsed = events_getTick() - count;
 	if (elapsed > 30) {

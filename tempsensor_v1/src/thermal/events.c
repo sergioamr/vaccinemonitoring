@@ -573,8 +573,10 @@ void event_main_sleep() {
 }
 
 void events_display_alarm(void *event, time_t currentTime) {
+
 	if (!g_pSysState->state.alarms.globalAlarm)
 		return;
+
 
 	lcd_printl(LINEC, "ALARM");
 	lcd_printl(LINEE, trim_sigma(g_pSysState->alarm_message));
