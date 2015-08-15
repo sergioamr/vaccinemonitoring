@@ -388,6 +388,7 @@ typedef struct {
 
 typedef union {
 	struct {
+		unsigned char snooze :1; //snooze for repeating alarm
 		unsigned char globalAlarm :1;
 		unsigned char battery :1;
 		unsigned char SD_card_failure :1;

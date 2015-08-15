@@ -263,15 +263,15 @@ void state_alarm_on(char *alarm_msg) {
 
 	// We are already in alarm mode
 	if (s->alarms.globalAlarm == STATE_ON) {
-		goto display_alarm;
+		return;
+	}
+
+	// We are snoozing, buzz don't show
+	if (s->alarms.snooze == STATE_ON) {
+		goto buzz_alarm;
 	}
 
 	s->alarms.globalAlarm = STATE_ON;
-	//state_alarm_turnon_buzzer();
-
-	display_alarm:
-
-	state_alarm_turnon_buzzer();
 
 	elapsed = events_getTick() - count;
 	if (elapsed > 30) {
@@ -283,6 +283,11 @@ void state_alarm_on(char *alarm_msg) {
 		events_display_alarm(NULL, 0);
 		count = events_getTick();
 	}
+
+	buzz_alarm:
+	state_alarm_turnon_buzzer();
+	_NOP();
+	//state_alarm_turnon_buzzer();
 }
 
 // Everything is fine!
@@ -291,6 +296,10 @@ void state_clear_alarm_state() {
 
 	//set buzzer OFF
 	//reset alarm state and counters
+	//set snooze because we want any alarms to still buzz
+	s->alarms.snooze = 1;
+	//MAKE SURE BUZZER GOES OFF TIL NEXT TIME
+	SYSTEM_SWITCH.buzzer_sound = STATE_OFF;
 
 	// We were not in alarm mode
 	if (s->alarms.globalAlarm == STATE_OFF)
@@ -301,7 +310,8 @@ void state_clear_alarm_state() {
 	}
 
 	g_pSysState->state.alarms.globalAlarm = STATE_OFF;
-	SYSTEM_SWITCH.buzzer_sound = STATE_OFF;
+	//state_alarm_turnoff_buzzer();
+	//SYSTEM_SWITCH.buzzer_sound = STATE_OFF;
 }
 
 /***********************************************************************************************************************/
@@ -390,16 +400,19 @@ void state_transmission_failed_gsm(uint8_t sim) {
 /***********************************************************************************************************************/
 
 void state_low_battery_alert() {
-	int i;
+	//int i;
 	if (STATE_ALARM.battery==true)
 		return;
 
 	STATE_ALARM.battery = true;
 
+	alarm_sms_battery_level();
 	// Activate sound alarm
+	/*
 	for (i = 0; i < MAX_SMS_NUMBERS; i++) {
 		sms_send_message_number(g_pDevCfg->cfgSMSNumbers[i].cfgReportSMS, "Low Battery!");
 	}
+	*/
 
 	state_alarm_on("LOW BATTERY");
 }
@@ -468,33 +481,52 @@ void state_power_on() {
 }
 
 void state_check_power() {
+	time_t elapsed = 0;
 
 	if (POWER_ON)
 		state_power_on();
 	else
 		state_power_out();
 
+	//if power is connected, leave
 	if (SYSTEM_SWITCH.power_connected == true)
 		return;
 
+	//not doing an alarm, leave
 	if (!g_pDevCfg->stBattPowerAlertParam.enablePowerAlert)
 		return;
 
-	// Check the power down time to generate an alert
-
-	if (STATE_ALARM.poweroutage == STATE_ON || g_pDevCfg->stBattPowerAlertParam.minutesPower == 0)
+	//if battery alert threshold is 0, leave
+	if (g_pDevCfg->stBattPowerAlertParam.minutesPower == 0)
 		return;
 
-	time_t currentTime = rtc_get_second_tick();
-	time_t elapsed = currentTime - g_pSysState->time_powerOutage;
+	if (g_pSysState->time_powerOutage == 0)
+		 g_pSysState->time_powerOutage = events_getTick();
+		else
+			elapsed = events_getTick() - g_pSysState->time_powerOutage;
 
-	if (elapsed > (g_pDevCfg->stBattPowerAlertParam.minutesPower) * 60) {
-		//int i;
-		STATE_ALARM.poweroutage = STATE_ON;
-		alarm_sms_power_outage();
 
-		state_alarm_on("POWER OUT");
+
+	if (elapsed > (g_pDevCfg->stBattPowerAlertParam.minutesPower * 60)) {
+		goto alarm_error; //alarm tripped
 	}
+	else{
+		return; //leave
+	}
+
+
+	alarm_error:
+		if(!STATE_ALARM.poweroutage){
+			alarm_sms_power_outage();
+		}
+
+		STATE_ALARM.poweroutage = STATE_ON;
+
+
+		g_pSysState->time_powerOutage = 0; //reset elapsed for next alarm
+		state_alarm_on("POWER OUT");
+
+
 }
 
 /***********************************************************************************************************************/

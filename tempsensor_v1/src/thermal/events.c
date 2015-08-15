@@ -357,8 +357,10 @@ void events_run() {
 
 	pEvent = &g_sEvents.events[g_sEvents.nextEvent];
 	while (events_getTick() >= pEvent->nextEventRun && pEvent != NULL) {
+		/*
 		if (g_iDebug)
 			buzzer_feedback_value(50);
+		*/
 
 		// We don't want to run the same event twice in a row
 		// lets return control over the system for a round of CPU before repeating the process

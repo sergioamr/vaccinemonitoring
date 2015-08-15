@@ -106,8 +106,11 @@ void alarm_test_sensor(int id) {
 		return;
 	}
 
+	//add new case here to just remind alarm..
+	/*
 	if (s->state.alarm)
 		return;
+	*/
 
 	if (tem->alarm_time == 0)
 		tem->alarm_time = events_getTick();
@@ -116,10 +119,14 @@ void alarm_test_sensor(int id) {
 
 	//lcd_printf(LINEC, "Sensor \"%s\" %s", SensorName[id], getFloatNumber2Text(temperature, msg));
 	if (temperature < cold) {
+		/*
 		if (!g_pSysState->system.switches.button_buzzer_override)
 			buzzer_feedback_value(100);
-		if (!s->state.lowAlarm
+			*/
+		/*if (!s->state.lowAlarm
 				&& elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsCold) {
+				*/
+		if (elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsCold) {
 			sprintf(msg, "%s Below %s", SensorName[id],
 					getFloatNumber2Text(cold, tmp));
 			s->state.lowAlarm = true;
@@ -127,10 +134,15 @@ void alarm_test_sensor(int id) {
 		}
 		return;
 	} else if (temperature > hot) {
+		/*
 		if (!g_pSysState->system.switches.button_buzzer_override)
 			buzzer_feedback_value(100);
-		if (!s->state.highAlarm
+			*/
+		/*
+		 * if (!s->state.highAlarm
 				&& elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsHot) {
+		 */
+		if (elapsed > g_pDevCfg->stTempAlertParams[id].maxSecondsHot) {
 			sprintf(msg, "%s Above %s", SensorName[id],
 					getFloatNumber2Text(hot, tmp));
 			s->state.highAlarm = true;
@@ -141,9 +153,13 @@ void alarm_test_sensor(int id) {
 
 	return;
 
-	alarm_error: s->state.alarm = true;
+	alarm_error:
 	state_alarm_on(msg);
-	alarm_sms_sensor(id, elapsed);
+	if (!s->state.alarm){
+		alarm_sms_sensor(id, elapsed); //only on first alarm
+	}
+	s->state.alarm = true; //set alarm flag
+	tem->alarm_time = 0; //reset alarm time
 
 	// Force the upload of data to the server in 15 seconds
 	event_force_event_by_id(EVT_SUBSAMPLE_TEMP, 5);
