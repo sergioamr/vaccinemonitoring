@@ -141,7 +141,7 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 	if (f_gets(line, lineSize, file) != 0) {
 		parse_time_from_line(&firstDate, line);
 		dateString = get_date_string(&firstDate, "", "", "", 0);
-		sprintf(line, "$STS,%d,%d,%d,$EN,IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=",g_pSysState->simState[slot].failedTransmissionsGPRS,g_pSysState->simState[slot].failedTransmissionsGSM, s->alarms.SD_card_failure, g_pDevCfg->cfgIMEI,
+		sprintf(line, "STS=%d,%d,%d&IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=",g_pSysState->simState[slot].failedTransmissionsGPRS,g_pSysState->simState[slot].failedTransmissionsGSM, s->alarms.SD_card_failure, g_pDevCfg->cfgIMEI,
 				sim->cfgPhoneNum, "0.1pa", dateString,
 				g_pDevCfg->sIntervalsMins.sampling);
 		/*
