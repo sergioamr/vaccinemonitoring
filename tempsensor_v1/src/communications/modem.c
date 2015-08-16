@@ -704,18 +704,18 @@ int modem_parse_time(struct tm* pTime) {
 
 	PARSE_FINDSTR_RET(pToken1, COMMAND_RESULT_CCLK, UART_FAILED);
 
+	// Find the character before parsing as it will be replaced by \0
+	if (strchr(pToken1, '-') == NULL) //time zone offset reported must be flipped in sign in order to produce UTC with gmtime()
+		negateTz = 1;
+
 	memset(&tmTime, 0, sizeof(tmTime));
 	//string format "yy/MM/dd,hh:mm:ss+-zz"
 	PARSE_FIRSTVALUE(pToken1, &tmTime.tm_year, delimiter, UART_FAILED);
 	tmTime.tm_year += 2000;
-
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_mon, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_mday, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_hour, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_min, delimiter, UART_FAILED);
-	// Find the character before the next parse as it will be replaced by \0
-	if (strchr(pToken1, '-') == NULL)
-		negateTz = 1;
 	PARSE_NEXTVALUE(pToken1, &tmTime.tm_sec, delimiter, UART_FAILED);
 	PARSE_NEXTVALUE(pToken1, &timeZoneOffset, delimiter, UART_FAILED);
 
