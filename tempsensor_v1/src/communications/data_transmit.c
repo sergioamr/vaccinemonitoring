@@ -121,6 +121,12 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 	int retry = 0;
 	uint32_t length = 0;
 	struct tm firstDate;
+	uint8_t slot;
+
+	SYSTEM_ALARMS *s = &g_pSysState->state; //pointer to alarm states
+	slot = config_getSelectedSIM(); //current sim
+
+
 
 	int res = TRANS_FAILED;
 	char* dateString = NULL;
@@ -135,13 +141,12 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 	if (f_gets(line, lineSize, file) != 0) {
 		parse_time_from_line(&firstDate, line);
 		dateString = get_date_string(&firstDate, "", "", "", 0);
-		sprintf(line, "IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=",
-					g_pDevCfg->cfgIMEI,
-					sim->cfgPhoneNum,
-					"0.1pa",
-					dateString,
-					g_pDevCfg->sIntervalsMins.sampling
-				);
+		sprintf(line, "$STS,%d,%d,%d,$EN,IMEI=%s&ph=%s&v=%s&sdt=%s&i=%d&t=",g_pSysState->simState[slot].failedTransmissionsGPRS,g_pSysState->simState[slot].failedTransmissionsGSM, s->alarms.SD_card_failure, g_pDevCfg->cfgIMEI,
+				sim->cfgPhoneNum, "0.1pa", dateString,
+				g_pDevCfg->sIntervalsMins.sampling);
+		/*
+		sprintf(line, "$STS,%d,%d,%d,$EN",g_pSysState->simState[slot].failedTransmissionsGPRS,g_pSysState->simState[slot].failedTransmissionsGSM, s->alarms.SD_card_failure);
+*/
 	} else {
 		goto release;
 	}
