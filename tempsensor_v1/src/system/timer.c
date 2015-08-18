@@ -36,7 +36,7 @@ void delay(uint32_t time) {
 	TA0CCR0 = 10000;					// 10ms (1 cnt = 1us @1MHz timer clk)
 	TA0CTL = TASSEL__SMCLK | MC__UP | ID__8;  // SMCLK/8 (1MHz), UP mode
 
-	__bis_SR_register(LPM0_bits + GIE); // Disable CPU, keep functional master clock and slaves.
+ 	__bis_SR_register(LPM0_bits + GIE); // Disable CPU, keep functional master clock and slaves.
 
 	TA0CTL = MC__STOP;
 	iTick = 0;

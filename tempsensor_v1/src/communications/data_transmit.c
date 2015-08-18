@@ -200,6 +200,61 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 }
 
 int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
+
+	if (g_pDevCfg->cfgUploadMode == MODE_GPRS){ //force GPRS
+
+		//try to send data... might fail if forcing
+		if (data_send_http(file, start, end) != TRANS_SUCCESS) {
+			//fail data send over http
+			state_transmission_failed_gprs(g_pDevCfg->cfgSIM_slot);
+			return TRANS_FAILED; //failed, return
+		}
+
+	}
+	else if(g_pDevCfg->cfgUploadMode == MODE_GSM){ //force GSM
+
+		//try to send data... might fail if forcing
+		if (data_send_sms(file, start, end) != TRANS_SUCCESS) {
+			//fail data send over sms
+			state_transmission_failed_gsm(g_pDevCfg->cfgSIM_slot);
+			return TRANS_FAILED; //failed, return
+		}
+
+	}
+	else{ //failover, try both
+
+		if(g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS == 0){ //if http succeeded..
+
+			//try to send data...
+			if (data_send_http(file, start, end) == TRANS_SUCCESS) {
+				//want to check for success here so we don't accidentily send via SMS again
+				return TRANS_SUCCESS;
+			}
+			else{
+				//fail data send over http. this will only trip if http_enable succeeds but
+				//	we somehow still fail to send
+				state_transmission_failed_gprs(g_pDevCfg->cfgSIM_slot);
+				//return TRANS_FAILED; //failed
+				//don't need to return, GSM fallback with either fail or succeed
+			}
+
+		}
+
+		//fallback to GSM afterwards, last resort!
+		//try to send data...
+		if (data_send_sms(file, start, end) != TRANS_SUCCESS) {
+			//fail data send over sms
+			state_transmission_failed_gsm(g_pDevCfg->cfgSIM_slot);
+			return TRANS_FAILED; //failed
+		}
+
+
+
+	}
+
+	return TRANS_SUCCESS; //succeeded, return
+
+	/*
 	if ((g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS > 0 ||
 			state_isGSM() || g_pDevCfg->cfgUploadMode == MODE_GSM) &&
 			g_pDevCfg->cfgUploadMode != MODE_GPRS) {
@@ -215,7 +270,9 @@ int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
 			return TRANS_FAILED;
 		}
 	}
+
 	return TRANS_SUCCESS;
+	*/
 }
 
 // If the last file was corrupted and forced a reboot we remove the extension
@@ -250,15 +307,23 @@ void process_batch() {
 
 	line = getSMSBufferHelper();
 
+	//is SIM operational?
 	if (!state_isSimOperational()) {
- 		return;
+ 		return; //no, leave
 	}
 
-	if (g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS == 0 && state_isGPRS()) {
+
+	//check GPRS before uploading. if it fails we are going to try
+	//	SMS. if we are forcing GPRS we won't be able to upload...
+	if (state_isGPRS()) {
 		if (http_enable() != UART_SUCCESS) {
-			g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS++;
+			g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS++; //failed GPRS http enable
+		}
+		else{ //http is connected
+			g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS = 0; //set to 0, we can connect
 		}
 	}
+
 
 	// Cycle through all files using f_findfirst, f_findnext.
 	fr = f_findfirst(dir, fili, FOLDER_TEXT, "*." EXTENSION_TEXT);
@@ -298,7 +363,7 @@ void process_batch() {
 					canSend = 0;
 					transactionState = data_send_method(filr, seekFrom, seekTo);
 					if (transactionState != TRANS_SUCCESS) {
-						break;
+						break; //failed
 					}
 					seekFrom = seekTo = filr->fptr;
 					// Found next time stamp - Move to next batch now
@@ -311,10 +376,12 @@ void process_batch() {
 			config_incLastCmd();
 		}
 
+
 		if(canSend) {
 			transactionState = data_send_method(filr, seekFrom, seekTo);
 			seekFrom = canSend = 0;
 		}
+
 
 		if (seekTo < filr->fsize && transactionState == TRANS_SUCCESS) {
 			g_pSysState->lastSeek = filr->fptr;
@@ -336,12 +403,14 @@ void process_batch() {
 		}
 	}
 
+	//if we are using GRPS, disconnect http
 	if (state_isGPRS()) {
 		http_deactivate();
 	}
 
 	lcd_printl(LINEC, "Transmission");
 	if (transactionState == TRANS_SUCCESS) {
+
 		// Make sure this sim is the one that's first used next time
 		g_pDevCfg->cfgSelectedSIM_slot = g_pDevCfg->cfgSIM_slot;
 		lcd_printl(LINE2, "Completed");
