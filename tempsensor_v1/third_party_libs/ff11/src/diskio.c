@@ -10,11 +10,10 @@
 // TODO Clean all the returns and crazy status here from original developer :(
 
 #include "diskio.h"		/* FatFs lower layer API */
-#include "MMC.h"	    /* Header file of MMC SD card control module */
+#include <sd_raw.h>	    /* Header file of MMC/SDHC card control module */
 
-#pragma SET_DATA_SECTION(".aggregate_vars")
+
 DSTATUS stat;
-#pragma SET_DATA_SECTION()
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/
@@ -37,32 +36,17 @@ DSTATUS disk_initialize (
 	BYTE pdrv				/* Physical drive nmuber to identify the drive */
 )
 {
-	int result;
+	uint8_t result = 0;
 
-	result = mmcInit();
-	switch (result)
-	{
-	case MMC_SUCCESS:
-		stat = RES_OK;
-		break;
-	case MMC_BLOCK_SET_ERROR:
-		stat = RES_ERROR;
-		break;
-	case MMC_RESPONSE_ERROR:
-		stat = RES_ERROR;
-		break;
-	default:
-		stat = RES_NOTRDY;
-		break;
+	//returns 0 on failure, 1 on success.
+	result = sd_raw_init();
+	if(result == 1){
+		stat = RES_OK; //ready if 1
 	}
-/*
-		MMC_DATA_TOKEN_ERROR
-		MMC_INIT_ERROR
-		MMC_CRC_ERROR
-		MMC_WRITE_ERROR
-		MMC_OTHER_ERROR
-		MMC_TIMEOUT_ERROR
-		*/
+	else{
+		stat = RES_NOTRDY; //else failed, not ready
+	}
+
 	return stat;
 }
 
@@ -79,13 +63,14 @@ DRESULT disk_read (
 	UINT count		/* Number of sectors to read */
 )
 {
-	int result = RES_PARERR;
+	uint8_t result = 0;
 	int iIdx   = 0;
 
 	for(iIdx = 0; ((iIdx < count) && (stat == RES_OK)); iIdx++)
 	{
-		result = mmcReadBlock(sector*SECTOR_SIZE, SECTOR_SIZE, buff);
-		if(result == MMC_SUCCESS)
+		//sd_raw_read(offset_t offset, uint8_t* buffer, uintptr_t length)
+		result = sd_raw_read(sector*SECTOR_SIZE,(uint8_t *)  buff, SECTOR_SIZE);
+		if(result == 1) //success on 1
 		{
 			stat = RES_OK;
 			buff += SECTOR_SIZE;
@@ -106,13 +91,13 @@ DRESULT disk_read_ex (
 	UINT count		/* Bytes to read */
 )
 {
-	int result = RES_PARERR;
+	uint8_t result = 0;
 	//int iIdx   = 0;
 
 	//for(iIdx = 0; ((iIdx < count) && (stat == RES_OK)); iIdx++)
 	{
-		result = mmcReadBlock(sector*SECTOR_SIZE, count, buff);
-		if(result == MMC_SUCCESS)
+		result = sd_raw_read(sector*SECTOR_SIZE, buff, SECTOR_SIZE);
+		if(result == 1)
 		{
 			stat = RES_OK;
 			//buff += SECTOR_SIZE;
@@ -140,13 +125,15 @@ DRESULT disk_write (
 	UINT count			/* Number of sectors to write */
 )
 {
-	int result = RES_PARERR;
+	uint8_t result = 0;
 	int iIdx   = 0;
 
 	for(iIdx = 0; ((iIdx < count) && (stat == RES_OK)); iIdx++)
 	{
-		result = mmcWriteBlock(sector*SECTOR_SIZE, SECTOR_SIZE, (unsigned char *) buff);
-		if(result == MMC_SUCCESS)
+		//sd_raw_write(offset_t offset, const uint8_t* buffer, uintptr_t length)
+		//result = mmcWriteBlock(sector*SECTOR_SIZE, SECTOR_SIZE, (unsigned char *) buff);
+		result = sd_raw_write(sector*SECTOR_SIZE, (const uint8_t *) buff, SECTOR_SIZE);
+		if(result == 1)
 		{
 			stat = RES_OK;
 			buff += SECTOR_SIZE;
@@ -181,7 +168,7 @@ DRESULT disk_ioctl (
 		stat = RES_OK; //as write is Write-around cache
 		break;
 	case GET_SECTOR_COUNT :	/* Get number of sectors on the disk (WORD) */
-		*(DWORD*)buff = SECTOR_COUNT;	//ZZZZ use the mmcReadCardSize
+		*(DWORD*)buff = SECTOR_COUNT; //TODO write get function for sector count
 		stat = RES_OK;
 		break;
 	case GET_BLOCK_SIZE:

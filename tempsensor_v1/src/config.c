@@ -286,6 +286,7 @@ void config_init() {
 	if (switch_check_service_pressed()) {
 		g_bServiceMode = true;
 		lcd_printf(LINEC, "Service Mode");
+		config_read_ini_file();
 		delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 		g_pSysCfg->calibrationFinished = 0;
 	} else if (!check_address_empty(g_pSysCfg->memoryInitialized)) {
@@ -359,11 +360,13 @@ void config_init() {
 #endif
 	config_default_configuration();
 #ifdef USE_MININI
-	config_read_ini_file();
+	//config_read_ini_file();
 #endif
 
+	/*
 	lcd_printf(LINEC, "CONFIG");
 	lcd_printl(LINEH, g_pSysCfg->firmwareVersion); // Show the firmware version
+	*/
 #ifndef _DEBUG
 			delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 #endif
@@ -523,9 +526,11 @@ int config_parse_configuration_ST2(char *token) {
 	BATT_POWER_ALERT_PARAM *pBattPower;
 
 	if (config_count_delims(token, ',') != ST2_NUM_PARAMS) {
+		/*
 #ifdef _DEBUG
 		log_append_("ST2 WRONG");
 #endif
+*/
 		return UART_SUCCESS;
 	}
 
@@ -744,8 +749,11 @@ FRESULT config_read_ini_file() {
 	CONFIG_INI_FILE);
 	cfg->logs.sms_alerts = ini_getbool(SECTION_LOGS, "SMS_Alerts", 0,
 	CONFIG_INI_FILE);
+
+	/*
 	cfg->logs.sms_reports = ini_getbool(SECTION_LOGS, "SMS_Reports", 0,
 	CONFIG_INI_FILE);
+	*/
 
 	// Currently in [LOGS] section
 	system = &g_pSysState->system; //switches initialized in system_states

@@ -378,6 +378,7 @@ void lcd_print_boot(const char* pcData, int line) {
 
 	lcd_printl(line, pcData);
 #else
+
 	lcd_print_progress();
 #endif
 }

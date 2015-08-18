@@ -35,7 +35,7 @@ void checkStack();
 #include "diskio.h"
 #include "signal.h"
 #include "encode.h"
-#include "MMC.h"
+//#include "MMC.h"
 #include "pmm.h"
 #include "lcd.h"
 #include "globals.h"

@@ -64,7 +64,6 @@ int8_t sms_process_memory_message(int8_t index) {
 	char ok[8];
 	char phoneNumber[32];
 	char *phone;
-	char answer = 0;
 
 	uart_txf("+CMGR=%d", index);
 
@@ -170,11 +169,10 @@ int8_t sms_process_memory_message(int8_t index) {
 	else if (strcmp(token, "Reset") == 0) {
 		sms_send_message_number(phone, "Rebooting...");
 		delallmsg();
-		for (t = 0; t < 10; t++) {
-			lcd_printf(LINEC, "REBOOT DEVICE");
-			lcd_printf(LINE2, "   *** %d ***  ", (10 - t));
-			lcd_progress_wait(1000);
-		}
+
+		//rebooting
+		lcd_print("Rebooting Now");
+		lcd_progress_wait(1000);
 
 		//reset the board by issuing a SW BOR
 		system_reboot("NET_COMMAND");
@@ -186,9 +184,6 @@ int8_t sms_process_memory_message(int8_t index) {
 		sms_send_message_number(phone, "Command Not Accepted...");
 		delallmsg();
 	}
-
-	if (answer)
-		sms_send_message_number(phone, "ACK");
 
 	return UART_SUCCESS;
 }

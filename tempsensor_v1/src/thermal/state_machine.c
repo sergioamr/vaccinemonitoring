@@ -85,7 +85,7 @@ void state_check_SD_card() {
 			if (g_szLastSD_CardError != NULL) {
 				sprintf(msg, "%s SD error [%s]", g_pDevCfg->cfgIMEI,
 						g_szLastSD_CardError);
-				alarm_SD_card_failure(msg);
+				//alarm_SD_card_failure(msg);
 			}
 		}
 	}
@@ -305,9 +305,8 @@ void state_clear_alarm_state() {
 	if (s->alarms.globalAlarm == STATE_OFF)
 		return;
 
-	if (g_pDevCfg->cfg.logs.sms_reports) {
-		strcat(g_pSysState->alarm_message, " cleared");
-	}
+	strcat(g_pSysState->alarm_message, " cleared");
+
 
 	g_pSysState->state.alarms.globalAlarm = STATE_OFF;
 	//state_alarm_turnoff_buzzer();

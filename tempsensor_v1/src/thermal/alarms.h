@@ -15,7 +15,7 @@ extern "C" {
 void alarm_low_memory();
 void alarm_sms_battery_level();
 void alarm_sms_power_outage();
-void alarm_SD_card_failure(char *msg);
+//void alarm_SD_card_failure(char *msg);
 SENSOR_STATUS *getAlarmsSensor(int id);
 
 //*****************************************************************************

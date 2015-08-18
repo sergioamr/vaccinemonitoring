@@ -549,11 +549,13 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	if (!g_bFatInitialized)
 		return FR_NOT_READY;
 
+	/*
 #ifdef _DEBUG
 	lcd_print("Saving sample");
 #else
+*/
 	lcd_print_progress();
-#endif
+//#endif
 
 	rtc_getlocal(&g_tmCurrTime);
 	char* fn = get_current_fileName(&g_tmCurrTime, FOLDER_DATA, EXTENSION_DATA);
@@ -580,11 +582,14 @@ FRESULT log_sample_web_format(UINT *tbw) {
 	*tbw = bw;
 
 	if (fr == FR_OK) {
+		/*
 #ifdef _DEBUG
 		lcd_printf(LINE2, "OK %d", *tbw);
 #else
 		event_force_event_by_id(EVT_DISPLAY, 0);
 #endif
+*/
+		_NOP(); //nothing
 	} else {
 		fat_check_error(fr);
 	}

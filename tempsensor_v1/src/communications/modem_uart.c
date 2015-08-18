@@ -206,7 +206,9 @@ void modem_send_command(const char *cmd) {
 	// This problem should not ocurr, if this happens means that you are not zero terminating the string
 	// or you are trying to transmit too much data in one go so you have to split your commands.
 	if (uart.iTxLen > sizeof(TXBuffer)) {
+		/*
 		lcd_print("TXERR");
+		*/
 		delay(HUMAN_DISPLAY_ERROR_DELAY);
 		uart.iTxLen = sizeof(TXBuffer) -1;
 	}
@@ -302,10 +304,12 @@ uint8_t uart_tx_data(const char *cmd, uint32_t timeout,
 			return UART_SUCCESS;
 		}
 		attempts--;
+		/*
 		if (g_iLCDVerbose == VERBOSE_BOOTING) {
 			lcd_printl(LINEC, modem_lastCommand);
 			lcd_print_boot("TIMEOUT", LINE2);
 		}
+		*/
 	}
 
 	// If there was an error we have to wait a bit to retrieve everything that is left from the transaction, like the error message

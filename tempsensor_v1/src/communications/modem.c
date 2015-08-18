@@ -390,8 +390,10 @@ int8_t modem_first_init() {
 
 	config_setLastCommand(COMMAND_FIRST_INIT);
 
+	/* not descriptive
 	lcd_printl(LINEC, "Power on");
 	delay(500);
+	*/
 
 	//check Modem is powered on. Otherwise wait for a second
 	while (!MODEM_ON && --attempts>0)
@@ -411,19 +413,34 @@ int8_t modem_first_init() {
 
 	uint8_t nsims = SYSTEM_NUM_SIM_CARDS;
 
+
+	if(&g_pDevCfg->cfgSIM_force > 0){
+		//forcing a SIM
+		if(&g_pDevCfg->cfgSIM_force == 1){
+
+		}
+
+	}
+	else{ //trying first SIM, then second
+
+	}
+
+
+
+
 	/*
 #ifdef _DEBUG
 	nsims = 1;
 #endif
 */
+	/*
 	//g_pDevCfg->cfgSIM_slot = 1;
 	for (t = 0; t < nsims; t++) {
 		//force sim 2 state so that we run swap onto sim1
 		modem_swap_SIM(); // swap
-		/*
-		 * We have to check which parameters are fatal to disable the SIM
-		 *
-		 */
+
+		 //We have to check which parameters are fatal to disable the SIM
+
 
 		if (!state_isSimOperational()) {
 			iSIM_Error++;
@@ -446,6 +463,7 @@ int8_t modem_first_init() {
 		lcd_printf(LINEE, "SIMS FAILED");
 		break;
 	}
+	*/
 
 	//success, send a heartbeat
 	sms_send_heart_beat();

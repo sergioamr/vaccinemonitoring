@@ -68,11 +68,13 @@ void hardware_actions() {
 			lcd_on = 1;
 			break;
 		case HWD_BUZZER_FEEDBACK:
+			/*
 			if (g_pSysState->system.switches.button_buzzer_override) {
 				lcd_printf(LINE1, "BUZZER OFF");
 			} else {
 				lcd_printf(LINE1, "BUZZER ON");
 			}
+			*/
 			g_iSystemSetup = 0;
 		case HWD_TURN_SCREEN:
 			lcd_on = 1;

@@ -284,6 +284,7 @@ void events_sync() {
 }
 
 void events_debug() {
+	/*
 #ifdef _DEBUG
 	if (!g_iDebug)
 		return;
@@ -302,6 +303,7 @@ void events_debug() {
 	if (test == 0 || nextEventTime < 10 || 1)
 		lcd_printf(LINE1, "[%s %d]   ", pEvent->name, nextEventTime);
 #endif
+*/
 }
 
 void event_run_now(EVENT *pEvent) {

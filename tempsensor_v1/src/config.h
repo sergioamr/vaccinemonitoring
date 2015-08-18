@@ -267,7 +267,7 @@ typedef union {
 		unsigned char server_config :1;
 		unsigned char modem_transactions :1;
 		unsigned char sms_alerts :1;
-		unsigned char sms_reports :1;
+		//unsigned char sms_reports :1;
 		unsigned char commmands :1;
 		unsigned char bit8 :1;
 	} logs;
@@ -331,9 +331,12 @@ typedef struct {
 	uint16_t maxRXBuffer;
 	uint16_t maxTXBuffer;
 #endif
+
+	/*
 #ifdef _DEBUG
 	uint16_t stackLeft;
 #endif
+*/
 
 	uint16_t lastCommand; // Command that was last executed to control flow.
 	char lastCommandTime[2 + 2 + 2 + 1 + 1 + 1]; //

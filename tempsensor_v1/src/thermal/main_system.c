@@ -113,11 +113,13 @@ void system_boot() {
 	g_iLCDVerbose = VERBOSE_BOOTING;         // Booting is not completed
 	lcd_printf(LINEC, "Boot %d", (int) g_pSysCfg->numberConfigurationRuns);
 
+	/*
 #ifndef _DEBUG
 	lcd_printl(LINEH, g_pSysCfg->firmwareVersion); // Show the firmware version
 #else
 	lcd_printl(LINE2, "(db)" __TIME__);
 #endif
+*/
 
 	// Initial trigger of temperature capture. Just get one sample
 	temperature_subsamples(1);
@@ -129,9 +131,12 @@ void system_boot() {
 	lcd_progress_wait(2000);
 #endif
 
+	modem_first_init();
+	/*
 	if (modem_first_init() != 1) {
 		_NOP(); // Modem failed to power on
 	}
+	*/
 
 	batt_check_level();
 
@@ -165,9 +170,9 @@ _Sigfun * signal(int i, _Sigfun *proc) {
 /****************************************************************************/
 
 // Paints the stack in a value to check for anomalies
-#define EMPTY_STACK_VALUE 0x69
+//#define EMPTY_STACK_VALUE 0x69
 
-uint8_t stackClear = EMPTY_STACK_VALUE;
+//uint8_t stackClear = EMPTY_STACK_VALUE;
 #ifdef ___CHECK_STACK___
 // Used to check the stack for leaks
 extern char __STACK_END;
