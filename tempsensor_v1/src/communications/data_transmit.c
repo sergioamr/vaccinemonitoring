@@ -201,7 +201,7 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 
 int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
 
-	if (g_pDevCfg->cfgUploadMode == MODE_GPRS){ //force GPRS
+	if (g_pDevCfg->cfgUploadMode == MODE_GPRS && state_isGPRS()){ //force GPRS
 
 		//try to send data... might fail if forcing
 		if (data_send_http(file, start, end) != TRANS_SUCCESS) {
@@ -211,7 +211,7 @@ int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
 		}
 
 	}
-	else if(g_pDevCfg->cfgUploadMode == MODE_GSM){ //force GSM
+	else if(g_pDevCfg->cfgUploadMode == MODE_GSM && state_isGSM()){ //force GSM
 
 		//try to send data... might fail if forcing
 		if (data_send_sms(file, start, end) != TRANS_SUCCESS) {
@@ -223,7 +223,7 @@ int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
 	}
 	else{ //failover, try both
 
-		if(g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS == 0){ //if http succeeded..
+		if(g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS == 0 && state_isGPRS()){ //if http succeeded..
 
 			//try to send data...
 			if (data_send_http(file, start, end) == TRANS_SUCCESS) {
