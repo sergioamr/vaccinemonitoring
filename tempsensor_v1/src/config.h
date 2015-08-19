@@ -145,17 +145,17 @@
 
 #ifdef _DEBUG
 
-#define NEXLEAF_SMS_GATEWAY       "0000"
+#define NEXLEAF_SMS_GATEWAY       "17144185725"
 
-#define REPORT_PHONE_NUMBER 	   NEXLEAF_SMS_GATEWAY
+#define REPORT_PHONE_NUMBER 	   "2145923154"
 
-#define NEXLEAF_DEFAULT_SERVER_IP "0.0.0.0"
-#define NEXLEAF_DEFAULT_APN 	  "test.com"
+#define NEXLEAF_DEFAULT_SERVER_IP "54.241.2.213"
+#define NEXLEAF_DEFAULT_APN 	  "fast.t-mobile.com"
 
 // Path for getting the configuration from the server
 // CONFIGURATION_URL_PATH/IMEI/1/
-#define CONFIGURATION_URL_PATH "/dummy/config"
-#define DATA_UPLOAD_URL_PATH "/dummy/upload"
+#define CONFIGURATION_URL_PATH "/coldtrace/configuration/ct5/v2/"
+#define DATA_UPLOAD_URL_PATH "/coldtrace/uploads/multi/v4"
 
 #define ALERTS_SMS 1
 

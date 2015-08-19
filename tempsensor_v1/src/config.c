@@ -89,6 +89,7 @@ void config_reset_error(SIM_CARD_CONFIG *sim) {
 }
 
 void config_display_config() {
+/*
 #ifdef _DEBUG
 	int t = 0;
 	lcd_printl(LINEC, "SMS Gateway");
@@ -108,6 +109,7 @@ void config_display_config() {
 	lcd_printl(LINEC, "UPLOAD URL ");
 	lcd_printl(LINEH, g_pDevCfg->cfgUpload_URL);
 #endif
+*/
 	lcd_display_config();
 }
 
@@ -433,7 +435,10 @@ int config_parse_configuration_ST1(char *token) {
 	memset(uploadMode, 0, sizeof(uploadMode));
 
 	config_setLastCommand(COMMAND_PARSE_CONFIG_ST1);
+
+	/*
 	lcd_printl(LINEH, (char *) CHUNK_ST1);
+	*/
 
 	// Skip $ST1,
 	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
@@ -535,7 +540,9 @@ int config_parse_configuration_ST2(char *token) {
 	}
 
 	config_setLastCommand(COMMAND_PARSE_CONFIG_ST2);
+	/*
 	lcd_printl(LINEH, CHUNK_ST2);
+	*/
 
 	// Skip $ST2,
 	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
@@ -585,7 +592,9 @@ int config_parse_configuration_ST3(char *token) {
 
 
 	config_setLastCommand(COMMAND_PARSE_CONFIG_ST3);
+	/*
 	lcd_printl(LINEH, CHUNK_ST3);
+	*/
 
 	// Skip $ST3,
 	PARSE_FIRSTSKIP(token, delimiter, UART_FAILED);
@@ -658,9 +667,13 @@ int config_parse_configuration(char *msg) {
 
 int config_process_configuration() {
 	char *token;
+
+	/*
 #ifdef _DEBUG
 	log_append_("cfg process");
 #endif
+*/
+
 // FINDSTR uses RXBuffer - There is no need to initialize the data to parse.
 	PARSE_FINDSTR_RET(token, HTTP_INCOMING_DATA, UART_FAILED);
 	return config_parse_configuration((char *) uart_getRXHead());
