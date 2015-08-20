@@ -384,9 +384,9 @@ int8_t modem_check_network() {
 
 
 int8_t modem_first_init() {
-	//int t = 0;
+	int t = 0;
 	int attempts = MODEM_CHECK_RETRY;
-	//int iSIM_Error = 0;
+	int iSIM_Error = 0;
 
 	config_setLastCommand(COMMAND_FIRST_INIT);
 
@@ -401,7 +401,7 @@ int8_t modem_first_init() {
 
 	if (!MODEM_ON) {
 		lcd_printl(LINEC, "Modem failed");
-		lcd_printl(LINEE, "Power on");
+		//lcd_printl(LINEE, "Power on");
 	}
 
 	uart_setOKMode();
@@ -411,38 +411,7 @@ int8_t modem_first_init() {
 	uart_tx_timeout("AT", TIMEOUT_DEFAULT, 10); // Loop for OK until modem is ready
 	lcd_enable_verbose();
 
-	//uint8_t nsims = SYSTEM_NUM_SIM_CARDS;
-
-
-	if(g_pDevCfg->cfgSIM_force > 0){
-		//forcing a SIM, lets see which
-		if(g_pDevCfg->cfgSIM_force == 1){ //first sim
-			g_pDevCfg->cfgSIM_slot = 0; //make sure on first SIM
-		}
-		else{ //only 2 sims, has to be other
-			g_pDevCfg->cfgSIM_slot = 1; //set second SIM
-		}
-		//display the SIM card
-		//lcd_printf(LINEC, "SIM %d", g_pDevCfg->cfgSIM_slot + 1);
-		//start on that SIM
-		modem_init();
-
-	}
-	else{ //trying first SIM, then second
-
-		//display SIM
-		//lcd_printf(LINEC, "SIM %d", g_pDevCfg->cfgSIM_slot + 1);
-		//start on first SIM by default
-		modem_init();
-
-		//if that SIM failed, try other
-		if (!state_isSimOperational()) {
-			modem_swap_SIM(); // swap and try
-		}
-
-	}
-
-
+	uint8_t nsims = SYSTEM_NUM_SIM_CARDS;
 
 
 	/*
@@ -450,8 +419,7 @@ int8_t modem_first_init() {
 	nsims = 1;
 #endif
 */
-	/*
-	//g_pDevCfg->cfgSIM_slot = 1;
+
 	for (t = 0; t < nsims; t++) {
 		//force sim 2 state so that we run swap onto sim1
 		modem_swap_SIM(); // swap
@@ -480,13 +448,11 @@ int8_t modem_first_init() {
 		lcd_printf(LINEE, "SIMS FAILED");
 		break;
 	}
-	*/
 
 
-	if (state_isSimOperational()) {
-		//if operational, send heartbeat to server
-		sms_send_heart_beat();
-	}
+
+
+	sms_send_heart_beat();
 
 	return MODEM_ON;
 }

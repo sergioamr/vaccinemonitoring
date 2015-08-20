@@ -288,7 +288,6 @@ void config_init() {
 	if (switch_check_service_pressed()) {
 		g_bServiceMode = true;
 		lcd_printf(LINEC, "Service Mode");
-		config_read_ini_file();
 		delay(HUMAN_DISPLAY_LONG_INFO_DELAY);
 		g_pSysCfg->calibrationFinished = 0;
 	} else if (!check_address_empty(g_pSysCfg->memoryInitialized)) {
@@ -362,7 +361,7 @@ void config_init() {
 #endif
 	config_default_configuration();
 #ifdef USE_MININI
-	//config_read_ini_file();
+	config_read_ini_file();
 #endif
 
 	/*

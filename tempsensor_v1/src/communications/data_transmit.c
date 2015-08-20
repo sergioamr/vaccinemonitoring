@@ -201,60 +201,6 @@ int8_t data_send_http(FIL *file, uint32_t start, uint32_t end) {
 
 int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
 
-	if (g_pDevCfg->cfgUploadMode == MODE_GPRS && state_isGPRS()){ //force GPRS
-
-		//try to send data... might fail if forcing
-		if (data_send_http(file, start, end) != TRANS_SUCCESS) {
-			//fail data send over http
-			state_transmission_failed_gprs(g_pDevCfg->cfgSIM_slot);
-			return TRANS_FAILED; //failed, return
-		}
-
-	}
-	else if(g_pDevCfg->cfgUploadMode == MODE_GSM && state_isGSM()){ //force GSM
-
-		//try to send data... might fail if forcing
-		if (data_send_sms(file, start, end) != TRANS_SUCCESS) {
-			//fail data send over sms
-			state_transmission_failed_gsm(g_pDevCfg->cfgSIM_slot);
-			return TRANS_FAILED; //failed, return
-		}
-
-	}
-	else{ //failover, try both
-
-		if(g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS == 0 && state_isGPRS()){ //if http succeeded..
-
-			//try to send data...
-			if (data_send_http(file, start, end) == TRANS_SUCCESS) {
-				//want to check for success here so we don't accidentily send via SMS again
-				return TRANS_SUCCESS;
-			}
-			else{
-				//fail data send over http. this will only trip if http_enable succeeds but
-				//	we somehow still fail to send
-				state_transmission_failed_gprs(g_pDevCfg->cfgSIM_slot);
-				//return TRANS_FAILED; //failed
-				//don't need to return, GSM fallback with either fail or succeed
-			}
-
-		}
-
-		//fallback to GSM afterwards, last resort!
-		//try to send data...
-		if (data_send_sms(file, start, end) != TRANS_SUCCESS) {
-			//fail data send over sms
-			state_transmission_failed_gsm(g_pDevCfg->cfgSIM_slot);
-			return TRANS_FAILED; //failed
-		}
-
-
-
-	}
-
-	return TRANS_SUCCESS; //succeeded, return
-
-	/*
 	if ((g_pSysState->simState[g_pDevCfg->cfgSIM_slot].failsGPRS > 0 ||
 			state_isGSM() || g_pDevCfg->cfgUploadMode == MODE_GSM) &&
 			g_pDevCfg->cfgUploadMode != MODE_GPRS) {
@@ -272,7 +218,7 @@ int8_t data_send_method(FIL *file, uint32_t start, uint32_t end) {
 	}
 
 	return TRANS_SUCCESS;
-	*/
+
 }
 
 // If the last file was corrupted and forced a reboot we remove the extension
